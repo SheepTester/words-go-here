@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Words go here 2</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="in which you type and things appear maybe"/>
+    <style>
+      html, body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: #333;
+      }
+      editor {
+        display: block;
+        background: #222;
+        color: white;
+        font-family: monospace;
+        counter-reset: linenumberthing;
+        font-size: 0;
+        position: relative;
+        margin-left: 20px;
+        min-height: 100%;
+      }
+      line {
+        width: 100%;
+        display: block;
+        font-size: 15px;
+        height: 15px;
+        padding-bottom: 5px;
+        white-space: pre;
+      }
+      line:focus {
+        background: #333;
+      }
+      line:before {
+        counter-increment: linenumberthing;
+        content: counter(linenumberthing);
+        font-size: 10px;
+        padding: 0 5px;
+        display: inline-block;
+        box-sizing: border-box;
+        position: absolute;
+        right: 100%;
+      }
+      .input {
+        position: fixed;
+        top: 100%;
+      }
+      cursor {
+        background: rgba(255,255,255,0.3);
+        display: block;
+        position: absolute;
+        height: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <editor></editor>
+
+    <script src="../sheep.js"></script>
+    <script src='a2.js'></script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

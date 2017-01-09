@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Words go here 1</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="An attempt to make a place where people can type their words even though better alternatives exist."/>
+    <style>
+      html, body, #editor {
+        height: 100%;
+        width: 100%;
+      }
+      body {
+        margin: 0;
+      }
+      #editor {
+        background: #222;
+        color: white;
+        font-family: monospace;
+        counter-reset: linenumberthing;
+        font-size: 0;
+      }
+      line {
+        width: 100%;
+        display: block;
+        font-size: 15px;
+        height: 15px;
+        padding-bottom: 5px;
+      }
+      line:focus {
+        background: #333;
+      }
+      line:before {
+        counter-increment: linenumberthing;
+        content: counter(linenumberthing);
+        font-size: 10px;
+        padding: 0 5px;
+        display: inline-block;
+        box-sizing: border-box;
+        height: 100%;
+      }
+      line > div {
+        background: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="editor"></div>
+
+    <script src="../sheep.js"></script>
+    <script src='a1.js'></script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
