@@ -49,10 +49,31 @@
         top: 100%;
       }
       cursor {
-        background: rgba(255,255,255,0.3);
+        background: rgba(255,255,255,0.8);
         display: block;
         position: absolute;
         height: 15px;
+        width: 1px;
+        animation: cursorlikeness .6s infinite alternate cubic-bezier(1,0,0,1);
+      }
+      cursor.moving {
+        animation: none;
+      }
+      canvas.selection {
+        position: absolute;
+        top: 0;
+        left: 0;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-crisp-edges;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+      @keyframes cursorlikeness {
+        from {opacity:0;}
+        to {opacity:1;}
+      }
+      .getTextLength {
+        white-space: pre;
       }
     </style>
   </head>
