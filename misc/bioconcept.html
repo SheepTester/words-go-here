@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>bio concept thing i guess</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="shtf"/>
+    <link href="https://fonts.googleapis.com/css?family=Questrial" rel="stylesheet">
+    <link rel="stylesheet" href="bios.css">
+    <style>
+      body {
+        background: #bdbdbd;
+        font-family: 'Questrial', sans-serif;
+        line-height: 1;
+        font-size: 15px;
+      }
+    </style>
+  </head>
+  <body class='bio'>
+    <bio class='boy'>
+      <name><nick>Chris</nick>Christopher Yao</name>
+      <gender data-thing='gender'>&nbsp;</gender>
+      <info data-thing="race">asian</info>
+      <info data-thing="birth date">20 Oct 2003</info>
+      <info data-thing="born where">unknown</info>
+      <list data-name="Aliases">Chris, Scott (<em>Infinity Chip</em>), Christogoofer Yaoch, Gaffasaurus (YouTube)</list>
+      <list data-name="Ships">Chrisaela (x Michaela, grade 7), Chrisathan (x Sneh, grade 7)</list>
+      <list data-name="Schools">JLS (6-8)</list>
+      <list data-name="Organisations">Real Axolotls</list>
+      <h>Profiles</h>
+      <text>
+        <a href="mailto:mrpenguin.unlucky@gmail.com">email</a>
+        <a href="https://plus.google.com/u/0/106434603220854241121">google+</a>
+        <a href="https://www.youtube.com/channel/UCrvlbaPVXWjHGG3YtelpbNw/">youtube</a>
+      </text>
+      <h>Description</h>
+      <text>short, founder of Axolotls, wears glasses</text>
+    </bio>
+
+    <script src="../../sheep.js"></script>
+    <script>
+document.querySelector('gender').onclick=e=>{
+  if (document.querySelector('bio').classList.contains('girl')) {
+    document.querySelector('bio').classList.remove('girl');
+    document.querySelector('bio').classList.add('boy');
+  } else {
+    document.querySelector('bio').classList.add('girl');
+    document.querySelector('bio').classList.remove('boy');
+  }
+};
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

@@ -1,0 +1,32 @@
+people {
+  display: flex;
+  color: #537780;
+  font-size: 20px;
+  flex-wrap: wrap;
+  padding: 5px;
+  transition: filter .5s;
+}
+person {
+  flex-grow: 1;
+  display: inline-block;
+  padding: 5px;
+  margin: 5px;
+  text-align: center;
+  cursor: pointer;
+  transition: box-shadow .2s;
+  height: 30px;
+  box-sizing: border-box;
+}
+person:nth-child(3n+1) {background-color: #FFFCCA;}
+person:nth-child(3n+2) {background-color: #55E9BC;}
+person:nth-child(3n+3) {background-color: #11D3BC;}
+person:hover {
+  box-shadow: inset 0 0 0 5px rgba(0,0,0,0.1);
+}
+person:active {
+  box-shadow: inset 0 0 0 15px rgba(0,0,0,0.1);
+}
+body.bio people {
+  pointer-events: none;
+  filter: blur(5px);
+}

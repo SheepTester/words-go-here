@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>list of people</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="some people"/>
+    <link href="https://fonts.googleapis.com/css?family=Questrial" rel="stylesheet">
+    <link rel="stylesheet" href="bios.css">
+    <link rel="stylesheet" href="people.css">
+    <style>
+      html, body {
+        height: 100%;
+        width: 100%;
+      }
+      body {
+        margin: 0;
+        background: #537780;
+        font-family: 'Questrial', sans-serif;
+        line-height: 1;
+        font-size: 15px;
+      }
+      h1 {
+        font-weight: normal;
+        font-size: 30px;
+        margin: 0;
+        padding: 10px;
+        color: white;
+        padding-bottom: 0;
+        transition: filter .5s;
+      }
+      body.bio h1 {
+        pointer-events: none;
+        filter: blur(5px);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Stalker bios</h1>
+    <people>
+      <person>Christopher Yao</person>
+      <person>Jessica Huang</person>
+      <person>Steven Xue</person>
+      <person>Sean Yen</person>
+      <person>Joseph Liu</person>
+      <person>Zach Meyers</person>
+      <person>Daniel Barszczak</person>
+    </people>
+    <bio class='boy'>
+      <name><nick>Chris</nick>Christopher Yao</name>
+      <gender data-thing='gender'>&nbsp;</gender>
+      <info data-thing="race">asian</info>
+      <info data-thing="birth date">20 Oct 2003</info>
+      <info data-thing="born where">unknown</info>
+      <list data-name="Aliases">Chris, Scott (<em>Infinity Chip</em>), Christogoofer Yaoch, Gaffasaurus (YouTube)</list>
+      <list data-name="Ships">Chrisaela (x Michaela, grade 7), Chrisathan (x Sneh, grade 7)</list>
+      <list data-name="Schools">JLS (6-8)</list>
+      <list data-name="Organisations">Real Axolotls</list>
+      <h>Profiles</h>
+      <text>
+        <a href="mailto:mrpenguin.unlucky@gmail.com">email</a>
+        <a href="https://plus.google.com/u/0/106434603220854241121">google+</a>
+        <a href="https://www.youtube.com/channel/UCrvlbaPVXWjHGG3YtelpbNw/">youtube</a>
+      </text>
+      <h>Description</h>
+      <text>short, founder of Axolotls, wears glasses</text>
+    </bio>
+
+    <script src="../../sheep.js"></script>
+    <script>
+document.querySelector('people').onclick=e=>{
+  if (e.target.tagName==='PERSON') {
+    var leave=e=>{
+      if (e.target===document.body) {
+        document.body.classList.remove('bio');
+        document.body.removeEventListener("mousedown",leave,false);
+        document.body.removeEventListener("touchstart",leave,false);
+      }
+    };
+    document.body.classList.add('bio');
+    document.body.addEventListener("mousedown",leave,false);
+    document.body.addEventListener("touchstart",leave,false);
+  }
+};
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
