@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>formatting</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="meh"/>
+    <style>
+
+    </style>
+  </head>
+  <body>
+    <textarea placeholder="wow" rows="8" cols="80">§kHi§r§lHi§r§mHi§r§nHi§r§oHi§r
+§00§11§22§33§44§55§66§77§88§99§aa§bb§cc§dd§ee§ff</textarea>
+    <p></p>
+    A system based off <a href="http://minecraft.gamepedia.com/Formatting_codes">Minecraft</a>.
+
+    <script src="../../sheep.js"></script>
+    <script>
+var colours={
+  0:'212121',
+  1:'3F51B5',
+  2:'4CAF50',
+  3:'009688',
+  4:'f44336',
+  5:'673AB7',
+  6:'FF9800',
+  7:'9E9E9E',
+  8:'607D8B',
+  9:'2196F3',
+  a:'8BC34A',
+  b:'00BCD4',
+  c:'E91E63',
+  d:'9C27B0',
+  e:'FFC107',
+  f:'fff'
+};
+document.querySelector('textarea').oninput=e=>{
+  // §
+  var styles={
+    b:false,
+    i:false,
+    u:false,
+    s:false,
+    o:false,
+    c:'0'
+  };
+  while (document.querySelector('p').hasChildNodes()) document.querySelector('p').removeChild(document.querySelector('p').lastChild);
+  var val=document.querySelector('textarea').value.replace(/&/g,'&amp;').replace(/ /g,'&nbsp;').replace(/</g,'&lt;').replace(/\>/g,'&gt;').replace(/\r?\n/g,'<br>');
+  for (var i=0;i<val.length;i=val.indexOf('§',i)===-1?val.length:val.indexOf('§',i)+2) {
+    if (i!==0||val[i]!=='§') {
+      var s=document.createElement('span');
+      s.innerHTML=val.slice(i,val.indexOf('§',i+1)===-1?val.length:val.indexOf('§',i+1));
+      if (i!==0) switch (val[i-1].toLowerCase()) {
+        case 'r':
+          styles.b=false;
+          styles.i=false;
+          styles.u=false;
+          styles.s=false;
+          styles.o=false;
+          styles.c='0';
+          break;
+        case 'k':
+          styles.o=true;
+          break;
+        case 'l':
+          styles.b=true;
+          break;
+        case 'm':
+          styles.s=true;
+          break;
+        case 'n':
+          styles.u=true;
+          break;
+        case 'o':
+          styles.i=true;
+          break;
+        default:
+          var t=val[i-1].charCodeAt();
+          if (t>=48&&t<=57||t>=97&&t<=102) styles.c=val[i-1];
+      }
+      s.style.fontWeight=styles.b?'bold':'normal';
+      s.style.fontStyle=styles.i?'italic':'normal';
+      s.style.textDecoration=styles.u?(styles.s?'line-through underline':'underline'):(styles.s?'line-through':'none');
+      s.style.fontFamily=styles.o?'Webdings':'inherit';
+      s.style.color='#'+colours[styles.c];
+      document.querySelector('p').appendChild(s);
+    }
+  }
+};
+document.querySelector('textarea').oninput();
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

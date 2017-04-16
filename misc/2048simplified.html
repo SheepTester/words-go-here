@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>2048 simplified</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="2048 made by gabrielecirulli without animations and all that fancy stuff"/>
+    <style media="screen">
+      td {
+        border: 1px solid black;
+        height: 16px;
+        min-width: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <p><a href="https://gabrielecirulli.github.io/2048/">better version</a></p>
+    <table id='game'></table>
+    <ul>
+      <li><button onclick='press(this)'>up</button></li>
+      <li><button onclick='press(this)'>down</button></li>
+      <li><button onclick='press(this)'>left</button></li>
+      <li><button onclick='press(this)'>right</button></li>
+    </ul>
+    <p>score <span id='score'></span></p>
+
+    <script src="../../sheep.js"></script>
+    <script>
+var grid=[,,,,,,,,,,,,,,,,],
+render,
+game=document.querySelector('#game'),
+newTile,
+score=0,
+scoreel=document.querySelector('#score'),
+available=_=>{
+  var c=[];
+  if (grid.includes(undefined)) for (var i=0;i<16;i++) if (!grid[i]) c.push(i);
+  return c;
+},
+newN=_=>{
+  var t=available();
+  grid[t[Math.floor(Math.random()*t.length)]]=2*((Math.random()>=0.9)+1);
+},
+press=e=>{
+  if (typeof e==='object') e=e.innerHTML;
+  var a,
+  b;
+  switch (e) {
+    case 'left':
+      a=i=>grid.slice(i*4,i*4+4).filter(Boolean);
+      b=(i,j,t)=>grid[i*4+j]=t[j];
+      break;
+    case 'right':
+      a=i=>grid.slice(i*4,i*4+4).filter(Boolean).reverse();
+      b=(i,j,t)=>grid[i*4+3-j]=t[j];
+      break;
+    case 'up':
+      a=i=>{
+        var t=[];
+        for (var j=0;j<4;j++) t.push(grid[j*4+i]);
+        return t.filter(Boolean);
+      };
+      b=(i,j,t)=>grid[j*4+i]=t[j];
+      break;
+    case 'down':
+      a=i=>{
+        var t=[];
+        for (var j=0;j<4;j++) t.push(grid[12-j*4+i]);
+        return t.filter(Boolean);
+      };
+      b=(i,j,t)=>grid[12-j*4+i]=t[j];
+      break;
+  }
+  for (var i=0;i<4;i++) { // check each row
+    var t=a(i);
+    for (var j=0;j<t.length;j++) {
+      if (t[j]===t[j+1]) {
+        t[j]*=2;
+        score+=t[j];
+        t.splice(j+1,1);
+        j--;
+      }
+    }
+    for (var j=0;j<4;j++) b(i,j,t);
+  }
+  newN();
+  render();
+};
+newN();
+newN();
+(render=_=>{
+  var s='',t;
+  for (var i=0;i<16;i++) s+=`${i%4===0?'<tr>':''}<td>${grid[i]?grid[i]:''}</td>${i%4===3?'</tr>':''}`;
+  game.innerHTML=s;
+  scoreel.innerHTML=score;
+})();
+/*document.onkeydown=e=>{
+  var t=document.querySelectorAll('ul li button');
+  t[Math.floor(Math.random()*t.length)].click();
+};*/
+/* GameManager.prototype.addRandomTile = function () {
+  if (this.grid.cellsAvailable()) {
+    var value = Math.random() < 0.9 ? 2 : 4;
+    var tile = new Tile(this.grid.randomAvailableCell(), value);
+
+    this.grid.insertTile(tile);
+  }
+};
+Grid.prototype.cellsAvailable = function () {
+  return !!this.availableCells().length;
+};
+Grid.prototype.availableCells = function () {
+  var cells = [];
+
+  this.eachCell(function (x, y, tile) {
+    if (!tile) {
+      cells.push({ x: x, y: y });
+    }
+  });
+
+  return cells;
+};
+Grid.prototype.eachCell = function (callback) {
+  for (var x = 0; x < this.size; x++) {
+    for (var y = 0; y < this.size; y++) {
+      callback(x, y, this.cells[x][y]);
+    }
+  }
+};
+Grid.prototype.randomAvailableCell = function () {
+  var cells = this.availableCells();
+
+  if (cells.length) {
+    return cells[Math.floor(Math.random() * cells.length)];
+  }
+}; */
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

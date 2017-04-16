@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>scratch to js</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="turns project.json to javascripts"/>
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+    <style media="screen">
+      body {
+        background-color: #E8EDF1;
+        font-family: 'Inconsolata', monospace;
+        font-size: 15px;
+        line-height: 1;
+      }
+      canvas, textarea {
+        height: 360px;
+        width: 480px;
+        background-color: black;
+        border-radius: 5px;
+      }
+      textarea {
+        box-sizing: border-box;
+        -moz-tab-size: 2;
+        -o-tab-size: 2;
+        tab-size: 2;
+        transition: box-shadow .2s;
+      }
+      textarea:focus {
+        box-shadow: 0 0 0 3px rgba(0,160,255,0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c" width="480" height="360"></canvas>
+    <p id='p'></p>
+
+    <script src="../../sheep.js"></script>
+    <!-- <script src="https://sheeptester.github.io/javascripts/shepform/colourspace.js"></script> -->
+    <script>
+// https://wiki.scratch.mit.edu/wiki/Scratch_File_Format_(2.0)#Format
+var canvas=document.querySelector('#c'),
+c=canvas.getContext('2d'),
+pxr=SHEEP.pixelratio(),
+scratch,
+sprites={
+  _STAGE_:{
+    lists:{},
+    vars:{}
+  }
+},
+userdata={mousex:0,mousey:0,mousedown:false,keys:{}};
+var p=document.querySelector('#p');
+function loguserdata() {
+  p.textContent=`mouse ${userdata.mousedown?'down':'up'} (${userdata.mousex},${userdata.mousey}) and keys ${(_=>{
+    var t=[];
+    for (var span in userdata.keys) if (userdata.keys[span]) t.push(span);
+    return t.join(' ');
+  })()}`;
+}
+document.onmousemove=e=>{
+  userdata.mousex=e.clientX-canvas.getBoundingClientRect().left-240;
+  userdata.mousey=180-e.clientY+canvas.getBoundingClientRect().top;loguserdata();
+};
+document.onmousedown=e=>{
+  userdata.mousedown=true;loguserdata();
+};
+document.onmouseup=e=>{
+  userdata.mousedown=false;loguserdata();
+};
+document.onkeydown=e=>{
+  userdata.keys[e.keyCode]=true;
+  loguserdata();
+  if (e.keyCode===9) {
+    e.preventDefault();
+    return false;
+  }
+};
+document.onkeyup=e=>{
+  userdata.keys[e.keyCode]=false;loguserdata();
+};
+canvas.width*=pxr;
+canvas.height*=pxr;
+SHEEP.ajax('http://projects.scratch.mit.edu/internalapi/project/115618276/get/',e=>scratch=JSON.parse(e));
+function doscratch(block,oops) {
+  if (typeof block!=='object') return block;
+  else {
+    var oops=oops||null;
+    console.log(block[0],block[1]);
+    switch (block[0]) {
+      case '-':
+        return Number(doscratch(block[1],oops))-Number(doscratch(block[2],oops));
+      case '*':
+        return Number(doscratch(block[1],oops))*Number(doscratch(block[2],oops));
+      case '/':
+        return Number(doscratch(block[1],oops))/Number(doscratch(block[2],oops));
+      case '+':
+        return Number(doscratch(block[1],oops))+Number(doscratch(block[2],oops));
+      case '%':
+        return Number(doscratch(block[1],oops))%Number(doscratch(block[2],oops));
+      case '&':
+        return doscratch(block[1],oops)&&doscratch(block[2],oops);
+      case '|':
+        return doscratch(block[1],oops)||doscratch(block[2],oops);
+      case '<':
+        var b1=doscratch(block[1],oops),b2=doscratch(block[2],oops);
+        if (isNaN(Number(b1))||isNaN(Number(b2))) return b1<b2;
+        else return Number(b1)<Number(b2);
+      case '>':
+        var b1=doscratch(block[1],oops),b2=doscratch(block[2],oops);
+        if (isNaN(Number(b1))||isNaN(Number(b2))) return b1>b2;
+        else return Number(b1)>Number(b2);
+      case '=':
+        var b1=doscratch(block[1],oops),b2=doscratch(block[2],oops);
+        if (b1===''&&(b2===0||b2===false)) return false;
+        else if (b2===''&&(b1===0||b1===false)) return false;
+        else if (typeof b2==='string'&&typeof b1==='string') return b1.toLowerCase()===b2.toLowerCase();
+        else return b1==b2;
+      case 'abs':
+        return Math.abs(doscratch(block[1],oops));
+      case 'append:toList:':
+        var list=doscratch(block[2],oops);
+        if (oops.lists[list]) oops.lists[list].push(doscratch(block[1],oops));
+        else if (sprites._STAGE_.lists[list]) sprites._STAGE_.lists[list].push(doscratch(block[1],oops));
+        break;
+      case 'changeVar:by:':
+        var vari=doscratch(block[1],oops);
+        if (oops.vars[vari]) oops.vars[vari]+=doscratch(block[2],oops);
+        else if (sprites._STAGE_.vars[vari]) sprites._STAGE_.vars[vari]+=doscratch(block[2],oops);
+        break;
+      case 'changePenSizeBy:':
+        oops.pensize+=doscratch(block[1],oops);
+        if (oops.pensize<1) oops.pensize=1;
+        if (oops.pensize>256) oops.pensize=256;
+        break;
+      case 'changeXposBy:':
+        // c.lineTo(125,45);
+        oops.x+=doscratch(block[1],oops);
+        break;
+      case 'deleteLine:ofList:':
+        var t=doscratch(block[1],oops),
+        list=doscratch(block[2],oops);
+        if (t==='all') {
+          if (oops.lists[list]) oops.lists[list]=[];
+          else if (sprites._STAGE_.lists[list]) sprites._STAGE_.lists[list]=[];
+        } else if (t==='none') {
+          if (oops.lists[list]) oops.lists[list].splice(-1,1);
+          else if (sprites._STAGE_.lists[list]) sprites._STAGE_.lists[list].splice(-1,1);
+        } else {
+          if (oops.lists[list]) oops.lists[list].splice(Number(t)-1,1);
+          else if (sprites._STAGE_.lists[list]) sprites._STAGE_.lists[list].splice(Number(t)-1,1);
+        }
+        break;
+      case 'call':
+        console.log('CALLED');
+        var cust=doscratch(block[1],oops);
+        if (oops.custs[cust]) {
+          dothe(oops.code[oops.custs[cust]],oops,block.slice(1));
+        }
+        break;
+      case 'doRepeat':
+        var iterations=Number(doscratch(block[1],oops));
+        for (var i=0;i<iterations;i++) for (var j=0;j<block[2].length;j++) doscratch(block[2][j],oops);
+        break;
+      case 'doForever':
+        var stringified=JSON.stringify(block[1]);
+        if (!oops.forevers[stringified]) {
+          oops.forevers[stringified]=true;
+          oops.forevers.push(block[1]);
+          for (var i=0;i<block[1].length;i++) doscratch(block[1][i],oops);
+        }
+        break;
+      case 'mousePressed':
+        return userdata.mousedown;
+      case 'mouseX':
+        return userdata.mousex;
+      case 'mouseY':
+        return userdata.mousey;
+      case 'keyPressed:':
+        switch (doscratch(block[1],oops)) {
+          case '\r':
+            return userdata.keys[13];
+          case '\t':
+            return userdata.keys[9];
+          case '\u0008':
+            return userdata.keys[8];
+          case '\u001b':
+            return userdata.keys[27];
+          case '':
+            return userdata.keys[46];
+          case '':
+            var t=[16,17,18,91,93,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135];
+            for (var i=0;i<t.length;i++) if (userdata.keys[t[i]]) return true;
+            return false;
+          default:
+            //
+        }
+        break;
+      case 'computeFunction:of:':
+        var n=Number(doscratch(block[2],oops));
+        switch (doscratch(block[1],oops)) {
+          case 'abs': return Math.abs(n);
+          case 'floor': return Math.floor(n);
+          case 'ceiling': return Math.ceil(n);
+          case 'sqrt': return Math.sqrt(n);
+          case 'sin': return Math.sin(n*(Math.PI/180));
+          case 'cos': return Math.cos(n*(Math.PI/180));
+          case 'tan': return Math.tan(n*(Math.PI/180));
+          case 'asin': return Math.asin(n)*(180/Math.PI);
+          case 'acos': return Math.acos(n)*(180/Math.PI);
+          case 'atan': return Math.atan(n)*(180/Math.PI);
+          case 'ln': return Math.log(n);
+          case 'log': return Math.log10(n);
+          case 'e ^': return Math.E**n;
+          case '10 ^': return 10**n;
+        }
+        break;
+      case 'clearPenTrails':
+        canvas.width=canvas.width;
+        c.translate(240*pxr,canvas.height-180*pxr);
+        c.scale(pxr,-pxr);
+        c.lineCap='round';
+        c.lineJoin='round';
+        break;
+      case 'doIf':
+        if (doscratch(block[1])) for (var i=0;i<block[2].length;i++) doscratch(block[2][i],oops);
+        break;
+      case 'doIfElse':
+        if (doscratch(block[1])) for (var i=0;i<block[2].length;i++) doscratch(block[2][i],oops);
+        else for (var i=0;i<block[3].length;i++) doscratch(block[3][i],oops);
+        break;
+      default:
+        //
+    }
+  }
+}
+function dothe(code,sprite,parames) {
+  var params={};
+  for (var i=0;i<code[0][2].length;i++) params[code[0][2][i]]=parames[i];
+  for (var i=1;i<code.length;i++) doscratch(code[i],sprite);
+}
+SHEEP.menu['green flag']=e=>{
+  if (scratch) {
+    console.log('green flagged');
+    if (scratch.variables) for (var i=0;i<scratch.variables.length;i++) sprites._STAGE_.vars[scratch.variables[i].name]=scratch.variables[i].value;
+    if (scratch.lists) for (var i=0;i<scratch.lists.length;i++) sprites._STAGE_.lists[scratch.lists[i].listName]=scratch.lists[i].contents;
+    sprites._STAGE_.gfs=[];
+    sprites._STAGE_.custs=[];
+    sprites._STAGE_.code=[];
+    sprites._STAGE_.forevers=[];
+    if (scratch.scripts) for (var i=0;i<scratch.scripts.length;i++) {
+      sprites._STAGE_.code[i]=scratch.scripts[i][2];
+      if (scratch.scripts[i][2][0][0]==='whenGreenFlag') sprites._STAGE_.gfs.push(i);
+      if (scratch.scripts[i][2][0][0]==='procDef') sprites._STAGE_.custs[scratch.scripts[i][2][0][1]]=i;
+    }
+    for (var i=0;i<scratch.children.length;i++) {
+      if (scratch.children[i].scripts) {
+        var data=scratch.children[i],
+        name=scratch.children[i].objName;
+        sprites[name]={vars:{},lists:{}};
+        if (data.variables) for (var i=0;i<data.variables.length;i++) sprites[name].vars[data.variables[i].name]=data.variables[i].value;
+        if (data.lists) for (var i=0;i<data.lists.length;i++) sprites[name].lists[data.lists[i].name]=data.lists[i].value;
+        sprites[name].x=data.scratchX;
+        sprites[name].y=data.scratchY;
+        sprites[name].pensize=1;
+        sprites[name].pencolour=255;
+        sprites[name].gfs=[];
+        sprites[name].custs=[];
+        sprites[name].code=[];
+        sprites[name].forevers=[];
+        for (var j=0;j<data.scripts.length;j++) {
+          sprites[name].code[j]=data.scripts[j][2];
+          if (data.scripts[j][2][0][0]==='whenGreenFlag') sprites[name].gfs.push(j);
+          if (data.scripts[j][2][0][0]==='procDef') sprites[name].custs[data.scripts[j][2][0][1]]=j;
+        }
+        sprites[name].pendown=false;
+      }
+    }
+    canvas.width=canvas.width;
+    c.translate(240*pxr,canvas.height-180*pxr);
+    c.scale(pxr,-pxr);
+    c.lineCap='round';
+    c.lineJoin='round';
+    for (var span in sprites) {
+      c.lineWidth=sprites[span].pensize;
+      c.strokeStyle=sprites[span].pencolour;
+      for (var i=0;i<sprites[span].gfs.length;i++) {
+        var code=sprites[span].code[sprites[span].gfs[i]];
+        for (var j=1;j<code.length;j++) doscratch(code[j],sprites[span]);
+      }
+    }
+    c.lineWidth=5;
+    c.strokeStyle='blue';
+    c.beginPath();
+    c.moveTo(125,125);
+    c.lineTo(125,45);
+    c.lineTo(45,125);
+    c.stroke();
+    c.lineWidth=1;
+    c.beginPath();
+    c.moveTo(0,180);
+    c.lineTo(0,-180);
+    c.moveTo(240,0);
+    c.lineTo(-240,0);
+    c.stroke();
+  }
+};
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

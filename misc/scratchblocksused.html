@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Scratch Blocks used</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="Get a list of the blocks used in a project."/>
+    <style>
+      body {
+        background-color: #E8EDF1;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 15px;
+        line-height: 1;
+      }
+      input, button, ul {
+        outline: none;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #E9EEF2;
+        border-radius: 2rem;
+        cursor: text;
+        box-shadow: none;
+        white-space: nowrap;
+        min-width: 0.625rem;
+        background: white;
+        transition: border-color 0.25s ease-out, box-shadow 0.25s ease-out;
+      }
+      input:focus, button:hover {
+        border-color: #4c97ff;
+        box-shadow: inset 0 0 0 -2px rgba(0,0,0,0.1);
+      }
+      button {
+        cursor: pointer;
+      }
+      ul {
+        display: table;
+        min-width: 100px;
+        min-height: 150px;
+        border: 1px solid #c6c6c6;
+        background-color: #F9F9F9;
+        border-radius: 0.75rem;
+        overflow-y: auto;
+        list-style: none;
+        font-size: 12px;
+      }
+      ul li {
+        color: white;
+        margin: 5px 2px;
+        padding: 5px 10px;
+        display: table;
+        border-radius: 20px;
+        position: relative;
+      }
+      ul li::after {
+        content: 'x' attr(data-count);
+        position: absolute;
+        left: 100%;
+        font-size: 8px;
+        font-style: italic;
+        color: #aaa;
+        bottom: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <input type="text" id="url" value="https://scratch.mit.edu/projects/115618276/">
+    <button>Give me blocks</button>
+    <ul></ul>
+
+    <script src="../../sheep.js"></script>
+    <script>
+var url=document.querySelector('#url');
+setTimeout(_=>url.style.width=(SHEEP.textwidth(url)+5)+'px',0);
+url.oninput=e=>url.style.width=(SHEEP.textwidth(url)+5)+'px';
+document.querySelector('button').onclick=e=>{
+  SHEEP.ajax('https://projects.scratch.mit.edu/internalapi/project/'+url.value.slice(url.value.indexOf('scratch.mit.edu/projects/')+25,url.value.slice(-1)==='/'?-1:undefined)+'/get/',e=>{
+    var blocks={},scratch=JSON.parse(e);
+    function parsen(script) {
+      if (typeof script[0]==='object') for (var i=0;i<script.length;i++) parsen(script[i]);
+      else {
+        if (!blocks[script[0]]) blocks[script[0]]=1;
+        else blocks[script[0]]++;
+        if (script[0]!=='procDef') {
+          if (typeof script[1]==='object'&&script[1]!==null) parsen(script[1]);
+          if (typeof script[2]==='object'&&script[2]!==null) parsen(script[2]);
+          if (typeof script[3]==='object'&&script[3]!==null) parsen(script[3]);
+        }
+      }
+    }
+    if (scratch.scripts) for (var i=0;i<scratch.scripts.length;i++) parsen(scratch.scripts[i][2]);
+    if (scratch.children) for (var i=0;i<scratch.children.length;i++) if (scratch.children[i].scripts) for (var j=0;j<scratch.children[i].scripts.length;j++) parsen(scratch.children[i].scripts[j][2]);
+    var ul=document.querySelector('ul');
+    while (ul.hasChildNodes()) ul.removeChild(ul.lastChild);
+    for (var span in blocks) {
+      var s=document.createElement("li");
+      s.textContent=span;
+      s.dataset.count=blocks[span];
+      s.style.backgroundColor=blockcolours[span];
+      ul.appendChild(s);
+    }
+  },e=>alert('URL fails to exist properly'));
+};
+var colours={
+  m:'4c97ff',
+  lo:'96f',
+  so:'d65cd6',
+  p:'00b295',
+  v:'FF9F1A',
+  li:'cc5b22',
+  ev:'ffd500',
+  co:'ffab19',
+  se:'4cbfe6',
+  op:'40bf4a',
+  cu:'FF5959',
+  ex:'575E75',
+  ob:'f00'
+},
+categories={
+  m: 'bounceOffEdge changeXposBy: changeYposBy: forward: glideSecs:toX:y:elapsed:from: gotoSpriteOrMouse: gotoX:y: heading heading: pointTowards: setRotationStyle turnLeft: turnRight: xpos xpos: ypos ypos:'.split(' '), // motion
+  lo:'backgroundIndex changeGraphicEffect:by: changeSizeBy: comeToFront costumeIndex costumeName filterReset goBackByLayers: hide lookLike: nextCostume nextScene say: say:duration:elapsed:from: scale sceneName setGraphicEffect:to: setSizeTo: show startScene startSceneAndWait think: think:duration:elapsed:from:'.split(' '), // looks
+  so:'changeTempoBy: changeVolumeBy: doPlaySoundAndWait drum:duration:elapsed:from: instrument: midiInstrument: noteOn:duration:elapsed:from: playDrum playSound: setTempoTo: setVolumeTo: stopAllSounds tempo volume rest:elapsed:from:'.split(' '), // sounds
+  p: 'changePenHueBy: changePenShadeBy: changePenSizeBy: clearPenTrails penColor: penSize: putPenDown putPenUp setPenHueTo: setPenShadeTo: stampCostume'.split(' '), // pen
+  v: 'changeVar:by: hideVariable: readVariable setVar:to: showVariable:'.split(' '), // variables
+  li:'append:toList: contentsOfList: deleteLine:ofList: getLine:ofList: hideList: insert:at:ofList: lineCountOfList: list:contains: setLine:ofList:to: showList:'.split(' '), // lists
+  ev:'broadcast: doBroadcastAndWait whenClicked whenGreenFlag whenIReceive whenKeyPressed whenSceneStarts whenSensorGreaterThan'.split(' '), // events
+  co:'createCloneOf deleteClone doForever doForeverIf doIf doIfElse doRepeat doReturn doUntil doWaitUntil stopScripts wait:elapsed:from: whenCloned'.split(' '), // control
+  se:'answer color:sees: distanceTo: doAsk getAttribute:of: getUserName keyPressed: mousePressed mouseX mouseY senseVideoMotion setVideoState setVideoTransparency soundLevel timeAndDate timer timerReset timestamp touching: touchingColor:'.split(' '), // sensing
+  op:'+ - * / % & | < = > abs computeFunction:of: concatenate:with: letter:of: not randomFrom:to: rounded sqrt stringLength:'.split(' '), // operators
+  cu:'getParam call procDef'.split(' '), // custom
+  ex:'sensor: sensorPressed:'.split(' '),
+  ob:'CLR_COUNT COUNT doForLoop doWhile fxTest getUserId hideAll INCR_COUNT isLoud obsolete sayNothing scrollAlign scrollRight scrollUp stopAll stopSound: turnAwayFromEdge undefined warpSpeed xScroll yScroll'.split(' ')
+},
+blockcolours={};
+for (var span in categories) for (var i=0;i<categories[span].length;i++) blockcolours[categories[span][i]]='#'+colours[span];
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
