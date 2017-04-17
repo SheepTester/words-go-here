@@ -63,11 +63,52 @@ document.onmousemove=e=>{
 document.onmousedown=e=>{
   userdata.mousedown=true;
 };
+canvas.ontouchstart=e=>{
+  userdata.mousedown=true;
+  userdata.mousex=e.touches[0].clientX-canvas.getBoundingClientRect().left-240;
+  userdata.mousey=180-e.touches[0].clientY+canvas.getBoundingClientRect().top;
+  var meep=e=>{
+    userdata.mousex=e.touches[0].clientX-canvas.getBoundingClientRect().left-240;
+    userdata.mousey=180-e.touches[0].clientY+canvas.getBoundingClientRect().top;
+    e.preventDefault();
+    return false;
+  },
+  merp=e=>{
+    userdata.mousedown=false;
+    document.removeEventListener("touchmove",meep,{passive:false});
+    document.removeEventListener("touchend",merp,{passive:false});
+  };
+  document.addEventListener("touchmove",meep,{passive:false});
+  document.addEventListener("touchend",merp,{passive:false});
+};
 document.onmouseup=e=>{
   userdata.mousedown=false;
 };
 document.onkeydown=e=>{
   userdata.keys[e.keyCode]=true;
+  if (scratch) {
+    for (var span in sprites) {
+      if (sprites[span].pensize) c.lineWidth=sprites[span].pensize;
+      if (sprites[span].pencolour) c.strokeStyle='#'+('00000'+sprites[span].pencolour.toString(16)).slice(-6);
+      if (sprites[span].code) for (var i=0;i<sprites[span].code.length;i++) if (sprites[span].code[i][0][0]==='whenKeyPressed') {
+        var t=doscratch(sprites[span].code[i][0][1],sprites[span]),
+        meep=false;
+        if (t==='any') meep=true;
+        else if ((t==='space'||t===' ')&&e.keyCode===32) meep=true;
+        else if (t==='left arrow'&&e.keyCode===37) meep=true;
+        else if (t==='up arrow'&&e.keyCode===38) meep=true;
+        else if (t==='right arrow'&&e.keyCode===39) meep=true;
+        else if (t==='down arrow'&&e.keyCode===40) meep=true;
+        else if (t==='\r'&&e.keyCode===13) meep=true;
+        else if (t==='\t'&&e.keyCode===9) meep=true;
+        else if (t==='\u0008'&&e.keyCode===8) meep=true;
+        else if (t===''&&e.keyCode===46) meep=true;
+        else if (t===''&&[16,17,18,91,93,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135].includes(e.keyCode)) meep=true;
+        else meep=e.keyCode===t.toUpperCase().charCodeAt();
+        if (meep) for (var j=1;j<sprites[span].code[i].length;j++) doscratch(sprites[span].code[i][j],sprites[span]);
+      }
+    }
+  }
   if (e.keyCode===9) {
     e.preventDefault();
     return false;
@@ -78,7 +119,7 @@ document.onkeyup=e=>{
 };
 canvas.width*=pxr;
 canvas.height*=pxr;
-SHEEP.ajax('http://projects.scratch.mit.edu/internalapi/project/115618276/get/',e=>scratch=JSON.parse(e)); // structure mania 115618276  test 155817190  penland 112971638
+SHEEP.ajax('https://projects.scratch.mit.edu/internalapi/project/112971638/get/',e=>scratch=JSON.parse(e)); // structure mania 115618276  test 155817190  penland 112971638
 function doscratch(block,oops) {
   if (typeof block!=='object') return block;
   else {
@@ -163,6 +204,9 @@ function doscratch(block,oops) {
         var iterations=Number(doscratch(block[1],oops));
         for (var i=0;i<iterations;i++) for (var j=0;j<block[2].length;j++) doscratch(block[2][j],oops);
         break;
+      case 'doUntil':
+        for (var i=0;i<1000000&&!doscratch(block[1],oops);i++) for (var j=0;j<block[2].length;j++) doscratch(block[2][j],oops);
+        break;
       case 'doForever':
         var stringified=JSON.stringify(block[1]);
         if (!oops.forevers[stringified]) {
@@ -178,7 +222,8 @@ function doscratch(block,oops) {
       case 'mouseY':
         return userdata.mousey;
       case 'keyPressed:':
-        switch (doscratch(block[1],oops)) {
+        var flooops=doscratch(block[1],oops);
+        switch (flooops) {
           case '\r':
             return userdata.keys[13];
           case '\t':
@@ -193,8 +238,15 @@ function doscratch(block,oops) {
             var t=[16,17,18,91,93,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135];
             for (var i=0;i<t.length;i++) if (userdata.keys[t[i]]) return true;
             return false;
-          default:
-            //
+          case 'any':
+            for (var span in userdata.keys) if (userdata.keys[span]) return true;
+            return false;
+          case 'space': case ' ': return userdata.keys[32];
+          case 'left arrow': return userdata.keys[37];
+          case 'up arrow': return userdata.keys[38];
+          case 'right arrow': return userdata.keys[39];
+          case 'down arrow': return userdata.keys[40];
+          default: return userdata.keys[flooops.toUpperCase().charCodeAt()];
         }
         break;
       case 'computeFunction:of:':
@@ -328,6 +380,8 @@ function doscratch(block,oops) {
         if (colour<0) oops.pencolour=16777216+colour;
         else oops.pencolour=colour;
         c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
+        oops.penhue=null;
+        oops.penlight=null;
         break;
       case 'penSize:':
         oops.pensize=doscratch(block[1],oops);
@@ -342,38 +396,47 @@ function doscratch(block,oops) {
         c.lineWidth=oops.pensize;
         break;
       case 'setPenHueTo:':
-        var hsl=convertcolours.dectohsl(oops.pencolour);
-        hsl.h=Number(doscratch(block[1],oops));
-        if (isNaN(hsl.h)) hsl.h=0;
-        hsl.s=100;
-        oops.pencolour=convertcolours.hsltodec(hsl);
+        if (oops.penhue===null) {
+          var hsl=convertcolours.dectohsl(convertcolours.resetsaturationhsv(oops.pencolour));
+          oops.penhue=hsl.h/3.6*2;
+          oops.penlight=hsl.l;
+        }
+        oops.penhue=Number(doscratch(block[1],oops));
+        if (isNaN(oops.penhue)) oops.penhue=0;
+        oops.pencolour=convertcolours.hsltodec(convertcolours.oopspentohsl(oops.penhue,oops.penlight));
         c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
         break;
       case 'changePenHueBy:':
-        var hsl=convertcolours.dectohsl(oops.pencolour);
-        hsl.h+=Number(doscratch(block[1],oops));
-        if (isNaN(hsl.h)) hsl.h=0;
-        hsl.s=100;
-        oops.pencolour=convertcolours.hsltodec(hsl);
+        if (oops.penhue===null) {
+          var hsl=convertcolours.dectohsl(convertcolours.resetsaturationhsv(oops.pencolour));
+          oops.penhue=hsl.h/3.6*2;
+          oops.penlight=hsl.l;
+        }
+        oops.penhue+=Number(doscratch(block[1],oops));
+        if (isNaN(oops.penhue)) oops.penhue=0;
+        oops.pencolour=convertcolours.hsltodec(convertcolours.oopspentohsl(oops.penhue,oops.penlight));
         c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
         break;
       case 'setPenShadeTo:':
-        var hsl=convertcolours.dectohsl(oops.pencolour);
-        hsl.l=Number(doscratch(block[1],oops))%200;
-        if (isNaN(hsl.l)) hsl.l=0;
-        if (hsl.l>100) hsl.l=100-hsl.l;
-        hsl.s=100;
-        oops.pencolour=convertcolours.hsltodec(hsl);
+        if (oops.penhue===null) {
+          var hsl=convertcolours.dectohsl(convertcolours.resetsaturationhsv(oops.pencolour));
+          oops.penhue=hsl.h/3.6*2;
+          oops.penlight=hsl.l;
+        }
+        oops.penlight=Number(doscratch(block[1],oops));
+        if (isNaN(oops.penlight)) oops.penlight=0;
+        oops.pencolour=convertcolours.hsltodec(convertcolours.oopspentohsl(oops.penhue,oops.penlight));
         c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
         break;
       case 'changePenShadeBy:':
-        var hsl=convertcolours.dectohsl(oops.pencolour);
-        hsl.l+=Number(doscratch(block[1],oops));
-        hsl%=200;
-        if (isNaN(hsl.l)) hsl.l=0;
-        if (hsl.l>100) hsl.l=100-hsl.l;
-        hsl.s=100;
-        oops.pencolour=convertcolours.hsltodec(hsl);
+        if (oops.penhue===null) {
+          var hsl=convertcolours.dectohsl(convertcolours.resetsaturationhsv(oops.pencolour));
+          oops.penhue=hsl.h/3.6*2;
+          oops.penlight=hsl.l;
+        }
+        oops.penlight+=Number(doscratch(block[1],oops));
+        if (isNaN(oops.penlight)) oops.penlight=0;
+        oops.pencolour=convertcolours.hsltodec(convertcolours.oopspentohsl(oops.penhue,oops.penlight));
         c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
         break;
       case 'concatenate:with:':
@@ -401,6 +464,8 @@ function doscratch(block,oops) {
           c.stroke();
         }
         break;
+      case 'xpos': return oops.x;
+      case 'ypos': return oops.y;
       case 'xpos:':
         if (oops.pendown) {
           c.beginPath();
@@ -473,9 +538,51 @@ function doscratch(block,oops) {
         else if (r1%1!==0||r2%1!==0) return Math.random()*(r1-r2)+r2;
         else return Math.floor(Math.random()*(r1-r2+1)+r2);
       case 'getParam':
+        // console.log('it\'s a getparam!',oops,oops.temp_params,block,block[1]);
+        moop=[oops,oops.temp_params,block,block[1]];
         return doscratch(oops.temp_params[block[1]],oops);
+        break;
+      case 'playSound:':
+      case 'doPlaySoundAndWait':
+        var sound=doscratch(block[1],oops),audio;
+        if (typeof sound==='number') audio=oops.sounds['  '+sound];
+        else audio=oops.sounds[sound];
+        if (audio===undefined) break;
+        audio=new Audio('https://cdn.assets.scratch.mit.edu/internalapi/asset/'+audio+'/get/');
+        audio.play();
+        break;
+      case 'broadcast:':
+      case 'doBroadcastAndWait':
+        var broadcast=doscratch(block[1],oops);
+        for (var span in sprites) {
+          if (sprites[span].pensize) c.lineWidth=sprites[span].pensize;
+          if (sprites[span].pencolour) c.strokeStyle='#'+('00000'+sprites[span].pencolour.toString(16)).slice(-6);
+          for (var i=0;i<sprites[span].code.length;i++) if (sprites[span].code[i][0][0]==='whenIReceive'&&doscratch(sprites[span].code[i][0][1],sprites[span])===broadcast) for (var j=1;j<sprites[span].code[i].length;j++) doscratch(sprites[span].code[i][j],sprites[span]);
+        }
+        if (oops.pensize) c.lineWidth=oops.pensize;
+        if (oops.pencolour) c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
+        break;
+      case 'not': return !doscratch(block[1],oops);
+      case 'rounded': return Math.round(Number(doscratch(block[1],oops)));
+      case 'letter:of:':
+        var str=doscratch(block[2],oops).toString(),
+        n=Number(doscratch(block[1],oops));
+        if (n>str.length||n<1) return '';
+        return str[n-1];
+      case 'stringLength:': return doscratch(block[1],oops).toString().length;
+      case 'getAttribute:of:':
+        var sprite=doscratch(block[2],oops),
+        prop=doscratch(block[1],oops).toString();
+        if (sprites[sprite]) {
+          sprite=sprites[sprite];
+          if (prop==='x position') return sprite.x;
+          else if (prop==='y position') return sprite.y;
+          else if (sprite.vars[prop]) return sprite.vars[prop];
+          else return 0;
+        }
+        else return 0;
       default:
-        //
+        console.log('%c⚠️ unsupported block %c'+block[0],'color:firebrick;','font-weight:bold;');
     }
   }
 }
@@ -485,10 +592,11 @@ function dothe(code,sprite,parames) {
   sprite.temp_params=params;
   for (var i=1;i<code.length;i++) doscratch(code[i],sprite);
 }
-var interval;
+var interval,moop;
 SHEEP.menu['green flag']=e=>{
   if (scratch) {
     console.log('%c🏴 green flagged','color:green;font-weight:bold;');
+    clearInterval(interval);
     canvas.style.backgroundImage='url(https://cdn.assets.scratch.mit.edu/internalapi/asset/'+scratch.costumes[scratch.currentCostumeIndex].baseLayerMD5+'/get/)';
     if (scratch.variables) for (var i=0;i<scratch.variables.length;i++) sprites._STAGE_.vars[scratch.variables[i].name]=scratch.variables[i].value;
     if (scratch.lists) for (var i=0;i<scratch.lists.length;i++) sprites._STAGE_.lists[scratch.lists[i].listName]=scratch.lists[i].contents;
@@ -496,10 +604,20 @@ SHEEP.menu['green flag']=e=>{
     sprites._STAGE_.custs=[];
     sprites._STAGE_.code=[];
     sprites._STAGE_.forevers=[];
+    sprites._STAGE_.costumes={};
+    sprites._STAGE_.sounds={};
     if (scratch.scripts) for (var i=0;i<scratch.scripts.length;i++) {
       sprites._STAGE_.code[i]=scratch.scripts[i][2];
       if (scratch.scripts[i][2][0][0]==='whenGreenFlag') sprites._STAGE_.gfs.push(i);
       if (scratch.scripts[i][2][0][0]==='procDef') sprites._STAGE_.custs[scratch.scripts[i][2][0][1]]=i;
+    }
+    if (scratch.costumes) for (var i=0;i<scratch.costumes.length;i++) {
+      sprites._STAGE_.costumes[scratch.costumes[i].costumeName]=scratch.costumes[i].baseLayerMD5;
+      sprites._STAGE_.costumes['  '+i]=scratch.costumes[i].baseLayerMD5;
+    }
+    if (scratch.sounds) for (var i=0;i<scratch.sounds.length;i++) {
+      sprites._STAGE_.sounds[scratch.sounds[i].soundName]=scratch.sounds[i].md5;
+      sprites._STAGE_.sounds['  '+i]=scratch.sounds[i].md5;
     }
     for (var i=0;i<scratch.children.length;i++) {
       if (scratch.children[i].scripts) {
@@ -512,15 +630,27 @@ SHEEP.menu['green flag']=e=>{
         sprites[name].y=data.scratchY;
         sprites[name].pensize=1;
         sprites[name].pencolour=255;
+        sprites[name].penhue=null;
+        sprites[name].penlight=null;
         sprites[name].pendown=false;
         sprites[name].gfs=[];
         sprites[name].custs=[];
         sprites[name].code=[];
         sprites[name].forevers=[];
+        sprites[name].costumes={};
+        sprites[name].sounds={};
         for (var j=0;j<data.scripts.length;j++) {
           sprites[name].code[j]=data.scripts[j][2];
           if (data.scripts[j][2][0][0]==='whenGreenFlag') sprites[name].gfs.push(j);
           if (data.scripts[j][2][0][0]==='procDef') sprites[name].custs[data.scripts[j][2][0][1]]=j;
+        }
+        if (data.costumes) for (var i=0;i<data.costumes.length;i++) {
+          sprites[name].costumes[data.costumes[i].costumeName]=data.costumes[i].baseLayerMD5;
+          sprites[name].costumes['  '+i]=data.costumes[i].baseLayerMD5;
+        }
+        if (data.sounds) for (var i=0;i<data.sounds.length;i++) {
+          sprites[name].sounds[data.sounds[i].soundName]=data.sounds[i].md5;
+          sprites[name].sounds['  '+i]=data.sounds[i].md5;
         }
       }
     }
@@ -566,10 +696,13 @@ SHEEP.menu['green flag']=e=>{
     c.stroke(); */
   }
 };
-SHEEP.menu['stop sign']=e=>clearInterval(interval);
+SHEEP.menu['stop sign']=e=>{
+  console.log('%c🛑 stop signed','color:red;font-weight:bold;');
+  clearInterval(interval);
+};
 var convertcolours={
   dectohsl(dec) {
-    var rgb={r:Math.floor(dec/65536),g:Math.floor(dec/256)%256,b:dec%256,a:Math.floor(dec/16777216)/255||1},
+    var rgb={r:Math.floor(dec/65536)/255,g:Math.floor(dec/256)%256/255,b:dec%256/255},
     max=Math.max(rgb.r,rgb.g,rgb.b),min=Math.min(rgb.r,rgb.g,rgb.b),
     h,s,l=(max+min)/2;
     if (max===min) h=s=0;
@@ -605,7 +738,55 @@ var convertcolours={
       b=hue2rgb(p,q,hsl.h-1/3);
     }
     return 65536*Math.floor(255.9999*r)+256*Math.floor(255.9999*g)+Math.floor(255.9999*b);
-  }
+  },
+  oopspentohsl(h,l) {
+    if (h<0) h+=Math.ceil(-h/200)*200; // modulus does not work the way i want it to w/ negative numbers so here it just adds enough 200's to make it positive
+    if (l<0) l+=Math.ceil(-l/200)*200; // before it's rounded
+    return {h:h%200/2*3.6,s:100,l:l%200>100?200-l%200:l%200};
+  },
+  resetsaturationhsv(dec) {
+    var rgb={r:Math.floor(dec/65536)/255,g:Math.floor(dec/256)%256/255,b:dec%256/255}, // dec to rgb
+    r=rgb.r, // rgb to hsv
+    g=rgb.g,
+    b=rgb.b,
+    min,max;
+    if (r<g) min=r,max=g;
+    else min=g,max=r;
+    if (b<min) min=b;
+    else if (b>max) max=b;
+    var hsv={v:Math.round(max*100)},
+    delta=max-min;
+    if (delta===0) hsv={v:hsv.v,s:0,h:0};
+    else {
+      if (max>0) {
+        hsv.s=Math.round(delta/max*100);
+        if (r===max) hsv.h=Math.round((g-b)/delta*60);
+        else if (g===max) hsv.h=Math.round(120+(b-r)/delta*60);
+        else hsv.h=Math.round(240+(r-g)/delta*60);
+        if (hsv.h<0) hsv.h+=360;
+      }
+      else hsv={v:hsv.v,s:0,h:0};
+    }
+    hsv.s=100; // SATURATION RESETS HERE
+    var h=hsv.h, // hsv to rgb
+    s=hsv.s,
+    v=hsv.v,
+    hh=Math.floor(h/60.0001),
+    f=h/60-hh,
+    p=v*(100-s)/10000,
+    q=v/100*(1-f*(s/100)),
+    t=v/100*(1-(1-f)*(s/100)),
+    rgb;
+    if (hh<4) {
+      if (hh<2) {
+        if (hh<1) rgb={r:v/100,g:t,b:p};
+        else rgb={r:q,g:v/100,b:p};
+      } else if (hh<3) rgb={r:p,g:v/100,b:t};
+      else rgb={r:p,g:q,b:v/100};
+    } else if (hh<5) rgb={r:t,g:p,b:v/100};
+    else rgb={r:v/100,g:p,b:q};
+    return 65536*Math.floor(255.9999*rgb.r)+256*Math.floor(255.9999*rgb.g)+Math.floor(255.9999*rgb.b);
+  },
 };
     </script>
   </body>
