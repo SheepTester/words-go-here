@@ -8,7 +8,8 @@
     <style media="screen">
       body {
         background-color: #E8EDF1;
-        font-family: 'Inconsolata', monospace;
+        /*font-family: 'Inconsolata', monospace;*/
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         font-size: 15px;
         line-height: 1;
       }
@@ -28,11 +29,57 @@
       textarea:focus {
         box-shadow: 0 0 0 3px rgba(0,160,255,0.3);
       }
+      input, button {
+        outline: none;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #E9EEF2;
+        border-radius: 2rem;
+        cursor: text;
+        box-shadow: none;
+        white-space: nowrap;
+        min-width: 0.625rem;
+        background: white;
+        transition: border-color 0.25s ease-out, box-shadow 0.25s ease-out;
+        margin-right: 10px;
+      }
+      input:focus, button:hover {
+        border-color: #4c97ff;
+        box-shadow: inset 0 0 0 -2px rgba(0,0,0,0.1);
+      }
+      button {
+        cursor: pointer;
+      }
+      p {
+        white-space: pre-wrap;
+      }
+      img {
+        width: 1.1rem;
+        height: 1.1rem;
+        opacity: 0.5;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        cursor: pointer;
+        transition: opacity 0.2s ease-out;
+      }
+      img:hover {
+        opacity: 1;
+      }
+      #imgs {
+        white-space: normal;
+      }
     </style>
   </head>
   <body>
+    <p id='imgs'>
+      <img class="green-flag_green-flag_1kiAo" src="data:image/svg+xml,%3Csvg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16.63 17.5'%3E%3Cdefs%3E%3Cstyle%3E.cls-1,.cls-2%7Bfill:%234cbf56;stroke:%2345993d;stroke-linecap:round;stroke-linejoin:round;%7D.cls-2%7Bstroke-width:1.5px;%7D%3C/style%3E%3C/defs%3E%3Ctitle%3Eicon--green-flag%3C/title%3E%3Cpath class='cls-1' d='M.75,2A6.44,6.44,0,0,1,8.44,2h0a6.44,6.44,0,0,0,7.69,0V12.4a6.44,6.44,0,0,1-7.69,0h0a6.44,6.44,0,0,0-7.69,0'/%3E%3Cline class='cls-2' x1='0.75' y1='16.75' x2='0.75' y2='0.75'/%3E%3C/svg%3E" title="Go">
+      <img class="stop-all_stop-all_1Y8P9" src="data:image/svg+xml,%3C?xml version='1.0' encoding='utf-8'?%3E %3C!-- Generator: Adobe Illustrator 19.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E %3Csvg version='1.1' id='Layer_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 14 14' style='enable-background:new 0 0 14 14;' xml:space='preserve'%3E %3Cstyle type='text/css'%3E .st0%7Bfill:%23EC5959;stroke:%23B84848;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;%7D %3C/style%3E %3Cpolygon class='st0' points='4.3,0.5 9.7,0.5 13.5,4.3 13.5,9.7 9.7,13.5 4.3,13.5 0.5,9.7 0.5,4.3 '/%3E %3C/svg%3E" title="Stop">
+    </p>
     <canvas id="c" width="480" height="360"></canvas>
-    <p id='p'>Use the sheepmenu to press the green flag.</p>
+    <p id='p'><strong>This thing is laggy, so be prepared for it.</strong> Green flag and stop sign images from <a href="https://llk.github.io/scratch-gui/">here</a>.</p>
+    <p><input type="text" id='url' value="https://scratch.mit.edu/projects/115618276/"><button>load project</button></p>
+    <p><strong>structure mania</strong> 115618276  <strong>test</strong> 155817190  <strong>penland</strong> 112971638</p>
 
     <script src="../../sheep.js"></script>
     <script>
@@ -119,14 +166,27 @@ document.onkeyup=e=>{
 };
 canvas.width*=pxr;
 canvas.height*=pxr;
-SHEEP.ajax('https://projects.scratch.mit.edu/internalapi/project/112971638/get/',e=>scratch=JSON.parse(e)); // structure mania 115618276  test 155817190  penland 112971638
+SHEEP.ajax('https://projects.scratch.mit.edu/internalapi/project/115618276/get/',e=>scratch=JSON.parse(e)); // structure mania 115618276  test 155817190  penland 112971638
+var url=document.querySelector('#url');
+setTimeout(_=>url.style.width=(SHEEP.textwidth(url)+5)+'px',0);
+url.oninput=e=>url.style.width=(SHEEP.textwidth(url)+5)+'px';
+document.querySelector('button').onclick=e=>
+  SHEEP.ajax(
+    'https://projects.scratch.mit.edu/internalapi/project/'+url.value.slice(url.value.indexOf('scratch.mit.edu/projects/')+25,url.value.slice(-1)==='/'?-1:undefined)+'/get/',
+    e=>scratch=JSON.parse(e),
+    e=>alert('URL fails to exist properly')
+  );
 function doscratch(block,oops) {
   if (typeof block!=='object') return block;
   else {
-    var oops=oops||null;
+    var oops=oops||null,
+    updatecolours=_=>{
+      c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
+      if (oops.pencolour>16777215) c.globalAlpha=Math.floor(oops.pencolour/16777216)/255;
+      else c.globalAlpha=1;
+    };
     switch (block[0]) {
       case '-':
-        var t=doscratch(block[1],oops),b=doscratch(block[2],oops);
         return Number(doscratch(block[1],oops))-Number(doscratch(block[2],oops));
       case '*':
         return Number(doscratch(block[1],oops))*Number(doscratch(block[2],oops));
@@ -156,16 +216,10 @@ function doscratch(block,oops) {
         else return b1==b2;
       case 'abs':
         return Math.abs(doscratch(block[1],oops));
-      case 'append:toList:':
-        var list=doscratch(block[2],oops);
-        if (oops.lists[list]) oops.lists[list].push(doscratch(block[1],oops));
-        else if (sprites._STAGE_.lists[list]) sprites._STAGE_.lists[list].push(doscratch(block[1],oops));
-        else oops.lists[list]=[doscratch(block[1],oops)];
-        break;
       case 'changeVar:by:':
         var vari=doscratch(block[1],oops);
-        if (oops.vars[vari]!==undefined) oops.vars[vari]+=doscratch(block[2],oops);
-        else if (sprites._STAGE_.vars[vari]!==undefined) sprites._STAGE_.vars[vari]+=doscratch(block[2],oops);
+        if (oops.vars[vari]!==undefined) oops.vars[vari]=Number(oops.vars[vari])+Number(doscratch(block[2],oops));
+        else if (sprites._STAGE_.vars[vari]!==undefined) sprites._STAGE_.vars[vari]=Number(sprites._STAGE_.vars[vari])+Number(doscratch(block[2],oops));
         else oops.vars[vari]=doscratch(block[2],oops);
         break;
       case 'setVar:to:':
@@ -178,34 +232,15 @@ function doscratch(block,oops) {
         if (oops.vars[vari]!==undefined) return oops.vars[vari];
         else if (sprites._STAGE_.vars[vari]!==undefined) return sprites._STAGE_.vars[vari];
         else return 0;
-      case 'changePenSizeBy:':
-        oops.pensize+=doscratch(block[1],oops);
-        if (oops.pensize<1) oops.pensize=1;
-        if (oops.pensize>256) oops.pensize=256;
-        break;
-      case 'deleteLine:ofList:':
-        var t=doscratch(block[1],oops),
-        list=doscratch(block[2],oops);
-        if (t==='all') {
-          if (oops.lists[list]) oops.lists[list]=[];
-          else if (sprites._STAGE_.lists[list]) sprites._STAGE_.lists[list]=[];
-        } else if (t==='none') {
-          if (oops.lists[list]) oops.lists[list].splice(-1,1);
-          else if (sprites._STAGE_.lists[list]) sprites._STAGE_.lists[list].splice(-1,1);
-        } else {
-          if (oops.lists[list]) oops.lists[list].splice(Number(t)-1,1);
-          else if (sprites._STAGE_.lists[list]) sprites._STAGE_.lists[list].splice(Number(t)-1,1);
-        }
-        break;
       case 'call':
         if (oops.custs[block[1]]!==undefined) dothe(oops.code[oops.custs[block[1]]],oops,block.slice(2));
         break;
       case 'doRepeat':
         var iterations=Number(doscratch(block[1],oops));
-        for (var i=0;i<iterations;i++) for (var j=0;j<block[2].length;j++) doscratch(block[2][j],oops);
+        for (var i=0;i<iterations;i++) for (var j=0;j<block[2].length;j++) if (doscratch(block[2][j],oops)==='THE GREAT SHEP DECLARES STOP') return 'THE GREAT SHEP DECLARES STOP';
         break;
       case 'doUntil':
-        for (var i=0;i<1000000&&!doscratch(block[1],oops);i++) for (var j=0;j<block[2].length;j++) doscratch(block[2][j],oops);
+        for (var i=0;i<1000000&&!doscratch(block[1],oops);i++) for (var j=0;j<block[2].length;j++) if (doscratch(block[2][j],oops)==='THE GREAT SHEP DECLARES STOP') return 'THE GREAT SHEP DECLARES STOP';
         break;
       case 'doForever':
         var stringified=JSON.stringify(block[1]);
@@ -275,14 +310,34 @@ function doscratch(block,oops) {
         c.lineCap='round';
         c.lineJoin='round';
         c.lineWidth=oops.pensize;
-        c.strokeStyle=oops.pencolour;
+        updatecolours();
         break;
       case 'doIf':
-        if (doscratch(block[1],oops)) for (var i=0;i<block[2].length;i++) doscratch(block[2][i],oops);
+        if (doscratch(block[1],oops)) for (var i=0;i<block[2].length;i++) if (doscratch(block[2][i],oops)==='THE GREAT SHEP DECLARES STOP') return 'THE GREAT SHEP DECLARES STOP';
         break;
       case 'doIfElse':
-        if (doscratch(block[1],oops)) for (var i=0;i<block[2].length;i++) doscratch(block[2][i],oops);
-        else for (var i=0;i<block[3].length;i++) doscratch(block[3][i],oops);
+        if (doscratch(block[1],oops)) {for (var i=0;i<block[2].length;i++) if (doscratch(block[2][i],oops)==='THE GREAT SHEP DECLARES STOP') return 'THE GREAT SHEP DECLARES STOP';}
+        else {for (var i=0;i<block[3].length;i++) if (doscratch(block[3][i],oops)==='THE GREAT SHEP DECLARES STOP') return 'THE GREAT SHEP DECLARES STOP';}
+        break;
+      case 'append:toList:':
+        var list=doscratch(block[2],oops);
+        if (oops.lists[list]) oops.lists[list].push(doscratch(block[1],oops));
+        else if (sprites._STAGE_.lists[list]) sprites._STAGE_.lists[list].push(doscratch(block[1],oops));
+        else oops.lists[list]=[doscratch(block[1],oops)];
+        break;
+      case 'deleteLine:ofList:':
+        var t=doscratch(block[1],oops),
+        list=doscratch(block[2],oops);
+        if (t==='all') {
+          if (oops.lists[list]) oops.lists[list]=[];
+          else if (sprites._STAGE_.lists[list]) sprites._STAGE_.lists[list]=[];
+        } else if (t==='none') {
+          if (oops.lists[list]) oops.lists[list].splice(-1,1);
+          else if (sprites._STAGE_.lists[list]) sprites._STAGE_.lists[list].splice(-1,1);
+        } else {
+          if (oops.lists[list]) oops.lists[list].splice(Number(t)-1,1);
+          else if (sprites._STAGE_.lists[list]) sprites._STAGE_.lists[list].splice(Number(t)-1,1);
+        }
         break;
       case 'lineCountOfList:':
         var list=doscratch(block[1],oops);
@@ -294,8 +349,8 @@ function doscratch(block,oops) {
         }
       case 'contentsOfList:':
         var list=doscratch(block[1],oops);
-        if (oops.lists[list]) list=oops.lists[list].length;
-        else if (sprites._STAGE_.lists[list]) list=sprites._STAGE_.lists[list].length;
+        if (oops.lists[list]) list=oops.lists[list];
+        else if (sprites._STAGE_.lists[list]) list=sprites._STAGE_.lists[list];
         else {
           oops.lists[list]=[];
           return '';
@@ -307,38 +362,32 @@ function doscratch(block,oops) {
         else list.join(' ');
       case 'setLine:ofList:to:':
         var list=doscratch(block[2],oops),
-        line=Number(doscratch(block[1],oops));
+        line=doscratch(block[1],oops);
         if (oops.lists[list]) {
           if (line==='last') oops.lists[list][oops.lists[list].length-1]=doscratch(block[3],oops);
           else if (line==='random') oops.lists[list][Math.floor(Math.random()*oops.lists[list].length)]=doscratch(block[3],oops);
-          else if (line<=oops.lists[list].length) oops.lists[list][line-1]=doscratch(block[3],oops);
+          else if (Number(line)<=oops.lists[list].length&&Number(line)>0) oops.lists[list][Number(line)-1]=doscratch(block[3],oops);
         }
         else if (sprites._STAGE_.lists[list]) {
           if (line==='last') sprites._STAGE_.lists[list][sprites._STAGE_.lists[list].length-1]=doscratch(block[3],oops);
           else if (line==='random') sprites._STAGE_.lists[list][Math.floor(Math.random()*sprites._STAGE_.lists[list].length)]=doscratch(block[3],oops);
-          else if (line<=sprites._STAGE_.lists[list].length) sprites._STAGE_.lists[list][line-1]=doscratch(block[3],oops);
+          else if (Number(line)<=sprites._STAGE_.lists[list].length&&Number(line)>0) sprites._STAGE_.lists[list][Number(line)-1]=doscratch(block[3],oops);
         }
         else oops.lists[list]=[];
         break;
       case 'getLine:ofList:':
         var list=doscratch(block[2],oops),
-        line=Number(doscratch(block[1],oops));
-        if (oops.lists[list]) {
-          if (line==='last') return oops.lists[list][oops.lists[list].length-1];
-          else if (line==='random') return oops.lists[list][Math.floor(Math.random()*oops.lists[list].length)];
-          else if (line<=oops.lists[list].length&&line>0) return oops.lists[list][line-1];
-          else return '';
-        }
-        else if (sprites._STAGE_.lists[list]) {
-          if (line==='last') return sprites._STAGE_.lists[list][sprites._STAGE_.lists[list].length-1];
-          else if (line==='random') return sprites._STAGE_.lists[list][Math.floor(Math.random()*sprites._STAGE_.lists[list].length)];
-          else if (line<=sprites._STAGE_.lists[list].length&&line>0) return sprites._STAGE_.lists[list][line-1];
-          else return '';
-        }
+        line=doscratch(block[1],oops);
+        if (oops.lists[list]) list=oops.lists[list];
+        else if (sprites._STAGE_.lists[list]) list=sprites._STAGE_.lists[list];
         else {
           oops.lists[list]=[];
           return '';
         }
+        if (line==='last') return list[list.length-1];
+        else if (line==='random') return list[Math.floor(Math.random()*list.length)];
+        else if (Number(line)<=list.length&&Number(line)>0) return list[Number(line)-1];
+        else return '';
       case 'insert:at:ofList:':
         var list=doscratch(block[3],oops),
         line=Number(doscratch(block[2],oops));
@@ -379,7 +428,7 @@ function doscratch(block,oops) {
         var colour=doscratch(block[1],oops);
         if (colour<0) oops.pencolour=16777216+colour;
         else oops.pencolour=colour;
-        c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
+        updatecolours();
         oops.penhue=null;
         oops.penlight=null;
         break;
@@ -404,7 +453,7 @@ function doscratch(block,oops) {
         oops.penhue=Number(doscratch(block[1],oops));
         if (isNaN(oops.penhue)) oops.penhue=0;
         oops.pencolour=convertcolours.hsltodec(convertcolours.oopspentohsl(oops.penhue,oops.penlight));
-        c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
+        updatecolours();
         break;
       case 'changePenHueBy:':
         if (oops.penhue===null) {
@@ -415,7 +464,7 @@ function doscratch(block,oops) {
         oops.penhue+=Number(doscratch(block[1],oops));
         if (isNaN(oops.penhue)) oops.penhue=0;
         oops.pencolour=convertcolours.hsltodec(convertcolours.oopspentohsl(oops.penhue,oops.penlight));
-        c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
+        updatecolours();
         break;
       case 'setPenShadeTo:':
         if (oops.penhue===null) {
@@ -426,7 +475,7 @@ function doscratch(block,oops) {
         oops.penlight=Number(doscratch(block[1],oops));
         if (isNaN(oops.penlight)) oops.penlight=0;
         oops.pencolour=convertcolours.hsltodec(convertcolours.oopspentohsl(oops.penhue,oops.penlight));
-        c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
+        updatecolours();
         break;
       case 'changePenShadeBy:':
         if (oops.penhue===null) {
@@ -437,7 +486,7 @@ function doscratch(block,oops) {
         oops.penlight+=Number(doscratch(block[1],oops));
         if (isNaN(oops.penlight)) oops.penlight=0;
         oops.pencolour=convertcolours.hsltodec(convertcolours.oopspentohsl(oops.penhue,oops.penlight));
-        c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
+        updatecolours();
         break;
       case 'concatenate:with:':
         return doscratch(block[1],oops).toString()+doscratch(block[2],oops).toString();
@@ -535,12 +584,12 @@ function doscratch(block,oops) {
         var r1=Number(doscratch(block[1],oops)),
         r2=Number(doscratch(block[2],oops));
         if (r1===r2) return r1;
-        else if (r1%1!==0||r2%1!==0) return Math.random()*(r1-r2)+r2;
-        else return Math.floor(Math.random()*(r1-r2+1)+r2);
+        else if (r1%1!==0||r2%1!==0) return Math.random()*(r2-r1)+r1;
+        else return Math.floor(Math.random()*(r2-r1+1)+r1);
       case 'getParam':
         // console.log('it\'s a getparam!',oops,oops.temp_params,block,block[1]);
         moop=[oops,oops.temp_params,block,block[1]];
-        return doscratch(oops.temp_params[block[1]],oops);
+        return oops.temp_params[block[1]];
         break;
       case 'playSound:':
       case 'doPlaySoundAndWait':
@@ -556,11 +605,15 @@ function doscratch(block,oops) {
         var broadcast=doscratch(block[1],oops);
         for (var span in sprites) {
           if (sprites[span].pensize) c.lineWidth=sprites[span].pensize;
-          if (sprites[span].pencolour) c.strokeStyle='#'+('00000'+sprites[span].pencolour.toString(16)).slice(-6);
+          if (sprites[span].pencolour) {
+            c.strokeStyle='#'+('00000'+sprites[span].pencolour.toString(16)).slice(-6);
+            if (sprites[span].pencolour>16777215) c.globalAlpha=Math.floor(sprites[span].pencolour/16777216)/255;
+            else c.globalAlpha=1;
+          }
           for (var i=0;i<sprites[span].code.length;i++) if (sprites[span].code[i][0][0]==='whenIReceive'&&doscratch(sprites[span].code[i][0][1],sprites[span])===broadcast) for (var j=1;j<sprites[span].code[i].length;j++) doscratch(sprites[span].code[i][j],sprites[span]);
         }
         if (oops.pensize) c.lineWidth=oops.pensize;
-        if (oops.pencolour) c.strokeStyle='#'+('00000'+oops.pencolour.toString(16)).slice(-6);
+        if (oops.pencolour) updatecolours();
         break;
       case 'not': return !doscratch(block[1],oops);
       case 'rounded': return Math.round(Number(doscratch(block[1],oops)));
@@ -581,6 +634,17 @@ function doscratch(block,oops) {
           else return 0;
         }
         else return 0;
+      case 'timestamp': return (Number(new Date())-946713600000)/86400000;
+      case 'distanceTo:':
+        var sprite=doscratch(block[1],oops);
+        if (sprite==='_mouse_') return Math.sqrt((oops.x-userdata.mousex)**2+(oops.y-userdata.mousey)**2);
+        else if (sprites[sprite]) return Math.sqrt((oops.x-sprites[sprite].x)**2+(oops.y-sprites[sprite].y)**2);
+        else return 10000; // interesting behavior, I must note
+      case 'stopScripts':
+        if (block[1]==='all') clearInterval(interval);
+        return 'THE GREAT SHEP DECLARES STOP'; // no other sprites
+      case 'doWaitUntil': break; // not going to support
+      case 'wait:elapsed:from:': break; // not going to support
       default:
         console.log('%c⚠️ unsupported block %c'+block[0],'color:firebrick;','font-weight:bold;');
     }
@@ -588,7 +652,7 @@ function doscratch(block,oops) {
 }
 function dothe(code,sprite,parames) {
   var params={};
-  for (var i=0;i<code[0][2].length;i++) params[code[0][2][i]]=parames[i];
+  for (var i=0;i<code[0][2].length;i++) params[code[0][2][i]]=doscratch(parames[i],sprite);
   sprite.temp_params=params;
   for (var i=1;i<code.length;i++) doscratch(code[i],sprite);
 }
@@ -625,7 +689,7 @@ SHEEP.menu['green flag']=e=>{
         name=scratch.children[i].objName;
         sprites[name]={vars:{},lists:{}};
         if (data.variables) for (var i=0;i<data.variables.length;i++) sprites[name].vars[data.variables[i].name]=data.variables[i].value;
-        if (data.lists) for (var i=0;i<data.lists.length;i++) sprites[name].lists[data.lists[i].name]=data.lists[i].value;
+        if (data.lists) for (var i=0;i<data.lists.length;i++) sprites[name].lists[data.lists[i].listName]=data.lists[i].contents;
         sprites[name].x=data.scratchX;
         sprites[name].y=data.scratchY;
         sprites[name].pensize=1;
@@ -661,19 +725,31 @@ SHEEP.menu['green flag']=e=>{
     c.lineJoin='round';
     for (var span in sprites) {
       if (sprites[span].pensize) c.lineWidth=sprites[span].pensize;
-      if (sprites[span].pencolour) c.strokeStyle='#'+('00000'+sprites[span].pencolour.toString(16)).slice(-6);
+      if (sprites[span].pencolour) {
+        c.strokeStyle='#'+('00000'+sprites[span].pencolour.toString(16)).slice(-6);
+        if (sprites[span].pencolour>16777215) c.globalAlpha=Math.floor(sprites[span].pencolour/16777216)/255;
+        else c.globalAlpha=1;
+      }
       for (var i=0;i<sprites[span].gfs.length;i++) {
         var code=sprites[span].code[sprites[span].gfs[i]];
-        for (var j=1;j<code.length;j++) doscratch(code[j],sprites[span]);
+        for (var j=1;j<code.length;j++) if (doscratch(code[j],sprites[span])==='THE GREAT SHEP DECLARES STOP') break;
       }
     }
     interval=setInterval(_=>{
       for (var span in sprites) {
         if (sprites[span].pensize) c.lineWidth=sprites[span].pensize;
-        if (sprites[span].pencolour) c.strokeStyle='#'+('00000'+sprites[span].pencolour.toString(16)).slice(-6);
+        if (sprites[span].pencolour) {
+          c.strokeStyle='#'+('00000'+sprites[span].pencolour.toString(16)).slice(-6);
+          if (sprites[span].pencolour>16777215) c.globalAlpha=Math.floor(sprites[span].pencolour/16777216)/255;
+          else c.globalAlpha=1;
+        }
         for (var i=0;i<sprites[span].forevers.length;i++) {
           var code=sprites[span].forevers[i];
-          for (var j=0;j<code.length;j++) doscratch(code[j],sprites[span]);
+          for (var j=0;j<code.length;j++) if (doscratch(code[j],sprites[span])==='THE GREAT SHEP DECLARES STOP') {
+            sprites[span].forevers.slice(i,1);
+            i--;
+            break;
+          }
         }
       }
     },1000/30);
@@ -700,6 +776,8 @@ SHEEP.menu['stop sign']=e=>{
   console.log('%c🛑 stop signed','color:red;font-weight:bold;');
   clearInterval(interval);
 };
+document.querySelector('.green-flag_green-flag_1kiAo').onclick=SHEEP.menu['green flag'];
+document.querySelector('.stop-all_stop-all_1Y8P9').onclick=SHEEP.menu['stop sign'];
 var convertcolours={
   dectohsl(dec) {
     var rgb={r:Math.floor(dec/65536)/255,g:Math.floor(dec/256)%256/255,b:dec%256/255},
