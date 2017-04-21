@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>projection 3dness</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="you see as a scratcher we make everything from scratch. we don't use those silly renderer things that do everything for us. on scratch we don't even get a build in text renderer! [insert more rambling]"/>
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+    <style>
+      body {
+        line-height: 1;
+        font-size: 15px;
+        background-color: #8BC34A;
+        font-family: 'Inconsolata', monospace;
+        color: white;
+      }
+      canvas {
+        background-color: white;
+        border-radius: 5px;
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <p>WASD, space, and shift. T to toggle.</p>
+
+    <script src="../../sheep.js"></script>
+    <script src="shepcanvas.js"></script>
+    <script>
+var c=new shepcanvas(document.querySelector('#c')),
+presses={right:false,left:false,back:false,forth:false,up:false,down:false},
+keys={68:'right',65:'left',87:'forth',83:'back',32:'up',16:'down'},
+points=[{x:30,y:0,z:50,xv:0,yv:0,zv:0},{x:20,y:50,z:100,xv:0,yv:0,zv:0}],
+controlling=0;
+document.onkeydown=e=>{if (keys[e.keyCode]) presses[keys[e.keyCode]]=true; else if (e.keyCode===84) controlling=(controlling+1)%2;};
+document.onkeyup=e=>{if (keys[e.keyCode]) presses[keys[e.keyCode]]=false;};
+function drawshtuf() {
+  c.clearcanvas();
+  var movespeed=0.5,friction=0.8;
+  if (presses.right) points[controlling].xv+=movespeed;
+  if (presses.left) points[controlling].xv-=movespeed;
+  if (presses.forth) points[controlling].zv+=movespeed;
+  if (presses.back) points[controlling].zv-=movespeed;
+  if (presses.up) points[controlling].yv+=movespeed;
+  if (presses.down) points[controlling].yv-=movespeed;
+  for (var i=0;i<points.length;i++) points[i].x+=points[i].xv,points[i].y+=points[i].yv,points[i].z+=points[i].zv,points[i].xv*=friction,points[i].yv*=friction,points[i].zv*=friction;
+  function drawdot(x,y,z,size,colour) {
+    if (z>10) {
+      var screenx=270*x/z,
+      screeny=270*y/z,
+      screenw=270*size/z;
+      if (Math.abs(screenx)<240+screenw/2&&Math.abs(screeny)<180+screenw/2) c.line({size:screenw,colour:colour},[screenx,screeny]);
+    }
+  }
+  if (points[0].z>points[1].z) {
+    drawdot(points[0].x,points[0].y,points[0].z,15,controlling===0?'#4CAF50':'#CDDC39');
+    drawdot(points[1].x,points[1].y,points[1].z,15,controlling===1?'#4CAF50':'#CDDC39');
+  } else {
+    drawdot(points[1].x,points[1].y,points[1].z,15,controlling===1?'#4CAF50':'#CDDC39');
+    drawdot(points[0].x,points[0].y,points[0].z,15,controlling===0?'#4CAF50':'#CDDC39');
+  }
+  c.line({size:2,colour:'rgba(0,0,0,0.3)'},[10,0],[-10,0],[0,0],[0,-10],[0,10]);
+  window.requestAnimationFrame(drawshtuf);
+}
+window.requestAnimationFrame(drawshtuf);
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

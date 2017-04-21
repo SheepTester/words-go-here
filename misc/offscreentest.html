@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Offscreen test</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="speed tests"/>
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+    <style>
+      body {
+        line-height: 1;
+        font-size: 15px;
+        background-color: #4CAF50;
+        font-family: 'Inconsolata', monospace;
+        color: white;
+      }
+      canvas {
+        background-color: white;
+        border-radius: 5px;
+        position: relative;
+      }
+      p {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="test1"></canvas>
+    <p id='first'><strong>With cropping</strong> time: <span></span>ms</p>
+    <canvas id="test2"></canvas>
+    <p id='second'><strong>Without cropping</strong> time: <span></span>ms</p>
+
+    <script src="../../sheep.js"></script>
+    <script src="shepcanvas.js"></script>
+    <script>
+var offedge=new shepcanvas(document.querySelector('#test1')),
+noedge=new shepcanvas(document.querySelector('#test2')),
+starparams={x:0,y:0,r:40,xv:0,yv:0,rv:0,ang:0,angv:0},
+pressings={right:false,left:false,up:false,down:false,grow:false,shrink:false,cw:false,ccw:false},
+drawonscreen=true,
+drawx=0,drawy=0,
+p1=document.querySelector('#first span'),
+p2=document.querySelector('#second span');
+document.onkeydown=e=>{
+  if (e.keyCode===39) pressings.right=true; // right
+  if (e.keyCode===37) pressings.left=true; // left
+  if (e.keyCode===38) pressings.up=true; // up
+  if (e.keyCode===40) pressings.down=true; // down
+  if (e.keyCode===87) pressings.grow=true; // w
+  if (e.keyCode===83) pressings.shrink=true; // s
+  if (e.keyCode===68) pressings.cw=true; // d
+  if (e.keyCode===65) pressings.ccw=true; // a
+};
+document.onkeyup=e=>{
+  if (e.keyCode===39) pressings.right=false; // right
+  if (e.keyCode===37) pressings.left=false; // left
+  if (e.keyCode===38) pressings.up=false; // up
+  if (e.keyCode===40) pressings.down=false; // down
+  if (e.keyCode===87) pressings.grow=false; // w
+  if (e.keyCode===83) pressings.shrink=false; // s
+  if (e.keyCode===68) pressings.cw=false; // d
+  if (e.keyCode===65) pressings.ccw=false; // a
+};
+function drawthings() {
+  if (pressings.right) starparams.xv+=1.5;
+  if (pressings.left) starparams.xv-=1.5;
+  if (pressings.up) starparams.yv+=1.5;
+  if (pressings.down) starparams.yv-=1.5;
+  if (pressings.grow) starparams.rv+=1;
+  if (pressings.shrink) starparams.rv-=1;
+  if (pressings.cw) starparams.angv+=1.5;
+  if (pressings.ccw) starparams.angv-=1.5;
+  starparams.x+=starparams.xv;
+  starparams.y+=starparams.yv;
+  starparams.r+=starparams.rv;
+  starparams.ang+=starparams.angv;
+  starparams.xv*=0.9;
+  starparams.yv*=0.9;
+  starparams.rv*=0.7;
+  starparams.angv*=0.8;
+  var thickness,
+  time=Number(new Date()),
+  colour;
+  var draw=(x,y)=>{
+    var reset=_=>{drawx=x,drawy=y,drawonscreen=false;},
+    chop={
+      w:240+thickness/2,
+      h:180+thickness/2
+    };
+    if (!drawonscreen) {
+      drawonscreen=true;
+      if (drawx>chop.w) {
+        if (x>chop.w) reset();
+        else {
+          drawy=drawy-(drawy-y)*((drawx-chop.w)/(drawx-x));
+          drawx=chop.w;
+        }
+      } else if (drawx<-chop.w) {
+        if (x<-chop.w) reset();
+        else {
+          drawy=drawy-(drawy-y)*((drawx+chop.w)/(drawx-x));
+          drawx=-chop.w;
+        }
+      }
+      if (drawy>chop.h) {
+        if (y>chop.h) reset();
+        else {
+          drawx=drawx-(drawx-x)*((drawy-chop.h)/(drawy-y));
+          drawy=chop.h;
+          if (Math.abs(drawx)>chop.w) reset();
+        }
+      } else if (drawy<-chop.h) {
+        if (y<-chop.h) reset();
+        else {
+          drawx=drawx-(drawx-x)*((-chop.h-drawy)/(y-drawy));
+          drawy=-chop.h;
+          if (Math.abs(drawx)>chop.w) reset();
+        }
+      }
+    }
+    if (drawonscreen) {
+      var tmpdx=x,
+      tmpdy=y;
+      if (x>chop.w) {
+        tmpdx=chop.w;
+        tmpdy=y-(y-drawy)*((x-chop.w)/(x-drawx));
+        drawonscreen=false;
+      } else if (x<-chop.w) {
+        tmpdx=-chop.w;
+        tmpdy=y-(y-drawy)*((-chop.w-x)/(drawx-x));
+        drawonscreen=false;
+      }
+      if (tmpdy>chop.h) {
+        tmpdx=tmpdx-(tmpdx-drawx)*((tmpdy-chop.h)/(tmpdy-drawy));
+        tmpdy=chop.h;
+        drawonscreen=false;
+      } else if (tmpdy<-chop.h) {
+        tmpdx=tmpdx-(tmpdx-drawx)*((-chop.h-tmpdy)/(drawy-tmpdy));
+        tmpdy=-chop.h;
+        drawonscreen=false;
+      }
+      offedge.line({size:thickness,colour:colour},[drawx,drawy],[tmpdx,tmpdy]);
+      drawx=x;
+      drawy=y;
+    }
+  };
+  offedge.clearcanvas();
+  for (var i=0;i<128;i++) {
+    colour='rgb('+i*2+',0,0)';
+    thickness=Math.abs(starparams.r)/20+1+Math.floor(16-i/16);
+    drawx=starparams.x+starparams.r*offedge.sin(starparams.ang);
+    drawy=starparams.y+starparams.r*offedge.cos(starparams.ang);
+    drawonscreen=!(Math.abs(drawx)>240||Math.abs(drawy)>180);
+    draw(starparams.x+starparams.r*offedge.sin(starparams.ang+144),starparams.y+starparams.r*offedge.cos(starparams.ang+144));
+    draw(starparams.x+starparams.r*offedge.sin(starparams.ang+288),starparams.y+starparams.r*offedge.cos(starparams.ang+288));
+    draw(starparams.x+starparams.r*offedge.sin(starparams.ang+72),starparams.y+starparams.r*offedge.cos(starparams.ang+72));
+    draw(starparams.x+starparams.r*offedge.sin(starparams.ang+216),starparams.y+starparams.r*offedge.cos(starparams.ang+216));
+    draw(starparams.x+starparams.r*offedge.sin(starparams.ang),starparams.y+starparams.r*offedge.cos(starparams.ang));
+  }
+  time=Number(new Date())-time;
+  p1.innerHTML=time;
+  time=Number(new Date());
+  noedge.clearcanvas();
+  for (var i=0;i<128;i++) {
+    noedge.line(
+      {size:Math.abs(starparams.r)/20+1+Math.floor(16-i/16),colour:'rgb('+i*2+',0,0)'},
+      [starparams.x+starparams.r*offedge.sin(starparams.ang),starparams.y+starparams.r*offedge.cos(starparams.ang)],
+      [starparams.x+starparams.r*offedge.sin(starparams.ang+144),starparams.y+starparams.r*offedge.cos(starparams.ang+144)],
+      [starparams.x+starparams.r*offedge.sin(starparams.ang+288),starparams.y+starparams.r*offedge.cos(starparams.ang+288)],
+      [starparams.x+starparams.r*offedge.sin(starparams.ang+72),starparams.y+starparams.r*offedge.cos(starparams.ang+72)],
+      [starparams.x+starparams.r*offedge.sin(starparams.ang+216),starparams.y+starparams.r*offedge.cos(starparams.ang+216)],
+      [starparams.x+starparams.r*offedge.sin(starparams.ang),starparams.y+starparams.r*offedge.cos(starparams.ang)]
+    );
+  }
+  time=Number(new Date())-time;
+  p2.innerHTML=time;
+  window.requestAnimationFrame(drawthings);
+}
+window.requestAnimationFrame(drawthings);
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
