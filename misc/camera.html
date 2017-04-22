@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>camera 3dness</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="spaces"/>
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+    <style>
+      body {
+        line-height: 1;
+        font-size: 15px;
+        background-color: #CDDC39;
+        font-family: 'Inconsolata', monospace;
+        color: white;
+      }
+      canvas {
+        background-color: black;
+        border-radius: 5px;
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <p>WASD and mouse (or arrow keys), shift to move forwards/backwards faster. Click on the canvas to enable mouse lock. FOV=<span id='fov'>270</span> (-/= to change).</p>
+
+    <script src="../../sheep.js"></script>
+    <script src="shepcanvas.js"></script>
+    <script>
+var c=new shepcanvas(document.querySelector('#c')),
+camera={x:0,y:0,z:0,forthv:0,rollv:0,hrotv:0,vrotv:0},
+presses={cw:false,ccw:false,back:false,forth:false,up:false,down:false,left:false,right:false,usingmouse:false,speed:false},
+keys={68:'cw',65:'ccw',87:'forth',83:'back',38:'up',40:'down',37:'left',39:'right',16:'speed'},
+originalaxis={x:{x:1,y:0,z:0},y:{x:0,y:1,z:0},z:{x:0,y:0,z:1}},
+opt={
+  fov:270,
+  minz:10,
+  maxz:18000,
+  starsize:10,
+  maxstars:10000,
+  show:10000,
+},
+stars=[],
+fovspan=document.querySelector('#fov');
+if (opt.show>opt.maxstars) opt.show=opt.maxstars;
+for (var i=0;i<opt.maxstars;i++) stars.push({x:c.rand(18000,-9000),y:c.rand(18000,-9000),z:c.rand(18000,-9000)});
+c.canvas.requestPointerLock=c.canvas.requestPointerLock||c.canvas.mozRequestPointerLock;
+document.exitPointerLock=document.exitPointerLock||document.mozExitPointerLock;
+document.onkeydown=e=>{
+  if (keys[e.keyCode]) presses[keys[e.keyCode]]=true;
+  else if (e.keyCode===189||e.keyCode===187) {
+    opt.fov+=188-e.keyCode;
+    fovspan.innerHTML=opt.fov;
+  } else if (e.keyCode===27&&presses.usingmouse) {
+    presses.usingmouse=false;
+    document.exitPointerLock();
+  }
+};
+document.onkeyup=e=>{if (keys[e.keyCode]) presses[keys[e.keyCode]]=false;};
+c.canvas.onclick=e=>c.canvas.requestPointerLock();
+var lockchange=e=>{
+  if (document.pointerLockElement===c.canvas) presses.usingmouse=true;
+  else presses.usingmouse=false;
+};
+if ("onpointerlockchange" in document) document.addEventListener('pointerlockchange',lockchange,false);
+else if ("onmozpointerlockchange" in document) document.addEventListener('mozpointerlockchange',lockchange,false);
+c.canvas.onmousemove=e=>{
+  if (presses.usingmouse) {
+    camera.hrotv-=e.movementX/100;
+    camera.vrotv+=e.movementY/100;
+  }
+};
+function drawshtuf() {
+  // UPDATE CAMERA
+  // rotate the reference axes
+  var sin={
+    horiz:c.sin(camera.hrotv),
+    vert:c.sin(camera.vrotv),
+    roll:c.sin(camera.rollv)
+  },cos={
+    horiz:c.cos(camera.hrotv),
+    vert:c.cos(camera.vrotv),
+    roll:c.cos(camera.rollv)
+  },
+  tmp={},
+  rotateaxis=a=>{
+    tmp.x=cos.roll*originalaxis[a].x+sin.roll*originalaxis[a].y;
+    tmp.y=cos.roll*originalaxis[a].y-sin.roll*originalaxis[a].x;
+    originalaxis[a].y=cos.vert*tmp.y+sin.vert*originalaxis[a].z;
+    tmp.z=cos.vert*originalaxis[a].z-sin.vert*tmp.y;
+    originalaxis[a].x=cos.horiz*tmp.x+sin.horiz*tmp.z;
+    originalaxis[a].z=cos.horiz*tmp.z-sin.horiz*tmp.x;
+  };
+  rotateaxis('x');
+  rotateaxis('y');
+  rotateaxis('z');
+  // slow down
+  camera.forthv*=0.93;
+  camera.rollv*=0.9;
+  camera.hrotv*=0.9;
+  camera.vrotv*=0.9;
+  camera.x+=originalaxis.x.z*camera.forthv;
+  camera.y+=originalaxis.y.z*camera.forthv;
+  camera.z+=originalaxis.z.z*camera.forthv;
+  // RENDER STARS
+  c.clearcanvas();
+  for (var i=0;i<opt.show;i++) {
+    // get tmps
+    var offset={
+      x:stars[i].x-camera.x,
+      y:stars[i].y-camera.y,
+      z:stars[i].z-camera.z
+    };
+    tmp.x=originalaxis.x.x*offset.x+originalaxis.y.x*offset.y+originalaxis.z.x*offset.z;
+    tmp.y=originalaxis.x.y*offset.x+originalaxis.y.y*offset.y+originalaxis.z.y*offset.z;
+    tmp.z=originalaxis.x.z*offset.x+originalaxis.y.z*offset.y+originalaxis.z.z*offset.z;
+    // do rendering
+    if (tmp.z>=opt.minz&&tmp.z<=opt.maxz) {
+      tmp.xue=opt.fov*tmp.x/tmp.z;
+      tmp.yen=opt.fov*tmp.y/tmp.z;
+      tmp.size=opt.fov*opt.starsize/tmp.z+1;
+      if (Math.abs(tmp.xue)<240+tmp.size/2&&Math.abs(tmp.yen)<180+tmp.size/2)
+        c.line({colour:'white',size:tmp.size},[tmp.xue,tmp.yen]);
+    }
+  }
+  // DETECT USER
+  if (presses.up) camera.vrotv-=0.75;
+  if (presses.down) camera.vrotv+=0.75;
+  if (presses.right) camera.hrotv-=0.75;
+  if (presses.left) camera.hrotv+=0.75;
+  if (presses.cw) camera.rollv-=0.3;
+  if (presses.ccw) camera.rollv+=0.3;
+  if (presses.back&&presses.speed) camera.forthv-=10;
+  else if (presses.back) camera.forthv-=2;
+  if (presses.forth&&presses.speed) camera.forthv+=10;
+  else if (presses.forth) camera.forthv+=2;
+  c.line({size:4,colour:'rgba(255,255,255,0.3)'},[0,0]);
+  window.requestAnimationFrame(drawshtuf);
+}
+window.requestAnimationFrame(drawshtuf);
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

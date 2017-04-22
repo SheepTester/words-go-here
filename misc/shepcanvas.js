@@ -75,4 +75,5 @@ function shepcanvas(canvas,w,h) {
   this.sin=a=>Math.sin(a*(Math.PI/180));
   this.cos=a=>Math.cos(a*(Math.PI/180));
   this.tan=a=>Math.tan(a*(Math.PI/180));
+  this.rand=(a,b)=>Math.floor(Math.random()*a+(b||0));
 }

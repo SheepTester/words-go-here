@@ -22,7 +22,7 @@
   </head>
   <body>
     <canvas id="c"></canvas>
-    <p>WASD, space, and shift. T to toggle.</p>
+    <p>WASD, space, and shift. T to toggle. FOV=<span id='fov'>270</span> (up/down to change)</p>
 
     <script src="../../sheep.js"></script>
     <script src="shepcanvas.js"></script>
@@ -31,8 +31,17 @@ var c=new shepcanvas(document.querySelector('#c')),
 presses={right:false,left:false,back:false,forth:false,up:false,down:false},
 keys={68:'right',65:'left',87:'forth',83:'back',32:'up',16:'down'},
 points=[{x:30,y:0,z:50,xv:0,yv:0,zv:0},{x:20,y:50,z:100,xv:0,yv:0,zv:0}],
-controlling=0;
-document.onkeydown=e=>{if (keys[e.keyCode]) presses[keys[e.keyCode]]=true; else if (e.keyCode===84) controlling=(controlling+1)%2;};
+controlling=0,
+fov=270,
+fovspan=document.querySelector('#fov');
+document.onkeydown=e=>{
+  if (keys[e.keyCode]) presses[keys[e.keyCode]]=true;
+  else if (e.keyCode===84) controlling=(controlling+1)%2;
+  else if (e.keyCode===38||e.keyCode===40) {
+    fov+=39-e.keyCode;
+    fovspan.innerHTML=fov;
+  }
+};
 document.onkeyup=e=>{if (keys[e.keyCode]) presses[keys[e.keyCode]]=false;};
 function drawshtuf() {
   c.clearcanvas();
@@ -46,9 +55,9 @@ function drawshtuf() {
   for (var i=0;i<points.length;i++) points[i].x+=points[i].xv,points[i].y+=points[i].yv,points[i].z+=points[i].zv,points[i].xv*=friction,points[i].yv*=friction,points[i].zv*=friction;
   function drawdot(x,y,z,size,colour) {
     if (z>10) {
-      var screenx=270*x/z,
-      screeny=270*y/z,
-      screenw=270*size/z;
+      var screenx=fov*x/z,
+      screeny=fov*y/z,
+      screenw=fov*size/z;
       if (Math.abs(screenx)<240+screenw/2&&Math.abs(screeny)<180+screenw/2) c.line({size:screenw,colour:colour},[screenx,screeny]);
     }
   }
