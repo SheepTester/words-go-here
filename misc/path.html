@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>path maker thigne</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="path makin'"/>
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+    <style>
+      body {
+        line-height: 1;
+        font-size: 15px;
+        font-family: 'Inconsolata', monospace;
+        color: white;
+        background-color: #009688;
+      }
+      #svg {
+        margin: auto;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: white;
+        border-radius: 5px;
+      }
+      #svg circle {
+        fill: transparent;
+        cursor: pointer;
+      }
+      #svg circle:hover {
+        fill: rgba(0,150,136,0.5);
+      }
+      #svg circle:active {
+        fill: rgba(0,150,136,0.8);
+      }
+    </style>
+  </head>
+  <body>
+    <p>drag point. shift to snap. ctrl+click to make new dot.</p>
+    <svg height='350' width='500' xmlns="http://www.w3.org/2000/svg" id='svg'>
+      <g id='grid' stroke='#eee' stroke-width='1'></g>
+      <path id='path' stroke='#333' stroke-width='5' fill='none' stroke-linejoin='round' stroke-linecap='round'/>
+      <g id='points' stroke='#666' stroke-width='5'></g>
+    </svg>
+
+    <script src="../../sheep.js"></script>
+    <script>
+var svg=document.querySelector('#svg'),
+grid=svg.querySelector('#grid'),
+circles=svg.querySelector('#points'),
+path=svg.querySelector('#path');
+for (var i=1;i<=Math.floor(svg.width.baseVal.value/50);i++) {
+  var t=document.createElementNS('http://www.w3.org/2000/svg',"path");
+  t.setAttributeNS(null,'d',`M${i*50} 0V${svg.height.baseVal.value}`);
+  grid.appendChild(t);
+}
+for (var i=1;i<=Math.floor(svg.height.baseVal.value/50);i++) {
+  var t=document.createElementNS('http://www.w3.org/2000/svg',"path");
+  t.setAttributeNS(null,'d',`M0 ${i*50}H${svg.width.baseVal.value}`);
+  grid.appendChild(t);
+}
+var points=[],
+beingdragged=false;
+function Point(x,y) {
+  this.c=document.createElementNS('http://www.w3.org/2000/svg',"circle");
+  this.c.setAttributeNS(null,'r',10);
+  this.c.setAttributeNS(null,'cx',x);
+  this.c.setAttributeNS(null,'cy',y);
+  this.c.onmousedown=e=>{
+    if (!e.ctrlKey&&!beingdragged)
+      beingdragged={
+        dx:this.c.cx.baseVal.value-e.clientX+svg.getBoundingClientRect().left,
+        dy:this.c.cy.baseVal.value-e.clientY+svg.getBoundingClientRect().top,
+        c:this.c
+      };
+  };
+  circles.appendChild(this.c);
+  this.type='L';
+}
+function render() {
+  var d='';
+  for (var i=0;i<points.length;i++) d+=points[i].type+points[i].c.cx.baseVal.value+' '+points[i].c.cy.baseVal.value;
+  path.setAttributeNS(null,'d',d);
+}
+points.push(new Point(100,100));
+points[0].type='M';
+render();
+svg.onmousemove=e=>{
+  if (beingdragged) {
+    var x=beingdragged.dx+e.clientX-svg.getBoundingClientRect().left,
+    y=beingdragged.dy+e.clientY-svg.getBoundingClientRect().top;
+    if (e.shiftKey) {
+      x=Math.round(x/50)*50;
+      y=Math.round(y/50)*50;
+    }
+    beingdragged.c.setAttributeNS(null,'cx',x);
+    beingdragged.c.setAttributeNS(null,'cy',y);
+    render();
+  }
+};
+svg.onmouseup=e=>{
+  beingdragged=false;
+};
+svg.onclick=e=>{
+  if (e.ctrlKey&&!beingdragged) {
+    points.push(new Point(e.clientX-svg.getBoundingClientRect().left,e.clientY-svg.getBoundingClientRect().top));
+    render();
+  }
+};
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

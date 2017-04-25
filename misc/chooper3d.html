@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>projection 3dness</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="you see as a scratcher we make everything from scratch. we don't use those silly renderer things that do everything for us. on scratch we don't even get a build in text renderer! [insert more rambling]"/>
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+    <style>
+      body {
+        line-height: 1;
+        font-size: 15px;
+        background-color: #8BC34A;
+        font-family: 'Inconsolata', monospace;
+        color: white;
+      }
+      canvas {
+        background-color: white;
+        border-radius: 5px;
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+
+    <script src="../../sheep.js"></script>
+    <script src="shepcanvas.js"></script>
+    <script>
+var c=new shepcanvas(document.querySelector('#c')),
+paused=false;
+function drawshtuf() {
+  c.clearcanvas();
+  //
+  window.requestAnimationFrame(drawshtuf);
+}
+window.requestAnimationFrame(drawshtuf);
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
