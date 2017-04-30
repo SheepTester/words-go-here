@@ -21,80 +21,431 @@
         right: 0;
         bottom: 0;
         background-color: white;
-        border-radius: 5px;
+        user-select: none;
       }
       #svg circle {
-        fill: transparent;
         cursor: pointer;
       }
-      #svg circle:hover {
-        fill: rgba(0,150,136,0.5);
+      #svg circle.active {
+        fill: white;
+        stroke: #009688;
       }
-      #svg circle:active {
-        fill: rgba(0,150,136,0.8);
+      div.settings {
+        margin: auto;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #333;
+        height: 100px;
+        width: 700px;
+        top: 450px;
+        border-bottom-left-radius: 5px;
+        border-bottom-right-radius: 5px;
+        box-sizing: border-box;
+        padding-left: 100px;
+        overflow-y: hidden;
+        transition: all .2s;
+      }
+      div.settings:not(.active) {
+        height: 5px;
+        top: 355px;
+        pointer-events: none;
+      }
+      span.letter {
+        position: absolute;
+        left: 0;
+        top: 0;
+        font-size: 30px;
+        width: 100px;
+        height: 100px;
+        line-height: 1;
+        cursor: pointer;
+        word-wrap: break-word;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        user-select: none;
+      }
+      span.letter::after {
+        content: attr(data-letter);
+        position: absolute;
+        left: 0;
+        top: 0;
+        font-size: 100px;
+        width: 100px;
+        height: 100px;
+        text-align: center;
+        line-height: 100px;
+        color: rgba(255,255,255,0.2);
+      }
+      span.letter:not(.nohover):hover {
+        background-color: rgba(255,255,255,0.05);
+      }
+      span.letter:not(.nohover):active {
+        background-color: rgba(255,255,255,0.1);
+      }
+      span.letter.nohover {
+        cursor: default;
+      }
+      div.inputgroup {
+        display: inline-block;
+        padding: 10px;
+        padding-bottom: 0;
+      }
+      div.inputgroup label {
+        margin-right: 5px;
+        /*font-size: 20px;*/
+        vertical-align: middle;
+      }
+      input.rangeinputthing[type=range] {
+        -webkit-appearance: none;
+        width: 100px;
+        background: transparent;
+        vertical-align: middle;
+      }
+      input.rangeinputthing[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 15px;
+        width: 15px;
+        cursor: pointer;
+        background-color: #009688;
+        margin: 0;
+        border-radius: 50%;
+        margin-top: -5px;
+      }
+      input.rangeinputthing[type=range]::-moz-range-thumb {height: 15px; width: 15px; cursor: pointer; background-color: #009688; margin: 0;border-radius: 50%;}
+      input.rangeinputthing[type=range]::-ms-thumb {height: 15px; width: 15px; cursor: pointer; background-color: #009688; margin: 0;border-radius: 50%;}
+      input.rangeinputthing[type=range]::-ms-track {
+        width: 100%;
+        cursor: pointer;
+        background-color: rgba(255,255,255,0.1);
+        height: 5px;
+        border-radius: 5px;
+        border-color: transparent;
+        color: transparent;
+      }
+      input.rangeinputthing[type=range]:hover::-ms-track {background-color: rgba(255,255,255,0.2);}
+      input.rangeinputthing[type=range]:focus::-ms-track {background-color: rgba(255,255,255,0.3);}
+      input.rangeinputthing[type=range]::-webkit-slider-runnable-track {
+        width: 100%;
+        background-color: rgba(255,255,255,0.1);
+        height: 5px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      input.rangeinputthing[type=range]:hover::-webkit-slider-runnable-track {background-color: rgba(255,255,255,0.2);}
+      input.rangeinputthing[type=range]:focus::-webkit-slider-runnable-track {background-color: rgba(255,255,255,0.3);}
+      input.rangeinputthing[type=range]::-moz-range-track {
+        width: 100%;
+        background-color: rgba(255,255,255,0.1);
+        height: 5px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      input.rangeinputthing[type=range]:hover::-moz-range-track {background-color: rgba(255,255,255,0.2);}
+      input.rangeinputthing[type=range]:focus::-moz-range-track {background-color: rgba(255,255,255,0.3);}
+      input.textinputthing {
+        border: none;
+        font-size: 12px;
+        padding: 5px;
+        background-color: rgba(255,255,255,0.1);
+        color: white;
+        border-radius: 2px;
+        width: 25px;
+        text-align: right;
+        margin-left: 5px;
+        cursor: pointer;
+      }
+      input.textinputthing:hover {background-color: rgba(255,255,255,0.2);}
+      input.textinputthing:focus {background-color: rgba(255,255,255,0.3); cursor: auto;}
+      input.checkinputthing {
+        -webkit-appearance: none;
+        background-color: rgba(255,255,255,0.1);
+        width: 30px;
+        height: 10px;
+        border-radius: 5px;
+        vertical-align: middle;
+        cursor: pointer;
+        margin: 0;
+      }
+      input.checkinputthing:focus {background-color: rgba(255,255,255,0.15);}
+      input.checkinputthing:hover {background-color: rgba(255,255,255,0.2);}
+      input.checkinputthing::after {
+        content: '';
+        height: 15px;
+        width: 15px;
+        background-color: #009688;
+        display: block;
+        border-radius: 50%;
+        margin-top: -2.5px;
+      }
+      input.checkinputthing:checked::after {
+        margin-left: 15px;
+      }
+      div.properties {
+        margin: auto;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 390px;
+        background-color: #333;
+        height: 40px;
+        width: 700px;
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+        box-sizing: border-box;
+        overflow-y: hidden;
+        transition: all .2s;
+      }
+      span.mousepos {
+        position: absolute;
+        right: 0;
+        height: 20px;
+        bottom: 0;
+        padding-right: 5px;
+        color: rgba(255,255,255,0.5);
+      }
+      button.pointremove {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255,255,255,0.1);
+        border: none;
+        color: white;
+        padding: 5px;
+        margin: 5px;
+        border-radius: 12.5px;
+        cursor: pointer;
+      }
+      button.pointremove:hover, button.pointremove:focus {
+        background-color: #f44336;
       }
     </style>
   </head>
   <body>
     <p>drag point. shift to snap. ctrl+click to make new dot.</p>
-    <svg height='350' width='500' xmlns="http://www.w3.org/2000/svg" id='svg'>
+    <svg height='350' width='700' xmlns="http://www.w3.org/2000/svg" id='svg'>
       <g id='grid' stroke='#eee' stroke-width='1'></g>
       <path id='path' stroke='#333' stroke-width='5' fill='none' stroke-linejoin='round' stroke-linecap='round'/>
-      <g id='points' stroke='#666' stroke-width='5'></g>
+      <g id='points' stroke='rgba(0,150,136,0.5)' stroke-width='1' fill='rgba(255,255,255,0.5)'></g>
     </svg>
+    <div class="settings">
+      <span class='letter' data-letter='M'>move to</span>
+      <button class='pointremove'>remove point</button>
+    </div>
+    <div class="properties"><span class='mousepos'>(0,0)</span></div>
 
     <script src="../../sheep.js"></script>
     <script>
 var svg=document.querySelector('#svg'),
 grid=svg.querySelector('#grid'),
 circles=svg.querySelector('#points'),
-path=svg.querySelector('#path');
-for (var i=1;i<=Math.floor(svg.width.baseVal.value/50);i++) {
-  var t=document.createElementNS('http://www.w3.org/2000/svg',"path");
-  t.setAttributeNS(null,'d',`M${i*50} 0V${svg.height.baseVal.value}`);
-  grid.appendChild(t);
+path=svg.querySelector('#path'),
+settings=document.querySelector('.settings'),
+props=document.querySelector('.properties'),
+mousepos=props.querySelector('.mousepos'),
+letter=settings.querySelector('.letter'),
+removept=settings.querySelector('.pointremove'),
+gridsize=50;
+function rendergrid(gridsize) {
+  while (grid.hasChildNodes()) grid.removeChild(grid.lastChild);
+  for (var i=1;i<=Math.floor(svg.width.baseVal.value/gridsize);i++) {
+    var t=document.createElementNS('http://www.w3.org/2000/svg',"path");
+    t.setAttributeNS(null,'d',`M${i*gridsize} 0V${svg.height.baseVal.value}`);
+    grid.appendChild(t);
+  }
+  for (var i=1;i<=Math.floor(svg.height.baseVal.value/gridsize);i++) {
+    var t=document.createElementNS('http://www.w3.org/2000/svg',"path");
+    t.setAttributeNS(null,'d',`M0 ${i*gridsize}H${svg.width.baseVal.value}`);
+    grid.appendChild(t);
+  }
 }
-for (var i=1;i<=Math.floor(svg.height.baseVal.value/50);i++) {
-  var t=document.createElementNS('http://www.w3.org/2000/svg',"path");
-  t.setAttributeNS(null,'d',`M0 ${i*50}H${svg.width.baseVal.value}`);
-  grid.appendChild(t);
-}
+rendergrid(gridsize);
 var points=[],
 beingdragged=false;
 function Point(x,y) {
+  this.i=points.length;
   this.c=document.createElementNS('http://www.w3.org/2000/svg',"circle");
-  this.c.setAttributeNS(null,'r',10);
+  this.c.setAttributeNS(null,'r',5);
   this.c.setAttributeNS(null,'cx',x);
   this.c.setAttributeNS(null,'cy',y);
   this.c.onmousedown=e=>{
+    if (e.which===3) {
+      if (!this.dontremove) {
+        circles.removeChild(this.c);
+        points.splice(this.i,1);
+        for (var i=this.i;i<points.length;i++) points[i].i=i;
+        render();
+      }
+      e.preventDefault();
+      return false;
+    }
     if (!e.ctrlKey&&!beingdragged)
       beingdragged={
         dx:this.c.cx.baseVal.value-e.clientX+svg.getBoundingClientRect().left,
         dy:this.c.cy.baseVal.value-e.clientY+svg.getBoundingClientRect().top,
-        c:this.c
+        c:this.c,
+        type:this.type,
+        update:(x,y)=>{
+          switch (this.type) {
+            case 'H':
+              options[0].update(x,true);
+              break;
+            case 'V':
+              options[0].update(y,true);
+              break;
+            default:
+              options[0].update(x,true);
+              options[1].update(y,true);
+          }
+        }
       };
+    setActiveTo(this);
   };
   circles.appendChild(this.c);
   this.type='L';
+  this.xr=gridsize;
+  this.yr=gridsize;
+  this.rot=0;
+  this.large=true;
+  this.sweep=true;
+  this.addoptions=_=>{
+    switch (this.type) {
+      case 'M':
+      case 'L':
+      case 'T':
+        options=[
+          new Numberinput('X',0,svg.width.baseVal.value,this.c.cx.baseVal.value,e=>{
+            this.c.setAttributeNS(null,'cx',e);
+            render();
+          }),
+          new Numberinput('Y',0,svg.height.baseVal.value,this.c.cy.baseVal.value,e=>{
+            this.c.setAttributeNS(null,'cy',e);
+            render();
+          }),
+          new Toggleinput('close path?',false,e=>{
+            this.z=e;
+            render();
+          })
+        ];
+        break;
+      case 'H':
+        options=[
+          new Numberinput('X',0,svg.width.baseVal.value,this.c.cx.baseVal.value,e=>{
+            this.c.setAttributeNS(null,'cx',e);
+            render();
+          }),
+          new Toggleinput('close path?',false,e=>{
+            this.z=e;
+            render();
+          })
+        ];
+        break;
+      case 'V':
+        options=[
+          new Numberinput('Y',0,svg.height.baseVal.value,this.c.cy.baseVal.value,e=>{
+            this.c.setAttributeNS(null,'cy',e);
+            render();
+          }),
+          new Toggleinput('close path?',false,e=>{
+            this.z=e;
+            render();
+          })
+        ];
+        break;
+      case 'A':
+        options=[
+          new Numberinput('X',0,svg.width.baseVal.value,this.c.cx.baseVal.value,e=>{
+            this.c.setAttributeNS(null,'cx',e);
+            render();
+          }),
+          new Numberinput('Y',0,svg.height.baseVal.value,this.c.cy.baseVal.value,e=>{
+            this.c.setAttributeNS(null,'cy',e);
+            render();
+          }),
+          new Numberinput('X radius',0,svg.width.baseVal.value,this.xr,e=>{
+            this.xr=e;
+            render();
+          }),
+          new Numberinput('Y radius',0,svg.height.baseVal.value,this.yr,e=>{
+            this.yr=e;
+            render();
+          }),
+          new Numberinput('rotation',0,360,this.rot,e=>{
+            this.rot=e;
+            render();
+          }),
+          new Toggleinput('large arc?',this.large,e=>{
+            this.large=e;
+            render();
+          }),
+          new Toggleinput('sweep?',this.sweep,e=>{
+            this.sweep=e;
+            render();
+          }),
+          new Toggleinput('close path?',false,e=>{
+            this.z=e;
+            render();
+          })
+        ];
+        break;
+    }
+  };
 }
 function render() {
   var d='';
-  for (var i=0;i<points.length;i++) d+=points[i].type+points[i].c.cx.baseVal.value+' '+points[i].c.cy.baseVal.value;
+  for (var i=0;i<points.length;i++) {
+    d+=points[i].type;
+    switch (points[i].type) {
+      case 'H':
+        d+=points[i].c.cx.baseVal.value;
+        points[i].c.setAttributeNS(null,'cy',points[i-1].c.cy.baseVal.value);
+        break;
+      case 'V':
+        d+=points[i].c.cy.baseVal.value;
+        points[i].c.setAttributeNS(null,'cx',points[i-1].c.cx.baseVal.value);
+        break;
+      case 'C':d+='0 0,0 0,0 0';break;
+      case 'S':d+='0 0,0 0';break;
+      case 'Q':d+='0 0,0 0';break;
+      case 'A':d+=`${points[i].xr} ${points[i].yr} ${points[i].rot} ${+points[i].large} ${+points[i].sweep} `+points[i].c.cx.baseVal.value+' '+points[i].c.cy.baseVal.value;break;
+      default:d+=points[i].c.cx.baseVal.value+' '+points[i].c.cy.baseVal.value;
+    }
+    if (points[i].z) d+='Z';
+  }
   path.setAttributeNS(null,'d',d);
 }
 points.push(new Point(100,100));
 points[0].type='M';
+points[0].dontremove=true;
 render();
+svg.onmousedown=e=>{
+  if (!beingdragged) {
+    setActiveTo();
+  }
+};
 svg.onmousemove=e=>{
+  var x=e.clientX-svg.getBoundingClientRect().left,
+  y=e.clientY-svg.getBoundingClientRect().top;
+  if (e.shiftKey) {
+    x=Math.round(x/gridsize)*gridsize;
+    y=Math.round(y/gridsize)*gridsize;
+  }
+  mousepos.innerHTML=`(${x},${y})`;
   if (beingdragged) {
-    var x=beingdragged.dx+e.clientX-svg.getBoundingClientRect().left,
+    x=beingdragged.dx+e.clientX-svg.getBoundingClientRect().left,
     y=beingdragged.dy+e.clientY-svg.getBoundingClientRect().top;
     if (e.shiftKey) {
-      x=Math.round(x/50)*50;
-      y=Math.round(y/50)*50;
+      x=Math.round(x/gridsize)*gridsize;
+      y=Math.round(y/gridsize)*gridsize;
     }
-    beingdragged.c.setAttributeNS(null,'cx',x);
-    beingdragged.c.setAttributeNS(null,'cy',y);
+    if (beingdragged.type!=='V') beingdragged.c.setAttributeNS(null,'cx',x);
+    if (beingdragged.type!=='H') beingdragged.c.setAttributeNS(null,'cy',y);
+    if (beingdragged.update) beingdragged.update(x,y);
     render();
   }
 };
@@ -103,10 +454,192 @@ svg.onmouseup=e=>{
 };
 svg.onclick=e=>{
   if (e.ctrlKey&&!beingdragged) {
-    points.push(new Point(e.clientX-svg.getBoundingClientRect().left,e.clientY-svg.getBoundingClientRect().top));
+    var x=e.clientX-svg.getBoundingClientRect().left,
+    y=e.clientY-svg.getBoundingClientRect().top;
+    if (e.shiftKey) {
+      x=Math.round(x/gridsize)*gridsize;
+      y=Math.round(y/gridsize)*gridsize;
+    }
+    if (points[points.length-1].type==='H') points.push(new Point(x,points[points.length-1].c.cy.baseVal.value));
+    else if (points[points.length-1].type==='V') points.push(new Point(points[points.length-1].c.cx.baseVal.value,y));
+    else points.push(new Point(x,y));
+    if (points[points.length-2].type==='M') points[points.length-1].type='L';
+    else if (points[points.length-2].type==='C') points[points.length-1].type='S';
+    else if (points[points.length-2].type==='Q') points[points.length-1].type='T';
+    else points[points.length-1].type=points[points.length-2].type;
+    setActiveTo(points[points.length-1]);
     render();
   }
 };
+var nextLetter={M:'L',L:'H',H:'V',V:'C',C:'S',S:'Q',Q:'T',T:'A',A:'M'},
+letterName={M:'move to',L:'line to',H:'horiz line',V:'vert line',C:'cubic bezier',S:'cont cubic bezier',Q:'quad bezier',T:'cont quad bezier',A:'arc'};
+letter.onclick=e=>{
+  if (selected&&!points[selected].dontremove) {
+    var lastletter=letter.dataset.letter;
+    if (e.shiftKey) {
+      var span;
+      for (span in nextLetter) if (nextLetter[span]===letter.dataset.letter) break;
+      letter.dataset.letter=span;
+    } else letter.dataset.letter=nextLetter[letter.dataset.letter];
+    letter.textContent=letterName[letter.dataset.letter];
+    points[selected].type=letter.dataset.letter;
+    if (points[selected].type==='L'&&lastletter==='H') {
+      if (points[selected].prevy) points[selected].c.setAttributeNS(null,'cy',points[selected].prevy);
+    } else if (points[selected].type==='H') {
+      points[selected].prevy=points[selected].c.cy.baseVal.value;
+      points[selected].c.setAttributeNS(null,'cy',points[selected-1].c.cy.baseVal.value);
+      if (points[selected].prevx) points[selected].c.setAttributeNS(null,'cx',points[selected].prevx);
+    } else if (points[selected].type==='V') {
+      points[selected].prevx=points[selected].c.cx.baseVal.value;
+      points[selected].c.setAttributeNS(null,'cx',points[selected-1].c.cx.baseVal.value);
+      if (points[selected].prevy) points[selected].c.setAttributeNS(null,'cy',points[selected].prevy);
+    } else if (points[selected].type==='C'&&lastletter==='V') {
+      if (points[selected].prevx) points[selected].c.setAttributeNS(null,'cx',points[selected].prevx);
+    }
+    setActiveTo(points[selected]);
+    render();
+  }
+};
+removept.onclick=e=>{
+  if (selected&&!points[selected].dontremove) {
+    circles.removeChild(points[selected].c);
+    var i=points[selected].i;
+    points.splice(i,1);
+    for (;i<points.length;i++) points[i].i=i;
+    setActiveTo();
+    render();
+  }
+};
+function Numberinput(label,min,max,at,onchange,property) {
+  this.div=document.createElement("div");
+  this.div.classList.add('inputgroup');
+  this.l=document.createElement("label");
+  this.l.textContent=label;
+  this.div.appendChild(this.l);
+  this.r=document.createElement("input");
+  this.r.type='range';
+  this.r.classList.add('rangeinputthing');
+  this.r.min=min;
+  this.r.max=max;
+  this.r.step=1;
+  this.r.oninput=e=>{
+    this.n.value=this.r.value;
+    if (onchange) onchange(Number(this.n.value));
+  };
+  this.r.value=at;
+  this.div.appendChild(this.r);
+  this.n=document.createElement("input");
+  this.n.type='text';
+  this.n.classList.add('textinputthing');
+  this.n.onkeydown=e=>{
+    if (e.keyCode===38||e.keyCode===40) {
+      var t=39-e.keyCode;
+      if (e.ctrlKey) t=+this.n.value+100*t;
+      else if (e.shiftKey) t=+this.n.value+10*t;
+      else if (e.altKey) t=+this.n.value+0.1*t;
+      else t=+this.n.value+1*t;
+      if (~this.n.value.indexOf('.')) {
+        var s=this.n.value.length-this.n.value.indexOf('.')-1;
+        this.n.value=Math.round(t*10**s)/10**s;
+      }
+      else this.n.value=t;
+      e.preventDefault();
+      return false;
+    }
+  };
+  this.n.onkeyup=e=>{
+    if (/[^0-9.-]/.test(this.n.value)) this.n.value=this.n.value.replace(/[^0-9.-]/g,'');
+    if (this.n.value[0]==='-'&&~this.n.value.slice(1).indexOf('-')) this.n.value='-'+this.n.value.slice(1).replace(/-/g,'');
+    if (this.n.value.replace(/[^.]/g,'').length>1)
+      this.n.value=this.n.value.slice(0,this.n.value.indexOf('.')+1)+this.n.value.slice(this.n.value.indexOf('.')+1).replace(/\./g,'');
+    this.r.value=this.n.value;
+    if (onchange) onchange(Number(this.n.value));
+  };
+  this.n.value=at;
+  this.div.appendChild(this.n);
+  if (property) props.appendChild(this.div);
+  else settings.appendChild(this.div);
+  this.bye=_=>{
+    if (property) props.removeChild(this.div);
+    else settings.removeChild(this.div);
+    this.l=null;
+    this.r=null;
+    this.n=null;
+    this.div=null;
+  };
+  this.update=(e,dontfirechange)=>{
+    this.n.value=e;
+    this.r.value=e;
+    if (onchange&&!dontfirechange) onchange(Number(this.n.value));
+  };
+}
+function Toggleinput(label,on,onchange,property) {
+  this.div=document.createElement("div");
+  this.div.classList.add('inputgroup');
+  this.l=document.createElement("label");
+  this.l.textContent=label;
+  this.div.appendChild(this.l);
+  this.c=document.createElement("input");
+  this.c.type='checkbox';
+  this.c.classList.add('checkinputthing');
+  this.c.checked=on;
+  this.c.onchange=e=>{
+    if (onchange) onchange(this.c.checked);
+  };
+  this.div.appendChild(this.c);
+  if (property) props.appendChild(this.div);
+  else settings.appendChild(this.div);
+  this.bye=_=>{
+    if (property) props.removeChild(this.div);
+    else settings.removeChild(this.div);
+    this.l=null;
+    this.c=null;
+    this.div=null;
+  };
+  this.check=(e,dontfirechange)=>{
+    e=e||!this.c.checked;
+    this.c.checked=e;
+    if (onchange&&!dontfirechange) onchange(this.c.checked);
+  };
+}
+var selected;
+function setActiveTo(point) {
+  var t=svg.querySelector('circle.active');
+  if (t) {
+    t.classList.remove('active');
+  }
+  if (settings.classList.contains('active')&&!point) {
+    settings.classList.remove('active');
+    selected=null;
+  }
+  for (var i=0;i<options.length;i++) options[i].bye();
+  options=[];
+  if (point) {
+    if (!settings.classList.contains('active')) settings.classList.add('active');
+    point.c.classList.add('active');
+    selected=point.i;
+    point.addoptions();
+    letter.dataset.letter=point.type;
+    letter.textContent=letterName[letter.dataset.letter];
+    if (point.dontremove) letter.classList.add('nohover');
+    else letter.classList.remove('nohover');
+  }
+}
+var options=[];
+new Numberinput('snap size',0,500,50,e=>{
+  if (e>=5) {
+    gridsize=e;
+    rendergrid(gridsize);
+  }
+},true);
+new Numberinput('width',0,1000,700,e=>{
+  svg.setAttribute('width',e);
+  rendergrid(gridsize);
+},true);
+new Numberinput('height',0,1000,350,e=>{
+  svg.setAttribute('height',e);
+  rendergrid(gridsize);
+},true);
     </script>
   </body>
   <!-- MADE BY SEAN -->
