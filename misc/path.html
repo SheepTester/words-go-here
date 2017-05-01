@@ -12,6 +12,7 @@
         font-family: 'Inconsolata', monospace;
         color: white;
         background-color: #009688;
+        margin-top: 50px;
       }
       #svg {
         margin: auto;
@@ -31,18 +32,12 @@
         stroke: #009688;
       }
       div.settings {
-        margin: auto;
-        position: absolute;
-        top: 0;
+        position: fixed;
         left: 0;
-        right: 0;
         bottom: 0;
         background-color: #333;
         height: 100px;
-        width: 700px;
-        top: 450px;
-        border-bottom-left-radius: 5px;
-        border-bottom-right-radius: 5px;
+        width: 100%;
         box-sizing: border-box;
         padding-left: 100px;
         overflow-y: hidden;
@@ -50,7 +45,6 @@
       }
       div.settings:not(.active) {
         height: 5px;
-        top: 355px;
         pointer-events: none;
       }
       span.letter {
@@ -191,12 +185,9 @@
         top: 0;
         left: 0;
         right: 0;
-        bottom: 390px;
+        width: 100%;
         background-color: #333;
         height: 40px;
-        width: 700px;
-        border-top-left-radius: 5px;
-        border-top-right-radius: 5px;
         box-sizing: border-box;
         overflow-y: hidden;
         transition: all .2s;
@@ -224,11 +215,26 @@
       button.pointremove:hover, button.pointremove:focus {
         background-color: #f44336;
       }
+      circle.controlpt {
+        stroke: rgba(0,0,0,0.3);
+      }
+      line.controlptline {
+        stroke: rgba(0,0,0,0.2);
+        stroke-dasharray: 10, 10;
+      }
+      /*#svg:not(:hover) circle {
+        opacity: 0.3;
+      }*/
+      button.pointremove.nohover {
+        opacity: 0.5;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
-    <p>drag point. shift to snap. ctrl+click to make new dot.</p>
-    <svg height='350' width='700' xmlns="http://www.w3.org/2000/svg" id='svg'>
+    <p>drag point. shift to snap. ctrl+click to make new dot. <a target="_blank" id='export'>export</a></p>
+    <p><input type="text" value="M90 90a50 50 0 0 0 0 100H98.579A150 150 0 1 0 381.421 190H390a50 50 0 0 0 0 -100a50 50 0 1 1 -100 0a50 50 0 1 1 -100 0a50 50 0 1 1 -100 0z" id='importd'><button id='import'>import</button></p>
+    <svg height='480' width='480' xmlns="http://www.w3.org/2000/svg" id='svg'>
       <g id='grid' stroke='#eee' stroke-width='1'></g>
       <path id='path' stroke='#333' stroke-width='5' fill='none' stroke-linejoin='round' stroke-linecap='round'/>
       <g id='points' stroke='rgba(0,150,136,0.5)' stroke-width='1' fill='rgba(255,255,255,0.5)'></g>
@@ -250,6 +256,8 @@ props=document.querySelector('.properties'),
 mousepos=props.querySelector('.mousepos'),
 letter=settings.querySelector('.letter'),
 removept=settings.querySelector('.pointremove'),
+exportlink=document.querySelector('#export'),
+importdesc=document.querySelector('#importd'),
 gridsize=50;
 function rendergrid(gridsize) {
   while (grid.hasChildNodes()) grid.removeChild(grid.lastChild);
@@ -277,6 +285,10 @@ function Point(x,y) {
     if (e.which===3) {
       if (!this.dontremove) {
         circles.removeChild(this.c);
+        circles.removeChild(this.control1);
+        circles.removeChild(this.conpath1);
+        circles.removeChild(this.control2);
+        circles.removeChild(this.conpath2);
         points.splice(this.i,1);
         for (var i=this.i;i<points.length;i++) points[i].i=i;
         render();
@@ -284,7 +296,7 @@ function Point(x,y) {
       e.preventDefault();
       return false;
     }
-    if (!e.ctrlKey&&!beingdragged)
+    if (!(e.ctrlKey||e.metaKey)&&!beingdragged)
       beingdragged={
         dx:this.c.cx.baseVal.value-e.clientX+svg.getBoundingClientRect().left,
         dy:this.c.cy.baseVal.value-e.clientY+svg.getBoundingClientRect().top,
@@ -302,10 +314,43 @@ function Point(x,y) {
               options[0].update(x,true);
               options[1].update(y,true);
           }
+          if (points[this.i+1]&&points[this.i+1].type==='C') {
+            var xdiff=x-points[this.i+1].conpath1.x1.baseVal.value,
+            ydiff=y-points[this.i+1].conpath1.y1.baseVal.value;
+            points[this.i+1].conpath1.setAttributeNS(null,'x1',points[this.i+1].conpath1.x1.baseVal.value+xdiff);
+            points[this.i+1].conpath1.setAttributeNS(null,'y1',points[this.i+1].conpath1.y1.baseVal.value+ydiff);
+            points[this.i+1].conpath1.setAttributeNS(null,'x2',points[this.i+1].conpath1.x2.baseVal.value+xdiff);
+            points[this.i+1].conpath1.setAttributeNS(null,'y2',points[this.i+1].conpath1.y2.baseVal.value+ydiff);
+            points[this.i+1].control1.setAttributeNS(null,'cx',points[this.i+1].control1.cx.baseVal.value+xdiff);
+            points[this.i+1].control1.setAttributeNS(null,'cy',points[this.i+1].control1.cy.baseVal.value+ydiff);
+          }
+          if (this.type!=='C') {
+            this.conpath1.setAttributeNS(null,'x2',this.conpath1.x2.baseVal.value+x-this.conpath2.x1.baseVal.value);
+            this.conpath1.setAttributeNS(null,'y2',this.conpath1.y2.baseVal.value+y-this.conpath2.y1.baseVal.value);
+            this.control1.setAttributeNS(null,'cx',this.conpath1.x2.baseVal.value);
+            this.control1.setAttributeNS(null,'cy',this.conpath1.y2.baseVal.value);
+          }
+          this.conpath2.setAttributeNS(null,'x2',this.conpath2.x2.baseVal.value+x-this.conpath2.x1.baseVal.value);
+          this.conpath2.setAttributeNS(null,'y2',this.conpath2.y2.baseVal.value+y-this.conpath2.y1.baseVal.value);
+          this.control2.setAttributeNS(null,'cx',this.conpath2.x2.baseVal.value);
+          this.control2.setAttributeNS(null,'cy',this.conpath2.y2.baseVal.value);
+          if (~['C','S','Q'].indexOf(this.type)) {
+            options[2].update(this.conpath1.x2.baseVal.value,true);
+            options[3].update(this.conpath1.y2.baseVal.value,true);
+            if (this.type==='C') {
+              options[4].update(this.conpath2.x2.baseVal.value,true);
+              options[5].update(this.conpath2.y2.baseVal.value,true);
+            }
+          }
+          this.conpath2.setAttributeNS(null,'x1',x);
+          this.conpath2.setAttributeNS(null,'y1',y);
         }
       };
     setActiveTo(this);
   };
+  this.c.addEventListener("touchstart",e=>{
+    this.c.onmousedown(e.touches[0]);
+  },{passive:false});
   circles.appendChild(this.c);
   this.type='L';
   this.xr=gridsize;
@@ -313,6 +358,75 @@ function Point(x,y) {
   this.rot=0;
   this.large=true;
   this.sweep=true;
+  if (points[points.length-1]) {
+    this.conx=(x+points[points.length-1].c.cx.baseVal.value)/2;
+    this.cony=(y+points[points.length-1].c.cy.baseVal.value)/2;
+  } else {
+    this.conx=x;
+    this.cony=y;
+  }
+  this.control1=document.createElementNS('http://www.w3.org/2000/svg',"circle");
+  this.control1.setAttributeNS(null,'class','controlpt');
+  this.control1.setAttributeNS(null,'r',5);
+  this.control1.setAttributeNS(null,'cx',this.conx);
+  this.control1.setAttributeNS(null,'cy',this.cony);
+  this.control1.setAttributeNS(null,'visibility','hidden');
+  this.control1.onmousedown=e=>{
+    if (!(e.ctrlKey||e.metaKey)&&!beingdragged)
+      beingdragged={
+        dx:this.control1.cx.baseVal.value-e.clientX+svg.getBoundingClientRect().left,
+        dy:this.control1.cy.baseVal.value-e.clientY+svg.getBoundingClientRect().top,
+        c:this.control1,
+        type:this.type,
+        update:(x,y)=>{
+          this.conpath1.setAttributeNS(null,'x2',x);
+          this.conpath1.setAttributeNS(null,'y2',y);
+          if (this.type!=='C') {
+            this.conpath2.setAttributeNS(null,'x2',x);
+            this.conpath2.setAttributeNS(null,'y2',y);
+          }
+          options[2].update(x,true);
+          options[3].update(y,true);
+        }
+      };
+  };
+  this.control1.addEventListener("touchstart",e=>{
+    this.control1.onmousedown(e.touches[0]);
+  },{passive:false});
+  circles.appendChild(this.control1);
+  this.conpath1=document.createElementNS('http://www.w3.org/2000/svg',"line");
+  this.conpath1.setAttributeNS(null,'class','controlptline');
+  this.conpath1.setAttributeNS(null,'visibility','hidden');
+  circles.appendChild(this.conpath1);
+  this.control2=document.createElementNS('http://www.w3.org/2000/svg',"circle");
+  this.control2.setAttributeNS(null,'class','controlpt');
+  this.control2.setAttributeNS(null,'r',5);
+  this.control2.setAttributeNS(null,'cx',this.conx);
+  this.control2.setAttributeNS(null,'cy',this.cony);
+  this.control2.setAttributeNS(null,'visibility','hidden');
+  this.control2.onmousedown=e=>{
+    if (!(e.ctrlKey||e.metaKey)&&!beingdragged)
+      beingdragged={
+        dx:this.control2.cx.baseVal.value-e.clientX+svg.getBoundingClientRect().left,
+        dy:this.control2.cy.baseVal.value-e.clientY+svg.getBoundingClientRect().top,
+        c:this.control2,
+        type:this.type,
+        update:(x,y)=>{
+          this.conpath2.setAttributeNS(null,'x2',x);
+          this.conpath2.setAttributeNS(null,'y2',y);
+          options[4].update(x,true);
+          options[5].update(y,true);
+        }
+      };
+  };
+  this.control2.addEventListener("touchstart",e=>{
+    this.control2.onmousedown(e.touches[0]);
+  },{passive:false});
+  circles.appendChild(this.control2);
+  this.conpath2=document.createElementNS('http://www.w3.org/2000/svg',"line");
+  this.conpath2.setAttributeNS(null,'class','controlptline');
+  this.conpath2.setAttributeNS(null,'visibility','hidden');
+  circles.appendChild(this.conpath2);
   this.addoptions=_=>{
     switch (this.type) {
       case 'M':
@@ -326,36 +440,20 @@ function Point(x,y) {
           new Numberinput('Y',0,svg.height.baseVal.value,this.c.cy.baseVal.value,e=>{
             this.c.setAttributeNS(null,'cy',e);
             render();
-          }),
-          new Toggleinput('close path?',false,e=>{
-            this.z=e;
-            render();
           })
         ];
         break;
       case 'H':
-        options=[
-          new Numberinput('X',0,svg.width.baseVal.value,this.c.cx.baseVal.value,e=>{
-            this.c.setAttributeNS(null,'cx',e);
-            render();
-          }),
-          new Toggleinput('close path?',false,e=>{
-            this.z=e;
-            render();
-          })
-        ];
+        options=[new Numberinput('X',0,svg.width.baseVal.value,this.c.cx.baseVal.value,e=>{
+          this.c.setAttributeNS(null,'cx',e);
+          render();
+        })];
         break;
       case 'V':
-        options=[
-          new Numberinput('Y',0,svg.height.baseVal.value,this.c.cy.baseVal.value,e=>{
-            this.c.setAttributeNS(null,'cy',e);
-            render();
-          }),
-          new Toggleinput('close path?',false,e=>{
-            this.z=e;
-            render();
-          })
-        ];
+        options=[new Numberinput('Y',0,svg.height.baseVal.value,this.c.cy.baseVal.value,e=>{
+          this.c.setAttributeNS(null,'cy',e);
+          render();
+        })];
         break;
       case 'A':
         options=[
@@ -386,14 +484,72 @@ function Point(x,y) {
           new Toggleinput('sweep?',this.sweep,e=>{
             this.sweep=e;
             render();
+          })
+        ];
+        break;
+      case 'C':
+        options=[
+          new Numberinput('X',0,svg.width.baseVal.value,this.c.cx.baseVal.value,e=>{
+            this.c.setAttributeNS(null,'cx',e);
+            render();
           }),
-          new Toggleinput('close path?',false,e=>{
-            this.z=e;
+          new Numberinput('Y',0,svg.height.baseVal.value,this.c.cy.baseVal.value,e=>{
+            this.c.setAttributeNS(null,'cy',e);
+            render();
+          }),
+          new Numberinput('1st control X',0,svg.width.baseVal.value,this.control1.cx.baseVal.value,e=>{
+            this.control1.setAttributeNS(null,'cx',e);
+            this.conpath1.setAttributeNS(null,'x2',e);
+            render();
+          }),
+          new Numberinput('1st control Y',0,svg.height.baseVal.value,this.control1.cy.baseVal.value,e=>{
+            this.control1.setAttributeNS(null,'cy',e);
+            this.conpath1.setAttributeNS(null,'y2',e);
+            render();
+          }),
+          new Numberinput('2st control X',0,svg.width.baseVal.value,this.control2.cx.baseVal.value,e=>{
+            this.control2.setAttributeNS(null,'cx',e);
+            this.conpath2.setAttributeNS(null,'x2',e);
+            render();
+          }),
+          new Numberinput('2st control Y',0,svg.height.baseVal.value,this.control2.cy.baseVal.value,e=>{
+            this.control2.setAttributeNS(null,'cy',e);
+            this.conpath2.setAttributeNS(null,'y2',e);
+            render();
+          })
+        ];
+        break;
+      case 'S':
+      case 'Q':
+        options=[
+          new Numberinput('X',0,svg.width.baseVal.value,this.c.cx.baseVal.value,e=>{
+            this.c.setAttributeNS(null,'cx',e);
+            render();
+          }),
+          new Numberinput('Y',0,svg.height.baseVal.value,this.c.cy.baseVal.value,e=>{
+            this.c.setAttributeNS(null,'cy',e);
+            render();
+          }),
+          new Numberinput('1st control X',0,svg.width.baseVal.value,this.control1.cx.baseVal.value,e=>{
+            this.control1.setAttributeNS(null,'cx',e);
+            this.conpath1.setAttributeNS(null,'x2',e);
+            render();
+          }),
+          new Numberinput('1st control Y',0,svg.height.baseVal.value,this.control1.cy.baseVal.value,e=>{
+            this.control1.setAttributeNS(null,'cy',e);
+            this.conpath1.setAttributeNS(null,'y2',e);
             render();
           })
         ];
         break;
     }
+    options.push(new Toggleinput('close path?',false,e=>{
+      this.z=e;
+      render();
+    }));
+  };
+  this.prepareyourself=e=>{
+    //
   };
 }
 function render() {
@@ -409,15 +565,16 @@ function render() {
         d+=points[i].c.cy.baseVal.value;
         points[i].c.setAttributeNS(null,'cx',points[i-1].c.cx.baseVal.value);
         break;
-      case 'C':d+='0 0,0 0,0 0';break;
-      case 'S':d+='0 0,0 0';break;
-      case 'Q':d+='0 0,0 0';break;
+      case 'C':d+=`${points[i].control1.cx.baseVal.value} ${points[i].control1.cy.baseVal.value},${points[i].control2.cx.baseVal.value} ${points[i].control2.cy.baseVal.value},${points[i].c.cx.baseVal.value} ${points[i].c.cy.baseVal.value}`;break;
+      case 'S':d+=`${points[i].control1.cx.baseVal.value} ${points[i].control1.cy.baseVal.value},${points[i].c.cx.baseVal.value} ${points[i].c.cy.baseVal.value}`;break;
+      case 'Q':d+=`${points[i].control1.cx.baseVal.value} ${points[i].control1.cy.baseVal.value},${points[i].c.cx.baseVal.value} ${points[i].c.cy.baseVal.value}`;break;
       case 'A':d+=`${points[i].xr} ${points[i].yr} ${points[i].rot} ${+points[i].large} ${+points[i].sweep} `+points[i].c.cx.baseVal.value+' '+points[i].c.cy.baseVal.value;break;
       default:d+=points[i].c.cx.baseVal.value+' '+points[i].c.cy.baseVal.value;
     }
     if (points[i].z) d+='Z';
   }
   path.setAttributeNS(null,'d',d);
+  exportlink.href=`data:image/svg+xml,<svg height='${svg.height.baseVal.value}' width='${svg.width.baseVal.value}' xmlns="http://www.w3.org/2000/svg"><path d="${d}" stroke='#333' stroke-width='5' fill='none' stroke-linejoin='round' stroke-linecap='round'/></svg>`;
 }
 points.push(new Point(100,100));
 points[0].type='M';
@@ -428,7 +585,8 @@ svg.onmousedown=e=>{
     setActiveTo();
   }
 };
-svg.onmousemove=e=>{
+svg.addEventListener("touchstart",svg.onmousedown,{passive:false});
+document.onmousemove=e=>{
   var x=e.clientX-svg.getBoundingClientRect().left,
   y=e.clientY-svg.getBoundingClientRect().top;
   if (e.shiftKey) {
@@ -436,6 +594,8 @@ svg.onmousemove=e=>{
     y=Math.round(y/gridsize)*gridsize;
   }
   mousepos.innerHTML=`(${x},${y})`;
+};
+svg.onmousemove=e=>{
   if (beingdragged) {
     x=beingdragged.dx+e.clientX-svg.getBoundingClientRect().left,
     y=beingdragged.dy+e.clientY-svg.getBoundingClientRect().top;
@@ -449,11 +609,15 @@ svg.onmousemove=e=>{
     render();
   }
 };
+svg.addEventListener("touchmove",e=>{
+  svg.onmousemove(e.touches[0]);
+},{passive:false});
 svg.onmouseup=e=>{
   beingdragged=false;
 };
+svg.addEventListener("touchstart",svg.onmouseup,{passive:false});
 svg.onclick=e=>{
-  if (e.ctrlKey&&!beingdragged) {
+  if ((e.ctrlKey||e.metaKey)&&!beingdragged) {
     var x=e.clientX-svg.getBoundingClientRect().left,
     y=e.clientY-svg.getBoundingClientRect().top;
     if (e.shiftKey) {
@@ -472,7 +636,7 @@ svg.onclick=e=>{
   }
 };
 var nextLetter={M:'L',L:'H',H:'V',V:'C',C:'S',S:'Q',Q:'T',T:'A',A:'M'},
-letterName={M:'move to',L:'line to',H:'horiz line',V:'vert line',C:'cubic bezier',S:'cont cubic bezier',Q:'quad bezier',T:'cont quad bezier',A:'arc'};
+letterName={M:'move',L:'line',H:'horiz line',V:'vert line',C:'cubic bezier',S:'cont cubic bezier',Q:'quad bezier',T:'cont quad bezier',A:'arc'};
 letter.onclick=e=>{
   if (selected&&!points[selected].dontremove) {
     var lastletter=letter.dataset.letter;
@@ -503,6 +667,10 @@ letter.onclick=e=>{
 removept.onclick=e=>{
   if (selected&&!points[selected].dontremove) {
     circles.removeChild(points[selected].c);
+    circles.removeChild(points[selected].control1);
+    circles.removeChild(points[selected].conpath1);
+    circles.removeChild(points[selected].control2);
+    circles.removeChild(points[selected].conpath2);
     var i=points[selected].i;
     points.splice(i,1);
     for (;i<points.length;i++) points[i].i=i;
@@ -534,7 +702,7 @@ function Numberinput(label,min,max,at,onchange,property) {
   this.n.onkeydown=e=>{
     if (e.keyCode===38||e.keyCode===40) {
       var t=39-e.keyCode;
-      if (e.ctrlKey) t=+this.n.value+100*t;
+      if (e.ctrlKey||e.metaKey) t=+this.n.value+100*t;
       else if (e.shiftKey) t=+this.n.value+10*t;
       else if (e.altKey) t=+this.n.value+0.1*t;
       else t=+this.n.value+1*t;
@@ -604,6 +772,12 @@ function Toggleinput(label,on,onchange,property) {
 }
 var selected;
 function setActiveTo(point) {
+  if (selected&&points[selected]) {
+    points[selected].control1.setAttributeNS(null,'visibility','hidden');
+    points[selected].conpath1.setAttributeNS(null,'visibility','hidden');
+    points[selected].control2.setAttributeNS(null,'visibility','hidden');
+    points[selected].conpath2.setAttributeNS(null,'visibility','hidden');
+  }
   var t=svg.querySelector('circle.active');
   if (t) {
     t.classList.remove('active');
@@ -621,8 +795,39 @@ function setActiveTo(point) {
     point.addoptions();
     letter.dataset.letter=point.type;
     letter.textContent=letterName[letter.dataset.letter];
-    if (point.dontremove) letter.classList.add('nohover');
-    else letter.classList.remove('nohover');
+    if (point.dontremove) {
+      letter.classList.add('nohover');
+      removept.classList.add('nohover');
+    } else {
+      letter.classList.remove('nohover');
+      removept.classList.remove('nohover');
+    }
+    if (point.type==='C') {
+      points[selected].control1.setAttributeNS(null,'visibility','visible');
+      points[selected].conpath1.setAttributeNS(null,'visibility','visible');
+      points[selected].control2.setAttributeNS(null,'visibility','visible');
+      points[selected].conpath2.setAttributeNS(null,'visibility','visible');
+      points[selected].conpath1.setAttributeNS(null,'x1',points[selected-1].c.cx.baseVal.value);
+      points[selected].conpath1.setAttributeNS(null,'y1',points[selected-1].c.cy.baseVal.value);
+      points[selected].conpath1.setAttributeNS(null,'x2',points[selected].control1.cx.baseVal.value);
+      points[selected].conpath1.setAttributeNS(null,'y2',points[selected].control1.cy.baseVal.value);
+      points[selected].conpath2.setAttributeNS(null,'x1',points[selected].c.cx.baseVal.value);
+      points[selected].conpath2.setAttributeNS(null,'y1',points[selected].c.cy.baseVal.value);
+      points[selected].conpath2.setAttributeNS(null,'x2',points[selected].control2.cx.baseVal.value);
+      points[selected].conpath2.setAttributeNS(null,'y2',points[selected].control2.cy.baseVal.value);
+    } else if (point.type==='S'||point.type==='Q') {
+      points[selected].control1.setAttributeNS(null,'visibility','visible');
+      points[selected].conpath1.setAttributeNS(null,'visibility','visible');
+      points[selected].conpath2.setAttributeNS(null,'visibility','visible');
+      points[selected].conpath1.setAttributeNS(null,'x1',points[selected-1].c.cx.baseVal.value);
+      points[selected].conpath1.setAttributeNS(null,'y1',points[selected-1].c.cy.baseVal.value);
+      points[selected].conpath2.setAttributeNS(null,'x1',points[selected].c.cx.baseVal.value);
+      points[selected].conpath2.setAttributeNS(null,'y1',points[selected].c.cy.baseVal.value);
+      points[selected].conpath1.setAttributeNS(null,'x2',points[selected].control1.cx.baseVal.value);
+      points[selected].conpath1.setAttributeNS(null,'y2',points[selected].control1.cy.baseVal.value);
+      points[selected].conpath2.setAttributeNS(null,'x2',points[selected].control1.cx.baseVal.value);
+      points[selected].conpath2.setAttributeNS(null,'y2',points[selected].control1.cy.baseVal.value);
+    }
   }
 }
 var options=[];
@@ -632,14 +837,146 @@ new Numberinput('snap size',0,500,50,e=>{
     rendergrid(gridsize);
   }
 },true);
-new Numberinput('width',0,1000,700,e=>{
+new Numberinput('width',0,1000,480,e=>{
   svg.setAttribute('width',e);
   rendergrid(gridsize);
 },true);
-new Numberinput('height',0,1000,350,e=>{
+new Numberinput('height',0,1000,480,e=>{
   svg.setAttribute('height',e);
   rendergrid(gridsize);
 },true);
+(document.querySelector('#import').onclick=e=>{
+  for (var i=0;i<points.length;i++) {
+    circles.removeChild(points[i].c);
+    circles.removeChild(points[i].control1);
+    circles.removeChild(points[i].conpath1);
+    circles.removeChild(points[i].control2);
+    circles.removeChild(points[i].conpath2);
+  }
+  points=[];
+  var d=importdesc.value,
+  commands=[];
+  for (var i=0;i<d.length;i++) {
+    if (~'1234567890.-mlhvcsqta ,'.indexOf(d[i].toLowerCase())) {
+      if (~'1234567890.-'.indexOf(d[i])) {
+        if (typeof commands[commands.length-1][commands[commands.length-1].length-1]!=='string') commands[commands.length-1].push(d[i]);
+        else commands[commands.length-1][commands[commands.length-1].length-1]+=d[i];
+      } else {
+        if (commands.length>0&&typeof commands[commands.length-1][commands[commands.length-1].length-1]==='string')
+          commands[commands.length-1][commands[commands.length-1].length-1]=Number(commands[commands.length-1][commands[commands.length-1].length-1]);
+        if (~'MLHVCSQTA'.indexOf(d[i])) commands.push([{t:d[i]}]);
+        else if (~'mlhvcsqta'.indexOf(d[i])) {
+          if (commands.length===0) commands.push([d[i].toUpperCase()]);
+          else commands.push([{t:d[i].toUpperCase(),relative:true}]);
+        }
+      }
+    }
+  }
+  if (commands.length>0&&typeof commands[commands.length-1][commands[commands.length-1].length-1]==='string')
+    commands[commands.length-1][commands[commands.length-1].length-1]=Number(commands[commands.length-1][commands[commands.length-1].length-1]);
+  commands[-1]={x:0,y:0,'0':'M','1':0,'2':0};
+  for (var i=0;i<commands.length;i++) {
+    if (commands[i][0].relative) {
+      switch (commands[i][0].t) {
+        case 'C':
+          commands[i][1]+=commands[i-1].x;
+          commands[i][2]+=commands[i-1].y;
+          commands[i][3]+=commands[i-1].x;
+          commands[i][4]+=commands[i-1].y;
+          commands[i][5]+=commands[i-1].x;
+          commands[i][6]+=commands[i-1].y;
+          break;
+        case 'S':
+        case 'Q':
+          commands[i][1]+=commands[i-1].x;
+          commands[i][2]+=commands[i-1].y;
+          commands[i][3]+=commands[i-1].x;
+          commands[i][4]+=commands[i-1].y;
+          break;
+        case 'A':
+          commands[i][6]+=commands[i-1].x;
+          commands[i][7]+=commands[i-1].y;
+          break;
+        case 'H':
+        case 'V':
+          commands[i][1]+=commands[i-1].x;
+          break;
+        default:
+          commands[i][1]+=commands[i-1].x;
+          commands[i][2]+=commands[i-1].y;
+      }
+    }
+    switch (commands[i][0].t) {
+      case 'C':
+        commands[i].x=commands[i][5];
+        commands[i].y=commands[i][6];
+        break;
+      case 'S':
+      case 'Q':
+        commands[i].x=commands[i][3];
+        commands[i].y=commands[i][4];
+        break;
+      case 'A':
+        commands[i].x=commands[i][6];
+        commands[i].y=commands[i][7];
+        break;
+      case 'H':
+        commands[i].x=commands[i][1];
+        commands[i].y=commands[i-1].y;
+        break;
+      case 'V':
+        commands[i].x=commands[i].x;
+        commands[i].y=commands[i][1];
+        break;
+      default:
+        commands[i].x=commands[i][1];
+        commands[i].y=commands[i][2];
+    }
+    commands[i][0]=commands[i][0].t;
+    points.push(new Point(commands[i].x,commands[i].y));
+    points[points.length-1].type=commands[i][0];
+    switch (commands[i][0]) {
+      case 'C':
+        points[points.length-1].conpath1.setAttributeNS(null,'x1',commands[i-1].x);
+        points[points.length-1].conpath1.setAttributeNS(null,'y1',commands[i-1].y);
+        points[points.length-1].conpath1.setAttributeNS(null,'x2',commands[i][1]);
+        points[points.length-1].conpath1.setAttributeNS(null,'y2',commands[i][2]);
+        points[points.length-1].control1.setAttributeNS(null,'cx',commands[i][1]);
+        points[points.length-1].control1.setAttributeNS(null,'cy',commands[i][2]);
+        points[points.length-1].conpath2.setAttributeNS(null,'x1',commands[i][5]);
+        points[points.length-1].conpath2.setAttributeNS(null,'y1',commands[i][6]);
+        points[points.length-1].conpath2.setAttributeNS(null,'x2',commands[i][3]);
+        points[points.length-1].conpath2.setAttributeNS(null,'y2',commands[i][4]);
+        points[points.length-1].control2.setAttributeNS(null,'cx',commands[i][3]);
+        points[points.length-1].control2.setAttributeNS(null,'cy',commands[i][4]);
+        break;
+      case 'S':
+      case 'Q':
+        points[points.length-1].conpath1.setAttributeNS(null,'x1',commands[i-1].x);
+        points[points.length-1].conpath1.setAttributeNS(null,'y1',commands[i-1].y);
+        points[points.length-1].conpath1.setAttributeNS(null,'x2',commands[i][1]);
+        points[points.length-1].conpath1.setAttributeNS(null,'y2',commands[i][2]);
+        points[points.length-1].control1.setAttributeNS(null,'cx',commands[i][1]);
+        points[points.length-1].control1.setAttributeNS(null,'cy',commands[i][2]);
+        points[points.length-1].conpath2.setAttributeNS(null,'x1',commands[i][3]);
+        points[points.length-1].conpath2.setAttributeNS(null,'y1',commands[i][4]);
+        points[points.length-1].conpath2.setAttributeNS(null,'x2',commands[i][1]);
+        points[points.length-1].conpath2.setAttributeNS(null,'y2',commands[i][2]);
+        break;
+      case 'A':
+        points[points.length-1].xr=commands[i][1];
+        points[points.length-1].yr=commands[i][2];
+        points[points.length-1].rot=commands[i][3];
+        points[points.length-1].large=!!commands[i][4];
+        points[points.length-1].sweep=!!commands[i][5];
+        break;
+    }
+  }
+  points[0].type='M';
+  points[0].dontremove=true;
+  setActiveTo();
+  render();
+})();
     </script>
   </body>
   <!-- MADE BY SEAN -->
