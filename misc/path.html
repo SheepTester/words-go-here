@@ -211,9 +211,16 @@
         margin: 5px;
         border-radius: 12.5px;
         cursor: pointer;
+        height: 25px;
       }
       button.pointremove:hover, button.pointremove:focus {
         background-color: #f44336;
+        z-index: 3;
+      }
+      div.properties button.pointremove {
+        position: static;
+        margin-left: 10px;
+        margin-right: 0;
       }
       circle.controlpt {
         stroke: rgba(0,0,0,0.3);
@@ -243,7 +250,7 @@
       <span class='letter' data-letter='M'>move to</span>
       <button class='pointremove'>remove point</button>
     </div>
-    <div class="properties"><span class='mousepos'>(0,0)</span></div>
+    <div class="properties"><span class='mousepos'>(0,0)</span><button class='pointremove'>reset points</button></div>
 
     <script src="../../sheep.js"></script>
     <script>
@@ -256,6 +263,7 @@ props=document.querySelector('.properties'),
 mousepos=props.querySelector('.mousepos'),
 letter=settings.querySelector('.letter'),
 removept=settings.querySelector('.pointremove'),
+resetpts=props.querySelector('.pointremove'),
 exportlink=document.querySelector('#export'),
 importdesc=document.querySelector('#importd'),
 gridsize=50;
@@ -585,6 +593,10 @@ svg.onmousedown=e=>{
     setActiveTo();
   }
 };
+svg.oncontextmenu=e=>{
+  e.preventDefault();
+  return false;
+};
 svg.addEventListener("touchstart",svg.onmousedown,{passive:false});
 document.onmousemove=e=>{
   var x=e.clientX-svg.getBoundingClientRect().left,
@@ -594,6 +606,28 @@ document.onmousemove=e=>{
     y=Math.round(y/gridsize)*gridsize;
   }
   mousepos.innerHTML=`(${x},${y})`;
+};
+path.setAttributeNS(null,'transform','translate(0,0)');
+circles.setAttributeNS(null,'transform','translate(0,0)');
+document.onkeydown=e=>{
+  if (e.keyCode>36&&e.keyCode<41) {
+    var diff;
+    if (e.ctrlKey||e.metaKey) diff=100;
+    else if (e.shiftKey) diff=10;
+    else if (e.altKey) diff=0.1;
+    else diff=1;
+    diff*=(e.keyCode-38.5)/Math.abs(e.keyCode-38.5);
+    if (selected!==null) {
+      if (e.keyCode%2===1&&points[selected].type!=='V') points[selected].c.setAttributeNS(null,'cx',points[selected].c.cx.baseVal.value+diff);
+      else if (e.keyCode%2===0&&points[selected].type!=='H') points[selected].c.setAttributeNS(null,'cy',points[selected].c.cy.baseVal.value+diff);
+      setActiveTo(points[selected])
+      render();
+    } else {
+      if (e.keyCode%2===1) path.setAttributeNS(null,'transform',`translate(${path.transform.baseVal[0].matrix.e+diff},${path.transform.baseVal[0].matrix.f})`);
+      else if (e.keyCode%2===0) path.setAttributeNS(null,'transform',`translate(${path.transform.baseVal[0].matrix.e},${path.transform.baseVal[0].matrix.f+diff})`);
+      circles.setAttributeNS(null,'transform',`translate(${path.transform.baseVal[0].matrix.e},${path.transform.baseVal[0].matrix.f})`);
+    }
+  }
 };
 svg.onmousemove=e=>{
   if (beingdragged) {
@@ -770,7 +804,7 @@ function Toggleinput(label,on,onchange,property) {
     if (onchange&&!dontfirechange) onchange(this.c.checked);
   };
 }
-var selected;
+var selected=null;
 function setActiveTo(point) {
   if (selected&&points[selected]) {
     points[selected].control1.setAttributeNS(null,'visibility','hidden');
@@ -845,6 +879,20 @@ new Numberinput('height',0,1000,480,e=>{
   svg.setAttribute('height',e);
   rendergrid(gridsize);
 },true);
+resetpts.onclick=e=>{
+  for (var i=0;i<points.length;i++) {
+    circles.removeChild(points[i].c);
+    circles.removeChild(points[i].control1);
+    circles.removeChild(points[i].conpath1);
+    circles.removeChild(points[i].control2);
+    circles.removeChild(points[i].conpath2);
+  }
+  points=[new Point(100,100)];
+  points[0].type='M';
+  points[0].dontremove=true;
+  setActiveTo();
+  render();
+};
 (document.querySelector('#import').onclick=e=>{
   for (var i=0;i<points.length;i++) {
     circles.removeChild(points[i].c);
@@ -857,14 +905,21 @@ new Numberinput('height',0,1000,480,e=>{
   var d=importdesc.value,
   commands=[];
   for (var i=0;i<d.length;i++) {
-    if (~'1234567890.-mlhvcsqta ,'.indexOf(d[i].toLowerCase())) {
-      if (~'1234567890.-'.indexOf(d[i])) {
+    if (~'1234567890.-mlhvcsqtaz ,'.indexOf(d[i].toLowerCase())) {
+      if (~'1234567890.'.indexOf(d[i])) {
         if (typeof commands[commands.length-1][commands[commands.length-1].length-1]!=='string') commands[commands.length-1].push(d[i]);
+        else commands[commands.length-1][commands[commands.length-1].length-1]+=d[i];
+      } else if ('-'===d[i]) {
+        if (typeof commands[commands.length-1][commands[commands.length-1].length-1]!=='string') commands[commands.length-1].push(d[i]);
+        else if (~'1234567890.'.indexOf(d[i-1])) {
+          commands[commands.length-1][commands[commands.length-1].length-1]=Number(commands[commands.length-1][commands[commands.length-1].length-1]);
+          commands[commands.length-1].push(d[i]);
+        }
         else commands[commands.length-1][commands[commands.length-1].length-1]+=d[i];
       } else {
         if (commands.length>0&&typeof commands[commands.length-1][commands[commands.length-1].length-1]==='string')
           commands[commands.length-1][commands[commands.length-1].length-1]=Number(commands[commands.length-1][commands[commands.length-1].length-1]);
-        if (~'MLHVCSQTA'.indexOf(d[i])) commands.push([{t:d[i]}]);
+        if (~'MLHVCSQTAZz'.indexOf(d[i])) commands.push([{t:d[i]}]);
         else if (~'mlhvcsqta'.indexOf(d[i])) {
           if (commands.length===0) commands.push([d[i].toUpperCase()]);
           else commands.push([{t:d[i].toUpperCase(),relative:true}]);
@@ -898,8 +953,10 @@ new Numberinput('height',0,1000,480,e=>{
           commands[i][7]+=commands[i-1].y;
           break;
         case 'H':
-        case 'V':
           commands[i][1]+=commands[i-1].x;
+          break;
+        case 'V':
+          commands[i][1]+=commands[i-1].y;
           break;
         default:
           commands[i][1]+=commands[i-1].x;
@@ -925,7 +982,7 @@ new Numberinput('height',0,1000,480,e=>{
         commands[i].y=commands[i-1].y;
         break;
       case 'V':
-        commands[i].x=commands[i].x;
+        commands[i].x=commands[i-1].x;
         commands[i].y=commands[i][1];
         break;
       default:
@@ -971,6 +1028,8 @@ new Numberinput('height',0,1000,480,e=>{
         points[points.length-1].sweep=!!commands[i][5];
         break;
     }
+    points[points.length-1].z=commands[i+1][0].t.toLowerCase()==='z';
+    if (points[points.length-1].z) i++;
   }
   points[0].type='M';
   points[0].dontremove=true;
