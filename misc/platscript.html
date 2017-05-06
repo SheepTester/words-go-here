@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Platformer Script?</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="Uses an image I think."/>
+    <style>
+      body {
+        background-color: #A55540;
+      }
+      canvas {
+        border-radius: 2px;
+        /* from r/place */
+        -ms-interpolation-mode: bicubic;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+        /* layer on top of each other */
+        position: absolute;
+        top: 10px;
+        left: 10px;
+      }
+      canvas#level {
+        background-color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="level" height="360" width="480"></canvas>
+    <canvas id="player" height="360" width="480"></canvas>
+
+    <script src="../../sheep.js"></script>
+    <script src="testlevel.js" charset="utf-8"></script>
+    <script>
+// rendering
+var level=document.querySelector('#level'),
+levelc=level.getContext('2d'),
+player=document.querySelector('#player'),
+playerc=player.getContext('2d'),
+levelimg=new Image();
+levelimg.onload=e=>{
+  levelc.drawImage(levelimg,0,0);
+};
+levelimg.src=levelimagedata;
+var keypresses={};
+document.onkeydown=e=>{
+  if (e.keyCode===65||e.keyCode===37) keypresses.left=true;
+  if (e.keyCode===87||e.keyCode===38) keypresses.up=true;
+  if (e.keyCode===68||e.keyCode===39) keypresses.right=true;
+  if (e.keyCode===83||e.keyCode===40) keypresses.down=true;
+};
+document.onkeyup=e=>{
+  if (e.keyCode===65||e.keyCode===37) keypresses.left=false;
+  if (e.keyCode===87||e.keyCode===38) keypresses.up=false;
+  if (e.keyCode===68||e.keyCode===39) keypresses.right=false;
+  if (e.keyCode===83||e.keyCode===40) keypresses.down=false;
+};
+var x=60,y=50,xv=0,yv=0;
+var HEIGHT=10,WIDTH=10;
+function pixelat(x,y) {
+  var t=levelc.getImageData(x,y,1,1).data;
+  return {r:t[0],g:t[1],b:t[2],a:t[3]/255};
+}
+function render() {
+  playerc.clearRect(x-1,y-1,12,12);
+  x+=xv;
+  y+=yv;
+  playerc.fillRect(x,y,WIDTH,HEIGHT);
+  /*if (keypresses.left) xv-=1;
+  if (keypresses.right) xv+=1;
+  if (keypresses.up) yv-=1;
+  if (keypresses.down) yv+=1;
+  xv*=0.9;
+  yv*=0.9;*/
+  var sides={left:[],right:[],top:[],bottom:[]};
+  for (var i=0;i<WIDTH;i++) sides.top.push(pixelat(x+i,y-1).r);
+  for (var i=0;i<WIDTH;i++) sides.bottom.push(pixelat(x+i,y+HEIGHT).r);
+  for (var i=0;i<HEIGHT;i++) sides.left.push(pixelat(x-1,y+i).r);
+  for (var i=0;i<HEIGHT;i++) sides.right.push(pixelat(x+WIDTH,y+i).r);
+  if (~sides.bottom.indexOf(0)) {
+    if (keypresses.up) yv-=10;
+  } else yv+=0.5;
+  if (yv>0) { // going down (positive yv)
+    loops:
+    for (var i=0;i<yv+1;i++) {
+      for (var j=0;j<WIDTH;j++) {
+        if (pixelat(x+j,y+HEIGHT+i).r===0) {
+          yv=i;
+          break loops;
+        }
+      }
+    }
+  } else if (yv<0) { // going up (negativ yv)
+    loops:
+    for (var i=0;i<-yv-1;i++) {
+      for (var j=0;j<WIDTH;j++) {
+        if (pixelat(x+j,y-i).r===0) {
+          yv=-i;
+          break loops;
+        }
+      }
+    }
+  }
+  if (keypresses.left) {
+    if (~sides.left.indexOf(0)) {
+      if (pixelat(x-1,y+HEIGHT-1).r===0&&pixelat(x-1,y+HEIGHT-2).r!==0) {
+        x--;
+        y--;
+      }
+    }
+    else x--;
+  }
+  if (keypresses.right) {
+    if (~sides.right.indexOf(0)) {
+      if (pixelat(x+WIDTH,y+HEIGHT-1).r===0&&pixelat(x+WIDTH,y+HEIGHT-2).r!==0) {
+        x++;
+        y--;
+      }
+    }
+    else x++;
+  }
+  window.requestAnimationFrame(render);
+}
+window.requestAnimationFrame(render);
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

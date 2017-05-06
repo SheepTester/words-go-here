@@ -1,7 +1,8 @@
-function shepcanvas(canvas,w,h) {
+function shepcanvas(canvas,w,h,options) {
   this.canvas=canvas;
   w=w||480;
   h=h||360;
+  options=options||{};
   this.width=w;
   this.height=h;
   this.canvas.width=this.canvas.width;
@@ -22,7 +23,8 @@ function shepcanvas(canvas,w,h) {
   this.canvas.style.height=h+'px';
   (this.clearcanvas=_=>{ // clear is reserved for smth else, apparently
     this.canvas.width=this.canvas.width;
-    c.translate(w*pxr/2,canvas.height-h*pxr/2);
+    if (options.positive&&!options.centre) c.translate(0,canvas.height);
+    else c.translate(w*pxr/2,canvas.height-h*pxr/2);
     c.scale(pxr,-pxr);
     c.lineCap='round';
     c.lineJoin='round';
@@ -76,4 +78,36 @@ function shepcanvas(canvas,w,h) {
   this.cos=a=>Math.cos(a*(Math.PI/180));
   this.tan=a=>Math.tan(a*(Math.PI/180));
   this.rand=(a,b)=>Math.floor(Math.random()*a+(b||0));
+  var pixelid=c.createImageData(1,1);
+  this.pixel=(x,y,rgba)=>{
+    if (rgba) {
+      if (rgba.r) {
+        rgba=[rgba.r,rgba.g,rgba.b,rgba.a];
+      }
+      rgba[3]/=255;
+      pixelid.data=rgba;
+      // for (var i=0;i<4;i++) pixelid.data[i]=rgba[i];
+      c.putImageData(pixelid,x,y);
+    } else {
+      var t=c.getImageData(x,y,1,1).data;
+      return {r:t[0],g:t[1],b:t[2],a:t[3]/255};
+    }
+  };
+  var images={};
+  if (options.images) {
+    for (var name in options.images) {
+      images[name]=new Image();
+      images[name].src=options.images[name];
+      images[name].style.display='none';
+    }
+  }
+  this.img=(x,y,url,src)=>{
+    if (src) {
+      var img=new Image();
+      img.src=url;
+      img.style.display='none';
+      img.onload=e=>c.drawImage(img,x,y);
+    }
+    else c.drawImage(images[url],x,y);
+  };
 }
