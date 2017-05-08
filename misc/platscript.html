@@ -57,69 +57,93 @@ document.onkeyup=e=>{
   if (e.keyCode===83||e.keyCode===40) keypresses.down=false;
 };
 var x=60,y=50,xv=0,yv=0;
-var HEIGHT=10,WIDTH=10;
+var HEIGHT=10,WIDTH=10,PIXEL_LENIENCY=1;
 function pixelat(x,y) {
   var t=levelc.getImageData(x,y,1,1).data;
   return {r:t[0],g:t[1],b:t[2],a:t[3]/255};
 }
+function getSide(tempx,tempy,side) {
+  var sides=[];
+  switch (side) {
+    case 'top':
+      for (var i=0;i<WIDTH;i++) sides.push(pixelat(tempx+i,tempy-1).r);
+      break;
+    case 'bottom':
+      for (var i=0;i<WIDTH;i++) sides.push(pixelat(tempx+i,tempy+HEIGHT).r);
+      break;
+    case 'left':
+      for (var i=0;i<HEIGHT;i++) sides.push(pixelat(tempx-1,tempy+i).r);
+      break;
+    case 'right':
+      for (var i=0;i<HEIGHT;i++) sides.push(pixelat(tempx+WIDTH,tempy+i).r);
+      break;
+  }
+  return sides;
+}
+playerc.fillStyle='rgba(0,188,212,0.8)';
 function render() {
-  playerc.clearRect(x-1,y-1,12,12);
-  x+=xv;
+  var sides={}; // get pixels of each side
+  sides.top=getSide(x,y,'top');
+  sides.bottom=getSide(x,y,'bottom');
+  sides.left=getSide(x,y,'left');
+  sides.right=getSide(x,y,'right');
+  if (~sides.bottom.indexOf(0)) { // touching a solid pixel?
+    if (keypresses.left) xv-=1; // move left/right
+    if (keypresses.right) xv+=1;
+    xv*=0.8; // friction
+    if (keypresses.up) yv=-7; // jump
+  } else {
+    if ((~sides.left.indexOf(0)||~sides.right.indexOf(0))&&keypresses.up) { // wall jump
+      xv*=-1;
+      yv-=xv;
+    }
+    yv+=0.5; // gravitational acceleration
+  }
+  var posxv=xv/Math.abs(xv), // are the vels pos (1) or neg (-1)?
+  posyv=yv/Math.abs(yv),
+  xside=posxv>0?'right':'left',
+  yside=posyv>0?'bottom':'top',
+  xvstop=((xv>=0?xv:-xv)+0.5)>>0,
+  yvstop=((yv>=0?yv:-yv)+0.5)>>0,
+  tempxv=xv;
+  for (var i=0;i<xvstop;i++) {
+    var side=getSide(x+i*posxv,y+i/xvstop*yv,xside);
+    if (~side.indexOf(0)) {
+      if (Math.abs(yv)<0.5) {
+        if ((()=>{
+          for (var i=0;i<HEIGHT;i++) {
+            if (i<PIXEL_LENIENCY&&side[HEIGHT-1-i]!==0) return false;
+            else if (i>=PIXEL_LENIENCY&&side[HEIGHT-1-i]===0) return false;
+          }
+          return true;
+        })()) y-=PIXEL_LENIENCY;
+        else if ((()=>{
+          for (var i=0;i<HEIGHT;i++) {
+            if (i<PIXEL_LENIENCY&&side[i]!==0) return false;
+            else if (i>=PIXEL_LENIENCY&&side[i]===0) return false;
+          }
+          return true;
+        })()) y+=PIXEL_LENIENCY;
+        else {
+          tempxv=i*posxv;
+          break;
+        }
+      } else {
+        tempxv=i*posxv;
+        break;
+      }
+    }
+  }
+  for (var i=0;i<yvstop;i++)
+    if (~getSide(x+i/yvstop*xv,y+i*posyv,yside).indexOf(0)) {
+      yv=i*posyv;
+      break;
+    }
+  xv=tempxv;
+  playerc.clearRect(x-5,y-5,WIDTH+10,HEIGHT+10); // clear previous player location
+  x+=xv; // change position
   y+=yv;
-  playerc.fillRect(x,y,WIDTH,HEIGHT);
-  /*if (keypresses.left) xv-=1;
-  if (keypresses.right) xv+=1;
-  if (keypresses.up) yv-=1;
-  if (keypresses.down) yv+=1;
-  xv*=0.9;
-  yv*=0.9;*/
-  var sides={left:[],right:[],top:[],bottom:[]};
-  for (var i=0;i<WIDTH;i++) sides.top.push(pixelat(x+i,y-1).r);
-  for (var i=0;i<WIDTH;i++) sides.bottom.push(pixelat(x+i,y+HEIGHT).r);
-  for (var i=0;i<HEIGHT;i++) sides.left.push(pixelat(x-1,y+i).r);
-  for (var i=0;i<HEIGHT;i++) sides.right.push(pixelat(x+WIDTH,y+i).r);
-  if (~sides.bottom.indexOf(0)) {
-    if (keypresses.up) yv-=10;
-  } else yv+=0.5;
-  if (yv>0) { // going down (positive yv)
-    loops:
-    for (var i=0;i<yv+1;i++) {
-      for (var j=0;j<WIDTH;j++) {
-        if (pixelat(x+j,y+HEIGHT+i).r===0) {
-          yv=i;
-          break loops;
-        }
-      }
-    }
-  } else if (yv<0) { // going up (negativ yv)
-    loops:
-    for (var i=0;i<-yv-1;i++) {
-      for (var j=0;j<WIDTH;j++) {
-        if (pixelat(x+j,y-i).r===0) {
-          yv=-i;
-          break loops;
-        }
-      }
-    }
-  }
-  if (keypresses.left) {
-    if (~sides.left.indexOf(0)) {
-      if (pixelat(x-1,y+HEIGHT-1).r===0&&pixelat(x-1,y+HEIGHT-2).r!==0) {
-        x--;
-        y--;
-      }
-    }
-    else x--;
-  }
-  if (keypresses.right) {
-    if (~sides.right.indexOf(0)) {
-      if (pixelat(x+WIDTH,y+HEIGHT-1).r===0&&pixelat(x+WIDTH,y+HEIGHT-2).r!==0) {
-        x++;
-        y--;
-      }
-    }
-    else x++;
-  }
+  playerc.fillRect(x>>0,y>>0,WIDTH,HEIGHT); // render player
   window.requestAnimationFrame(render);
 }
 window.requestAnimationFrame(render);
