@@ -63,19 +63,27 @@ function pixelat(x,y) {
   return {r:t[0],g:t[1],b:t[2],a:t[3]/255};
 }
 function getSide(tempx,tempy,side) {
-  var sides=[];
+  var sides=[],d;
   switch (side) {
     case 'top':
-      for (var i=0;i<WIDTH;i++) sides.push(pixelat(tempx+i,tempy-1).r);
+      d=tempx>>0===tempx?0:1;
+      tempy=Math.ceil(tempy);
+      for (var i=0;i<WIDTH+d;i++) sides.push(pixelat(tempx+i,tempy-1).r);
       break;
     case 'bottom':
-      for (var i=0;i<WIDTH;i++) sides.push(pixelat(tempx+i,tempy+HEIGHT).r);
+      d=tempx>>0===tempx?0:1;
+      tempy=Math.floor(tempy);
+      for (var i=0;i<WIDTH+d;i++) sides.push(pixelat(tempx+i,tempy+HEIGHT).r);
       break;
     case 'left':
-      for (var i=0;i<HEIGHT;i++) sides.push(pixelat(tempx-1,tempy+i).r);
+      d=tempy>>0===tempy?0:1;
+      tempx=Math.ceil(tempx);
+      for (var i=0;i<HEIGHT+d;i++) sides.push(pixelat(tempx-1,tempy+i).r);
       break;
     case 'right':
-      for (var i=0;i<HEIGHT;i++) sides.push(pixelat(tempx+WIDTH,tempy+i).r);
+      d=tempy>>0===tempy?0:1;
+      tempx=Math.floor(tempx);
+      for (var i=0;i<HEIGHT+d;i++) sides.push(pixelat(tempx+WIDTH,tempy+i).r);
       break;
   }
   return sides;
@@ -94,43 +102,46 @@ function pixelLeniencyArrayCheck(array,fromend) {
 }
 playerc.fillStyle='rgba(233,30,99,0.8)';
 function render() {
+  playerc.clearRect(x-5,y-5,WIDTH+10,HEIGHT+10); // clear previous player location
+  /*
   if (keypresses.left) xv-=1;
   else if (keypresses.right) xv+=1;
   else xv*=0.8;
   if (keypresses.up) yv-=1;
   else if (keypresses.down) yv+=1;
   else yv*=0.8;
-  /*
+  */
   var sides={
     bottom:getSide(x,y,'bottom')
   };
-  yv+=1;
+  yv+=0.5;
   if (~sides.bottom.indexOf(0)) {
     if (keypresses.left) xv-=1;
     if (keypresses.right) xv+=1;
     xv*=0.8;
-    if (keypresses.up) yv-=14;
+    if (keypresses.up) yv-=7;
   }
-  */
   // FOR FUTURE SEANS: Google "Digital differential analyzer (graphics algorithm)" whatever that is
   var xside=xv===0?'neither':xv>0?'right':'left',
   xabsvel=Math.abs(xv),
   xpositivity=xv===0?1:xv/xabsvel,
+  xmod=xpositivity===1?1-x%1:x%1,
   xignore=false, // collided on x axis
   yside=yv===0?'neither':yv>0?'bottom':'top',
   yabsvel=Math.abs(yv),
   ypositivity=yv===0?1:yv/yabsvel,
+  ymod=ypositivity===1?1-y%1:y%1,
   yignore=false,
   xyintchecks=[]; // possible x-y combos that land on a int for
-  for (var i=0;i<xabsvel+0.5;i++) xyintchecks.push([i,xabsvel===0?0:i/xabsvel*yabsvel]);
-  for (var i=0;i<yabsvel+0.5;i++) {
+  for (var i=0;i<xabsvel+xmod;i++) xyintchecks.push([i,xabsvel===0?0:i/xabsvel*yabsvel]);
+  for (var i=0;i<yabsvel+ymod;i++) {
     if ((i=>{
       for (var j=0;j<xyintchecks.length;j++) if (xyintchecks[j][1]===i) return false;
       return true;
     })(i)) xyintchecks.push([yabsvel===0?0:i/yabsvel*xabsvel,i]);
   }
-  if (xabsvel<0.5) xignore=true;
-  if (yabsvel<0.5) yignore=true;
+  if (xabsvel===0) xignore=true;
+  if (yabsvel===0) yignore=true;
   xyintchecks.sort((a,b)=>a[0]===b[0]?a[1]-b[1]:a[0]-b[0]);
   for (var i=0;i<xyintchecks.length;i++) {
     var side;
@@ -140,34 +151,26 @@ function render() {
         if (pixelLeniencyArrayCheck(side,true)) y--;
         else if (pixelLeniencyArrayCheck(side,false)) y++;
         else {
-          xv=xyintchecks[i][0]*xpositivity;
+          if (xabsvel+xmod>xyintchecks[i][0]*xpositivity) xv=xyintchecks[i][0]*xpositivity;
           xignore=true;
         }
       } else if (xabsvel!==0) {
-        if (pixelLeniencyArrayCheck(getSide(x+xyintchecks[i][0]*xpositivity-xpositivity,y+(yignore?yv:xyintchecks[i][1]*ypositivity),'bottom'),xpositivity===-1)) y++;
-        else if (pixelLeniencyArrayCheck(getSide(x+xyintchecks[i][0]*xpositivity-xpositivity,y+(yignore?yv:xyintchecks[i][1]*ypositivity),'top'),xpositivity===-1)) y--;
+        if (pixelLeniencyArrayCheck(getSide(x+xyintchecks[i][0]*xpositivity,y+(yignore?yv:xyintchecks[i][1]*ypositivity),'bottom'),xpositivity===-1)) y++;
+        else if (pixelLeniencyArrayCheck(getSide(x+xyintchecks[i][0]*xpositivity,y+(yignore?yv:xyintchecks[i][1]*ypositivity),'top'),xpositivity===-1)) y--;
       }
-      if (!xignore) xyintchecks[i][2]+=' (x) pass - '+side.join(',');
-      else xyintchecks[i][2]+=' (x) FAIL - '+side.join(',');
-    } else if (xignore) xyintchecks[i][2]+=' (x) skip';
+    }
     if (!yignore&&xyintchecks[i][1]>>0===xyintchecks[i][1]) {
       side=getSide(x+(xignore?xv:xyintchecks[i][0]*xpositivity),y+xyintchecks[i][1]*ypositivity,yside);
       if (~side.indexOf(0)) {
         yv=xyintchecks[i][1]*ypositivity;
         yignore=true;
       }
-      if (!yignore) xyintchecks[i][2]+=' (y) pass - '+side.join(',');
-      else xyintchecks[i][2]+=' (y) FAIL - '+side.join(',');
-    } else if (yignore) xyintchecks[i][2]+=' (y) skip';
+    }
     if (xignore&&yignore) break;
   }
-  playerc.clearRect(x-5,y-5,WIDTH+10,HEIGHT+10); // clear previous player location
   x+=xv; // change position
   y+=yv;
   playerc.fillRect(x>>0,y>>0,WIDTH,HEIGHT); // render player
-  if (pixelat(x+WIDTH-1,y+HEIGHT-1).r===0) {
-    // console.log(xyintchecks,xv,yv);
-  }
   window.requestAnimationFrame(render);
 }
 window.requestAnimationFrame(render);

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>SVG to PNG</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="Meh."/>
+    <style media="screen">
+      canvas {
+        max-width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <input type="file" id="svg" accept="image/svg+xml" multiple>
+    <p>Then right click on the images and click "save as" or "download image" or whatever.</p>
+    <div id='canvases'></div>
+    <label>Custom width/height?</label><input type="checkbox" id='customwh'><label>If so, width:</label><input type="number" id='w'><label>height:</label><input type="number" id='h'>
+
+    <script src="../../sheep.js"></script>
+    <script>
+var fileinput=document.querySelector('#svg'),t,
+canvases=document.querySelector('#canvases'),
+customwh=document.querySelector('#customwh'),
+width=document.querySelector('#w'),
+height=document.querySelector('#h');
+fileinput.addEventListener("change",getPNGs,false);
+customwh.addEventListener("change",getPNGs,false);
+width.addEventListener("change",e=>{if (customwh.checked) getPNGs},false);
+height.addEventListener("change",e=>{if (customwh.checked) getPNGs},false);
+function getPNGs() {
+  while (canvases.hasChildNodes()) canvases.removeChild(canvases.lastChild);
+  var files=fileinput.files;
+  for (var i=0;i<files.length;i++)
+    if (files[i].type==='image/svg+xml') {
+      (i=>{
+        var t=window.URL.createObjectURL(files[i]);
+        SHEEP.ajax(t,e=>{
+          var s=document.createElement("div");
+          s.innerHTML=e;
+          var svg=s.querySelector('svg'),w,h;
+          if (customwh.checked) w=+width.value,h=+height.value;
+          else if (svg.height.baseVal.unitType===2||svg.width.baseVal.unitType===2) w=svg.viewBox.baseVal.width,h=svg.viewBox.baseVal.height;
+          else w=svg.width.baseVal.value,h=svg.height.baseVal.value;
+          var canvas=document.createElement("canvas"),
+          c=canvas.getContext('2d');
+          canvas.width=w;
+          canvas.height=h;
+          var image=new Image();
+          image.onload=e=>{
+            c.drawImage(image,0,0,w,h);
+            window.URL.revokeObjectURL(t);
+          };
+          image.src=t;
+          canvases.appendChild(canvas);
+        });
+      })(i);
+    }
+}
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
