@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Platformer Script? #3</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="And yet things weren't working :("/>
+    <style>
+      body {
+        background-color: #4B4A5A;
+      }
+      canvas {
+        border-radius: 2px;
+        /* from r/place */
+        -ms-interpolation-mode: bicubic;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+        /* layer on top of each other */
+        position: absolute;
+        top: 10px;
+        left: 10px;
+      }
+      canvas#level {
+        background-color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="level" height="360" width="480"></canvas>
+    <canvas id="player" height="360" width="480"></canvas>
+
+    <script src="../../sheep.js"></script>
+    <script src="testlevel.js" charset="utf-8"></script>
+    <script>
+// rendering
+var level=document.querySelector('#level'),
+levelc=level.getContext('2d'),
+player=document.querySelector('#player'),
+playerc=player.getContext('2d'),
+levelimg=new Image();
+levelimg.onload=e=>{
+  levelc.drawImage(levelimg,0,0);
+};
+levelimg.src=levelimagedata;
+var keypresses={};
+document.onkeydown=e=>{
+  if (e.keyCode===65||e.keyCode===37) keypresses.left=true;
+  if (e.keyCode===87||e.keyCode===38) keypresses.up=true;
+  if (e.keyCode===68||e.keyCode===39) keypresses.right=true;
+  if (e.keyCode===83||e.keyCode===40) keypresses.down=true;
+};
+document.onkeyup=e=>{
+  if (e.keyCode===65||e.keyCode===37) keypresses.left=false;
+  if (e.keyCode===87||e.keyCode===38) keypresses.up=false;
+  if (e.keyCode===68||e.keyCode===39) keypresses.right=false;
+  if (e.keyCode===83||e.keyCode===40) keypresses.down=false;
+};
+var x=60,y=50,xv=0,yv=0;
+var HEIGHT=10,WIDTH=10,PIXEL_LENIENCY=1,
+floor=Math.floor,round=Math.round,ceil=Math.ceil;
+function pixelat(x,y) {
+  var t=levelc.getImageData(x>>0,y>>0,1,1).data; // NOTE: x and y values are rounded down
+  return t[0]*65536+t[1]*256+t[2];
+}
+function getSide(tempx,tempy,side) {
+  var sides=[],plsone;
+  switch (side) {
+    case 'top':
+      plsone=tempx>>0===tempx?0:1;
+      for (var i=0;i<WIDTH+plsone;i++) sides.push(pixelat(tempx+i,tempy-1));
+      break;
+    case 'bottom':
+      plsone=tempx>>0===tempx?0:1;
+      for (var i=0;i<WIDTH+plsone;i++) sides.push(pixelat(tempx+i,tempy+HEIGHT));
+      break;
+    case 'left':
+      plsone=tempy>>0===tempy?0:1;
+      for (var i=0;i<HEIGHT+plsone;i++) sides.push(pixelat(tempx-1,tempy+i));
+      break;
+    case 'right':
+      plsone=tempy>>0===tempy?0:1;
+      for (var i=0;i<HEIGHT+plsone;i++) sides.push(pixelat(tempx+WIDTH,tempy+i));
+      break;
+  }
+  return sides;
+}
+function pixelLeniencyArrayCheck(array,fromend) {
+  fromend=fromend||false;
+  for (var i=0;i<PIXEL_LENIENCY;i++) {
+    if (fromend&&array[array.length-1-i]!==0) return false;
+    else if (!fromend&&array[i]!==0) return false;
+  }
+  for (var i=PIXEL_LENIENCY;i<array.length;i++) {
+    if (fromend&&array[array.length-1-i]===0) return false;
+    else if (!fromend&&array[i]===0) return false;
+  }
+  return true;
+}
+playerc.fillStyle='rgba(233,30,99,0.8)';
+function render() {
+  playerc.clearRect(x-5,y-5,WIDTH+10,HEIGHT+10); // clear previous player location
+  //*
+  if (keypresses.left&&!keypresses.right) xv-=1;
+  else if (keypresses.right&&!keypresses.left) xv+=1;
+  else xv*=0.8;
+  if (keypresses.up&&!keypresses.down) yv-=1;
+  else if (keypresses.down&&!keypresses.up) yv+=1;
+  else yv*=0.8;
+  /*/
+  var sides={
+    bottom:getSide(x,y,'bottom')
+  };
+  yv+=0.5;
+  if (~sides.bottom.indexOf(0)) {
+    if (keypresses.left) xv-=1;
+    if (keypresses.right) xv+=1;
+    xv*=0.8;
+    if (keypresses.up) yv-=7;
+  }
+  //*/
+  // FOR FUTURE SEANS: Google "Digital differential analyzer (graphics algorithm)" whatever that is
+  var tXv=xv-(x>>0!==x&&xv>0?-1+x%1:x%1),
+  absX=Math.abs(tXv),
+  posX=tXv/absX,
+  tX=posX===1?ceil(x):floor(x),
+  collidedX=false,
+  sideX=posX===1?'right':'left',
+  tYv=yv-(y>>0!==y&&yv>0?1-y%1:y%1),
+  absY=Math.abs(tYv),
+  posY=tYv/absY,
+  tY=posY===1?ceil(y):floor(y),
+  collidedY=false,
+  sideY=posY===1?'bottom':'top',
+  checkpositions=[];
+  for (var i=0;i<ceil(absX);i++) checkpositions.push([i,absX===0?0:i/absX*absY]);
+  for (var i=0;i<ceil(absY);i++) if ((i=>{
+    for (var j=0;j<checkpositions.length;j++) if (checkpositions[j][1]===i) return false;
+    return true;
+  })(i)) checkpositions.push([absY===0?0:i/absY*absX,i]);
+  if (xv>=-x%1&&xv<=1-x%1) collidedX=true;
+  if (yv>=-y%1&&yv<=1-y%1) collidedY=true;
+  for (var i=0;i<checkpositions.length;i++) {
+    var side;
+    if (!collidedX&&checkpositions[i][0]>>0===checkpositions[i][0]) {
+      side=getSide(tX+checkpositions[i][0]*posX,tY+(collidedY?tYv:checkpositions[i][1]*posY),sideX);
+      if (~side.indexOf(0)) {
+        tXv=checkpositions[i][0]*posX;
+        collisedX=true;
+      }
+    }
+  }
+  xv=tXv+(x>>0!==x&&xv>0?-1+x%1:x%1),yv=tYv+(y>>0!==y&&yv>0?1-y%1:y%1);
+  x+=xv, // change position
+  y+=yv;
+  playerc.fillRect(round(x),round(y),WIDTH,HEIGHT); // render player
+  window.requestAnimationFrame(render);
+}
+window.requestAnimationFrame(render);
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

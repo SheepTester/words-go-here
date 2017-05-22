@@ -63,27 +63,19 @@ function pixelat(x,y) {
   return {r:t[0],g:t[1],b:t[2],a:t[3]/255};
 }
 function getSide(tempx,tempy,side) {
-  var sides=[],d;
+  var sides=[];
   switch (side) {
     case 'top':
-      d=tempx>>0===tempx?0:1;
-      tempy=Math.ceil(tempy);
-      for (var i=0;i<WIDTH+d;i++) sides.push(pixelat(tempx+i,tempy-1).r);
+      for (var i=0;i<WIDTH;i++) sides.push(pixelat(tempx+i,tempy-1).r);
       break;
     case 'bottom':
-      d=tempx>>0===tempx?0:1;
-      tempy=Math.floor(tempy);
-      for (var i=0;i<WIDTH+d;i++) sides.push(pixelat(tempx+i,tempy+HEIGHT).r);
+      for (var i=0;i<WIDTH;i++) sides.push(pixelat(tempx+i,tempy+HEIGHT).r);
       break;
     case 'left':
-      d=tempy>>0===tempy?0:1;
-      tempx=Math.ceil(tempx);
-      for (var i=0;i<HEIGHT+d;i++) sides.push(pixelat(tempx-1,tempy+i).r);
+      for (var i=0;i<HEIGHT;i++) sides.push(pixelat(tempx-1,tempy+i).r);
       break;
     case 'right':
-      d=tempy>>0===tempy?0:1;
-      tempx=Math.floor(tempx);
-      for (var i=0;i<HEIGHT+d;i++) sides.push(pixelat(tempx+WIDTH,tempy+i).r);
+      for (var i=0;i<HEIGHT;i++) sides.push(pixelat(tempx+WIDTH,tempy+i).r);
       break;
   }
   return sides;
@@ -103,24 +95,22 @@ function pixelLeniencyArrayCheck(array,fromend) {
 playerc.fillStyle='rgba(233,30,99,0.8)';
 function render() {
   playerc.clearRect(x-5,y-5,WIDTH+10,HEIGHT+10); // clear previous player location
-  /*
   if (keypresses.left) xv-=1;
   else if (keypresses.right) xv+=1;
   else xv*=0.8;
   if (keypresses.up) yv-=1;
   else if (keypresses.down) yv+=1;
   else yv*=0.8;
-  */
-  var sides={
-    bottom:getSide(x,y,'bottom')
-  };
-  yv+=0.5;
-  if (~sides.bottom.indexOf(0)) {
-    if (keypresses.left) xv-=1;
-    if (keypresses.right) xv+=1;
-    xv*=0.8;
-    if (keypresses.up) yv-=7;
-  }
+  // var sides={
+  //   bottom:getSide(x,y,'bottom')
+  // };
+  // yv+=0.5;
+  // if (~sides.bottom.indexOf(0)) {
+  //   if (keypresses.left) xv-=1;
+  //   if (keypresses.right) xv+=1;
+  //   xv*=0.8;
+  //   if (keypresses.up) yv-=7;
+  // }
   // FOR FUTURE SEANS: Google "Digital differential analyzer (graphics algorithm)" whatever that is
   var xside=xv===0?'neither':xv>0?'right':'left',
   xabsvel=Math.abs(xv),
@@ -133,25 +123,25 @@ function render() {
   ymod=ypositivity===1?1-y%1:y%1,
   yignore=false,
   xyintchecks=[]; // possible x-y combos that land on a int for
-  for (var i=0;i<xabsvel+xmod;i++) xyintchecks.push([i,xabsvel===0?0:i/xabsvel*yabsvel]);
-  for (var i=0;i<yabsvel+ymod;i++) {
+  for (var i=0;i<xabsvel-(xpositivity===1?x%1:1-x%1);i++) xyintchecks.push([i,xabsvel===0?0:i/xabsvel*yabsvel]);
+  for (var i=0;i<yabsvel-(ypositivity===1?y%1:1-y%1);i++) {
     if ((i=>{
       for (var j=0;j<xyintchecks.length;j++) if (xyintchecks[j][1]===i) return false;
       return true;
     })(i)) xyintchecks.push([yabsvel===0?0:i/yabsvel*xabsvel,i]);
   }
-  if (xabsvel===0) xignore=true;
-  if (yabsvel===0) yignore=true;
+  if (xv>=-(x%1)&&xv<=1-x%1) xignore=true;
+  if (yv>=-(y%1)&&yv<=1-y%1) yignore=true;
   xyintchecks.sort((a,b)=>a[0]===b[0]?a[1]-b[1]:a[0]-b[0]);
   for (var i=0;i<xyintchecks.length;i++) {
     var side;
     if (!xignore&&xyintchecks[i][0]>>0===xyintchecks[i][0]) {
-      side=getSide(x+xyintchecks[i][0]*xpositivity,y+(yignore?yv:xyintchecks[i][1]*ypositivity),xside);
+      side=getSide(x+(xmod+xyintchecks[i][0])*xpositivity,y+(yignore?yv:xyintchecks[i][1]*ypositivity),xside);
       if (~side.indexOf(0)) {
         if (pixelLeniencyArrayCheck(side,true)) y--;
         else if (pixelLeniencyArrayCheck(side,false)) y++;
         else {
-          if (xabsvel+xmod>xyintchecks[i][0]*xpositivity) xv=xyintchecks[i][0]*xpositivity;
+          if (xabsvel>xyintchecks[i][0]*xpositivity) xv=xyintchecks[i][0]*xpositivity;
           xignore=true;
         }
       } else if (xabsvel!==0) {
@@ -160,9 +150,9 @@ function render() {
       }
     }
     if (!yignore&&xyintchecks[i][1]>>0===xyintchecks[i][1]) {
-      side=getSide(x+(xignore?xv:xyintchecks[i][0]*xpositivity),y+xyintchecks[i][1]*ypositivity,yside);
+      side=getSide(x+(xignore?xv:xyintchecks[i][0]*xpositivity),y+(ymod+xyintchecks[i][1])*ypositivity,yside);
       if (~side.indexOf(0)) {
-        yv=xyintchecks[i][1]*ypositivity;
+        if (yabsvel>xyintchecks[i][1]*ypositivity) yv=xyintchecks[i][1]*ypositivity;
         yignore=true;
       }
     }
