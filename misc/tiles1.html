@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>tiles 1</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="2lazi4desc"/>
+    <style>
+      body {
+        background-color: #4B4A5A;
+      }
+      canvas {
+        border-radius: 2px;
+        background-color: white;
+        width: 400px;
+        height: 400px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+
+    <script src="../../sheep.js"></script>
+    <script>
+var canvas=document.querySelector('#c'),
+c=canvas.getContext('2d'),
+pixelratio=(window.devicePixelRatio||1)/(c.webkitBackingStorePixelRatio||c.mozBackingStorePixelRatio||c.msBackingStorePixelRatio||c.oBackingStorePixelRatio||c.backingStorePixelRatio||1),
+tiles=`
+0000000000
+0........0
+0........0
+0.0......0
+0........0
+000......0
+0..00....0
+0.......00
+0......000
+0000000000`.slice(1).split(/\r?\n/).map(x=>x.split('')),/*
+0123456789 */
+level,keys={},mouse={x:0,y:0};
+canvas.height=400*pixelratio;
+canvas.width=400*pixelratio;
+c.scale(pixelratio*40,pixelratio*40);
+(level=(grid=false)=>{
+  c.fillStyle='#222';
+  for (var y=0;y<tiles.length;y++) for (var x=0;x<tiles[y].length;x++) if (tiles[y][x]==='0') c.fillRect(x,y,1,1);
+  if (grid) {
+    c.strokeStyle='rgba(255,0,0,0.2)';
+    c.lineWidth=0.025;
+    for (var i=0;i<10;i++) {
+      c.beginPath();
+      c.moveTo(0,i);
+      c.lineTo(10,i);
+      c.moveTo(i,0);
+      c.lineTo(i,10);
+      c.stroke();
+    }
+  }
+})();
+document.body.onfocus=e=>{
+  level.blur=false;
+  window.requestAnimationFrame(render);
+  console.log('[Level] Welcome back!');
+};
+document.body.onblur=e=>{
+  level.blur=true;
+  console.log('[Level] Bye...');
+};
+document.onkeydown=e=>{
+  switch (e.keyCode) {
+    case 37:keys.left=1;break;
+    case 38:keys.up=1;break;
+    case 39:keys.right=1;break;
+    case 40:keys.down=1;break;
+  }
+};
+document.onkeyup=e=>{
+  switch (e.keyCode) {
+    case 37:keys.left=0;break;
+    case 38:keys.up=0;break;
+    case 39:keys.right=0;break;
+    case 40:keys.down=0;break;
+  }
+};
+canvas.onmousemove=e=>{
+  mouse.x=(e.clientX-canvas.getBoundingClientRect().left)/40;
+  mouse.y=(e.clientY-canvas.getBoundingClientRect().top)/40;
+};
+var x=1,y=7.75,xv=0,yv=0,HEIGHT=1.25,WIDTH=0.75;
+var ceil=Math.ceil,floor=Math.floor,abs=Math.abs;
+function render() {
+  c.clearRect(0,0,10,10);
+  level(level.blur);
+  if (keys.left) xv-=0.05;
+  else if (keys.right) xv+=0.05;
+  xv*=0.9;
+  c.fillStyle='rgba(139,195,74,0.8)';
+  c.fillRect(x,y,WIDTH,HEIGHT);
+  c.fillStyle='rgba(76,175,80,0.5)';
+  c.fillRect(x,y-0.15,xv,0.1);
+  var tempx=floor(x),
+  tempxv=x-floor(x)+xv,
+  hit=false,
+  checks=[];
+  c.fillStyle='rgba(255, 235, 59, 0.3)';
+  c.fillRect(tempx,y,WIDTH,HEIGHT);
+  c.lineWidth=0.1;
+  if (tempxv>0) {
+    for (var i=1;i<tempxv+WIDTH;i++) {
+      checks.push([i]);
+      if (!hit&&tiles[8][tempx+i]==='0') {
+        hit=true;
+        xv=i-x+floor(x)-WIDTH;
+        c.strokeStyle='rgba(0, 188, 212, 0.5)';
+      } else c.strokeStyle='rgba(244, 67, 54, 0.5)';
+      c.strokeRect(tempx+i+0.1,y,0.8,HEIGHT);
+    }
+  } else if (tempxv<0) {
+    for (var i=0;i<-tempxv;i++) {
+      checks.push([i]);
+      if (!hit&&tiles[8][tempx-i-1]==='0') {
+        hit=true;
+        xv=-i-x+floor(x);
+        c.strokeStyle='rgba(0, 188, 212, 0.5)';
+      } else c.strokeStyle='rgba(244, 67, 54, 0.5)';
+      c.strokeRect(tempx-i-0.9,y,0.8,HEIGHT);
+    }
+  }
+  c.fillStyle='rgba(76,175,80,0.5)';
+  c.fillRect(x+xv,y,WIDTH,HEIGHT);
+  x+=xv;
+  if (!level.blur) window.requestAnimationFrame(render);
+}
+window.requestAnimationFrame(render);
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

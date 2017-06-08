@@ -57,13 +57,12 @@ document.onkeyup=e=>{
   if (e.keyCode===83||e.keyCode===40) keypresses.down=false;
 };
 var x=60,y=50,xv=0,yv=0;
-var HEIGHT=10,WIDTH=10,PIXEL_LENIENCY=1,
-floor=Math.floor,round=Math.round,ceil=Math.ceil;
+var HEIGHT=10,WIDTH=10,PIXEL_LENIENCY=1;
 function pixelat(x,y) {
   var t=levelc.getImageData(x>>0,y>>0,1,1).data; // NOTE: x and y values are rounded down
   return t[0]*65536+t[1]*256+t[2];
 }
-function getSide(tempx,tempy,side) {
+function getSide(tempx,tempy,side,flat=true) {
   var sides=[],plsone;
   switch (side) {
     case 'top':
@@ -99,6 +98,7 @@ function pixelLeniencyArrayCheck(array,fromend) {
 }
 playerc.fillStyle='rgba(233,30,99,0.8)';
 function render() {
+  var floor=Math.floor,ceil=Math.ceil,abs=Math.abs; // get rid of Math.
   playerc.clearRect(x-5,y-5,WIDTH+10,HEIGHT+10); // clear previous player location
   //*
   if (keypresses.left&&!keypresses.right) xv-=1;
@@ -120,40 +120,48 @@ function render() {
   }
   //*/
   // FOR FUTURE SEANS: Google "Digital differential analyzer (graphics algorithm)" whatever that is
-  var tXv=xv-(x>>0!==x&&xv>0?-1+x%1:x%1),
-  absX=Math.abs(tXv),
-  posX=tXv/absX,
-  tX=posX===1?ceil(x):floor(x),
+  var posX=xv>0,
+  roundedX=posX?ceil(x+WIDTH):floor(x),
+  distToIntX=posX?roundedX-x-WIDTH:roundedX-x,
   collidedX=false,
-  sideX=posX===1?'right':'left',
-  tYv=yv-(y>>0!==y&&yv>0?1-y%1:y%1),
-  absY=Math.abs(tYv),
-  posY=tYv/absY,
-  tY=posY===1?ceil(y):floor(y),
+  posY=yv>0,
+  roundedY=posY?ceil(y+HEIGHT):floor(y),
+  distToIntY=posY?roundedY-y-HEIGHT:roundedY-y,
   collidedY=false,
-  sideY=posY===1?'bottom':'top',
-  checkpositions=[];
-  for (var i=0;i<ceil(absX);i++) checkpositions.push([i,absX===0?0:i/absX*absY]);
-  for (var i=0;i<ceil(absY);i++) if ((i=>{
-    for (var j=0;j<checkpositions.length;j++) if (checkpositions[j][1]===i) return false;
-    return true;
-  })(i)) checkpositions.push([absY===0?0:i/absY*absX,i]);
-  if (xv>=-x%1&&xv<=1-x%1) collidedX=true;
-  if (yv>=-y%1&&yv<=1-y%1) collidedY=true;
-  for (var i=0;i<checkpositions.length;i++) {
+  checks=[];
+  for (var i=0;i<ceil(abs(xv-distToIntX));i++) checks.push([i,abs(xv-distToIntX)===0?0:i/abs(xv-distToIntX)*abs(yv-distToIntY)]);
+  for (var i=0;i<ceil(abs(yv-distToIntY));i++)
+    if ((i=>{for (var j of checks) if (j[1]===i) return false; return true;})(i))
+      checks.push([i,abs(yv-distToIntY)===0?0:i/abs(yv-distToIntY)*abs(xv-distToIntX)]);
+  if (x+xv>=floor(x)&&x+xv<=ceil(x)) collidedX=true;
+  if (y+yv>=floor(y)&&y+yv<=ceil(y)) collidedY=true;
+  checks.sort((a,b)=>a[0]===b[0]?a[1]-b[1]:a[0]-b[0]);
+  function pixelLine(x,y,vertical) {
+    var sides=[];
+    if (vertical) for (var i=0;i<HEIGHT;i++) sides.push(pixelat(x,y+i));
+    else for (var i=0;i<WIDTH;i++) sides.push(pixelat(x+i,y));
+    return sides;
+  }
+  for (var i=0;i<checks.length;i++) {
     var side;
-    if (!collidedX&&checkpositions[i][0]>>0===checkpositions[i][0]) {
-      side=getSide(tX+checkpositions[i][0]*posX,tY+(collidedY?tYv:checkpositions[i][1]*posY),sideX);
+    if (!collidedX&&checks[i][0]%1===0) {
+      side=pixelLine(roundedX+(posX?checks[i][0]:-1-checks[i][0]),roundedY+(collidedY?yv-distToIntY:(posY?checks[i][1]:-1-checks[i][1])),true);
       if (~side.indexOf(0)) {
-        tXv=checkpositions[i][0]*posX;
-        collisedX=true;
+        xv=distToIntX+posX?checks[i][0]:-checks[i][0];
+        collidedX=true;
+      }
+    }
+    if (!collidedY&&checks[i][1]%1===0) {
+      side=pixelLine(roundedX+(collidedX?xv-distToIntX:(posX?checks[i][0]:-1-checks[i][0])),roundedY+(posY?checks[i][1]:-1-checks[i][1]),false);
+      if (~side.indexOf(0)) {
+        yv=distToIntY+posY?checks[i][1]:-checks[i][1];
+        collidedY=true;
       }
     }
   }
-  xv=tXv+(x>>0!==x&&xv>0?-1+x%1:x%1),yv=tYv+(y>>0!==y&&yv>0?1-y%1:y%1);
   x+=xv, // change position
   y+=yv;
-  playerc.fillRect(round(x),round(y),WIDTH,HEIGHT); // render player
+  playerc.fillRect(floor(x),floor(y),WIDTH,HEIGHT); // render player
   window.requestAnimationFrame(render);
 }
 window.requestAnimationFrame(render);
