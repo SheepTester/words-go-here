@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>"Draw an image"</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="like on Google Hangouts"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+      .doodlewrapper {
+        width: 260px;
+        height: 320px;
+        background-color: #E1E2E1;
+        border-radius: 2px;
+        position: relative;
+        overflow: hidden;
+        font-size: 0;
+        box-shadow: inset 0 0 2px rgba(0,0,0,0.3);
+      }
+      .doodlewrapper > .doodlebar {
+        background-color: #263238;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 30px;
+        box-sizing: border-box;
+        padding: 0 5px;
+        box-shadow: 0 0 2px rgba(0,0,0,0.3);
+        z-index: 1;
+      }
+      .doodlewrapper > .doodlebar > .doodlecolour, .doodlewrapper > .doodlebar > .doodlecolours > li {
+        border: 2px solid rgba(0,0,0,0.1);
+        height: 20px;
+        width: 20px;
+        display: inline-block;
+        margin: 5px;
+        box-sizing: border-box;
+        padding: 0;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform .2s;
+        color: transparent;
+        font-size: 0;
+        box-shadow: 0 0 0 2px rgba(255,255,255,0.1);
+      }
+      .doodlewrapper > .doodlebar > .doodlecolour::selection {
+        color: transparent;
+        background-color: transparent;
+      }
+      .doodlewrapper > .doodlebar > .doodlecolour:hover, .doodlewrapper > .doodlebar > .doodlecolours > li:hover {
+        transform: scale(1.05);
+      }
+      .doodlewrapper > .doodlebar > .doodlecolour:active, .doodlewrapper > .doodlebar > .doodlecolours > li:active {
+        transform: scale(0.95);
+      }
+      .doodlewrapper > .doodlebar > .doodlecolours {
+        opacity: 0;
+        pointer-events: none;
+        position: absolute;
+        top: 40px;
+        left: 5px;
+        background-color: #4F5B62;
+        margin: 0;
+        padding: 0 5px 5px 0;
+        border-radius: 2px;
+        box-shadow: 0 0 2px rgba(0,0,0,0.3);
+        z-index: 2;
+        width: 200px;
+        font-size: 0;
+        transition: all .2s;
+      }
+      .doodlewrapper > .doodlebar > .doodlecolour:focus ~ .doodlecolours {
+        opacity: 1;
+        pointer-events: all;
+        top: 28px;
+      }
+      .doodlewrapper > .doodlebar > .doodlecolours > li {
+        margin-right: 0;
+        margin-bottom: 0;
+        box-shadow: none;
+      }
+      .doodlewrapper > .doodlebar > .doodlesize {
+        -webkit-appearance: none;
+        width: 70px;
+        background: transparent;
+        margin: 0 5px;
+        margin-top: 10px;
+        vertical-align: top;
+        height: 10px;
+      }
+      .doodlewrapper > .doodlebar > .doodlesize::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 5px;
+        width: 5px;
+        background-color: white;
+        cursor: pointer;
+        border-radius: 50%;
+        transform: scale(2);
+        margin-top: -1.5px;
+      }
+      .doodlewrapper > .doodlebar > .doodlesize::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 2px;
+        cursor: pointer;
+        background-color: rgba(255,255,255,0.26);
+      }
+      .doodlewrapper > .doodlebar > .doodlesize:focus::-webkit-slider-runnable-track {
+        background-color: rgba(255,255,255,0.36);
+      }
+      .doodlewrapper > .doodlebar > .doodlesize::-moz-range-thumb {
+        height: 5px;
+        width: 5px;
+        background-color: white;
+        cursor: pointer;
+        border-radius: 50%;
+        transform: scale(2);
+      }
+      .doodlewrapper > .doodlebar > .doodlesize::-moz-range-track {
+        width: 100%;
+        height: 2px;
+        cursor: pointer;
+        background-color: rgba(255,255,255,0.26);
+      }
+      .doodlewrapper > .doodlebar > .doodlesize::-ms-thumb {
+        height: 5px;
+        width: 5px;
+        background-color: white;
+        cursor: pointer;
+        border-radius: 50%;
+        transform: scale(2);
+      }
+      .doodlewrapper > .doodlebar > .doodlesize::-ms-track {
+        width: 100%;
+        cursor: pointer;
+        background: transparent;
+        border-color: transparent;
+        color: transparent;
+        height: 2px;
+        background-color: rgba(255,255,255,0.26);
+      }
+      .doodlewrapper > .doodlebar > .doodlesize:focus {
+        outline: none;
+      }
+      .doodlewrapper > .doodlebar > .doodledo, .doodlewrapper > .doodledo {
+        background-color: transparent;
+        border: none;
+        padding: 0;
+        vertical-align: top;
+      }
+      .doodlewrapper > .doodlebar > .doodledo >.doodledonot, .doodlewrapper > .doodlebar > .doodledo > .doodledoagain {
+        color: rgba(255,255,255,0.8);
+        vertical-align: top;
+        font-size: 20px;
+        margin: 5px;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        cursor: pointer;
+        margin-right: 0;
+      }
+      .doodlewrapper > .doodlebar > .doodledo:focus > .doodledonot,
+      .doodlewrapper > .doodlebar > .doodledo:focus > .doodledoagain,
+      .doodlewrapper > .doodlebar > .doodledo > .doodledonot:hover,
+      .doodlewrapper > .doodlebar > .doodledo > .doodledoagain:hover,
+      .doodlewrapper > .doodledo > .doodlemove:hover,
+      .doodlewrapper > .doodledo:focus > .doodlemove,
+      .doodlewrapper > .doodledo > .doodledone:hover,
+      .doodlewrapper > .doodledo:focus > .doodledone {
+        color: white;
+      }
+      .doodlewrapper > .doodlecanvas {
+        background-color: white;
+        margin: auto;
+        position: absolute;
+        top: 30px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        box-shadow: 0 0 2px rgba(0,0,0,0.3);
+        cursor: crosshair;
+        fill: none;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .doodlewrapper > .doodledo > .doodlemove {
+        color: rgba(255,255,255,0.8);
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 5px;
+        font-size: 20px;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        cursor: pointer;
+        -webkit-filter: drop-shadow(0 0 2px rgba(0,0,0,0.3));
+        filter: drop-shadow(0 0 2px rgba(0,0,0,0.3));
+        z-index: 2;
+      }
+      .doodlewrapper > .doodledo > .doodledone {
+        color: rgba(255,255,255,0.8);
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        margin: 5px;
+        padding: 2.5px;
+        border-radius: 50%;
+        font-size: 20px;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        cursor: pointer;
+        background-color: #263238;
+        box-shadow: 0 0 3px rgba(0,0,0,0.3);
+        transition: transform .2s;
+      }
+      .doodlewrapper > .doodledo > .doodledone:hover {
+        background-color: #4f5b62;
+        transform: scale(1.1);
+      }
+      .doodlewrapper.move > .doodlecanvas {
+        cursor: move;
+      }
+      .doodlewrapper.move > .doodlebar {
+        pointer-events: none;
+        opacity: 0.5;
+      }
+      canvas {
+        box-shadow: 0 0 2px rgba(0,0,0,0.3);
+        border-radius: 2px;
+        margin: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='doodlewrapper'>
+      <div class='doodlebar'>
+        <input class="doodlecolour">
+        <ul class="doodlecolours"></ul>
+        <input type="range" class="doodlesize" min='1' max='15' value='5'>
+        <button class='doodledo'><i class="material-icons doodledonot">undo</i></button>
+        <button class='doodledo'><i class="material-icons doodledoagain">redo</i></button>
+      </div>
+      <button class='doodledo'><i class="material-icons doodlemove">open_with</i></button>
+      <svg height='200' width='200' class='doodlecanvas'></svg>
+      <button class='doodledo'><i class="material-icons doodledone">done</i></button>
+    </div>
+
+    <script src="../../sheep.js"></script>
+    <script>
+var wrapper=document.querySelector('.doodlewrapper'),
+colours=wrapper.querySelector('.doodlecolours'),
+colour=wrapper.querySelector('.doodlecolour'),
+sizeinput=wrapper.querySelector('.doodlesize'),
+svg=wrapper.querySelector('.doodlecanvas'),
+undo=wrapper.querySelector('.doodledonot'),
+redo=wrapper.querySelector('.doodledoagain'),
+movetoggle=wrapper.querySelector('.doodlemove'),
+done=wrapper.querySelector('.doodledone'),
+redohist=[];
+colour.style.backgroundColor='#000000';
+var t=document.createDocumentFragment(),
+loscolores='ffffff d4d4d4 aaaaaa 7f7f7f 555555 383838 1a1a1a 000000 edc12d df5b16 d82d18 55a436 198ebf 692282 71174c 441e14 f6eb3b f38618 ef6b48 7bbb61 41b2d0 8b519f d05da1 75554b f6f697 f9c787 f4a38a add59b 84d0e2 b18cbc f4c6e0 99817a'.split(' ');
+for (var i=0;i<loscolores.length;i++) {
+  var li=document.createElement("li");
+  li.style.backgroundColor='#'+loscolores[i];
+  t.appendChild(li);
+}
+colours.appendChild(t);
+colours.onmousedown=colours.ontouchstart=e=>{
+  if (e.target.tagName==='LI') colour.style.backgroundColor=e.target.style.backgroundColor;
+};
+sizeinput.oninput=e=>{
+  colour.dataset.size=sizeinput.value;
+};
+function pointsToPoints(array,pos) {
+  var str='';
+  for (var i=0;i<array.length;i++) str+=` ${Math.round(array[i][0]-pos.left)},${Math.round(array[i][1]-pos.top)}`;
+  return str.slice(1);
+}
+svg.onmousedown=(e,touch)=>{
+  if (touch) {
+    var stopIt=e;
+    e=e.changedTouches[0];
+  }
+  if (wrapper.classList.contains('move')) {
+    var style=svg.currentStyle||document.defaultView.getComputedStyle(svg),
+    offset=[e.clientX-Number(style.left.slice(0,-2)),e.clientY-Number(style.top.slice(0,-2))],
+    move=e=>{
+      if (touch) {
+        var stopIt=e;
+        e=e.changedTouches[0];
+      }
+      svg.style.left=(e.clientX-offset[0])+'px';
+      svg.style.right=(offset[0]-e.clientX)+'px';
+      svg.style.top=(e.clientY-offset[1])+'px';
+      svg.style.bottom=(offset[1]-e.clientY)+'px';
+      if (touch) stopIt.preventDefault();
+    },
+    up=e=>{
+      if (touch) {
+        var stopIt=e;
+        e=e.changedTouches[0];
+      }
+      if (touch) {
+        document.removeEventListener("touchmove",move,{passive:false});
+        document.removeEventListener("touchend",up,{passive:false});
+        stopIt.preventDefault();
+      } else {
+        document.removeEventListener("mousemove",move,false);
+        document.removeEventListener("mouseup",up,false);
+      }
+    };
+  } else {
+    var pts=[[e.clientX,e.clientY],[e.clientX,e.clientY]],
+    move=e=>{
+      if (touch) {
+        var stopIt=e;
+        e=e.changedTouches[0];
+      }
+      if ((e.clientX-pts[pts.length-2][0])**2+(e.clientY-pts[pts.length-2][1])**2>25) pts.push([e.clientX,e.clientY]);
+      else pts[pts.length-1]=[e.clientX,e.clientY];
+      line.setAttributeNS(null,'points',pointsToPoints(pts,svg.getBoundingClientRect()));
+      if (touch) stopIt.preventDefault();
+    },
+    up=e=>{
+      if (touch) {
+        var stopIt=e;
+        e=e.changedTouches[0];
+      }
+      if (e.clientX!==pts[pts.length-1][0]||e.clientY!==pts[pts.length-1][1]) pts.push([e.clientX,e.clientY]);
+      line.setAttributeNS(null,'points',pointsToPoints(pts,svg.getBoundingClientRect()));
+      if (touch) {
+        document.removeEventListener("touchmove",move,{passive:false});
+        document.removeEventListener("touchend",up,{passive:false});
+        stopIt.preventDefault();
+      } else {
+        document.removeEventListener("mousemove",move,false);
+        document.removeEventListener("mouseup",up,false);
+      }
+    },
+    line=document.createElementNS('http://www.w3.org/2000/svg',"polyline");
+    line.setAttributeNS(null,'points',pointsToPoints(pts,svg.getBoundingClientRect()));
+    line.setAttributeNS(null,'stroke-width',sizeinput.value);
+    line.setAttributeNS(null,'stroke',colour.style.backgroundColor);
+    svg.appendChild(line);
+    redohist=[];
+  }
+  if (touch) {
+    document.addEventListener("touchmove",move,{passive:false});
+    document.addEventListener("touchend",up,{passive:false});
+    stopIt.preventDefault();
+  } else {
+    document.addEventListener("mousemove",move,false);
+    document.addEventListener("mouseup",up,false);
+  }
+};
+svg.ontouchstart=e=>{
+  svg.onmousedown(e,true);
+};
+undo.onclick=e=>{
+  if (svg.lastChild) {
+    redohist.push(svg.lastChild);
+    svg.removeChild(svg.lastChild);
+  }
+};
+redo.onclick=e=>{
+  if (redohist.length) {
+    svg.appendChild(redohist[redohist.length-1]);
+    redohist.splice(-1,1);
+  }
+};
+movetoggle.onclick=e=>{
+  movetoggle.innerHTML=movetoggle.innerHTML==='open_with'?(wrapper.classList.add('move'),'edit'):(wrapper.classList.remove('move'),'open_with');
+};
+done.onclick=e=>{
+  var code=`${svg.width.baseVal.value.toString(36)}.${svg.height.baseVal.value.toString(36)}..`,t;
+  for (var i=0;i<svg.children.length;i++) {
+    t=svg.children[i];
+    code+=Number(t.getAttributeNS(null,"stroke-width")).toString(16)+loscolores.indexOf(t.getAttributeNS(null,"stroke").slice(4,-1).split(', ').map(a=>('0'+Number(a).toString(16)).slice(-2)).join('')).toString(32);
+    for (var j=0;j<t.points.length;j++) code+=`${t.points[j].x.toString(36)}.${t.points[j].y.toString(36)}.`;
+    code+='.';
+  }
+  console.log(code);
+  document.body.appendChild(codeToCanvas(code,true));
+};
+function codeToCanvas(code,notblurry) {
+  var canvas=document.createElement("canvas"),
+  c=canvas.getContext('2d');
+  var wh=code.slice(0,code.indexOf('..')).split('.'),
+  code=code.slice(code.indexOf('..')+2);
+  canvas.height=parseInt(wh[1],36),
+  canvas.width=parseInt(wh[0],36);
+  if (notblurry) {
+    var pxr=(window.devicePixelRatio||1)/(
+      c.webkitBackingStorePixelRatio||
+      c.mozBackingStorePixelRatio||
+      c.msBackingStorePixelRatio||
+      c.oBackingStorePixelRatio||
+      c.backingStorePixelRatio||1);
+    canvas.style.height=canvas.height+'px',
+    canvas.style.width=canvas.width+'px';
+    canvas.height*=pxr,
+    canvas.width*=pxr;
+    c.scale(pxr,pxr);
+  }
+  c.lineCap='round';
+  c.lineJoin='round';
+  for (var i=0;i<code.length;) {
+    var size=parseInt(code[i],16),
+    colour='#'+loscolores[parseInt(code[i+1],32)],
+    points=code.slice(i+2,i=~(~code.indexOf('..',i+2)||~code.length)+2).split('.').map(a=>parseInt(a,36));
+    c.strokeStyle=colour;
+    c.lineWidth=size;
+    c.beginPath();
+    c.moveTo(points[0],points[1]);
+    for (var j=2;j<points.length;j+=2) c.lineTo(points[j],points[j+1]);
+    c.stroke();
+  }
+  return canvas;
+}
+document.onkeydown=e=>{
+  if (e.ctrlKey||e.metaKey) {
+    if (e.keyCode===90&&!e.shiftKey) undo.click();
+    else if (e.keyCode===89&&!e.shiftKey||e.keyCode===90&&e.shiftKey) redo.click();
+  }
+};
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

@@ -66,6 +66,7 @@ document.body.onblur=e=>{
   console.log('[Level] Bye...');
 };
 document.onkeydown=e=>{
+  if (e.shiftKey) keys.shift=1;
   switch (e.keyCode) {
     case 37:keys.left=1;break;
     case 38:keys.up=1;break;
@@ -74,6 +75,7 @@ document.onkeydown=e=>{
   }
 };
 document.onkeyup=e=>{
+  if (!e.shiftKey) keys.shift=0;
   switch (e.keyCode) {
     case 37:keys.left=0;break;
     case 38:keys.up=0;break;
@@ -90,44 +92,60 @@ var ceil=Math.ceil,floor=Math.floor,abs=Math.abs;
 function render() {
   c.clearRect(0,0,10,10);
   level(level.blur);
+  x=mouse.x;
   if (keys.left) xv-=0.05;
   else if (keys.right) xv+=0.05;
-  xv*=0.9;
+  if (keys.up) keys.shift?y-=0.05:yv-=0.05;
+  else if (keys.down) keys.shift?y+=0.05:yv+=0.05;
   c.fillStyle='rgba(139,195,74,0.8)';
   c.fillRect(x,y,WIDTH,HEIGHT);
   c.fillStyle='rgba(76,175,80,0.5)';
   c.fillRect(x,y-0.15,xv,0.1);
-  var tempx=floor(x),
-  tempxv=x-floor(x)+xv,
-  hit=false,
+  c.fillRect(x-0.15,y,0.1,yv);
+  var isxpositive=xv>0,
+  forxloopstop=xv===0?0:isxpositive?xv+x+WIDTH-floor(x+WIDTH)-1:-xv+floor(x)-x,
+  hitx=false,
+  getx=i=>isxpositive?floor(x+WIDTH)+i+1:floor(x)-i-1,
+  isypositive=yv>0,
+  foryloopstop=yv===0?0:isypositive?yv+y+HEIGHT-floor(y+HEIGHT)-1:-yv+floor(y)-y,
+  hity=false,
+  gety=i=>isypositive?floor(y+HEIGHT)+i+1:floor(y)-i-1,
   checks=[];
-  c.fillStyle='rgba(255, 235, 59, 0.3)';
-  c.fillRect(tempx,y,WIDTH,HEIGHT);
   c.lineWidth=0.1;
-  if (tempxv>0) {
-    for (var i=1;i<tempxv+WIDTH;i++) {
-      checks.push([i]);
-      if (!hit&&tiles[8][tempx+i]==='0') {
-        hit=true;
-        xv=i-x+floor(x)-WIDTH;
-        c.strokeStyle='rgba(0, 188, 212, 0.5)';
-      } else c.strokeStyle='rgba(244, 67, 54, 0.5)';
-      c.strokeRect(tempx+i+0.1,y,0.8,HEIGHT);
+  if (xv!==0||yv!==0) {
+    function blocks(from,to,xy,horizontal) {
+      var tile=[];
+      if (horizontal) for (var i=from;i<to;i++) tile.push(tiles[xy][i]);
+      else for (var i=from;i<to;i++) tile.push(tiles[i][xy]);
+      return tile;
     }
-  } else if (tempxv<0) {
-    for (var i=0;i<-tempxv;i++) {
-      checks.push([i]);
-      if (!hit&&tiles[8][tempx-i-1]==='0') {
-        hit=true;
-        xv=-i-x+floor(x);
-        c.strokeStyle='rgba(0, 188, 212, 0.5)';
-      } else c.strokeStyle='rgba(244, 67, 54, 0.5)';
-      c.strokeRect(tempx-i-0.9,y,0.8,HEIGHT);
+    if (forxloopstop<0) forxloopstop=0;
+    if (foryloopstop<0) foryloopstop=0;
+    for (var i=0;i<forxloopstop;i++) checks.push([i,i/forxloopstop*foryloopstop]);
+    for (var i=0;i<foryloopstop;i++)
+      if ((()=>{
+        console.log('meep');
+        for (var j=0;j<checks.length;j++)
+          if (checks[j][1]===i) return false;
+        return true;
+      })) checks.push([i/foryloopstop*forxloopstop,i]);
+    checks.sort((a,b)=>a[0]===b[0]?a[1]-b[1]:a[0]-b[0]);
+    for (var i=0,len=checks.length;i<len;i++) {
+      if (!hitx&&checks[i][0]%1===0) {
+        var sideblocks=blocks(floor(y+checks[i][1]*(isypositive?1:-1)),ceil(y+HEIGHT+checks[i][1]*(isypositive?1:-1)),getx(checks[i][0]),false);
+        if (~sideblocks.indexOf('0')) {
+          hitx=true;
+          xv=isxpositive?getx(checks[i][0])-x-WIDTH:getx(checks[i][0])-x+1;
+          c.strokeStyle='rgba(63, 81, 181, 0.5)';
+          if (keys.shift) console.log(sideblocks);
+        } else c.strokeStyle='rgba(0, 188, 212, 0.5)';
+        c.strokeRect(getx(checks[i][0])+0.1,floor(y+checks[i][1]*(isypositive?1:-1))+0.1,0.8,ceil(y+HEIGHT+checks[i][1]*(isypositive?1:-1))-floor(y)-0.2);
+      }
     }
   }
+  if (keys.shift) console.log(checks,forxloopstop,foryloopstop);
   c.fillStyle='rgba(76,175,80,0.5)';
-  c.fillRect(x+xv,y,WIDTH,HEIGHT);
-  x+=xv;
+  c.fillRect(x+xv,y+yv,WIDTH,HEIGHT);
   if (!level.blur) window.requestAnimationFrame(render);
 }
 window.requestAnimationFrame(render);
