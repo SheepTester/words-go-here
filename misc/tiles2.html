@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>tiles 1</title>
+    <title>tiles 2</title>
     <meta charset="UTF-8">
     <meta name="description" content="2lazi4desc"/>
     <style>
@@ -24,7 +24,7 @@
 var canvas=document.querySelector('#c'),
 c=canvas.getContext('2d'),
 pixelratio=(window.devicePixelRatio||1)/(c.webkitBackingStorePixelRatio||c.mozBackingStorePixelRatio||c.msBackingStorePixelRatio||c.oBackingStorePixelRatio||c.backingStorePixelRatio||1),
-tiles=`
+tilemap=`
 0000000000
 0........0
 0........0
@@ -42,7 +42,7 @@ canvas.width=400*pixelratio;
 c.scale(pixelratio*40,pixelratio*40);
 (level=(grid=false)=>{
   c.fillStyle='#222';
-  for (var y=0;y<tiles.length;y++) for (var x=0;x<tiles[y].length;x++) if (tiles[y][x]==='0') c.fillRect(x,y,1,1);
+  for (var y=0;y<tilemap.length;y++) for (var x=0;x<tilemap[y].length;x++) if (tilemap[y][x]==='0') c.fillRect(x,y,1,1);
   if (grid) {
     c.strokeStyle='rgba(255,0,0,0.2)';
     c.lineWidth=0.025;
@@ -88,64 +88,79 @@ canvas.onmousemove=e=>{
   mouse.y=(e.clientY-canvas.getBoundingClientRect().top)/40;
 };
 var x=1,y=7.75,xv=0,yv=0,HEIGHT=1.25,WIDTH=0.75;
-var ceil=Math.ceil,floor=Math.floor,abs=Math.abs;
+var ceil=Math.ceil,floor=Math.floor,abs=Math.abs,round=Math.round;
+function checkTilesX(x,y) {
+  var stop=ceil(y+HEIGHT),tiles=[];
+  for (var i=floor(y);i<stop;i++) tiles.push(tilemap[i][x]);
+  return tiles;
+}
+function checkTilesY(x,y) {
+  var stop=ceil(x+WIDTH),tiles=[];
+  for (var i=floor(x);i<stop;i++) tiles.push(tilemap[y][i]);
+  return tiles;
+}
 function render() {
   c.clearRect(0,0,10,10);
   level(level.blur);
+  /* //* to enable block 1, /* to enable block 2
   x=mouse.x;
   if (keys.left) xv-=0.05;
   else if (keys.right) xv+=0.05;
   if (keys.up) keys.shift?y-=0.05:yv-=0.05;
   else if (keys.down) keys.shift?y+=0.05:yv+=0.05;
+  /*/
+  x+=xv;
+  y+=yv;
+  if (~checkTilesY(x,floor(y+HEIGHT)).indexOf('0')) {
+    if (keys.left) xv-=0.05;
+    else if (keys.right) xv+=0.05;
+    xv*=0.85;
+    if (keys.up) yv-=0.3;
+  }
+  yv+=0.02;
+  //*/
   c.fillStyle='rgba(139,195,74,0.8)';
   c.fillRect(x,y,WIDTH,HEIGHT);
   c.fillStyle='rgba(76,175,80,0.5)';
   c.fillRect(x,y-0.15,xv,0.1);
   c.fillRect(x-0.15,y,0.1,yv);
-  var isxpositive=xv>0,
-  forxloopstop=xv===0?0:isxpositive?xv+x+WIDTH-floor(x+WIDTH)-1:-xv+floor(x)-x,
-  hitx=false,
-  getx=i=>isxpositive?floor(x+WIDTH)+i+1:floor(x)-i-1,
-  isypositive=yv>0,
-  foryloopstop=yv===0?0:isypositive?yv+y+HEIGHT-floor(y+HEIGHT)-1:-yv+floor(y)-y,
-  hity=false,
-  gety=i=>isypositive?floor(y+HEIGHT)+i+1:floor(y)-i-1,
-  checks=[];
-  c.lineWidth=0.1;
-  if (xv!==0||yv!==0) {
-    function blocks(from,to,xy,horizontal) {
-      var tile=[];
-      if (horizontal) for (var i=from;i<to;i++) tile.push(tiles[xy][i]);
-      else for (var i=from;i<to;i++) tile.push(tiles[i][xy]);
-      return tile;
-    }
-    if (forxloopstop<0) forxloopstop=0;
-    if (foryloopstop<0) foryloopstop=0;
-    for (var i=0;i<forxloopstop;i++) checks.push([i,i/forxloopstop*foryloopstop]);
-    for (var i=0;i<foryloopstop;i++)
-      if ((()=>{
-        console.log('meep');
-        for (var j=0;j<checks.length;j++)
-          if (checks[j][1]===i) return false;
-        return true;
-      })) checks.push([i/foryloopstop*forxloopstop,i]);
-    checks.sort((a,b)=>a[0]===b[0]?a[1]-b[1]:a[0]-b[0]);
-    c.fillStyle='rgba(158, 158, 158, 0.5)';
-    for (var i=0,len=checks.length;i<len;i++) {
-      if (!hitx&&checks[i][0]%1===0) {
-        var sideblocks=blocks(floor(y+checks[i][1]*(isypositive?1:-1)),ceil(y+HEIGHT+checks[i][1]*(isypositive?1:-1)),getx(checks[i][0]),false);
-        c.fillRect(x+checks[i][0],y+checks[i][1],WIDTH,HEIGHT);
-        if (~sideblocks.indexOf('0')) {
-          hitx=true;
-          xv=isxpositive?getx(checks[i][0])-x-WIDTH:getx(checks[i][0])-x+1;
-          c.strokeStyle='rgba(63, 81, 181, 0.5)';
-          if (keys.shift) console.log(sideblocks);
-        } else c.strokeStyle='rgba(0, 188, 212, 0.5)';
-        c.strokeRect(getx(checks[i][0])+0.1,floor(y+checks[i][1]*(isypositive?1:-1))+0.1,0.8,ceil(y+HEIGHT+checks[i][1]*(isypositive?1:-1))-floor(y)-0.2);
-      }
-    }
+  var checks=[],
+  xrange=xv>0 ? ceil(x+WIDTH+xv)-ceil(x+WIDTH) :xv<0 ? floor(x)-floor(x+xv) :0,
+  offsetx=xv>0 ? ceil(x+WIDTH)-x-WIDTH :xv<0 ? floor(x)-x :0
+  xcollided=x+WIDTH+xv<=ceil(x+WIDTH)&&x+xv>=floor(x),
+  yrange=yv>0 ? ceil(y+HEIGHT+yv)-ceil(y+HEIGHT) :yv<0 ? floor(y)-floor(y+yv) :0,
+  offsety=yv>0 ? ceil(y+HEIGHT)-y-HEIGHT :yv<0 ? floor(y)-y :0
+  ycollided=y+HEIGHT+yv<=ceil(y+HEIGHT)&&y+yv>=floor(y);
+  for (var i=0,t;i<xrange;i++) {
+    t=i*(xv>0 ? 1 :xv<0 ? -1 :0)+offsetx;
+    checks.push([t,xv===0?0:t/xv*yv,2]);
   }
-  if (keys.shift) console.log(checks,forxloopstop,foryloopstop);
+  for (var i=0,t;i<yrange;i++) {
+    t=i*(yv>0 ? 1 :yv<0 ? -1 :0)+offsety;
+    if ((()=>{
+      for (var j=0;j<checks.length;j++) if (checks[j][1]===t) {
+        checks[j][2]*=3;
+        return false;
+      }
+      return true;
+    })()) checks.push([yv===0?0:t/yv*xv,t,3]);
+  }
+  checks.sort((a,b)=>a[0]===b[0]?abs(a[1])-abs(b[1]):abs(a[0])-abs(b[0]));
+  for (var i=0;i<checks.length;i++) {
+    if (!xcollided&&checks[i][2]%2===0) {
+      if (~checkTilesX(
+        xv>0 ? round(x+WIDTH+checks[i][0]) :xv<0 ? round(x+checks[i][0])-1 :floor(x),
+        ycollided?y+yv:y+checks[i][1]
+      ).indexOf('0')) xv=checks[i][0],xcollided=true;
+    }
+    if (!ycollided&&checks[i][2]%3===0) {
+      if (~checkTilesY(
+        xcollided?x+xv:x+checks[i][0],
+        yv>0 ? round(y+HEIGHT+checks[i][1]) :yv<0 ? round(y+checks[i][1])-1 :floor(y)
+      ).indexOf('0')) yv=checks[i][1],ycollided=true;
+    }
+    if (xcollided&&ycollided) break;
+  }
   c.fillStyle='rgba(76,175,80,0.5)';
   c.fillRect(x+xv,y+yv,WIDTH,HEIGHT);
   if (!level.blur) window.requestAnimationFrame(render);
