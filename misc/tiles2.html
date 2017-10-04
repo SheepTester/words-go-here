@@ -126,10 +126,10 @@ function render() {
   c.fillRect(x-0.15,y,0.1,yv);
   var checks=[],
   xrange=xv>0 ? ceil(x+WIDTH+xv)-ceil(x+WIDTH) :xv<0 ? floor(x)-floor(x+xv) :0,
-  offsetx=xv>0 ? ceil(x+WIDTH)-x-WIDTH :xv<0 ? floor(x)-x :0
+  offsetx=xv>0 ? ceil(x+WIDTH)-x-WIDTH :xv<0 ? floor(x)-x :0,
   xcollided=x+WIDTH+xv<=ceil(x+WIDTH)&&x+xv>=floor(x),
   yrange=yv>0 ? ceil(y+HEIGHT+yv)-ceil(y+HEIGHT) :yv<0 ? floor(y)-floor(y+yv) :0,
-  offsety=yv>0 ? ceil(y+HEIGHT)-y-HEIGHT :yv<0 ? floor(y)-y :0
+  offsety=yv>0 ? ceil(y+HEIGHT)-y-HEIGHT :yv<0 ? floor(y)-y :0,
   ycollided=y+HEIGHT+yv<=ceil(y+HEIGHT)&&y+yv>=floor(y);
   for (var i=0,t;i<xrange;i++) {
     t=i*(xv>0 ? 1 :xv<0 ? -1 :0)+offsetx;
