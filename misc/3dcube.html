@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>3d cube</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="3d cube maybe"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <style>
+      canvas {
+        border: 1px solid black;
+      }
+      div {
+        display: inline-block;
+        position: relative;
+      }
+      div::after {
+        content: '';
+        margin: auto;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 5px;
+        width: 5px;
+        border-radius: 50%;
+        background-color: rgba(0,0,0,0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <canvas id="stage" width="480" height="360"></canva>
+    </div>
+
+    <script src="../../sheep.js" charset="utf-8"></script>
+    <script src="geometrystuff.js" charset="utf-8"></script>
+    <script>
+var canvas=document.querySelector('#stage'),
+c=canvas.getContext('2d'),
+camera={
+  x:0,y:0,z:-150,rotx:{measure:0},roty:{measure:0},
+  xv:0,yv:0,zv:0,rotxv:0,rotyv:0
+},
+config={
+  NEAR_PLANE:10,
+  VIEW_FACTOR:150,
+  STAGE:new Rectangle(new Point(-240,-180),new Point(240,180)),
+  MOVE_SPEED:0.5
+},
+keys={};
+c.lineCap="round";
+c.lineJoin="round";
+c.strokeStyle="blue";
+c.lineWidth=5;
+c.translate(canvas.width/2,canvas.height/2);
+canvas.requestPointerLock=canvas.requestPointerLock||canvas.mozRequestPointerLock;
+document.exitPointerLock=document.exitPointerLock||document.mozExitPointerLock;
+document.addEventListener("keydown",e=>{
+  keys[e.keyCode]=true;
+  if (e.keyCode===27&&keys.usingmouse) {
+    keys.usingmouse=false;
+    document.exitPointerLock();
+  }
+},false);
+document.addEventListener("keyup",e=>{
+  keys[e.keyCode]=false;
+},false);
+canvas.addEventListener("click",e=>{
+  c.canvas.requestPointerLock();
+},false);
+var lockchange=e=>{
+  if (document.pointerLockElement===canvas) keys.usingmouse=true;
+  else keys.usingmouse=false;
+};
+if ("onpointerlockchange" in document) document.addEventListener('pointerlockchange',lockchange,false);
+else if ("onmozpointerlockchange" in document) document.addEventListener('mozpointerlockchange',lockchange,false);
+canvas.addEventListener("mousemove",e=>{
+  if (keys.usingmouse) {
+    camera.rotx.measure+=e.movementX/500;
+    camera.roty.measure+=e.movementY/500;
+    // camera.rotxv+=e.movementX/5000;
+    // camera.rotyv+=e.movementY/5000;
+  }
+},false);
+function line(x1,y1,z1,x2,y2,z2) {
+  var t={
+    x1:x1-camera.x,y1:y1-camera.y,z1:z1-camera.z,
+    x2:x2-camera.x,y2:y2-camera.y,z2:z2-camera.z
+  };
+  x1=t.x1*camera.rotx.cos-t.z1*camera.rotx.sin,
+  z1=t.z1*camera.rotx.cos+t.x1*camera.rotx.sin,
+  x2=t.x2*camera.rotx.cos-t.z2*camera.rotx.sin,
+  z2=t.z2*camera.rotx.cos+t.x2*camera.rotx.sin;
+  y1=t.y1*camera.roty.cos-z1*camera.roty.sin,
+  z1=z1*camera.roty.cos+t.y1*camera.roty.sin,
+  y2=t.y2*camera.roty.cos-z2*camera.roty.sin,
+  z2=z2*camera.roty.cos+t.y2*camera.roty.sin;
+  if (z1>=config.NEAR_PLANE||z2>=config.NEAR_PLANE) {
+    var percent=(config.NEAR_PLANE-z1)/(z2-z1);
+    if (z1<config.NEAR_PLANE) x1+=percent*(x2-x1),y1+=percent*(y2-y1),z1=config.NEAR_PLANE;
+    else if (z2<config.NEAR_PLANE) x2=x1+percent*(x2-x1),y2=y1+percent*(y2-y1),z2=config.NEAR_PLANE;
+    var oldline=new Line(
+      new Point(config.VIEW_FACTOR*(x1/z1),config.VIEW_FACTOR*(y1/z1)),
+      new Point(config.VIEW_FACTOR*(x2/z2),config.VIEW_FACTOR*(y2/z2))
+    ),
+    line=config.STAGE.clip(oldline);
+    if (line) {
+      c.beginPath();
+      c.moveTo(line.pt1.x,line.pt1.y);
+      c.lineTo(line.pt2.x,line.pt2.y);
+      c.stroke();
+    }
+  }
+}
+function draw() {
+  c.clearRect(-canvas.width/2,-canvas.height/2,canvas.width,canvas.height);
+  camera.x+=camera.xv,camera.xv*=0.9;
+  camera.y+=camera.yv,camera.yv*=0.9;
+  camera.z+=camera.zv,camera.zv*=0.9;
+  // camera.rotx.measure+=camera.rotxv,camera.rotxv*=0.9;
+  // camera.roty.measure+=camera.rotyv,camera.rotyv*=0.9;
+  camera.rotx.sin=Math.sin(camera.rotx.measure),camera.rotx.cos=Math.cos(camera.rotx.measure);
+  camera.roty.sin=Math.sin(camera.roty.measure),camera.roty.cos=Math.cos(camera.roty.measure);
+  if (keys[87]) camera.xv+=camera.rotx.sin*config.MOVE_SPEED,camera.zv+=camera.rotx.cos*config.MOVE_SPEED;
+  if (keys[83]) camera.xv-=camera.rotx.sin*config.MOVE_SPEED,camera.zv-=camera.rotx.cos*config.MOVE_SPEED;
+  if (keys[65]) camera.xv-=camera.rotx.cos*config.MOVE_SPEED,camera.zv+=camera.rotx.sin*config.MOVE_SPEED;
+  if (keys[68]) camera.xv+=camera.rotx.cos*config.MOVE_SPEED,camera.zv-=camera.rotx.sin*config.MOVE_SPEED;
+  if (keys[16]) camera.yv+=config.MOVE_SPEED;
+  if (keys[32]) camera.yv-=config.MOVE_SPEED;
+  // cube back
+  line(-50,-50,50,50,-50,50);
+  line(-50,50,50,50,50,50);
+  line(-50,-50,50,-50,50,50);
+  line(50,-50,50,50,50,50);
+  // cube front
+  line(-50,-50,-50,50,-50,-50);
+  line(-50,50,-50,50,50,-50);
+  line(-50,-50,-50,-50,50,-50);
+  line(50,-50,-50,50,50,-50);
+  // cube sides
+  line(-50,-50,-50,-50,-50,50);
+  line(50,-50,-50,50,-50,50);
+  line(-50,50,-50,-50,50,50);
+  line(50,50,-50,50,50,50);
+  // rhombus
+  var rhombusZ=new Date().getTime()/100%10*10;
+  line(120,50,rhombusZ,170,0,rhombusZ);
+  line(70,0,rhombusZ,120,50,rhombusZ);
+  line(170,0,rhombusZ,120,-50,rhombusZ);
+  line(70,0,rhombusZ,120,-50,rhombusZ);
+  window.requestAnimationFrame(draw);
+}
+draw();
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
