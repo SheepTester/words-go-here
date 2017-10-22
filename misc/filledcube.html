@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>3d cube</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="3d cube maybe"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <style>
+      canvas {
+        border: 1px solid black;
+      }
+      div {
+        display: inline-block;
+        position: relative;
+      }
+      div::after {
+        content: '';
+        margin: auto;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 5px;
+        width: 5px;
+        border-radius: 50%;
+        background-color: rgba(0,0,0,0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <canvas id="stage" width="480" height="360"></canva>
+    </div>
+    <p><strong>WASD; shift + space; click on canvas to lock mouse and look around</strong>; the top of the cube is intentionally missing</p>
+
+    <script src="../../sheep.js" charset="utf-8"></script>
+    <script src="geometrystuff.js" charset="utf-8"></script>
+    <script>
+var canvas=document.querySelector('#stage'),
+c=canvas.getContext('2d'),
+camera={
+  x:0,y:0,z:-150,rotx:{measure:0},roty:{measure:0},
+  xv:0,yv:0,zv:0,rotxv:0,rotyv:0
+},
+config={
+  NEAR_PLANE:10,
+  VIEW_FACTOR:150,
+  STAGE:new Rectangle(new Point(-240,-180),new Point(240,180)),
+  MOVE_SPEED:0.5,
+  MIN_X:-240,
+  MAX_X:240,
+  MIN_Y:-180,
+  MAX_Y:180,
+  MIN_Z:10,
+  MAX_Z:1000
+},
+keys={};
+c.lineCap="round";
+c.lineJoin="round";
+c.strokeStyle="blue";
+c.fillStyle='deepskyblue';
+c.lineWidth=5;
+c.translate(canvas.width/2,canvas.height/2);
+canvas.requestPointerLock=canvas.requestPointerLock||canvas.mozRequestPointerLock;
+document.exitPointerLock=document.exitPointerLock||document.mozExitPointerLock;
+document.addEventListener("keydown",e=>{
+  keys[e.keyCode]=true;
+  if (e.keyCode===27&&keys.usingmouse) {
+    keys.usingmouse=false;
+    document.exitPointerLock();
+  }
+},false);
+document.addEventListener("keyup",e=>{
+  keys[e.keyCode]=false;
+},false);
+canvas.addEventListener("click",e=>{
+  c.canvas.requestPointerLock();
+},false);
+var lockchange=e=>{
+  if (document.pointerLockElement===canvas) keys.usingmouse=true;
+  else keys.usingmouse=false;
+};
+if ("onpointerlockchange" in document) document.addEventListener('pointerlockchange',lockchange,false);
+else if ("onmozpointerlockchange" in document) document.addEventListener('mozpointerlockchange',lockchange,false);
+canvas.addEventListener("mousemove",e=>{
+  if (keys.usingmouse) {
+    camera.rotx.measure+=e.movementX/500;
+    camera.roty.measure+=e.movementY/500;
+    // camera.rotxv+=e.movementX/5000;
+    // camera.rotyv+=e.movementY/5000;
+  }
+},false);
+function line(x1,y1,z1,x2,y2,z2) {
+  var t={
+    x1:x1-camera.x,y1:y1-camera.y,z1:z1-camera.z,
+    x2:x2-camera.x,y2:y2-camera.y,z2:z2-camera.z
+  };
+  x1=t.x1*camera.rotx.cos-t.z1*camera.rotx.sin,
+  z1=t.z1*camera.rotx.cos+t.x1*camera.rotx.sin,
+  x2=t.x2*camera.rotx.cos-t.z2*camera.rotx.sin,
+  z2=t.z2*camera.rotx.cos+t.x2*camera.rotx.sin;
+  y1=t.y1*camera.roty.cos-z1*camera.roty.sin,
+  z1=z1*camera.roty.cos+t.y1*camera.roty.sin,
+  y2=t.y2*camera.roty.cos-z2*camera.roty.sin,
+  z2=z2*camera.roty.cos+t.y2*camera.roty.sin;
+  if (z1>=config.NEAR_PLANE||z2>=config.NEAR_PLANE) {
+    var percent=(config.NEAR_PLANE-z1)/(z2-z1);
+    if (z1<config.NEAR_PLANE) x1+=percent*(x2-x1),y1+=percent*(y2-y1),z1=config.NEAR_PLANE;
+    else if (z2<config.NEAR_PLANE) x2=x1+percent*(x2-x1),y2=y1+percent*(y2-y1),z2=config.NEAR_PLANE;
+    var oldline=new Line(
+      new Point(config.VIEW_FACTOR*(x1/z1),config.VIEW_FACTOR*(y1/z1)),
+      new Point(config.VIEW_FACTOR*(x2/z2),config.VIEW_FACTOR*(y2/z2))
+    ),
+    line=config.STAGE.clip(oldline);
+    if (line) {
+      c.beginPath();
+      c.moveTo(line.pt1.x,line.pt1.y);
+      c.lineTo(line.pt2.x,line.pt2.y);
+      c.stroke();
+    }
+  }
+}
+function pt(x,y,z) {
+  return {x:x,y:y,z:z};
+}
+function cameraTransform(point) {
+  var t={
+    x:point.x-camera.x,y:point.y-camera.y,z:point.z-camera.z
+  };
+  x=t.x*camera.rotx.cos-t.z*camera.rotx.sin,
+  z=t.z*camera.rotx.cos+t.x*camera.rotx.sin;
+  y=t.y*camera.roty.cos-z*camera.roty.sin,
+  z=z*camera.roty.cos+t.y*camera.roty.sin;
+  return pt(x,y,z);
+}
+function xIntersect(p1,p2,x) {
+  var percent=(x-p1[0])/(p2[0]-p1[0]);
+  return [x,p1[1]+percent*(p2[1]-p1[1])];
+}
+function yIntersect(p1,p2,y) {
+  var percent=(y-p1[1])/(p2[1]-p1[1]);
+  return [p1[0]+percent*(p2[0]-p1[0]),y];
+}
+function zIntersect(p1,p2,planeZ) {
+  var percent=(planeZ-p1.z)/(p2.z-p1.z);
+  return pt(p1.x+percent*(p2.x-p1.x),p1.y+percent*(p2.y-p1.y),planeZ);
+}
+function flatify(point) {
+  return [config.VIEW_FACTOR*(point.x/point.z),config.VIEW_FACTOR*(point.y/point.z)];
+}
+function clipShape(points,inRangeFn,intersectFn) {
+  function toIndex(i) {
+    var t=points.length;
+    return (i%t+t)%t;
+  }
+  for (var i=0;i<points.length;i++) {
+    if (inRangeFn(points[i])) {
+      var currentPt=points[i];
+      for (var lastPt=currentPt;points.length;) {
+        var pt=points[toIndex(i-1)];
+        if (inRangeFn(pt)) {
+          lastPt=pt;
+          points.splice(toIndex(i-1),1);
+        } else {
+          points.splice(toIndex(i),0,intersectFn(lastPt,pt));
+          break;
+        }
+      }
+      points.splice(i+1,1);
+      for (var lastPt=currentPt;points.length;) {
+        var pt=points[toIndex(i+1)];
+        if (inRangeFn(pt)) {
+          lastPt=pt;
+          points.splice(toIndex(i+1),1);
+        } else {
+          points.splice(toIndex(i+1),0,intersectFn(lastPt,pt));
+          break;
+        }
+      }
+    }
+  }
+  return points;
+}
+function vertexDirection(points) {
+  // https://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order
+  var sum=0;
+  for (var i=0;i<points.length;i++) sum+=i===points.length-1?(points[0][0]-points[i][0])*(points[0][1]+points[i][1]):(points[i+1][0]-points[i][0])*(points[i+1][1]+points[i][1]);
+  return sum;
+}
+function polygon(vertices,clockwise) {
+  var points=vertices.map(a=>cameraTransform(a));
+  points=clipShape(points,pt=>pt.z<config.MIN_Z,(pt1,pt2)=>zIntersect(pt1,pt2,config.MIN_Z));
+  // points=clipShape(points,pt=>pt.z>config.MAX_Z,(pt1,pt2)=>zIntersect(pt1,pt2,config.MAX_Z));
+  points=points.map(a=>flatify(a));
+  if (clockwise&&(vertexDirection(points)<0)===(clockwise!=='cw')) return;
+  points=clipShape(points,pt=>pt[0]<config.MIN_X,(pt1,pt2)=>xIntersect(pt1,pt2,config.MIN_X));
+  points=clipShape(points,pt=>pt[0]>config.MAX_X,(pt1,pt2)=>xIntersect(pt1,pt2,config.MAX_X));
+  points=clipShape(points,pt=>pt[1]<config.MIN_Y,(pt1,pt2)=>yIntersect(pt1,pt2,config.MIN_Y));
+  points=clipShape(points,pt=>pt[1]>config.MAX_Y,(pt1,pt2)=>yIntersect(pt1,pt2,config.MAX_Y));
+  if (points.length>2) {
+    c.beginPath();
+    c.moveTo(points[0][0],points[0][1]);
+    for (var i=1;i<points.length;i++) c.lineTo(points[i][0],points[i][1]);
+    c.closePath();
+    c.fill();
+  }
+}
+function draw() {
+  c.clearRect(-canvas.width/2,-canvas.height/2,canvas.width,canvas.height);
+  camera.x+=camera.xv,camera.xv*=0.9;
+  camera.y+=camera.yv,camera.yv*=0.9;
+  camera.z+=camera.zv,camera.zv*=0.9;
+  // camera.rotx.measure+=camera.rotxv,camera.rotxv*=0.9;
+  // camera.roty.measure+=camera.rotyv,camera.rotyv*=0.9;
+  camera.rotx.sin=Math.sin(camera.rotx.measure),camera.rotx.cos=Math.cos(camera.rotx.measure);
+  camera.roty.sin=Math.sin(camera.roty.measure),camera.roty.cos=Math.cos(camera.roty.measure);
+  if (keys[87]) camera.xv+=camera.rotx.sin*config.MOVE_SPEED,camera.zv+=camera.rotx.cos*config.MOVE_SPEED;
+  if (keys[83]) camera.xv-=camera.rotx.sin*config.MOVE_SPEED,camera.zv-=camera.rotx.cos*config.MOVE_SPEED;
+  if (keys[65]) camera.xv-=camera.rotx.cos*config.MOVE_SPEED,camera.zv+=camera.rotx.sin*config.MOVE_SPEED;
+  if (keys[68]) camera.xv+=camera.rotx.cos*config.MOVE_SPEED,camera.zv-=camera.rotx.sin*config.MOVE_SPEED;
+  if (keys[16]) camera.yv+=config.MOVE_SPEED;
+  if (keys[32]) camera.yv-=config.MOVE_SPEED;
+  /*// cube back
+  line(-50,-50,50,50,-50,50);
+  line(-50,50,50,50,50,50);
+  line(-50,-50,50,-50,50,50);
+  line(50,-50,50,50,50,50);
+  // cube front
+  line(-50,-50,-50,50,-50,-50);
+  line(-50,50,-50,50,50,-50);
+  line(-50,-50,-50,-50,50,-50);
+  line(50,-50,-50,50,50,-50);
+  // cube sides
+  line(-50,-50,-50,-50,-50,50);
+  line(50,-50,-50,50,-50,50);
+  line(-50,50,-50,-50,50,50);
+  line(50,50,-50,50,50,50);*/
+  // inside
+  c.fillStyle='firebrick';
+  polygon([pt(-50,-50,50),pt(50,-50,50),pt(50,50,50),pt(-50,50,50)],'cw');
+  c.fillStyle='orangered';
+  polygon([pt(-50,-50,-50),pt(50,-50,-50),pt(50,50,-50),pt(-50,50,-50)],'ccw');
+  c.fillStyle='lightcoral';
+  polygon([pt(50,-50,-50),pt(50,-50,50),pt(50,50,50),pt(50,50,-50)],'ccw');
+  c.fillStyle='darkred';
+  polygon([pt(-50,-50,-50),pt(-50,-50,50),pt(-50,50,50),pt(-50,50,-50)],'cw');
+  c.fillStyle='brown';
+  polygon([pt(-50,50,-50),pt(50,50,-50),pt(50,50,50),pt(-50,50,50)],'ccw');
+  // outside
+  c.fillStyle='deepskyblue';
+  polygon([pt(-50,-50,50),pt(50,-50,50),pt(50,50,50),pt(-50,50,50)],'ccw');
+  c.fillStyle='dodgerblue';
+  polygon([pt(-50,-50,-50),pt(50,-50,-50),pt(50,50,-50),pt(-50,50,-50)],'cw');
+  c.fillStyle='lightskyblue';
+  polygon([pt(50,-50,-50),pt(50,-50,50),pt(50,50,50),pt(50,50,-50)],'cw');
+  c.fillStyle='mediumturquoise';
+  polygon([pt(-50,-50,-50),pt(-50,-50,50),pt(-50,50,50),pt(-50,50,-50)],'ccw');
+  c.fillStyle='cornflowerblue';
+  polygon([pt(-50,50,-50),pt(50,50,-50),pt(50,50,50),pt(-50,50,50)],'cw');
+  window.requestAnimationFrame(draw);
+}
+draw();
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
