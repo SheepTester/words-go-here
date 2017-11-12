@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Custom pronouns</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="English is a terrible language."/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <style>
+      .reqtext {
+        color: red;
+        font-size: 0.75em;
+      }
+      .req::after {
+        content: '*';
+        color: red;
+      }
+      .bad {
+        border: 1px solid red;
+      }
+      input {
+        border: 0.5px solid grey;
+      }
+      #error {
+        color: red;
+      }
+      :focus {
+        box-shadow: 0 0 3px blue;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="reqtext">* required</p>
+    <p class="req">Select your preferred pronoun: <select id="gender">
+      <option>female</option>
+      <option>male</option>
+      <option>custom...</option>
+    </select></p>
+    <div id="pronouns" style="display: none;">
+      <p>Please enter your preferred pronoun forms:</p>
+    </div>
+    <button id="cont">Continue</button>
+    <p id="error"></p>
+
+    <script src="../../sheep.js" charset="utf-8"></script>
+    <script>
+var languages={ // unnecessarily complicated, but it looks cool
+  register(languageName,inflections,order,genders) {
+    for (var i=0;i<order.length;i++) if (!inflections[order[i]]) throw new Error(order[i]+' not an inflection');
+    this[languageName]=inflections;
+    this[languageName].order=order;
+    if (genders) this[languageName].genders=genders;
+    this.languages.push(languageName);
+  },
+  languages:[]
+};
+((inflections)=>{
+  inflections['nominative']=inflections['objective']=inflections['possessive']=inflections['possessive pronoun']=str=>true; // english doesn't care
+  inflections['reflexive']=str=>{
+    return str.slice(-4).toLowerCase()==='self';
+  };
+  var order=['nominative','objective','possessive','possessive pronoun','reflexive'];
+  languages.register('English',inflections,order);
+})({});
+((inflections)=>{
+  inflections['nominative']=inflections['disjunctive']=inflections['possessive singular']=str=>true; // spanish doesn't care, but only sometimes
+  inflections['dative']=inflections['accusative']=str=>{
+    return str.replace(/[^aeiou]*[aeiou][^aeiou]*/ig,'b')==='b';
+  };
+  inflections['possessive plural']=str=>{
+    return str[str.length-1]==='s';
+  };
+  var order=['nominative','dative','accusative','disjunctive','possessive singular','possessive plural'],
+  genders=['feminine','masculine'];
+  languages.register('Spanish',inflections,order,genders);
+})({});
+((inflections)=>{
+  inflections['nominative']=str=>true;
+  inflections['accusative']=str=>{
+    return str[str.length-1]==='n';
+  };
+  inflections['possessive singular']=str=>{
+    return str[str.length-1]==='a';
+  };
+  inflections['possessive accusative singular']=str=>{
+    return str.slice(-2)==='an';
+  };
+  inflections['possessive plural']=str=>{
+    return str.slice(-2)==='aj';
+  };
+  inflections['possessive accusative plural']=str=>{
+    return str.slice(-3)==='ajn';
+  };
+  var order=['nominative','accusative','possessive singular','possessive accusative singular','possessive plural','possessive accusative plural'];
+  languages.register('Esperanto',inflections,order);
+})({});
+((inflections)=>{
+  inflections['pronoun']=str=>{
+    return !/[^\u{4e00}-\u{9fa5}]/u.test(str);
+  };
+  var order=['pronoun'];
+  languages.register('Chinese',inflections,order);
+})({});
+var gender=document.querySelector('#gender'),
+options=document.querySelector('#pronouns'),
+cont=document.querySelector('#cont'),
+error=document.querySelector('#error');
+gender.addEventListener("change",e=>{
+  options.style.display=gender.value==='custom...'?'block':'none';
+},false);
+for (let langName of languages.languages) {
+  var h=document.createElement("h2");
+  h.textContent=langName;
+  options.appendChild(h);
+  let lang=languages[langName];
+  if (lang.genders) {
+    var p=document.createElement("p");
+    p.innerHTML=`Select a gender the adjectives should inflect as:`;
+    p.classList.add('req');
+    options.appendChild(p);
+    for (var gen of lang.genders) {
+      var div=document.createElement("div"),
+      radio=document.createElement("input"),
+      label=document.createElement("label");
+      radio.name=langName;
+      radio.type='radio';
+      radio.value=gen;
+      label.textContent=gen;
+      div.appendChild(radio);
+      div.appendChild(label);
+      options.appendChild(div);
+    }
+  }
+  for (let inf of lang.order) {
+    let div=document.createElement("div"),
+    input=document.createElement("input"),
+    label=document.createElement("label");
+    div.classList.add('req');
+    label.textContent=inf;
+    input.type='text';
+    input.addEventListener("input",e=>{
+      lang[inf](input.value)?input.classList.remove('bad'):input.classList.add('bad');
+    },false);
+    div.appendChild(label);
+    div.appendChild(input);
+    options.appendChild(div);
+  }
+}
+cont.addEventListener("click",e=>{
+  if (gender.value==='custom...') {
+    var inputs=document.querySelectorAll('#pronouns input'),
+    errors=0;
+    for (var i=0;i<inputs.length;i++) {
+      if (inputs[i].type==='radio') {
+        if (!document.querySelector('input[type=radio][name="'+inputs[i].name+'"]:checked')) errors++;
+      } else {
+        if (!inputs[i].value) errors++,inputs[i].classList.add('bad');
+        else if (inputs[i].classList.contains('bad')) errors++;
+      }
+    }
+    if (errors) error.innerHTML=`${errors} required input(s) not filled in properly.`;
+    else window.location='https://www.google.com/';
+  } else window.location='https://www.google.com/';
+},false);
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
