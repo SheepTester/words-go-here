@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>opentype.js fun</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="playing with a font parser"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <style>
+      body{max-width:1000px;margin:20px auto;padding:0 20px;font-family:sans-serif;}input,button,select,textarea{font:inherit;}a {text-decoration:none;}a:hover{text-decoration:underline;}h1,h2,h3,h4,h5,h6{font-weight:normal;}
+    </style>
+  </head>
+  <body>
+    <h1>opentype.js fun</h1>
+    <p>uses <a href="https://opentype.js.org/">opentype.js</a> which is pretty cool</p>
+    <div id="boof"></div>
+    <p><label>press keys in here:</label> <input type="text" id="happy"></p>
+    <p><strong>width:</strong> <span id="wdt"></span></p>
+    <p>I intend to make a Roboto text engine for Scratchers using this newfound technology! *chuckles in an evil manner*</p>
+
+    <script src="../../sheep.js" charset="utf-8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/opentype.js@latest/dist/opentype.min.js"></script>
+    <script>
+opentype.load('https://gamepro5.github.io/Fredoka_One/FredokaOne-Regular.ttf',(err,font)=>{
+  if (err) console.error('SMTH GONE WRONG:\n'+err);
+  else {
+    var input=document.querySelector('#happy');
+    input.addEventListener("input",e=>{
+      var path=font.getPath(input.value,240,180,100,{kerning:false}).commands,
+      str='';
+      for (var cmd of path) {
+        str+=cmd.type;
+        if (cmd.x1) str+=' '+cmd.x1;
+        if (cmd.y1) str+=' '+cmd.y1;
+        if (cmd.x2) str+=' '+cmd.x2;
+        if (cmd.y2) str+=' '+cmd.y2;
+        if (cmd.x) str+=' '+cmd.x;
+        if (cmd.y) str+=' '+cmd.y;
+      }
+      document.querySelector('#boof').innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" fill="black" height="360" width="480"><path d="${str}"></svg>`;
+      input.value='';
+      document.querySelector('#wdt').innerHTML=document.querySelector('path').getBoundingClientRect().width;
+    },false);
+  }
+});
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
