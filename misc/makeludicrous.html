@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ludicrous Loops Level Creator</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="eventually will make into game"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" href="canvasfullscreen.css">
+    <style media="screen">
+      body>p {
+        display: block;
+        margin: 0;
+        position: fixed;
+        top: 0;
+        right: 0;
+        max-width: 200px;
+        background-color: rgba(0,0,0,0.6);
+        color: white;
+        font-size: 15px;
+        line-height: 1.5;
+        font-family: sans-serif;
+        padding: 10px;
+        opacity: 0.5;
+        cursor: default;
+      }
+      p:hover {
+        opacity: 1;
+      }
+      textarea {
+        display: block;
+        background: none;
+        background-color: rgba(255,255,255,0.1);
+        border: none;
+        height: 100px;
+        width: 100%;
+        font: inherit;
+        color: inherit;
+      }
+      textarea:focus {
+        box-shadow: inset 0 0 0 3px rgba(0,255,255,0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="level"></canvas>
+    <p>Keyboard shortcuts: R for a new rectangle, L for a new loop, backspace to delete an object, up arrow to get JSON, down arrow to load a level.<textarea></textarea></p>
+
+    <script src="../../sheep.js" charset="utf-8"></script>
+    <script src="canvasfullscreen.js" charset="utf-8"></script>
+    <script>
+var canvas=document.querySelector('#level'),
+c=canvas.getContext('2d'),
+keys={x:0,y:0,down:false},
+scroll={x:0,y:0},
+selected=null,
+objects=[],
+xPositions=[],
+yPositions=[],
+output=document.querySelector('textarea');
+function updatePositionArrays() {
+  xPositions=[],
+  yPositions=[];
+  for (var i=0;i<objects.length;i++) {
+    xPositions.push(...objects[i].xPositions);
+    yPositions.push(...objects[i].yPositions);
+  }
+  xPositions=xPositions.sort((a,b)=>a-b),
+  yPositions=yPositions.sort((a,b)=>a-b);
+}
+function snap(x,y,draw=true) {
+  if (keys[16]) return [x,y];
+  let i=0;
+  c.strokeStyle='rgba(0,255,255,0.5)';
+  c.lineWidth=1;
+  while (x>xPositions[i]&&i<xPositions.length) i++;
+  if (xPositions[i]-x<10||(i>0&&x-xPositions[--i]<10)) {
+    x=xPositions[i];
+    if (draw) {
+      c.beginPath();
+      c.moveTo(x+scroll.x,0);
+      c.lineTo(x+scroll.x,innerHeight);
+      c.stroke();
+    }
+  }
+  i=0;
+  while (y>yPositions[i]&&i<yPositions.length) i++;
+  if (yPositions[i]-y<10||(i>0&&y-yPositions[--i]<10)) {
+    y=yPositions[i];
+    if (draw) {
+      c.beginPath();
+      c.moveTo(0,y+scroll.y);
+      c.lineTo(innerWidth,y+scroll.y);
+      c.stroke();
+    }
+  }
+  return [x,y];
+}
+class Object {
+  constructor(x,y) {
+    this.x=x||0;
+    this.y=y||0;
+    this.selected=false;
+    this.nodes=[];
+    this.selectedNode=null;
+    this.dragging=false;
+    this.mousewasdown=keys.down;
+  }
+  render() {}
+  inside() {return false;}
+  drag() {}
+  doYourThing() {
+    if (keys[8]) {
+      this.die();
+      return;
+    }
+    for (let i=0;i<this.nodes.length;i++) this.nodes[i].interact();
+    if (!this.selectedNode||this.selectedNode===this) {
+      if (keys.down) {
+        if (this.mousewasdown) {
+          if (this.dragging) {
+            this.drag(keys.x-this.dragging[0],keys.y-this.dragging[1]);
+          }
+        } else {
+          this.mousewasdown=true;
+          if (this.inside(keys.x-scroll.x,keys.y-scroll.y)) {
+            this.dragging=[keys.x-this.x,keys.y-this.y],this.selectedNode=this;
+            updatePositionArrays();
+          }
+          else this.selected=false,selected=null,keys.scrollOffset=true;
+        }
+      } else {
+        if (this.mousewasdown) {
+          this.mousewasdown=false;
+          if (this.dragging) {
+            this.dragging=false,this.selectedNode=null;
+            updatePositionArrays();
+          }
+        }
+      }
+    }
+  }
+  get xPositions() {return [];}
+  get yPositions() {return [];}
+  die() {
+    let t=objects.indexOf(this);
+    if (~t) objects.splice(t,1);
+    if (this.selected) selected=null;
+  }
+  getObject() {
+    return {
+      type:"object",
+      x:this.x,
+      y:this.y
+    };
+  }
+}
+class Node {
+  constructor(x,y,onchange,parent) {
+    this.x=x||0;
+    this.y=y||0;
+    this.onchange=onchange||(()=>{});
+    this.parent=parent||{};
+    this.mousewasdown=keys.down;
+    this.dragging=false;
+    this.radius=15;
+    this.renderradius=5;
+  }
+  render() {
+    c.fillStyle='green';
+    c.beginPath();
+    c.arc(this.x+scroll.x,this.y+scroll.y,this.renderradius,0,2*Math.PI);
+    c.fill();
+  }
+  inside(x,y) {
+    return (this.x-x)*(this.x-x)+(this.y-y)*(this.y-y)<=this.radius*this.radius;
+  }
+  interact() {
+    if (keys.down) {
+      if (this.mousewasdown) {
+        if (this.dragging) {
+          let x=keys.x-scroll.x,
+          y=keys.y-scroll.y;
+          let t=this.onchange(x,y);
+          if (t) [x,y]=t;
+          [x,y]=snap(x,y);
+          t=this.onchange(x,y);
+          if (t) [this.x,this.y]=t;
+          else this.x=x,this.y=y;
+        }
+      } else {
+        this.mousewasdown=true;
+        if (!this.parent.selectedNode&&this.inside(keys.x-scroll.x,keys.y-scroll.y)) this.dragging=true,this.parent.selectedNode=this;
+      }
+    } else {
+      if (this.mousewasdown) {
+        this.mousewasdown=false;
+        if (this.dragging) {
+          this.dragging=false,this.parent.selectedNode=null;
+          updatePositionArrays();
+        }
+      }
+    }
+  }
+}
+class Box extends Object {
+  constructor(x,y,width,height) {
+    super(x,y);
+    this.width=width||0;
+    this.height=height||0;
+    this.selectedNode=null;
+    this.nodes=[new Node(this.x,this.y,(x,y)=>{
+      let t=[x,y];
+      if (x<=this.maxx) this.width=this.maxx-x,this.x=x;
+      else t[0]=this.x=this.maxx,this.width=0;
+      if (y<=this.maxy) this.height=this.maxy-y,this.y=y;
+      else t[1]=this.y=this.maxy,this.height=0;
+      return t;
+    },this),new Node(this.maxx,this.maxy,(x,y)=>{
+      let t=[x,y];
+      if (x>=this.x) this.width=x-this.x;
+      else t[0]=this.x,this.width=0;
+      if (y>=this.y) this.height=y-this.y;
+      else t[1]=this.y,this.height=0;
+      return t;
+    },this)];
+  }
+  render() {
+    c.lineWidth=this.selected?4:2;
+    c.strokeRect(this.x+scroll.x,this.y+scroll.y,this.width,this.height);
+    if (this.selected) for (let i=0;i<this.nodes.length;i++) this.nodes[i].render();
+  }
+  inside(x,y) {
+    return x>=this.x&&y>=this.y&&x<=this.maxx&&y<=this.maxy;
+  }
+  drag(x,y) {
+    let [minx,miny]=snap(x,y,false),
+    [maxx,maxy]=snap(x+this.width,y+this.height,false),
+    xchange=false,ychange=false;
+    if (minx!==x) x=minx,xchange=0;
+    else if (maxx!==x+this.width) x=maxx-this.width,xchange=this.width;
+    if (xchange!==false) {
+      c.beginPath();
+      c.moveTo(x+scroll.x+xchange,0);
+      c.lineTo(x+scroll.x+xchange,innerHeight);
+      c.stroke();
+    }
+    if (miny!==y) y=miny,ychange=0;
+    else if (maxy!==y+this.height) y=maxy-this.height,ychange=this.height;
+    if (ychange!==false) {
+      c.beginPath();
+      c.moveTo(0,y+scroll.y+ychange);
+      c.lineTo(innerWidth,y+scroll.y+ychange);
+      c.stroke();
+    }
+    this.nodes[0].x=this.x=x;
+    this.nodes[0].y=this.y=y;
+    this.nodes[1].x=this.maxx;
+    this.nodes[1].y=this.maxy;
+  }
+  get maxx() {return this.x+this.width;}
+  set maxx(n) {this.width=n-this.x;}
+  get maxy() {return this.y+this.height;}
+  set maxy(n) {this.height=n-this.y;}
+  get xPositions() {return this.dragging?[]:[this.nodes[0].x,this.nodes[1].x];}
+  get yPositions() {return this.dragging?[]:[this.nodes[0].y,this.nodes[1].y];}
+  getObject() {
+    return {
+      type:"rect",
+      x:this.x,
+      y:this.y,
+      width:this.width,
+      height:this.height
+    };
+  }
+}
+class Loop extends Object {
+  constructor(cx,cy,innerRadius,outerRadius,start,stop) {
+    super(cx,cy);
+    this.radii=[innerRadius||0,outerRadius||0];
+    this.start=start%360||0; // in degrees, either: 0 90 180 270
+    this.stop=stop%360||0;
+    this.nodes=[new Node(...this.toPosition(this.start,this.radii[1]),(x,y)=>{
+      let radius=Math.sqrt((x-this.x)*(x-this.x)+(y-this.y)*(y-this.y)),
+      slope=Math.abs((y-this.y)/(x-this.x))>1;
+      if (radius>=this.radii[0]) this.radii[1]=radius;
+      if (slope) this.start=y>this.y?180:0;
+      else this.start=x>this.x?90:270;
+      return this.toPosition(this.start,this.radii[1]);
+    },this),new Node(...this.toPosition(this.stop,this.radii[0]),(x,y)=>{
+      let radius=Math.sqrt((x-this.x)*(x-this.x)+(y-this.y)*(y-this.y)),
+      slope=Math.abs((y-this.y)/(x-this.x))>1;
+      if (radius<=this.radii[1]) this.radii[0]=radius;
+      if (slope) this.stop=y>this.y?180:0;
+      else this.stop=x>this.x?90:270;
+      return this.toPosition(this.stop,this.radii[0]);
+    },this)];
+  }
+  render() {
+    c.lineWidth=this.selected?4:2;
+    if (this.stop===this.start) {
+      c.beginPath();
+      c.arc(this.x+scroll.x,this.y+scroll.y,this.radii[0],0,2*Math.PI);
+      c.stroke();
+      c.beginPath();
+      c.arc(this.x+scroll.x,this.y+scroll.y,this.radii[1],0,2*Math.PI);
+      c.stroke();
+    } else {
+      c.beginPath();
+      c.arc(this.x+scroll.x,this.y+scroll.y,this.radii[0],(this.start-90)/180*Math.PI,(this.stop-90)/180*Math.PI);
+      c.stroke();
+      c.beginPath();
+      c.arc(this.x+scroll.x,this.y+scroll.y,this.radii[1],(this.start-90)/180*Math.PI,(this.stop-90)/180*Math.PI);
+      c.stroke();
+    }
+    if (this.selected) for (let i=0;i<this.nodes.length;i++) this.nodes[i].render();
+  }
+  inside(x,y) {
+    if ((this.x-x)*(this.x-x)+(this.y-y)*(this.y-y)<=this.radii[1]*this.radii[1]) {
+      if (this.stop===this.start) return true;
+      else {
+        let quadrants=[false,false,false,false];
+        for (let i=this.start;;i=(i+90)%360) {
+          if (quadrants[i/90]||i===this.stop) break;
+          quadrants[i/90]=true;
+        }
+        x=x-this.x,y=y-this.y;
+        // 3 0
+        // 2 1
+        if (x<0) return quadrants[y<0?3:2];
+        else if (x>0) return quadrants[y<0?0:1];
+        else if (x===0) return y===0||(quadrants[y<0?0:2]||quadrants[y<0?3:1]);
+        else return quadrants[x<0?2:0]||quadrants[x<0?3:1];
+      }
+    } else return false;
+  }
+  drag(x,y) {
+    [x,y]=snap(x,y);
+    this.x=x;
+    this.y=y;
+    [this.nodes[0].x,this.nodes[0].y]=this.toPosition(this.start,this.radii[1]);
+    [this.nodes[1].x,this.nodes[1].y]=this.toPosition(this.stop,this.radii[0]);
+  }
+  toPosition(angle,radius) {
+    switch (angle%360) {
+      case 0: return [this.x,this.y-radius];
+      case 90: return [this.x+radius,this.y];
+      case 180: return [this.x,this.y+radius];
+      case 270: return [this.x-radius,this.y];
+      default: return [this.x,this.y];
+    }
+  }
+  get xPositions() {return this.dragging?[]:[this.x-this.radii[1],this.x-this.radii[0],this.x,this.x+this.radii[0],this.x+this.radii[1]]}
+  get yPositions() {return this.dragging?[]:[this.y-this.radii[1],this.y-this.radii[0],this.y,this.y+this.radii[0],this.y+this.radii[1]]}
+  getObject() {
+    return {
+      type:"loop",
+      x:this.x,
+      y:this.y,
+      radiusInner:this.radii[0],
+      radiusOuter:this.radii[1],
+      startAngle:(this.start+269)%360+1,
+      endAngle:(this.stop+269)%360+1
+    };
+  }
+}
+document.addEventListener("keydown",e=>{keys[e.keyCode]=true;},false);
+document.addEventListener("keyup",e=>{keys[e.keyCode]=false;},false);
+document.addEventListener("mousedown",e=>{keys.x=e.clientX,keys.y=e.clientY,keys.down=true;e.preventDefault();},false);
+document.addEventListener("mousemove",e=>{keys.x=e.clientX,keys.y=e.clientY;e.preventDefault();},false);
+document.addEventListener("mouseup",e=>{keys.x=e.clientX,keys.y=e.clientY,keys.down=false;e.preventDefault();},false);
+document.addEventListener("touchstart",e=>{keys.x=e.touches[0].clientX,keys.y=e.touches[0].clientY,keys.down=true;e.preventDefault();},{passive:false});
+document.addEventListener("touchmove",e=>{keys.x=e.touches[0].clientX,keys.y=e.touches[0].clientY;e.preventDefault();},{passive:false});
+document.addEventListener("touchend",e=>{keys.down=false;e.preventDefault();},{passive:false});
+objects.push(new Box(100,698,400,0));
+objects.push(new Loop(100,498,100,200,180,0));
+objects.push(new Box(200,498,100,100));
+objects.push(new Box(100,398,0,200));
+objects.push(new Box(100,298,200,0));
+objects.push(new Box(500,498,0,200));
+objects.push(new Loop(500,298,100,200,270,180));
+objects.push(new Box(400,298,100,100));
+function detectKey(keycode) {
+  let pressing='pressing'+keycode;
+  if (keys[keycode]) {
+    if (!keys[pressing]) {
+      keys[pressing]=true;
+      return true;
+    }
+  } else if (keys[pressing]) keys[pressing]=false;
+  return false;
+}
+function draw() {
+  c.clearRect(0,0,innerWidth,innerHeight);
+  if (!selected) {
+    if (keys.down) {
+      if (keys.scrollOffset) {
+        if (typeof keys.scrollOffset==='object') scroll.x=keys.x-keys.scrollOffset[0],scroll.y=keys.y-keys.scrollOffset[1];
+      } else {
+        for (let i=0;i<objects.length;i++) {
+          if (objects[i].inside(keys.x-scroll.x,keys.y-scroll.y)) {
+            selected=objects[i],selected.selected=true;
+            objects.splice(objects.indexOf(selected),1); // push to top
+            objects.splice(0,0,selected);
+            break;
+          }
+        }
+        if (!selected) keys.scrollOffset=[keys.x-scroll.x,keys.y-scroll.y];
+      }
+    } else if (keys.scrollOffset) keys.scrollOffset=null;
+  } else {
+    selected.doYourThing();
+  }
+  if (detectKey(82)) {
+    if (selected) selected.selected=false;
+    objects.splice(0,0,new Box(keys.x-scroll.x-50,keys.y-scroll.y-50,100,100));
+    selected=objects[0];
+    selected.selected=true;
+    updatePositionArrays();
+  }
+  if (detectKey(76)) {
+    if (selected) selected.selected=false;
+    objects.splice(0,0,new Loop(keys.x-scroll.x,keys.y-scroll.y,50,100,0,180));
+    selected=objects[0];
+    selected.selected=true;
+    updatePositionArrays();
+  }
+  if (detectKey(38)) {
+    let str=[];
+    for (let i=0;i<objects.length;i++) str.push(objects[i].getObject());
+    output.value=JSON.stringify(str);
+    output.focus();
+  }
+  if (detectKey(40)) {
+    try {
+      let json=JSON.parse(output.value);
+      for (let i=objects.length;i--;) objects[i].die();
+      for (let i=0;i<json.length;i++) {
+        switch (json[i].type) {
+          case 'rect': objects.push(new Box(json[i].x,json[i].y,json[i].width,json[i].height)); break;
+          case 'loop': objects.push(new Loop(json[i].x,json[i].y,json[i].radiusInner,json[i].radiusOuter,json[i].startAngle+90,json[i].endAngle+90)); break;
+        }
+      }
+    } catch (e) {
+      output.value=e;
+    }
+  }
+  c.strokeStyle='white';
+  c.lineJoin='round';
+  c.lineCap='round';
+  for (let i=objects.length;i--;) objects[i].render();
+  window.requestAnimationFrame(draw);
+}
+draw();
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
