@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>walking into rectangles</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="it hurts"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" href="canvasfullscreen.css">
+    <style>
+      body {
+        background-color: #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="level"></canvas>
+
+    <script src="../../sheep.js" charset="utf-8"></script>
+    <script src="canvasfullscreen.js" charset="utf-8"></script>
+    <script>
+var canvas=document.querySelector('#level'),
+c=canvas.getContext('2d'),
+keys={x:0,y:0,down:false},
+scroll={x:0,y:0},
+selected=null,
+terrain,
+objects=[],
+level=[
+  {"type":"rect","x":22,"y":500,"width":406,"height":34},
+  {"type":"rect","x":410,"y":276,"width":18,"height":224},
+  {"type":"rect","x":54,"y":276,"width":356,"height":18},
+  {"type":"rect","x":22,"y":276,"width":32,"height":224}
+],
+config={
+  GRAVITY_ACCELERATION:0.4
+};
+document.addEventListener("keydown",e=>{keys[e.keyCode]=true;},false);
+document.addEventListener("keyup",e=>{keys[e.keyCode]=false;},false);
+document.addEventListener("mousedown",e=>{keys.x=e.clientX,keys.y=e.clientY,keys.down=true;e.preventDefault();},false);
+document.addEventListener("mousemove",e=>{keys.x=e.clientX,keys.y=e.clientY;e.preventDefault();},false);
+document.addEventListener("mouseup",e=>{keys.x=e.clientX,keys.y=e.clientY,keys.down=false;e.preventDefault();},false);
+document.addEventListener("touchstart",e=>{keys.x=e.touches[0].clientX,keys.y=e.touches[0].clientY,keys.down=true;e.preventDefault();},{passive:false});
+document.addEventListener("touchmove",e=>{keys.x=e.touches[0].clientX,keys.y=e.touches[0].clientY;e.preventDefault();},{passive:false});
+document.addEventListener("touchend",e=>{keys.down=false;e.preventDefault();},{passive:false});
+function toXY(dir) {
+  switch (dir) {
+    case 0: return [1,0];
+    case Math.PI/2: return [0,1];
+    case Math.PI: return [-1,0];
+    case Math.PI*1.5: return [0,-1];
+    default:
+      return [Math.cos(dir),Math.sin(dir)];
+  }
+}
+class Rect {
+  constructor(x,y,width,height) {
+    this.x=x||0,
+    this.y=y||0,
+    this.width=width||0,
+    this.height=height||0;
+  }
+}
+class Object {
+  constructor(x,y,width,height) {
+    this.x=x||0,
+    this.y=y||0,
+    this.width=width||0,
+    this.height=height||0;
+    this.gravity=Math.PI/2;
+    this.horizVel=0; // parallel to ground
+    this.vertVel=0; // perpendicular to ground, opposite direction of gravity
+  }
+  tick() {
+    if (this.userinput) this.userinput();
+    this.vertVel+=config.GRAVITY_ACCELERATION;
+    this.x+=this.horizVel;
+    this.y+=this.vertVel;
+  }
+}
+class Player extends Object {
+  userinput() {
+    if (keys[37]) this.horizVel-=1;
+    if (keys[39]) this.horizVel+=1;
+  }
+}
+terrain=level.map(a=>new Rect(a.x,a.y,a.width,a.height));
+objects.push(new Player(0,0,40,40));
+function draw() {
+  function renderRect(rect) { // let's see if putting the render function here is better
+    c.strokeRect(rect.x+scroll.x,rect.y+scroll.x,rect.width,rect.height);
+  }
+  function renderObj(obj) {
+    c.fillRect(obj.x+scroll.x,obj.y+scroll.x,obj.width,obj.height);
+  }
+  // clear canvas; not doing so could be catastrophic
+  c.clearRect(0,0,innerWidth,innerHeight);
+  // styles
+  c.strokeStyle='#333';
+  c.fillStyle='rgba(51,51,51,0.5)';
+  c.lineJoin='round';
+  c.lineCap='round';
+  c.lineWidth=2;
+  // render level
+  for (let i=terrain.length;i--;) renderRect(terrain[i]);
+  for (let i=objects.length;i--;) {
+    objects[i].tick();
+    renderObj(objects[i]);
+  }
+  window.requestAnimationFrame(draw);
+}
+draw();
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>

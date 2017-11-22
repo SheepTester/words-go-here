@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Gemini Logo Customiser</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="for alguien"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" href="https://orbiit.github.io/gunn-web-app/css/colourpicker.css">
+    <link rel="stylesheet" id="googlefont">
+    <style>
+      html, body {
+        height: 100%;
+        width: 100%;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .settings {
+        position: fixed;
+        top: 0;
+        right: 0;
+        flex: none;
+        padding: 10px;
+        background-color: rgba(0,0,0,0.8);
+        color: white;
+        margin: 0;
+        list-style: none;
+        border: 1px solid rgba(255,255,255,0.3);
+        font-size: 14px;
+      }
+      .colourtriggers {
+        background: none;
+        border: 1px solid rgba(255,255,255,0.3);
+        height: 1em;
+        width: 1em;
+        border-radius: 50%;
+        margin-left: 5px;
+        cursor: pointer;
+      }
+      .settings input {
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.7);
+        background-color: rgba(255,255,255,0.1);
+        padding: 5px;
+        margin: 5px;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      input[type=number] {
+        width: 50px;
+      }
+      .settings input:focus {
+        cursor: auto;
+        text-shadow: 0 0 3px rgba(255,255,255,0.5);
+        color: white;
+      }
+      a {
+        color: inherit;
+        background-color: rgba(255,255,255,0.1);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+        background-color: rgba(255,255,255,0.2);
+      }
+      .colourpicker-input {
+        color: white;
+      }
+    </style>
+  </head>
+  <body class="dark">
+    <svg viewBox="-30 -40 402 130" xmlns="http://www.w3.org/2000/svg" stroke-linejoin="round" stroke-linecap="round" fill="none" width="804" height="260">
+      <path d="M0 0 h50 M22 0 v70 h-5 h16 h-5 V0 M25 -26.087 l5 -5 l-10 10 l5 -5 A30 35 0 1 0 22 28.838" stroke-width="3"/>
+      <g>
+        <text x="62" y="15" id="em">emini</text>
+        <text x="47" y="65" id="ech">echnologies</text>
+      </g>
+    </svg>
+    <ul class="settings">
+      <li>WASD to position "gemini" text</li>
+      <li>arrow keys to position "technologies" text</li>
+      <li><label>Foreground colour</label><button id="forebtn" class="colourtriggers"></button></li>
+      <li><label>Background colour</label><button id="backbtn" class="colourtriggers"></button></li>
+      <li><label>Font (from <a href="https://fonts.google.com/">Google Fonts</a>)</label><input type="text" id="fontinput"></li>
+      <li><label>Font weight (multiple of 100 between 100-900; normal is 500)</label><input type="number" id="weightinput"></li>
+      <li>300 is light, 400 is normal, 700 is bold. not all fonts have all font weights</li>
+      <li><label>Font size (px)</label><input type="number" id="sizeinput"></li>
+      <li><label>Output:</label><input type="text" id="output" readonly></li>
+    </ul>
+
+    <script src="../../sheep.js" charset="utf-8"></script>
+    <script src="https://orbiit.github.io/gunn-web-app/js/colour.min.js" charset="utf-8"></script>
+    <script>
+function updateOutput() {
+  output.value=`${empos.x}:${empos.y}:${echpos.x}:${echpos.y}:${foreinput.colour}${backinput.colour}${font}:${weight}:${size}`;
+}
+var path=document.querySelector('svg path'),
+text=document.querySelector('svg g'),
+emini=document.querySelector('#em'),
+empos={
+  get x() {return this._x;},
+  set x(x) {
+    this._x=x;
+    emini.setAttributeNS(null,'x',x);
+    updateOutput();
+  },
+  get y() {return this._y;},
+  set y(y) {
+    this._y=y;
+    emini.setAttributeNS(null,'y',y);
+    updateOutput();
+  }
+},
+echnologies=document.querySelector('#ech'),
+echpos={
+  get x() {return this._x;},
+  set x(x) {
+    this._x=x;
+    echnologies.setAttributeNS(null,'x',x);
+    updateOutput();
+  },
+  get y() {return this._y;},
+  set y(y) {
+    this._y=y;
+    echnologies.setAttributeNS(null,'y',y);
+    updateOutput();
+  }
+},
+forebtn=document.querySelector('#forebtn'),
+foreinput=new ColourPicker(c=>{
+  path.style.stroke=c;
+  text.style.fill=c;
+  forebtn.style.backgroundColor=c;
+  updateOutput();
+}),
+backbtn=document.querySelector('#backbtn'),
+backinput=new ColourPicker(c=>{
+  document.body.style.backgroundColor=c;
+  backbtn.style.backgroundColor=c;
+  updateOutput();
+}),
+fontinput=document.querySelector('#fontinput'),
+font='Roboto',
+weightinput=document.querySelector('#weightinput'),
+weight=400,
+sizeinput=document.querySelector('#sizeinput'),
+size=60,
+link=document.querySelector('#googlefont'),
+output=document.querySelector('#output');
+foreinput.colour='#2aa2eb';
+forebtn.onclick=e=>{
+  foreinput.trigger(forebtn);
+};
+backinput.colour='#fff';
+backbtn.onclick=e=>{
+  backinput.trigger(backbtn);
+};
+fontinput.value=font;
+weightinput.value=weight;
+sizeinput.value=size;
+(weightinput.onchange=fontinput.onchange=e=>{
+  document.body.style.fontFamily=`'${fontinput.value}'`;
+  document.body.style.fontWeight=weightinput.value;
+  link.href=`https://fonts.googleapis.com/css?family=${fontinput.value.replace(/\s/g,'+')}:${weightinput.value}`;
+  updateOutput();
+})();
+(sizeinput.onchange=e=>{
+  text.style.fontSize=sizeinput.value;
+  updateOutput();
+})();
+/*link.onerror=e=>{
+  alert(`Couldn't load font ${link.href}`);
+};
+link.setAttribute('onerror',`link.onerror();`);*/
+empos.x=62;
+empos.y=15;
+echpos.x=47;
+echpos.y=65;
+document.addEventListener("keydown",e=>{
+  switch (e.keyCode) {
+    case 65: empos.x--; break;
+    case 87: empos.y--; break;
+    case 68: empos.x++; break;
+    case 83: empos.y++; break;
+    case 37: echpos.x--; break;
+    case 38: echpos.y--; break;
+    case 39: echpos.x++; break;
+    case 40: echpos.y++; break;
+  }
+},false);
+updateOutput();
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
