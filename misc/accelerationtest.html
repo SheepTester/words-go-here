@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>acceleration test</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="physics is hard"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep2.css">
+    <script src="../../sheep2.js" charset="utf-8"></script>
+    <style>
+      canvas {
+        background: #eee;
+        float: left;
+      }
+      #canvas2 {
+        float: right;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="100" height="1000"></canvas>
+    <canvas id="canvas2" width="100" height="1000"></canvas>
+    <h1>Acceleration Test</h1>
+    <p>10 pixels represents a "meter."</p>
+    <p>The box on the left should fall at the same speed regardless of frame rate.</p>
+    <p>The box on the right assumes that it always runs at 60fps (the difference is more significant when you switch tabs).</p>
+    <p>Until now, my previous projects with gravity (eg <a href="https://sheeptester.github.io/platformre/">Platformre</a>, <a href="https://sheeptester.github.io/platformre/penland/inv.html">Penland</a>, <a href="https://sheeptester.github.io/platformre/nova/customise.html">Platformludo</a>, and <a href="https://sheeptester.github.io/platformre/nova/penland/">Skribilmondo</a>) have used the system on the right.</p>
+    <p>My future projects will likely use the method used on the left since it also accounts for potentially slower/laggier computers that don't run the canvas at 60fps (this is extremely apparent in Skribilmondo where a ton of blocks are being rerendered per frame).</p>
+
+    <script>
+let canvas = document.querySelector('#canvas'),
+c = canvas.getContext('2d'),
+canvas2 = document.querySelector('#canvas2'),
+c2 = canvas2.getContext('2d'),
+lastFrame = new Date().getTime(),
+yv = -0.005, // in m/ms
+y = 100,
+scale = 10, // pixels per meter
+acceleration = 0.0000098, // in m/ms^2, acceleration of gravity
+y2 = 100,
+yv2 = -0.0833333333, // in m/frame
+accel2 = 0.00272222222; // in m/frame^2
+c.fillStyle = 'black';
+function draw() {
+  let now = new Date().getTime(),
+  time = now - lastFrame;
+  c.clearRect(0, 0, canvas.width, canvas.height);
+  c2.clearRect(0, 0, canvas2.width, canvas2.height);
+  yv += acceleration * time;
+  y += yv * time * scale;
+  c.fillRect(40,y,20,20);
+  yv2 += accel2;
+  y2 += yv2 * scale;
+  c2.fillRect(40,y2,20,20);
+  lastFrame = now;
+  window.requestAnimationFrame(draw);
+}
+draw();
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
