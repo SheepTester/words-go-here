@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>schedule maker</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="wow!"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep2.css">
+    <script src="../../sheep2.js" charset="utf-8"></script>
+    <script src="_uglysettings.js" charset="utf-8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/opentype.js@latest/dist/opentype.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js" charset="utf-8"></script>
+    <style></style>
+  </head>
+  <body>
+    <div id="settings">
+      <p><label>set font (WOFF, OTF, TTF)</label><input type="file" id="font" accept=".woff,.otf,.ttf"></p>
+    </div>
+    <button id="done">done</button>
+    <svg id="svg"></svg>
+
+    <script>
+const totalPadding = new UglySetting("padding", 40, {type: "number", addToDOM: true}),
+fiveMinHeight = new UglySetting("px per 5 min", 5, {type: "number", addToDOM: true}),
+dayWidth = new UglySetting("width of each day in px", 87, {type: "number", addToDOM: true}),
+startingMinute = new UglySetting("minute when school starts", 505, {type: "number", addToDOM: true}),
+periodNameSize = new UglySetting("bigger font size", 24, {type: "number", addToDOM: true}),
+periodTimeSize = new UglySetting("less big font size", 12, {type: "number", addToDOM: true}),
+scheduleJSON = new UglySetting("schedule json", `[
+  [{"name":"Period A","start":505,"end":565},{"name":"Brunch","start":565,"end":585},{"name":"FlexTime","start":585,"end":645},{"name":"FlexTime","start":645,"end":705},{"name":"Period B","start":715,"end":770},{"name":"Lunch","start":770,"end":810},{"name":"Period F","start":810,"end":865}],
+  [{"name":"Period C","start":505,"end":565},{"name":"Brunch","start":565,"end":585},{"name":"FlexTime","start":585,"end":645},{"name":"FlexTime","start":645,"end":705},{"name":"Period D","start":715,"end":770},{"name":"Lunch","start":770,"end":810},{"name":"Period G","start":810,"end":865}],
+  [{"name":"SELF","start":505,"end":550},{"name":"SELF","start":550,"end":600},{"name":"Brunch","start":600,"end":615},{"name":"FlexTime","start":615,"end":675},{"name":"FlexTime","start":675,"end":735}],
+  [{"name":"Period E","start":505,"end":565},{"name":"Brunch","start":565,"end":580},{"name":"Period B","start":580,"end":655},{"name":"Period C","start":665,"end":740},{"name":"Lunch","start":740,"end":780},{"name":"Period A","start":780,"end":855},{"name":"Period G","start":865,"end":940}],
+  [{"name":"Period D","start":505,"end":585},{"name":"Brunch","start":585,"end":600},{"name":"Period E","start":600,"end":675},{"name":"Period F","start":685,"end":760}]
+]`, {textarea: true, addToDOM: true});
+const svgElem = document.querySelector("#svg"),
+doneBtn = document.querySelector("#done"),
+fontChooser = document.querySelector("#font"),
+periodColours = {
+  "Period A": "FF9800", "Period B": "2196F3", "Period C": "f44336", "Period D": "FFEB3B",
+  "Period E": "3F51B5", "Period F": "4CAF50", "Period G": "E91E63", "FlexTime": "607D8B", "SELF": "607D8B"
+};
+fontChooser.addEventListener("change", e => {
+  if (fontChooser.files[0]) {
+    var url = window.URL.createObjectURL(fontChooser.files[0]);
+    opentype.load(url, (err, font) => {
+      window.URL.revokeObjectURL(url);
+      window.font = font;
+    });
+  }
+},false);
+function getSVGPath(text, fontSize, x, y) {
+  var path = font.getPath(text, x, y, fontSize).commands,
+  pathString = "";
+  for (var cmd of path) {
+    pathString += cmd.type;
+    if (cmd.x1) pathString += " " + cmd.x1;
+    if (cmd.y1) pathString += " " + cmd.y1;
+    if (cmd.x2) pathString += " " + cmd.x2;
+    if (cmd.y2) pathString += " " + cmd.y2;
+    if (cmd.x) pathString += " " + cmd.x;
+    if (cmd.y) pathString += " " + cmd.y;
+  }
+  return pathString;
+}
+function centreTextInRect(text, fontSize, x, y, width, height) {
+  let textWidth = font.getAdvanceWidth(text, fontSize),
+  textX = x + width / 2 - textWidth / 2,
+  textY = y + height / 2 + fontSize / 2;
+  return getSVGPath(text, fontSize, textX, textY);
+}
+doneBtn.addEventListener("click", e => {
+  let innerHTML = "",
+  schedule = JSON.parse(scheduleJSON.getValue()),
+  startTime = startingMinute.getValue(),
+  padding = totalPadding.getValue(),
+  scaleFactor = fiveMinHeight.getValue() / 5,
+  pxPerDay = dayWidth.getValue(),
+  bigFontSize = periodNameSize.getValue(),
+  smallFontSize = periodTimeSize.getValue(),
+  tallestDay = 0;
+  for (let dayNum = 0; dayNum < schedule.length; dayNum++) {
+    innerHTML += `<g stroke="white" stroke-width="5">`;
+    let day = schedule[dayNum];
+    for (let periodNum = 0; periodNum < day.length; periodNum++) {
+      let period = day[periodNum],
+      x = pxPerDay * dayNum + padding,
+      y = (period.start - startTime) * scaleFactor + padding,
+      height = (period.end - period.start) * scaleFactor;
+      if (period.name === "Lunch" || period.name === "Brunch") {
+        innerHTML += `<path fill="rgba(0,0,0,0.8)" d="${centreTextInRect(period.name, smallFontSize, x, y, pxPerDay, height)}"/>`;
+      } else {
+        innerHTML += `<path fill="#${periodColours[period.name]}" d="M${x} ${y}h${pxPerDay}v${height}H${x}z"/>`;
+        let textColor = period.name === "Period D" ? "rgba(0,0,0,0.8)" : "white",
+        periodName = period.name === "FlexTime" ? "Flex" : period.name === "SELF" ? "SELF" : period.name.slice(-1),
+        minutes = (period.end - period.start) + "minutes",
+        times = trumpify(period.start) + "&en;" + trumpify(period.end);
+        innerHTML += `<path fill="${textColor}" d="${centreTextInRect(periodName, bigFontSize, x, y, pxPerDay, height)}"/>`;
+      }
+      if (y + height > tallestDay) tallestDay = y + height;
+    }
+    innerHTML += `</g>`;
+  }
+  svgElem.setAttribute("width", (pxPerDay * 5 + padding * 2) + "px");
+  svgElem.setAttribute("height", (tallestDay + padding * 2) + "px");
+  svgElem.innerHTML = innerHTML;
+}, false);
+    </script>
+  </body>
+  <!-- MADE BY SEAN -->
+</html>
