@@ -1,5 +1,5 @@
 /** HOW TO USE _uglysettings.js
-  * 0. <script src="_uglysettings.js" charset="utf-8"></script>
+  * 0. <script src="0uglysettings.js" charset="utf-8"></script>
   * 1. make div#settings
   * 2. new UglySetting("label text here", "default value", options)
   */
