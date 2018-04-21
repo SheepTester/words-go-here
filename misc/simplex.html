@@ -36,7 +36,6 @@ const magicUnskew = 1 - unskew * 2;
 const gradientA = [1, 1, 0, -1, -1, -1, 0, 1];
 const gradientB = [0, 1, 1, 1, 0, -1, -1, -1];
 
-let str = "";
 function simplexNoise(tbl, x, y) {
   let mu = (x + y) * skew,
   a = Math.floor(x + mu),
@@ -78,7 +77,6 @@ function run() {
   adjustColours = adjustColourSetting.getValue();
   for (let x = 0; x < canvas.width; x += pixelSize) {
     for (let y = 0; y < canvas.height; y += pixelSize) {
-      str = "";
       let value = simplexNoise(table, (x + offsetX) / scaleX, (y + offsetY) / scaleY) * 32.5 + 0.5;
       if (adjustColours) value *= value;
       c.fillStyle = `hsl(${hue}, ${sat}%, ${Math.round(value * 100)}%)`;
