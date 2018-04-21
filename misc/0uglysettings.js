@@ -9,6 +9,8 @@ function UglySetting(labelText, defaultValue, options) {
   this.labelElem = document.createElement("label");
   this.inputElem = document.createElement(options.textarea ? "textarea" : "input");
 
+  if (options.type === "number") this.inputElem.type = "number";
+  else if (options.type === "boolean") this.inputElem.type = "checkbox", this.inputElem.checked = defaultValue;
   this.inputElem.value = defaultValue;
   this.labelElem.appendChild(document.createTextNode(labelText));
 
@@ -18,11 +20,11 @@ function UglySetting(labelText, defaultValue, options) {
 
   this.type = options.type || null;
 
-  if (options.addToDOM) this.addToDOM();
+  if (options.addToDOM || options.addToDOM === undefined) this.addToDOM();
 }
 UglySetting.prototype.getValue = function() {
   if (this.type === "number") return +this.inputElem.value;
-  else if (this.type === "boolean") return this.inputElem.value[0].toLowerCase() === "n";
+  else if (this.type === "boolean") return this.inputElem.checked;
   else return this.inputElem.value;
 };
 UglySetting.prototype.addToDOM = function() {
