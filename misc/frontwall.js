@@ -8,7 +8,7 @@
 
     set name(name) {
       pageName.textContent = name;
-    }
+    },
 
     set innerHTML(html) {
       content.innerHTML = html;
