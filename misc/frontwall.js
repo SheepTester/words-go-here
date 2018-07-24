@@ -65,10 +65,11 @@
       const months = ['January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'];
       function formatDate(date) {
-        return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getYear()}`
+        return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
       }
 
       // ====== CUSTOM POSTS ======
+      // newPost('Title', new Date()).innerHTML = ``;
 
       break;
 
