@@ -2,7 +2,7 @@
   'use strict';
 
   const content = document.querySelector('table tr:nth-child(2) td:last-child'),
-        pageName = document.querySelector('title')
+        pageName = document.querySelector('title'),
         path = window.location.pathname,
         page = {
 
@@ -69,7 +69,6 @@
       }
 
       // ====== CUSTOM POSTS ======
-      newPost('test', new Date()).innerHTML = ``;
 
       break;
 
