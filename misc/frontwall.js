@@ -10,8 +10,8 @@
       pageName.textContent = name;
     },
 
-    set innerHTML(html) {
-      content.innerHTML = html;
+    get topify() {
+      content.vAlign = 'top';
     }
 
   };
@@ -71,6 +71,35 @@
       // ====== CUSTOM POSTS ======
       // newPost('Title', new Date()).innerHTML = ``;
 
+      break;
+
+    case '/is-gamepro5-good-programmer':
+      content.innerHTML = `
+        <center>
+          <h3>Is Gamekeeper 5 a gud programer?</h3>
+          <p>
+            <big><big><big><big><big><big><big><big><big><big><big><big><big>NO!</big></big></big></big></big></big></big></big></big></big></big></big></big>
+          </p>
+          ${button('why?', '/about-website?programing')}
+        </center>
+      `;
+      break;
+
+    case '/about-website':
+      content.querySelector('.button').href = 'https://goo.gl/forms/EeA1rGx8marT03MB3';
+
+      if (window.location.search === '?programing') {
+        const paragraph = content.querySelector('p');
+        paragraph.innerHTML = paragraph.innerHTML
+          .replace('This site is by far my greatest accomplishment.', '<x-highlight>$&</x-highlight>');
+        document.head.appendChild(document.createElement('style')).textContent = `
+          x-highlight {
+            background-color: rgba(255, 0, 0, 0.1);
+            font-weight: bold;
+            /* border-bottom: 2px dashed red; */
+          }
+        `;
+      }
       break;
 
   }
