@@ -12,9 +12,16 @@
 
     get topify() {
       content.vAlign = 'top';
+    },
+
+    swapLink(oldLink, newLink) {
+      document.querySelectorAll(`a[href="${oldLink}"]`).forEach(el => el.href = newLink);
     }
 
   };
+
+  page.swapLink('https://goo.gl/forms/tj4LqFKzyMPuOlqg1', 'https://goo.gl/forms/EeA1rGx8marT03MB3');
+  page.swapLink('https://goo.gl/forms/ziifb6S4XmK0k3QS2', 'https://goo.gl/forms/AOE4M5FjmbfvbTis2');
 
   let customButtons = 0;
   function button(text, onclick = '#') {
@@ -27,7 +34,63 @@
     }
   }
 
-  switch (path) {
+  if (path.startsWith('/programs')) {
+
+    function newProgram(title, description, url) {
+      const id = title.toLowerCase().replace(/\s/g, '_');
+      if (path === '/programs/' + id) {
+        content.innerHTML = `
+          <a href="/programs.html">
+            <img class="backarrow" src="/images/backarrow.svg">
+          </a>
+          <p>
+          <p>
+          <h3><b>${title}</b></h3>
+          ${description ? `<p>${description}</p>` : ''}
+          <iframe src="${url}" height="500" width="600"></iframe>
+        `;
+      } else {
+        content.appendChild(document.createElement('p')).innerHTML = `
+          ${title}
+          <br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${button('play', '/programs/' + id)}
+        `;
+      }
+    }
+
+    // ====== CUSTOM PROGRAMS ======
+    newProgram('test', 'hmmm', 'https://sheeptester.github.io/');
+
+  }
+  else switch (path) {
+
+    case '/':
+
+      function newNotif(title) {
+        const wrapper = document.createElement('center');
+        const id = atob(title).replace(/[^a-z]/gi, '') || 'a' + content.textContent.length;
+        if (localStorage[id] === 'yes') wrapper.style.display = 'none';
+        content.insertBefore(wrapper, content.querySelector('center:nth-of-type(2)'));
+        return {
+          set innerHTML(html) {
+            wrapper.innerHTML = `
+            <div class="alert" style="width: 280px;" id="${id}">
+              <span class="closebtn" onclick="this.parentElement.parentElement.style.display='none';localStorage.${id}='yes';">&times;</span>
+          	  <br>
+              <h3>${title}</h3>
+              <br>
+              ${html}
+            </div>
+            <br>
+            `;
+          }
+        }
+      }
+
+      // ====== CUSTOM ALERTS ======
+      // newNotif('test').innerHTML = `lollololollol<p><a class="popupbutton" href="#">do nothing</a></p>`;
+
+      break;
 
     case '/news':
     case '/news_list':
@@ -86,7 +149,6 @@
       break;
 
     case '/about-website':
-      content.querySelector('.button').href = 'https://goo.gl/forms/EeA1rGx8marT03MB3';
 
       if (window.location.search === '?programing') {
         const paragraph = content.querySelector('p');
@@ -100,6 +162,7 @@
           }
         `;
       }
+
       break;
 
   }
