@@ -6,8 +6,8 @@
         path = window.location.pathname,
         page = {
 
-    set name(name) {
-      pageName.textContent = name;
+    set title(tabName) {
+      pageName.textContent = 'Gamepro5 - ' + tabName;
     },
 
     get topify() {
@@ -39,6 +39,7 @@
     function newProgram(title, description, url) {
       const id = title.toLowerCase().replace(/\s/g, '_');
       if (path === '/programs/' + id) {
+        page.title = 'Programs';
         content.innerHTML = `
           <a href="/programs.html">
             <img class="backarrow" src="/images/backarrow.svg">
@@ -49,7 +50,7 @@
           ${description ? `<p>${description}</p>` : ''}
           <iframe src="${url}" height="500" width="600"></iframe>
         `;
-      } else {
+      } else if (path[9] !== '/') {
         content.appendChild(document.createElement('p')).innerHTML = `
           ${title}
           <br>
@@ -59,7 +60,7 @@
     }
 
     // ====== CUSTOM PROGRAMS ======
-    newProgram('test', 'hmmm', 'https://sheeptester.github.io/');
+    // newProgram('test', 'hmmm', 'https://sheeptester.github.io/');
 
   }
   else switch (path) {
@@ -137,6 +138,7 @@
       break;
 
     case '/is-gamepro5-good-programmer':
+      page.title = 'Is Gamekeeper 5 a gud programer?';
       content.innerHTML = `
         <center>
           <h3>Is Gamekeeper 5 a gud programer?</h3>
