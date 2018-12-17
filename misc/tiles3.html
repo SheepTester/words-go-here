@@ -11,6 +11,8 @@
     <style>
       body {
         background-color: #4B4A5A;
+        color: white;
+        font-family: 'Roboto', 'Helvetica Neue', 'Helvetica', sans-serif;
       }
       canvas {
         border-radius: 2px;
@@ -33,16 +35,16 @@ const c = canvas.getContext('2d');
 const map = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 1, 1, 1, 1, 1, 1, 0, 1],
+  [1, 0, 0, 0, 1, 0, 0, 0, 1, 1],
+  [1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 1, 1, 0, 0, 0, 0, 0, 0, 1],
+  [1, 1, 1, 1, 1, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 1, 0, 0, 0, 1, 1],
+  [1, 0, 0, 0, 0, 0, 0, 1, 1, 1],
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
-const temp_player = {x: 2, y: 2, width: 0.7, height: 1.2, xv: 0, yv: 0};
+const temp_player = {x: 1, y: 7.8, width: 0.7, height: 1.2, xv: 0, yv: 0};
 function getTile(x, y) {
   return x < 0 || x >= 10 || y < 0 || y >= 10 ? null : {x: x, y: y, tile: map[y][x]};
 }
@@ -50,10 +52,15 @@ function isSolid(block) {
   return block && block.tile;
 }
 let playing = false;
+let onGround = false;
 function render() {
   if (playing) {
     temp_player.xv *= 0.8;
     temp_player.yv += 0.05;
+    if (keys.left) temp_player.xv -= 0.05;
+    if (keys.up && onGround) temp_player.yv = -temp_player.height / 3;
+    if (keys.right) temp_player.xv += 0.05;
+    if (keys.down) temp_player.yv += 1;
   }
   c.clearRect(0, 0, 400, 400);
   c.fillStyle = '#212121';
@@ -64,20 +71,21 @@ function render() {
     }
   }
   c.fill();
-  const {xv, yv, collided, axis} = platformer(temp_player, getTile, isSolid);
+  const {xv, yv, collided, collisions, yCollided} = platformer(temp_player, getTile, isSolid);
   if (collided) {
     c.fillStyle = '#f44336';
     c.beginPath();
-    collided.forEach(({x, y}) => {
+    collisions.forEach(({x, y}) => {
       c.rect(x * 40, y * 40, 40, 40);
     });
     c.fill();
   }
   if (playing) {
     if (collided) {
-      if (axis === 'x') temp_player.xv = xv;
-      else temp_player.yv = yv;
-    }
+      onGround = temp_player.yv > 0 && yCollided;
+      temp_player.xv = xv;
+      temp_player.yv = yv;
+    } else onGround = false;
     temp_player.x += temp_player.xv;
     temp_player.y += temp_player.yv;
   }
@@ -97,6 +105,7 @@ function render() {
   c.fillStyle = 'rgba(76, 175, 80, 0.5)';
   c.fillRect((temp_player.x + xv) * 40, (temp_player.y + yv) * 40, temp_player.width * 40, temp_player.height * 40);
 }
+const keys = {left: false, up: false, right: false, down: false};
 document.addEventListener('keydown', e => {
   if (e.keyCode === 80) {
     playing = !playing;
@@ -104,10 +113,12 @@ document.addEventListener('keydown', e => {
     else window.cancelAnimationFrame(lastID);
   } else if (playing) {
     switch (e.keyCode) {
-      case 37: case 65: temp_player.xv -= 0.3; break;
-      case 38: case 87: case 32: temp_player.yv -= 0.5; break;
-      case 39: case 68: temp_player.xv += 0.3; break;
-      case 40: case 83: temp_player.yv += 1; break;
+      case 37: case 65: keys.left = true; break;
+      case 38: case 87: case 32: keys.up = true; break;
+      case 39: case 68: keys.right = true; break;
+      case 40: case 83: keys.down = true; break;
+      case 219: temp_player.height -= 0.1; temp_player.y += 0.09; break;
+      case 221: temp_player.height += 0.1; temp_player.y -= 0.11; break;
     }
   } else {
     switch (e.keyCode) {
@@ -124,6 +135,14 @@ document.addEventListener('keydown', e => {
       default: return;
     }
     render();
+  }
+});
+document.addEventListener('keyup', e => {
+  switch (e.keyCode) {
+    case 37: case 65: keys.left = false; break;
+    case 38: case 87: case 32: keys.up = false; break;
+    case 39: case 68: keys.right = false; break;
+    case 40: case 83: keys.down = false; break;
   }
 });
 let lastID = null;

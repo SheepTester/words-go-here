@@ -1,13 +1,13 @@
 function platformer(player, getTile, isSolid) {
-  const {x, y, xv, yv, width, height} = player;
+  let {x, y, xv, yv, width, height} = player;
   if (xv === 0 && yv === 0) {
     return { xv: 0, yv: 0, collided: false };
   }
-  const anchorX = xv < 0 ? x : x + width;
-  const anchorY = yv < 0 ? y : y + height;
-  let nextX = (xv < 0 ? Math.floor : Math.ceil)(anchorX); // maybe calc. offset instead of + width
+  let anchorX = xv < 0 ? x : x + width;
+  let anchorY = yv < 0 ? y : y + height;
+  let nextX = (xv < 0 ? Math.floor : Math.ceil)(anchorX);
   let nextY = (yv < 0 ? Math.floor : Math.ceil)(anchorY);
-  const slope = yv / xv;
+  let slope = yv / xv;
   function getCollisions(minX, maxX, minY, maxY) {
     const collisions = [];
     for (let x = minX; x < maxX; x++) {
@@ -18,46 +18,53 @@ function platformer(player, getTile, isSolid) {
     }
     return collisions;
   }
-  let collided = null, newXV = xv, newYV = yv, axis;
-  while (xv === 0 || (xv < 0 ? nextX - anchorX >= xv : nextX - anchorX <= xv)
-      || (yv < 0 ? nextY - anchorY >= yv : nextY - anchorY <= yv)) {
+  let xCollided = null, yCollided = null, newXV = xv, newYV = yv;
+  while (xv === 0 || !xCollided && (xv < 0 ? nextX - anchorX >= xv : nextX - anchorX <= xv)
+      || !yCollided && (yv < 0 ? nextY - anchorY >= yv : nextY - anchorY <= yv)) {
     let localY = slope * (nextX - anchorX) + anchorY;
-    while ((yv < 0 ? localY > nextY : localY < nextY) && (xv < 0 ? nextX - anchorX >= xv : nextX - anchorX <= xv)) {
+    while (!xCollided && (yv < 0 ? localY > nextY : localY < nextY) && (xv < 0 ? nextX - anchorX >= xv : nextX - anchorX <= xv)) {
       const x = xv < 0 ? nextX - 1 : nextX;
       const minY = yv < 0 ? Math.floor(localY) : Math.floor(localY - height);
       const maxY = yv < 0 ? Math.ceil(localY + height) : Math.ceil(localY);
       const collisions = getCollisions(x, x + 1, minY, maxY);
       if (collisions.length) {
-        collided = collisions;
+        xCollided = collisions;
         newXV = nextX - anchorX;
-        newYV = localY - anchorY;
-        axis = 'x';
-        break;
+        anchorX = xv < 0 ? nextX + width : nextX;
+        xv = 0;
+        slope = Infinity;
       }
       xv < 0 ? nextX-- : nextX++;
       localY = slope * (nextX - anchorX) + anchorY;
     }
-    if (!collided && (yv < 0 ? nextY - anchorY >= yv : nextY - anchorY <= yv)) {
-      const localX = (nextY - anchorY) / slope + anchorX;
-      const minX = xv < 0 ? Math.floor(localX) : Math.floor(localX - width);
-      const maxX = xv < 0 ? Math.ceil(localX + width) : Math.ceil(localX);
-      const y = yv < 0 ? nextY - 1 : nextY;
-      const collisions = getCollisions(minX, maxX, y, y + 1);
-      if (collisions.length) {
-        collided = collisions;
-        newXV = localX - anchorX;
-        newYV = nextY - anchorY;
-        axis = 'y';
+    if (xCollided && (yCollided || yv === 0)) break;
+    if (!yCollided) {
+      if (yv < 0 ? nextY - anchorY >= yv : nextY - anchorY <= yv) {
+        const localX = ((nextY - anchorY) / slope || 0) + anchorX;
+        const minX = xv < 0 ? Math.floor(localX) : Math.floor(localX - width);
+        const maxX = xv < 0 ? Math.ceil(localX + width) : Math.ceil(localX);
+        const y = yv < 0 ? nextY - 1 : nextY;
+        const collisions = getCollisions(minX, maxX, y, y + 1);
+        if (collisions.length) {
+          yCollided = collisions;
+          newYV = nextY - anchorY;
+          anchorY = yv < 0 ? nextY + height : nextY;
+          nextY = Math.ceil(anchorY);
+          yv = 0;
+          slope = 0;
+          if (xCollided || xv === 0) break;
+        }
+        yv < 0 ? nextY-- : nextY++;
+      } else {
         break;
       }
-      yv < 0 ? nextY-- : nextY++;
-    } else {
-      break;
     }
   }
   return { // TODO
     xv: newXV, yv: newYV,
-    collided: collided,
-    axis: axis
+    collided: xCollided || yCollided,
+    xCollided: xCollided,
+    yCollided: yCollided,
+    collisions: [...(xCollided || []), ...(yCollided || [])]
   }
 }
