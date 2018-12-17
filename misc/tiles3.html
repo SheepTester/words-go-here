@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>tiles 3</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="Using a completely different tile-based platformer engine"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+    <script src="./platscript6ish.js" charset="utf-8"></script>
+    <style>
+      body {
+        background-color: #4B4A5A;
+      }
+      canvas {
+        border-radius: 2px;
+        background-color: white;
+        width: 400px;
+        height: 400px;
+        -ms-interpolation-mode: bicubic;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c" width="400" height="400"></canvas>
+    <script>
+const canvas = document.getElementById('c');
+const c = canvas.getContext('2d');
+const map = [
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+];
+const temp_player = {x: 2, y: 2, width: 0.7, height: 1.2, xv: 0, yv: 0};
+function getTile(x, y) {
+  return x < 0 || x >= 10 || y < 0 || y >= 10 ? null : {x: x, y: y, tile: map[y][x]};
+}
+function isSolid(block) {
+  return block && block.tile;
+}
+let playing = false;
+function render() {
+  if (playing) {
+    temp_player.xv *= 0.8;
+    temp_player.yv += 0.05;
+  }
+  c.clearRect(0, 0, 400, 400);
+  c.fillStyle = '#212121';
+  c.beginPath();
+  for (let x = 0; x < 10; x++) {
+    for (let y = 0; y < 10; y++) {
+      if (map[y][x]) c.rect(x * 40, y * 40, 40, 40);
+    }
+  }
+  c.fill();
+  const {xv, yv, collided, axis} = platformer(temp_player, getTile, isSolid);
+  if (collided) {
+    c.fillStyle = '#f44336';
+    c.beginPath();
+    collided.forEach(({x, y}) => {
+      c.rect(x * 40, y * 40, 40, 40);
+    });
+    c.fill();
+  }
+  if (playing) {
+    if (collided) {
+      if (axis === 'x') temp_player.xv = xv;
+      else temp_player.yv = yv;
+    }
+    temp_player.x += temp_player.xv;
+    temp_player.y += temp_player.yv;
+  }
+  c.strokeStyle = 'rgba(255, 0, 0, 0.2)';
+  c.beginPath();
+  for (let i = 40; i < 400; i += 40) {
+    c.moveTo(i, 0);
+    c.lineTo(i, 400);
+    c.moveTo(0, i);
+    c.lineTo(400, i);
+  }
+  c.stroke();
+  c.fillStyle = 'rgba(139, 195, 74, 0.8)';
+  c.fillRect(temp_player.x * 40, temp_player.y * 40, temp_player.width * 40, temp_player.height * 40);
+  c.fillStyle = 'rgba(76, 175, 80, 0.5)';
+  c.fillRect((temp_player.x + temp_player.xv) * 40, (temp_player.y + temp_player.yv) * 40, temp_player.width * 40, temp_player.height * 40);
+  c.fillStyle = 'rgba(76, 175, 80, 0.5)';
+  c.fillRect((temp_player.x + xv) * 40, (temp_player.y + yv) * 40, temp_player.width * 40, temp_player.height * 40);
+}
+document.addEventListener('keydown', e => {
+  if (e.keyCode === 80) {
+    playing = !playing;
+    if (playing) frame();
+    else window.cancelAnimationFrame(lastID);
+  } else if (playing) {
+    switch (e.keyCode) {
+      case 37: case 65: temp_player.xv -= 0.3; break;
+      case 38: case 87: case 32: temp_player.yv -= 0.5; break;
+      case 39: case 68: temp_player.xv += 0.3; break;
+      case 40: case 83: temp_player.yv += 1; break;
+    }
+  } else {
+    switch (e.keyCode) {
+      case 37: temp_player.xv -= 0.1; break;
+      case 38: temp_player.yv -= 0.1; break;
+      case 39: temp_player.xv += 0.1; break;
+      case 40: temp_player.yv += 0.1; break;
+      case 65: temp_player.x -= 0.1; break;
+      case 87: temp_player.y -= 0.1; break;
+      case 68: temp_player.x += 0.1; break;
+      case 83: temp_player.y += 0.1; break;
+      case 219: e.shiftKey ? temp_player.height -= 0.1 : temp_player.width -= 0.1; break;
+      case 221: e.shiftKey ? temp_player.height += 0.1 : temp_player.width += 0.1; break;
+      default: return;
+    }
+    render();
+  }
+});
+let lastID = null;
+function frame() {
+  render();
+  lastID = window.requestAnimationFrame(frame);
+}
+render();
+    </script>
+  </body>
+</html>
