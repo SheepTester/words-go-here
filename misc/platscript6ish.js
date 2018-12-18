@@ -5,8 +5,8 @@ function platformer(player, getTile, isSolid) {
   }
   let anchorX = xv < 0 ? x : x + width;
   let anchorY = yv < 0 ? y : y + height;
-  let nextX = (xv < 0 ? Math.floor : Math.ceil)(anchorX);
-  let nextY = (yv < 0 ? Math.floor : Math.ceil)(anchorY);
+  let nextX = xv < 0 ? Math.floor(anchorX + Number.EPSILON) : Math.ceil(anchorX - Number.EPSILON);
+  let nextY = yv < 0 ? Math.floor(anchorY + Number.EPSILON) : Math.ceil(anchorY - Number.EPSILON);
   let slope = yv / xv;
   function getCollisions(minX, maxX, minY, maxY) {
     const collisions = [];
