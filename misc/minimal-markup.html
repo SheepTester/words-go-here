@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Minimal markup</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="Only support for italics, links, and escaping."/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+    <style>
+      #output {
+        white-space: pre;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Minimal markup</h1>
+    <pre>Normal {Italics} https://example.com/ {example}{https://example.com/}
+\{Italics} {https://example.com/}{} \{example}\{https://example.com/}
+{Italicized \}} \\{ followed by italics} \\\{or maybe not}</pre>
+    <p>Normal <em>Italics</em> <a href="https://example.com/">https://example.com/</a> <a href="https://example.com/">example</a><br>
+    {Italics} https://example.com/ {example}{https://example.com/}<br>
+    <em>Italicized }</em> \<em> followed by italics</em> \{or maybe not}</p>
+    <textarea id="input" rows="8" cols="80" placeholder="input"></textarea>
+    <div id="output"></div>
+    <script>
+const urlRegex = /\bhttps?:\/\/([\-A-Za-z0-9+@#\/%?=~_|!:,.;]|&amp;)*[\-A-Za-z0-9#\/=_]/g;
+const startsWithProtocolRegex = /^https?:\/\//;
+function minimalMarkupToHTML(markup) {
+  let html = '', nextIsEscaped = false, insideBrackets = false,
+  bracketsJustEnded = 0, link = false, linkContent, tempHTML, lastBracketPos = 0;
+  for (let i = 0; i < markup.length; i++) {
+    if (bracketsJustEnded >= 2 || bracketsJustEnded && !insideBrackets && markup[i] !== '{') {
+      console.log(bracketsJustEnded, insideBrackets, markup[i]);
+      if (markup[i] === '{') {
+        nextIsEscaped = true;
+      }
+      bracketsJustEnded = 0;
+      if (link) {
+        link = false;
+        if (startsWithProtocolRegex.test(html)) tempHTML += `<a href="${html}">${linkContent}</a>`;
+        else tempHTML += linkContent;
+      } else {
+        tempHTML += `<em>${html}</em>`;
+      }
+      html = tempHTML;
+      lastBracketPos = html.length;
+    }
+    switch (markup[i]) {
+      case '\\':
+        if (nextIsEscaped) {
+          html += '\\';
+          nextIsEscaped = false;
+        } else {
+          nextIsEscaped = true;
+        }
+        break;
+      case '{':
+        if (nextIsEscaped || insideBrackets) html += '{';
+        else {
+          if (bracketsJustEnded) {
+            link = true;
+            linkContent = html;
+          } else {
+            tempHTML = html.slice(0, lastBracketPos) + html.slice(lastBracketPos).replace(urlRegex, '<a href="$&">$&</a>');
+          }
+          html = '';
+          insideBrackets = true;
+        }
+        break;
+      case '}':
+        if (!insideBrackets || nextIsEscaped) html += '}';
+        else {
+          insideBrackets = false;
+          bracketsJustEnded++;
+        }
+        break;
+      case '<': html += '&lt;'; break;
+      case '>': html += '&gt;'; break;
+      case '&': html += '&amp;'; break;
+      case '"': html += '&quot;'; break;
+      default: html += markup[i];
+    }
+    if (nextIsEscaped && markup[i] !== '\\')
+      nextIsEscaped = false;
+  }
+  if (insideBrackets || bracketsJustEnded) {
+    if (link) {
+      if (startsWithProtocolRegex.test(html)) tempHTML += `<a href="${html}">${linkContent}</a>`; // TODO: update me too
+      else tempHTML += linkContent;
+    } else {
+      tempHTML += `<em>${html}</em>`;
+    }
+    html = tempHTML;
+  } else {
+    html = html.slice(0, lastBracketPos) + html.slice(lastBracketPos).replace(urlRegex, '<a href="$&">$&</a>');
+  }
+  return html;
+}
+const input = document.getElementById('input');
+const output = document.getElementById('output');
+input.addEventListener('input', e => {
+  output.innerHTML = minimalMarkupToHTML(input.value);
+});
+    </script>
+  </body>
+</html>
