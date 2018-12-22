@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>skin tones</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="skin tones????"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <h1>skin tones</h1>
+    <p><a href="http://johnthemathguy.blogspot.com/2013/08/what-color-is-human-skin.html">hmmmm</a></p>
+    <canvas id="test1" width="300" height="300"></canvas>
+    <canvas id="test2" width="300" height="300"></canvas>
+    <canvas id="test3" width="300" height="300"></canvas>
+    <canvas id="test4" width="300" height="300"></canvas>
+    <canvas id="test5" width="300" height="300"></canvas>
+    <canvas id="test6" width="300" height="300"></canvas>
+    <script>
+const CANVAS_SIZE = 300;
+const SQUARE_SIZE = 10;
+function fill(canvas, getColour) {
+  const c = canvas.getContext('2d');
+  for (let x = 0; x < CANVAS_SIZE; x += SQUARE_SIZE) {
+    for (let y = 0; y < CANVAS_SIZE; y += SQUARE_SIZE) {
+      c.fillStyle = getColour(x / SQUARE_SIZE, y / SQUARE_SIZE);
+      c.fillRect(x, y, SQUARE_SIZE, SQUARE_SIZE);
+    }
+  }
+}
+fill(document.getElementById('test1'), () => {
+  const k = Math.random() * 6 - 3;
+  return `rgb(${224.3 + 9.6 * k}, ${193.1 + 17.0 * k}, ${177.6 + 21.0 * k})`;
+});
+fill(document.getElementById('test2'), () => {
+  const k = Math.random() * 6 - 3;
+  return `rgb(${168.8 + 38.5 * k}, ${122.5 + 32.1 * k}, ${96.7 + 26.3 * k})`;
+});
+fill(document.getElementById('test3'), () => {
+  let k = Math.sin(Math.random() * Math.PI * 2);
+  k = k * k * 3;
+  return `rgb(${224.3 + 9.6 * k}, ${193.1 + 17.0 * k}, ${177.6 + 21.0 * k})`;
+});
+fill(document.getElementById('test4'), () => {
+  let k = Math.sin(Math.random() * Math.PI * 2);
+  k = k * k * 3;
+  return `rgb(${168.8 + 38.5 * k}, ${122.5 + 32.1 * k}, ${96.7 + 26.3 * k})`;
+});
+fill(document.getElementById('test5'), () => {
+  let k = Math.random() * 2 - 1;
+  k = k * k * 3;
+  return `rgb(${224.3 + 9.6 * k}, ${193.1 + 17.0 * k}, ${177.6 + 21.0 * k})`;
+});
+fill(document.getElementById('test6'), () => {
+  let k = Math.random() * 2 - 1;
+  k = k * k * 3;
+  return `rgb(${168.8 + 38.5 * k}, ${122.5 + 32.1 * k}, ${96.7 + 26.3 * k})`;
+});
+    </script>
+  </body>
+</html>

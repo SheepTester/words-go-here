@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>pixel font</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="pixel font maker and renderer?"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+    <style>
+      canvas {
+        image-rendering: pixelated;
+        width: 300px;
+        border: 1px solid black;
+      }
+      #editor {
+        white-space: nowrap;
+        margin-bottom: 40px;
+      }
+      .col {
+        display: inline-block;
+        vertical-align: top;
+      }
+      .pixel {
+        border: 1px solid white;
+        background-color: #eee;
+        height: 40px;
+        width: 40px;
+        box-sizing: border-box;
+      }
+      .filled {
+        background-color: #333;
+      }
+      .control {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        background-color: #f44336;
+        position: absolute;
+        z-index: 0;
+      }
+      .control button {
+        border: none;
+        background: none;
+        color: white;
+        cursor: pointer;
+      }
+      .label {
+        position: absolute;
+        z-index: -1;
+        color: rgba(255, 255, 255, 0.5);
+        text-align: center;
+        left: 0;
+        right: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>maker</h1>
+    <p><label for="charset">char set: </label><input type="text" id="charset" value="abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ.,!?:;'&quot;-_()[]{}<>/*\|+=~`@#$%^&amp;"></p>
+    <p><label for="height">text height: </label><input type="number" id="height" value="4"></p>
+    <p><label for="default-width">default width: </label><input type="number" id="default-width" value="2"></p>
+    <p><button id="start-editor">start</button></p>
+    <div id="editor"></div>
+    <p><label for="font-data">font data</label></p>
+    <p><textarea id="font-data" rows="8" cols="80"></textarea></p>
+    <button id="import">import</button>
+    <p><label for="test">sample output</label></p>
+    <p><textarea id="test" rows="8" cols="80">Down with SELF.</textarea></p>
+    <canvas id="output" width="50" height="50"></canvas>
+    <h2>problems</h2>
+    <ul>
+      <li>text overflow is dumb</li>
+      <li>spaces at the end of a line don't wrap</li>
+      <li>no newline support</li>
+    </ul>
+    <h2>todo</h2>
+    <ul>
+      <li>import font into editor</li>
+    </ul>
+    <script>
+const charsetInput = document.getElementById('charset');
+const heightInput = document.getElementById('height');
+const defaultWidthInput = document.getElementById('default-width');
+const startEditor = document.getElementById('start-editor');
+const editor = document.getElementById('editor');
+const outputText = document.getElementById('output');
+const fontData = document.getElementById('font-data');
+const testContent = document.getElementById('test');
+const importBtn = document.getElementById('import');
+const c = output.getContext('2d');
+const PIXEL_WIDTH = 40;
+const CANVAS_SIZE = 50;
+startEditor.addEventListener('click', e => {
+  importBtn.disabled = startEditor.disabled = heightInput.disabled = defaultWidthInput.disabled = charsetInput.disabled = true;
+  fontData.readOnly = true;
+  const pixels = [];
+  const characters = charsetInput.value;
+  const height = +heightInput.value;
+  const defaultWidth = Math.max(+defaultWidthInput.value, 1);
+  function updateOutput() {
+    let output = height;
+    for (let i = 0, char = 0; i < pixels.length;) {
+      const letter = pixels[i];
+      output += '|';
+      for (let j = 0; j < letter.len; j++) {
+        output += pixels[i + j].map(p => +p.classList.contains('filled')).join('');
+      }
+      i += letter.len + 1;
+      char++;
+    }
+    fontData.value = output;
+    fontDataObj = importFontData(output, characters);
+    renderText();
+  }
+  function createCol(index = pixels.length) {
+    pixels.splice(index, 0, []);
+    const arrCol = pixels[index];
+    const col = document.createElement('div');
+    col.classList.add('col');
+    for (let j = 0; j < height; j++) {
+      const pixel = document.createElement('div');
+      pixel.classList.add('pixel');
+      col.appendChild(pixel);
+      arrCol.push(pixel);
+    }
+    if (pixels[index + 1]) editor.insertBefore(col, pixels[index + 1].col);
+    else editor.appendChild(col);
+    arrCol.col = col;
+    return arrCol;
+  }
+  function delCol(index) {
+    editor.removeChild(pixels[index].col);
+    pixels.splice(index, 1);
+  }
+  for (let i = 0; i < characters.length; i++) {
+    const letter = createCol();
+    for (let i = 1; i < defaultWidth; i++) createCol();
+    const insertBefore = createCol();
+    letter.len = defaultWidth;
+    const btnWrapper = document.createElement('div');
+    btnWrapper.classList.add('pixel');
+    btnWrapper.classList.add('control');
+    btnWrapper.style.width = letter.len * 40 + 'px';
+    const label = document.createElement('span');
+    label.textContent = characters[i];
+    label.classList.add('label');
+    btnWrapper.appendChild(label);
+    const btnLess = document.createElement('button');
+    btnLess.classList.add('less');
+    btnLess.textContent = '-';
+    btnLess.addEventListener('click', e => {
+      if (letter.len > 1) {
+        const index = pixels.indexOf(insertBefore);
+        if (~index) {
+          delCol(index - 1);
+          letter.len--;
+          btnWrapper.style.width = letter.len * 40 + 'px';
+        }
+      }
+    });
+    btnWrapper.appendChild(btnLess);
+    const btnMore = document.createElement('button');
+    btnMore.classList.add('more');
+    btnMore.textContent = '+';
+    btnMore.addEventListener('click', e => {
+      const index = pixels.indexOf(insertBefore);
+      if (~index) {
+        createCol(index);
+        letter.len++;
+        btnWrapper.style.width = letter.len * 40 + 'px';
+      }
+    });
+    btnWrapper.appendChild(btnMore);
+    letter.col.appendChild(btnWrapper);
+  }
+  updateOutput();
+  const pointers = {};
+  function getPixel(clientX, clientY) {
+    const rect = editor.getBoundingClientRect();
+    const col = pixels[Math.floor((clientX - rect.left) / PIXEL_WIDTH)];
+    if (col) return col[Math.floor((clientY - rect.top) / PIXEL_WIDTH)] || null;
+    else return null;
+  }
+  editor.addEventListener('pointerdown', e => {
+    const pixel = getPixel(e.clientX, e.clientY);
+    if (pixel) {
+      pointers[e.pointerId] = { type: pixel.classList.contains('filled') ? 'emptify' : 'fillify' };
+      if (pointers[e.pointerId].type === 'fillify')
+        pixel.classList.add('filled');
+      else
+        pixel.classList.remove('filled');
+      updateOutput();
+    }
+  });
+  editor.addEventListener('pointermove', e => {
+    if (pointers[e.pointerId]) {
+      const pixel = getPixel(e.clientX, e.clientY);
+      if (pixel) {
+        if (pixel.classList.contains('filled')) {
+          if (pointers[e.pointerId].type === 'emptify')
+            pixel.classList.remove('filled');
+        } else {
+          if (pointers[e.pointerId].type === 'fillify')
+            pixel.classList.add('filled');
+        }
+        updateOutput();
+      }
+    }
+  });
+  editor.addEventListener('pointerup', e => {
+    delete pointers[e.pointerId];
+  });
+  editor.addEventListener('mousedown', e => {
+    e.preventDefault();
+  });
+  editor.addEventListener('touchmove', e => {
+    e.preventDefault();
+  }, {passive: false});
+});
+function importFontData(fontData, charset) {
+  const charData = fontData.split('|');
+  const height = +charData.shift();
+  const chars = {};
+  charData.forEach((data, i) => {
+    const cols = [];
+    for (let i = 0; i < data.length; i += height) {
+      cols.push(data.slice(i, i + height).split('').map(p => p === '1'));
+    }
+    chars[charset[i]] = cols;
+  });
+  return {
+    height: height,
+    chars: chars
+  };
+}
+function calculateText(fontData, text, letterSpacing = 1, wrap) { // no support for newlines
+  const emptyCol = new Array(fontData.height).fill(false);
+  if (wrap) {
+    const lines = [];
+    let lastLine = [];
+    lines.push(lastLine);
+    let lastWord = [];
+    let maxLength = 0;
+    text.split('').forEach(char => {
+      if (!fontData.chars[char]) return;
+      if (char === ' ') {
+        if (lastLine.length + lastWord.length > wrap) {
+          while (lastLine.length + lastWord.length > wrap) {
+            if (lastLine.length > maxLength)
+              maxLength = lastLine.length;
+            lastLine = lastWord.splice(0, wrap);
+            lines.push(lastLine);
+          }
+        } else {
+          lastLine.push(...lastWord);
+          lastWord = [];
+        }
+        lastLine.push(...fontData.chars[char]);
+      } else {
+        if (lastWord.length) lastWord.push(emptyCol);
+        lastWord.push(...fontData.chars[char]);
+      }
+    });
+    if (lastLine.length + lastWord.length > wrap) {
+      while (lastLine.length + lastWord.length > wrap) {
+        if (lastLine.length > maxLength)
+          maxLength = lastLine.length;
+        lastLine = lastWord.splice(0, wrap); // TODO: better text overflow
+        lines.push(lastLine);
+      }
+    } else {
+      lastLine.push(...lastWord);
+      if (lastLine.length > maxLength)
+        maxLength = lastLine.length;
+    }
+    if (lines[0].length === 0) lines.splice(0, 1);
+    return {
+      maxwidth: Math.min(maxLength, wrap),
+      lineheight: fontData.height,
+      lines: lines
+    };
+  } else {
+    const data = [];
+    text.split('').forEach(char => {
+      if (!fontData.chars[char]) return;
+      if (data.length) data.push(emptyCol);
+      data.push(...fontData.chars[char]);
+    });
+    return {
+      width: data.length,
+      height: fontData.height,
+      data: data
+    };
+  }
+}
+function imageifyText(calculations, {r, g, b}, lineSpacing = 1, alignment = 'left') {
+  if (calculations.lines) {
+    const imageData = new ImageData(calculations.maxwidth, calculations.lines.length * (calculations.lineheight + lineSpacing) - lineSpacing);
+    let lineY = 0;
+    calculations.lines.forEach(line => {
+      if (lineY) lineY += lineSpacing;
+      let lineX = 0;
+      if (alignment === 'centre') lineX = Math.floor((calculations.maxwidth - line.length) / 2);
+      else if (alignment === 'right') lineX = calculations.maxwidth - line.length;
+      line.forEach((pixels, x) => {
+        pixels.forEach((pixel, y) => {
+          if (pixel) {
+            const i = ((lineY + y) * imageData.width + lineX + x) * 4;
+            imageData.data[i + 0] = r;
+            imageData.data[i + 1] = g;
+            imageData.data[i + 2] = b;
+            imageData.data[i + 3] = 255;
+          }
+        });
+      });
+      lineY += calculations.lineheight;
+    });
+    return imageData;
+  } else {
+    const imageData = new ImageData(calculations.width, calculations.height);
+    calculations.data.forEach((pixels, x) => {
+      pixels.forEach((pixel, y) => {
+        if (pixel) {
+          const i = (y * imageData.width + x) * 4;
+          imageData.data[i + 0] = r;
+          imageData.data[i + 1] = g;
+          imageData.data[i + 2] = b;
+          imageData.data[i + 3] = 255;
+        }
+      });
+    });
+    return imageData;
+  }
+}
+let fontDataObj;
+function renderText() {
+  c.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+  if (test.value)
+    c.putImageData(imageifyText(calculateText(fontDataObj, test.value, 1, CANVAS_SIZE), {r: 0, b: 0, g: 0}, 1, 'centre'), 0, 0);
+}
+importBtn.addEventListener('click', e => {
+  fontDataObj = importFontData(fontData.value, charsetInput.value);
+  heightInput.value = fontDataObj.height;
+  // startEditor.click();
+  renderText();
+  importBtn.disabled = startEditor.disabled = heightInput.disabled = defaultWidthInput.disabled = charsetInput.disabled = true;
+  fontData.readOnly = true;
+});
+test.addEventListener('input', e => {
+  if (fontDataObj) renderText();
+});
+    </script>
+  </body>
+</html>
