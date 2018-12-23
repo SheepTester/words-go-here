@@ -12,7 +12,9 @@
           }
         };
       };
-    }, err => {});
+    }, err => {
+      console.log(err);
+    });
   } catch (e) {}
 
   const content = document.querySelector('table tr:nth-child(2) td:last-child'),
