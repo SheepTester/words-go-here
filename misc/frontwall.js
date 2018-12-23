@@ -1,6 +1,20 @@
 (function() {
   'use strict';
 
+  try {
+    window._update = false;
+    navigator.serviceWorker.register('https://sheeptester.github.io/words-go-here/misc/frontwall-sw.js').then(regis => {
+      regis.onupdatefound = () => {
+        const installingWorker = regis.installing;
+        installingWorker.onstatechange = () => {
+          if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            window._update = true;
+          }
+        };
+      };
+    }, err => {});
+  } catch (e) {}
+
   const content = document.querySelector('table tr:nth-child(2) td:last-child'),
         pageName = document.querySelector('title'),
         path = window.location.pathname,
