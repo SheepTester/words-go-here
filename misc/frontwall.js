@@ -13,6 +13,7 @@
         };
       };
     }, err => {
+      more_violently_throw_an_error;
       console.log(err);
     });
   } catch (e) {}
