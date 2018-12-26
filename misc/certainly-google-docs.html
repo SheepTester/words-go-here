@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Untitled document - Google Docs</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="certainly Google Docs"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,400i,500" rel="stylesheet">
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+      }
+      body {
+        font-size: 0;
+        margin: 0;
+        font-family: 'Roboto', sans-serif;
+      }
+      input, button {
+        font: inherit;
+        color: inherit;
+      }
+      .icon {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+      }
+      .icon::before {
+        content: url('./google-doc-icons.svg');
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+      .header {
+        height: 33px;
+      }
+      .logo {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        padding: 8px;
+        margin: 4px 0 4px 8px;
+      }
+      .logo .icon::before {
+        top: -3250px;
+      }
+      .title {
+        border: 1px solid transparent;
+        border-radius: 2px;
+        color: black;
+        font-size: 18px;
+        height: 20px;
+        line-height: 22px;
+        min-width: 1px;
+        padding: 2px 7px;
+        vertical-align: top;
+        margin-top: 9px;
+      }
+      .title:hover {
+        border-color: #e5e5e5;
+      }
+      .title:focus {
+        box-shadow: inset 0px 1px 2px rgba(0,0,0,0.1);
+        outline: none;
+        border: 1px solid #4d90fe;
+      }
+      .title::-webkit-input-placeholder {
+        font-style: italic;
+      }
+      .star {
+        display: inline-block;
+        background-image: url('./dumb-google-docs-star.png');
+        background-repeat: no-repeat;
+        background-size: contain;
+        background-position: center;
+        margin: 2px;
+        margin-top: 12px; /* 1 + 2 + 9 */
+        margin-left: 6px;
+        margin-right: 4px;
+        width: 19px;
+        height: 19px;
+        vertical-align: top;
+      }
+      .folder {
+        display: inline-block;
+        margin: 2px;
+        margin-top: 12px; /* 1 + 2 + 9 */
+        margin-left: 4px;
+        width: 19px;
+        height: 19px;
+        vertical-align: top;
+        opacity: 0.45;
+      }
+      .folder::before {
+        top: -2536px;
+      }
+      .menus {
+        margin-left: 64px;
+        height: 31px;
+      }
+      .menu-item {
+        display: inline-block;
+        padding: 3px 7px 5px 7px;
+        margin-top: 2px;
+        border: 1px solid transparent;
+        font-size: 14px;
+      }
+      .saved {
+        margin-left: 14px;
+        color: #777;
+        text-decoration: underline;
+        padding: 0;
+        border: none;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .top-right {
+        position: fixed;
+        top: 0;
+        right: 0;
+        padding: 0 12px 0 16px;
+        display: flex;
+        align-items: center;
+        height: 64px;
+      }
+      .trend-btn, .comment-btn {
+        height: 24px; /* visually 40px; (40 - 24) / 2 = 8 on each side */
+        width: 24px;
+        opacity: 0.54;
+        margin: 10px;
+        margin-bottom: 11px;
+        margin-right: 18.5px;
+      }
+      .trend-btn {
+        margin-right: 17px;
+      }
+      .trend-btn::before {
+        top: -4110px;
+      }
+      .comment-btn::before {
+        top: -1760px;
+      }
+      .share-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #4285f4;
+        font-size: 14px;
+        border-radius: 2px;
+        border: 1px solid transparent;
+        margin-right: 12px;
+        padding: 0 7px;
+        height: 30px;
+        color: white;
+        font-weight: 500;
+        line-height: 27px;
+      }
+      .share-btn .share-icon {
+        display: inline-block;
+        background-image: url('./more-google-doc-icons.svg');
+        background-repeat: no-repeat;
+        background-position: 0px -219px;
+        height: 21px;
+        width: 21px;
+        margin: 0 3px 0 -4px;
+        vertical-align: middle;
+      }
+      .user-wrapper {
+        display: inline-block;
+        width: 48px;
+        height: 48px;
+      }
+      .toolbar {
+        border-top: 1px solid #e0e0e0;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 0 21px 0 22px;
+        min-height: 35px;
+      }
+      .toolbar-icon {
+        display: inline-block;
+        margin: 3px 1px 0;
+        height: 26px;
+        border: 1px solid transparent;
+        opacity: 0.54;
+        width: 26px;
+        text-align: center;
+        line-height: 26px;
+      }
+      .toolbar-icon .icon {
+        display: inline-block;
+        height: 18px;
+        width: 18px;
+        margin: 1px 2px 2px 1px;
+        vertical-align: middle;
+      }
+      .separator {
+        display: inline-block;
+        border-left: 1px solid #e0e0e0;
+        margin: 0 3px;
+        height: 35px;
+        vertical-align: top;
+      }
+      .undo-btn::before { left: -18px; top: -1350px; }
+      .redo-btn::before { left: -18px; top: -1638px; }
+      .print-btn::before { top: -568px; }
+      .format-btn::before { top: -3512px; }
+      .bold-btn::before { top: -1368px; }
+      .italics-btn::before { left: -18px; top: -3494px; }
+      .underline-btn::before { top: -640px; }
+      .text-colour-btn::before { top: -90px; }
+      .text-colour {
+        opacity: 1;
+      }
+      .text-colour .icon {
+        height: 20px;
+        width: 22px;
+        border-bottom: 4px solid black;
+      }
+      .text-colour .icon::before {
+        opacity: 0.54;
+      }
+      .zoom {
+        border: 1px solid transparent;
+        margin: 0 2px;
+        padding: 0 2px;
+        height: 26px;
+        line-height: 26px;
+        display: inline-block;
+        vertical-align: middle;
+      }
+      .zoom-input {
+        width: 28px;
+        margin-left: -3px;
+        height: 22px;
+        color: rgba(0,0,0,.7);
+        background: transparent;
+        border: 1px solid transparent;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 1px 8px;
+        border-radius: 1px;
+      }
+      .dropdown {
+        background-image: url('./google-doc-dropdown-arrow.png');
+        background-repeat: no-repeat;
+        background-position: center;
+        display: inline-block;
+        float: right;
+        margin-top: 10px;
+        padding-left: 1px;
+        min-width: 7px;
+        opacity: .8;
+        vertical-align: middle;
+        width: 5px;
+        height: 7px;
+        margin-left: 2px;
+      }
+      .text-style {
+        display: inline-block;
+        margin: 3px 2px 0 1px;
+        height: 26px;
+        line-height: 26px;
+        color: rgba(0,0,0,.7);
+        border: 1px solid transparent;
+        padding-right: 3px;
+        vertical-align: top;
+      }
+      .text-label {
+        display: inline-block;
+        white-space: nowrap;
+        width: 70px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: top;
+        font-size: 12px;
+        font-weight: 500;
+        margin-left: 10px;
+      }
+      .text-dropdown {
+        background-image: url('./google-doc-dropdown-arrow.png');
+        background-repeat: no-repeat;
+        background-position: center;
+        display: inline-block;
+        margin-left: 5px;
+        margin-right: 4px;
+        margin-top: 8px;
+        height: 11px;
+        width: 7px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="logo"><div class="icon"></div></div>
+      <input type="text" class="title" placeholder="Untitled document">
+      <div class="star"></div>
+      <div class="folder icon"></div>
+    </div>
+    <div class="top-right">
+      <div class="trend-btn icon"></div>
+      <div class="comment-btn icon"></div>
+      <div class="share-btn"><div class="share-icon"></div>SHARE</div>
+      <div class="user-wrapper"></div>
+    </div>
+    <div class="menus">
+      <div class="menu-item">File</div>
+      <div class="menu-item">Edit</div>
+      <div class="menu-item">View</div>
+      <div class="menu-item">Insert</div>
+      <div class="menu-item">Format</div>
+      <div class="menu-item">Tools</div>
+      <div class="menu-item">Add-ons</div>
+      <div class="menu-item">Help</div>
+      <div class="menu-item saved">All changes saved in Drive</div>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-icon"><div class="undo-btn icon"></div></div>
+      <div class="toolbar-icon"><div class="redo-btn icon"></div></div>
+      <div class="toolbar-icon"><div class="print-btn icon"></div></div>
+      <div class="toolbar-icon"><div class="format-btn icon"></div></div>
+      <div class="separator"></div>
+      <div class="zoom">
+        <input class="zoom-input" type="text" value="100%">
+        <div class="dropdown"></div>
+      </div>
+      <div class="separator"></div>
+      <div class="text-style">
+        <div class="text-label">Normal text</div>
+        <div class="text-dropdown"></div>
+      </div>
+      <div class="separator"></div>
+      <div class="text-style">
+        <div class="text-label">Times New Roman</div>
+        <div class="text-dropdown"></div>
+      </div>
+      <div class="separator"></div>
+      <div class="zoom">
+        <input class="zoom-input" type="text" value="12">
+        <div class="dropdown"></div>
+      </div>
+      <div class="separator"></div>
+      <div class="toolbar-icon"><div class="bold-btn icon"></div></div>
+      <div class="toolbar-icon"><div class="italics-btn icon"></div></div>
+      <div class="toolbar-icon"><div class="underline-btn icon"></div></div>
+      <div class="toolbar-icon text-colour"><div class="text-colour-btn icon"></div></div>
+      <div class="toolbar-icon"><div class="highlight-btn icon"></div></div>
+      <div class="separator"></div>
+      <div class="toolbar-icon"><div class="link-btn icon"></div></div>
+      <div class="toolbar-icon"><div class="other-comment-btn icon"></div></div>
+      <div class="toolbar-icon"><div class="image-btn icon"></div></div>
+    </div>
+  </body>
+</html>
