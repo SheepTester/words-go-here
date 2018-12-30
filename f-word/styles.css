@@ -138,12 +138,16 @@ p {
 .post a:hover {
   text-decoration: underline;
 }
+.post a::selection {
+  color: white;
+}
 .author {
   font-size: 16px;
 }
 .post-content {
   font-size: 24px;
   line-height: 1.8;
+  white-space: pre-wrap;
 }
 .post .date, .join-date {
   font-size: 14px;
