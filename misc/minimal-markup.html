@@ -31,7 +31,6 @@ function minimalMarkupToHTML(markup) {
   bracketsJustEnded = 0, link = false, linkContent, tempHTML, lastBracketPos = 0;
   for (let i = 0; i < markup.length; i++) {
     if (bracketsJustEnded >= 2 || bracketsJustEnded && !insideBrackets && markup[i] !== '{') {
-      console.log(bracketsJustEnded, insideBrackets, markup[i]);
       if (markup[i] === '{') {
         nextIsEscaped = true;
       }
@@ -86,7 +85,7 @@ function minimalMarkupToHTML(markup) {
   }
   if (insideBrackets || bracketsJustEnded) {
     if (link) {
-      if (startsWithProtocolRegex.test(html)) tempHTML += `<a href="${html}">${linkContent}</a>`; // TODO: update me too
+      if (startsWithProtocolRegex.test(html)) tempHTML += `<a href="${html}">${linkContent}</a>`;
       else tempHTML += linkContent;
     } else {
       tempHTML += `<em>${html}</em>`;
