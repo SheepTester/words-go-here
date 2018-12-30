@@ -6,9 +6,62 @@
     <meta name="description" content="Basically Twitter but worse."/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans%7CMontserrat" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css">
     <script src="../../sheep3.js" charset="utf-8"></script>
+    <script src="./minimalist-markup.js" charset="utf-8"></script>
+    <script src="./main.js" charset="utf-8"></script>
   </head>
   <body>
-    <p>f word</p>
+    <div class="container home" id="container">
+      <div class="content" id="sign-in">
+        <h1>sign in<a class="top-nav" href="?">home</a></h1>
+        <input type="text" class="auth-input" placeholder="username" id="sign-in-username">
+        <input type="password" class="auth-input" placeholder="password" id="sign-in-password">
+        <p class="error auth-p hidden" id="sign-in-error"></p>
+        <button id="sign-in-btn" class="auth-btn">sign in</button>
+      </div>
+      <div class="content" id="create-account">
+        <h1>sign up<a class="top-nav" href="?">home</a></h1>
+        <p class="auth-p">Usernames may only contain lowercase letters and spaces.</p>
+        <input type="text" class="auth-input" placeholder="username" id="sign-up-username">
+        <p class="auth-p">Passwords must contain at least one space.</p>
+        <input type="password" class="auth-input" placeholder="password" id="sign-up-password">
+        <p class="error auth-p hidden" id="sign-up-error"></p>
+        <button id="sign-up-btn" class="auth-btn">sign up</button>
+        <p>By signing up, you acknowledge that your password is weakly protected by a md5 hash. There is no terms of service or privacy policy to agree to.</p>
+      </div>
+      <div class="content" id="home">
+        <h1>f word
+          <span class="signed-out-top-nav">
+            <a class="top-nav" href="?sign-up">sign up</a>
+            <a class="top-nav" href="?sign-in">sign in</a>
+          </span>
+          <span class="signed-in-top-nav">
+            <a class="top-nav" href="?settings">settings</a>
+            <a class="top-nav sign-out">sign out</a>
+          </span>
+        </h1>
+        <div id="post-wrapper" class="signed-in-top-nav">
+          <textarea class="postarea" id="postarea" placeholder="post something dumb..."></textarea>
+          <p class="error auth-p hidden" id="post-error"></p>
+          <button class="auth-btn" id="post-submit">post</button>
+        </div>
+        <div id="posts"></div>
+      </div>
+      <div class="content" id="settings">
+        <h1>settings<a class="top-nav" href="?">home</a></h1>
+      </div>
+      <div class="content" id="post-page">
+        <a class="top-nav" href="?">home</a>
+        <textarea class="postarea" id="temp-post-page-content" readonly></textarea>
+      </div>
+      <div class="content" id="user-page">
+        <a class="top-nav" href="?">home</a>
+        <h1 id="username"></h1>
+        <p class="join-date" id="join-date"></p>
+        <p id="bio" class="text"></p>
+      </div>
+    </div>
   </body>
 </html>
