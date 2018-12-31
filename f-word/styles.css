@@ -232,6 +232,8 @@ p {
 .post-right {
   display: inline-block;
   vertical-align: middle;
+  flex: auto;
+  width: 0;
 }
 .colour-input {
   -webkit-appearance: none;
@@ -309,6 +311,7 @@ p {
 .expand-child-btn {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   margin-left: -5.26%;
+  white-space: nowrap;
 }
 .child-author {
   font-weight: bold;

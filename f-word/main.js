@@ -1,9 +1,15 @@
 function askAPI(url, body = {}, isJSON = false) {
-  return fetch('https://test-9d9aa.firebaseapp.com/fword?' + url, {
+  const promise = fetch('https://test-9d9aa.firebaseapp.com/fword?' + url, {
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
     method: 'POST',
     body: JSON.stringify(body)
   }).then(async r => r.status === 400 ? Promise.reject(await r.text()) : isJSON ? r.json() : r.text());
+  promise.catch(err => {
+    if (err.message === 'Failed to fetch') {
+      alert('Firebase is being overworked and is complaining. Try again later.');
+    }
+  });
+  return promise;
 }
 function clickOnEnter(input, btn) {
   input.addEventListener('keydown', e => {
@@ -431,7 +437,7 @@ document.addEventListener('DOMContentLoaded', e => {
         }).catch(checkSessionExpire(alert));
         e.preventDefault();
       } else if (href && href[0] === '?') {
-        switchView(href);
+        switchView(href === '?' ? './' : href);
         e.preventDefault();
       }
     }
