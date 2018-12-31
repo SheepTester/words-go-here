@@ -11,7 +11,7 @@ function minimalMarkupToHTML(markup) {
       bracketsJustEnded = 0;
       if (link) {
         link = false;
-        if (startsWithProtocolRegex.test(html)) tempHTML += `<a href="${html}">${linkContent}</a>`;
+        if (startsWithProtocolRegex.test(html)) tempHTML += `<a href="${html}" rel="noopener noreferrer" target="_blank">${linkContent}</a>`;
         else tempHTML += linkContent;
       } else {
         tempHTML += `<em>${html}</em>`;
@@ -35,7 +35,7 @@ function minimalMarkupToHTML(markup) {
             link = true;
             linkContent = html;
           } else {
-            tempHTML = html.slice(0, lastBracketPos) + html.slice(lastBracketPos).replace(urlRegex, '<a href="$&">$&</a>');
+            tempHTML = html.slice(0, lastBracketPos) + html.slice(lastBracketPos).replace(urlRegex, '<a href="$&" rel="noopener noreferrer" target="_blank">$&</a>');
           }
           html = '';
           insideBrackets = true;
@@ -59,14 +59,14 @@ function minimalMarkupToHTML(markup) {
   }
   if (insideBrackets || bracketsJustEnded) {
     if (link) {
-      if (startsWithProtocolRegex.test(html)) tempHTML += `<a href="${html}">${linkContent}</a>`;
+      if (startsWithProtocolRegex.test(html)) tempHTML += `<a href="${html}" rel="noopener noreferrer" target="_blank">${linkContent}</a>`;
       else tempHTML += linkContent;
     } else {
       tempHTML += `<em>${html}</em>`;
     }
     html = tempHTML;
   } else {
-    html = html.slice(0, lastBracketPos) + html.slice(lastBracketPos).replace(urlRegex, '<a href="$&">$&</a>');
+    html = html.slice(0, lastBracketPos) + html.slice(lastBracketPos).replace(urlRegex, '<a href="$&" rel="noopener noreferrer" target="_blank">$&</a>');
   }
   return html;
 }

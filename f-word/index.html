@@ -39,7 +39,7 @@
           </span>
           <span class="signed-in-top-nav">
             <a class="top-nav" href="?settings">settings</a>
-            <a class="top-nav sign-out">sign out</a>
+            <a class="top-nav sign-out" href="#">sign out</a>
           </span>
         </h1>
         <div id="post-wrapper" class="signed-in-top-nav">
@@ -48,17 +48,44 @@
           <button class="auth-btn" id="post-submit">post</button>
         </div>
         <div id="posts"></div>
+        <button class="auth-btn" id="load-more">load more</button>
       </div>
       <div class="content" id="settings">
-        <h1>settings<a class="top-nav" href="?">home</a></h1>
+        <h1>settings<a class="top-nav" href="?">home</a><a class="top-nav sign-out" href="#">sign out</a></h1>
+        <div class="pfp-setter-wrapper">
+          <div class="pfp pfp-settings" id="self-pfp"></div>
+          <input type="color" class="colour-input" id="colour1">
+          <input type="color" class="colour-input" id="colour2">
+        </div>
+        <p class="error auth-p hidden" id="pfp-error"></p>
+        <button class="auth-btn" id="save-pfp">save</button>
+        <h2>Bio</h2>
+        <textarea class="postarea" id="self-bio" placeholder="self-deprecating joke here..."></textarea>
+        <p class="error auth-p hidden" id="bio-error"></p>
+        <button class="auth-btn" id="save-bio">save</button>
+        <h2>Secret</h2>
+        <textarea class="postarea" id="self-secret" placeholder="crush history here..."></textarea>
+        <p class="error auth-p hidden" id="secret-error"></p>
+        <button class="auth-btn" id="save-secret">save</button>
+        <h2>Session expiry length</h2>
+        <p class="auth-p">The number of days your session will be valid (or -1 to never expire).</p>
+        <input type="number" class="auth-input" placeholder="new expiry length" id="expiry-length">
+        <p class="error auth-p hidden" id="expiry-error"></p>
+        <button class="auth-btn" id="save-expiry">save</button>
+        <h2>Change password</h2>
+        <!-- API doesn't actually check oof -->
+        <input type="password" class="auth-input" placeholder="old password" id="old-password">
+        <input type="password" class="auth-input" placeholder="new password" id="new-password">
+        <p class="error auth-p hidden" id="new-pass-error"></p>
+        <button class="auth-btn" id="save-password">save</button>
       </div>
       <div class="content" id="post-page">
-        <a class="top-nav" href="?">home</a>
+        <a class="top-nav" href="?">home</a><a class="top-nav sign-out" href="#">sign out</a>
         <textarea class="postarea" id="temp-post-page-content" readonly></textarea>
       </div>
       <div class="content" id="user-page">
-        <a class="top-nav" href="?">home</a>
-        <h1 id="username"></h1>
+        <a class="top-nav" href="?">home</a><a class="top-nav sign-out" href="#">sign out</a>
+        <h1><div class="pfp pfp-user" id="user-pfp"></div><span id="username"></span></h1>
         <p class="join-date" id="join-date"></p>
         <p id="bio" class="text"></p>
       </div>

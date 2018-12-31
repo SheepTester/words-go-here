@@ -42,7 +42,7 @@ Sets the user's profile picture given `newpfp`. If it doesn't fit the `DEGREE.HE
 
 ### `type=setpass`
 
-Sets the user's password given `password`. Will error with `dumb password` if it contains a space.
+Sets the user's password given `password`. Will error with `dumb password` if it doesn't contain a space.
 
 ### `type=setsecret`
 
