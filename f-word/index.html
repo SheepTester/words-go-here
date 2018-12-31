@@ -29,7 +29,7 @@
         <input type="password" class="auth-input" placeholder="password" id="sign-up-password">
         <p class="error auth-p hidden" id="sign-up-error"></p>
         <button id="sign-up-btn" class="auth-btn">sign up</button>
-        <p>By signing up, you acknowledge that your password is weakly protected by a md5 hash. There is no terms of service or privacy policy to agree to.</p>
+        <p class="auth-p text">By signing up, you acknowledge that your password is weakly protected by a md5 hash. Read the <a href="./?about#privacy-policy" rel="noopener noreferrer" target="_blank">Privacy Policy and Terms of Use</a> if you want.</p>
       </div>
       <div class="content" id="home">
         <h1>f word
@@ -47,13 +47,16 @@
           <p class="error auth-p hidden" id="post-error"></p>
           <button class="auth-btn" id="post-submit">post</button>
         </div>
+        <div class="signed-out-top-nav">
+          <p class="auth-p text">F Word is a dumb social medium I made as practice. <a href="?about">Learn more.</a></p>
+        </div>
         <div id="posts"></div>
         <button class="auth-btn" id="load-more">load more</button>
       </div>
       <div class="content" id="settings">
         <h1>settings<a class="top-nav" href="?">home</a><a class="top-nav sign-out" href="#">sign out</a></h1>
         <p class="text auth-p"><a id="user-page-link">Link to user page</a></p>
-        <h2>Profile icon</h2>
+        <h2 id="profile-icon">Profile icon</h2>
         <div class="pfp-setter-wrapper">
           <div class="pfp pfp-settings" id="self-pfp"></div>
           <input type="color" class="colour-input" id="colour1">
@@ -61,20 +64,20 @@
         </div>
         <p class="error auth-p hidden" id="pfp-error"></p>
         <button class="auth-btn" id="save-pfp">save</button>
-        <h2>Bio</h2>
+        <h2 id="set-bio">Bio</h2>
         <textarea class="postarea" id="self-bio" placeholder="self-deprecating joke here..."></textarea>
         <p class="error auth-p hidden" id="bio-error"></p>
         <button class="auth-btn" id="save-bio">save</button>
-        <h2>Secret</h2>
+        <h2 id="set-secret">Secret</h2>
         <textarea class="postarea" id="self-secret" placeholder="crush history here..."></textarea>
         <p class="error auth-p hidden" id="secret-error"></p>
         <button class="auth-btn" id="save-secret">save</button>
-        <h2>Session expiry length</h2>
+        <h2 id="session-expiry-length">Session expiry length</h2>
         <p class="auth-p">The number of days your session will be valid (or -1 to never expire).</p>
         <input type="number" class="auth-input" placeholder="new expiry length" id="expiry-length">
         <p class="error auth-p hidden" id="expiry-error"></p>
         <button class="auth-btn" id="save-expiry">save</button>
-        <h2>Change password</h2>
+        <h2 id="change-password">Change password</h2>
         <!-- API doesn't actually check oof -->
         <input type="password" class="auth-input" placeholder="old password" id="old-password">
         <input type="password" class="auth-input" placeholder="new password" id="new-password">
@@ -106,8 +109,40 @@
         <h1><div class="pfp pfp-user" id="user-pfp"></div><span id="username"></span></h1>
         <p class="join-date" id="join-date"></p>
         <p id="bio" class="text"></p>
-        <h2>Posts</h2>
+        <h2 id="posts">Posts</h2>
         <div id="user-posts-wrapper" class="auth-p"></div>
+      </div>
+      <div class="content" id="about">
+        <span class="signed-out-top-nav">
+          <a class="top-nav" href="?sign-up">sign up</a>
+          <a class="top-nav" href="?sign-in">sign in</a>
+        </span>
+        <span class="signed-in-top-nav">
+          <a class="top-nav" href="?">home</a>
+          <a class="top-nav sign-out" href="#">sign out</a>
+        </span>
+        <h1>About F Word</h1>
+        <div class="auth-p">
+          <p class="text">F Word is a Twitter-like social medium built with <a href="https://firebase.google.com/">Firebase</a>, <a href="https://pages.github.com/">Github Pages</a>, and <a href="https://fonts.google.com/">Google Fonts</a>. It's named with the intention of having alternative connotations when spoken.</p>
+          <p class="text">I started by making a backend API using Firebase Cloud Functions as a gate way between the user and the Firebase Realtime Database. The way Google seems to recommend you do seems has you directly modify the database from the client side, but if the client can edit the database, <em>they can edit the database</em>. I want server-side validation, and Cloud Functions allow me to do that.</p>
+          <p class="text">My idea was that you could send your password to the Firebase servers, where it's encoded (using a md5 hash) and checked with your actual encoded password, and if it matches, it creates and returns a session ID, which is required to validate any action that is associated with the user. The user can then store the session ID until it expires or the user signs out. The only problem with this is that someone could open the JS console, steal the session ID, and use it on their own computer. Maybe in the future it should store the user's IP and/or browser data and check to see if it matches with the original data from when the user signed in and created that session ID.</p>
+          <p class="text">I forgot to make the password changing require the old password, so the old password input in the settings is actually fake; you can leave it empty and it'll still work. I am too lazy to fix this.</p>
+          <p class="text">The front end takes advantage of the <a href="https://developer.mozilla.org/en-US/docs/Web/API/History">History API</a>, which I had just discovered, which introduces the <code>pushState</code> method that only changes the URL without reloading. I thought that was prety cool, so it's abused in this web app.</p>
+          <p class="text">Github Pages pages are static, so I can't generate them from the server. Instead, the client side is just a single web page whose contents are generated on the client side, which fetches stuff using the backend API thing I made with Firebase.</p>
+          <p class="text">The fonts I used were <a href="https://fonts.google.com/specimen/Montserrat/">Montserrat</a> for headings and buttons and <a href="https://fonts.google.com/specimen/Open+Sans">Open Sans</a> for body content.</p>
+          <p class="text">F Word uses <a href="https://sheeptester.github.io/words-go-here/misc/minimal-markup.html">Minimal Markup</a>, a minimalist markup language I made that only has italics and links.</p>
+          <p class="text">I think the coolest thing about F Word is that you can tab through the website, selecting links, buttons, and inputs, and you'll be able to know which one has the focus. Normally, this doesn't happen because I prioritize looks for mice, and when you click on a button, the focus stays on the button, but I don't want the ugly blue focus glow to stay when you let go of your mouse. F Word is able to distinguish between tab and mouse focus, which I think is pretty cool. Notice how if you click on a button, the white outline doesn't appear, yet if you use the tab key to focus on it, it does. I hope to introduce this system to my current and future projects.</p>
+          <p class="text">The purple-orange colour scheme is inspired by a random gradient I got from Ugwisha. Its purple-orange gradient reminded me of the lava and obsidian of a volcano, which I thought was pretty cool. The orange makes a great accent colour, and the purple gives an opportunity to make the website dark themed.</p>
+          <p class="text">F Word is in my <code>words-go-here</code> repository, a defunct repository meant to be a text editor, because F Word lets you post things in a text box, and "words go here" in the text boxes. I also didn't feel like creating a new repository, and the <code>sheeptester.github.io</code> one is fat.</p>
+          <h2 id="privacy-policy">Privacy policy</h2>
+          <p class="text">I collect whatever data you send me; your passwords, desired usernames when signing up, bios, secrets, session expiry lengths, posts, and the posts you like.</p>
+          <p class="text">Google and Github Pages collect anonymized data for analytics whenever you make a request to their servers.</p>
+          <p class="text">If you do not want your data collected, it is too late.</p>
+          <p class="text">Your brain also collects data through your <a href="https://xkcd.com/1998/">optic organs</a>; unfortunately, it is illegal to stop this.</p>
+          <h2 id="terms-of-use">Terms of use</h2>
+          <p class="text">You can do whatever, but I also can do whatever. However, I am not legally responsible for anything that happens or doesn't happen.</p>
+          <p class="text">Github Pages and Google might have different ideas though, so don't do anything too illegal.</p>
+        </div>
       </div>
     </div>
   </body>

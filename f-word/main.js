@@ -80,6 +80,10 @@ function frontPagePostify(pfps, postID, post, session, moreInfo = false, showPar
   if (session) {
     if (!post.likes) html += `<a class="like-btn like-solo like-like" href="#">like</a>`;
     html += `<a class="respond-btn like-solo" href="#">respond</a>`;
+    if (session.admin) html += `<a class="censor-btn like-solo" href="#">censor</a>`;
+  }
+  if (post.children) {
+    html += `<span class="response-count">${Object.keys(post.children).length} response(s)</span>`;
   }
   html += `</div></div>`;
   if (showChildren && post.children) {
@@ -283,9 +287,12 @@ document.addEventListener('DOMContentLoaded', e => {
         elems.user.posts.innerHTML = html;
       });
       document.title = user + ' on F Word';
+    } else if (search === 'about') {
+      currentView = 'about';
     } else {
       currentView = 'home';
       if (search !== '') history.replaceState({}, '', './');
+      elems.posts.innerHTML = '';
       elems.loadMore.disabled = true;
       askAPI('type=recent-posts&limit=20', {}, true).then(async posts => {
         [lastPostID, continueDiv] = await renderPosts(elems.posts, posts, session, pfps);
@@ -304,6 +311,7 @@ document.addEventListener('DOMContentLoaded', e => {
     document.body.classList.add('hide-signed-in-top-nav');
     session = null;
     localStorage.removeItem(COOKIE_NAME);
+    switchView('./');
   }
   function signIn(sessionID, username) {
     session = {
@@ -323,7 +331,9 @@ document.addEventListener('DOMContentLoaded', e => {
   document.addEventListener('click', e => {
     if (e.target.tagName === 'A') {
       const href = e.target.getAttribute('href');
-      if (e.target.classList.contains('sign-out')) {
+      if (e.target.classList.contains('disabled')) {
+        e.preventDefault();
+      } else if (e.target.classList.contains('sign-out')) {
         askAPI('session=true&type=signout', {session: session.id}).then(signOut).catch(checkSessionExpire());
         e.preventDefault();
       } else if (e.target.classList.contains('like-btn')) {
@@ -409,6 +419,16 @@ document.addEventListener('DOMContentLoaded', e => {
           await getPFPs(pfps, mentionedUsers);
           e.target.outerHTML = frontPagePostify(pfps, parentID, postData, session, true, true, false);
         });
+        e.preventDefault();
+      } else if (e.target.classList.contains('censor-btn')) {
+        if (!e.shiftKey && !confirm('censor?')) return;
+        const post = e.target.parentNode.parentNode;
+        const postID = post.dataset.id;
+        post.classList.add('disabled');
+        askAPI('session=true&type=delete&post=' + postID, {session: session.id}, true).then(postData => {
+          console.log(postData);
+          post.remove();
+        }).catch(checkSessionExpire(alert));
         e.preventDefault();
       } else if (href && href[0] === '?') {
         switchView(href);

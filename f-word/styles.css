@@ -34,12 +34,16 @@ body {
 .content {
   display: none;
 }
+.about {
+  max-width: 530px;
+}
 .sign-in #sign-in { display: block; }
 .create-account #create-account { display: block; }
 .home #home { display: block; }
 .settings #settings { display: block; }
 .post-page #post-page { display: block; }
 .user-page #user-page { display: block; }
+.about #about { display: block; }
 h1 {
   font-size: 50px;
   font-family: 'Montserrat', sans-serif;
@@ -147,7 +151,7 @@ p {
 .post a:hover, .tab-focus a:focus, .text a:hover {
   text-decoration: underline;
 }
-.post a::selection {
+.post a::selection, .text a::selection, .fake-link::selection {
   color: white;
 }
 .author {
@@ -324,4 +328,9 @@ p {
 }
 .fake-link {
   color: var(--lava);
+}
+.post .response-count {
+  display: inline;
+  font-size: 16px;
+  margin-left: 10px;
 }
