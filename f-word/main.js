@@ -58,7 +58,7 @@ function frontPagePostify(pfps, postID, post, session) {
   html += `<a class="date" href="?!${postID}">${new Date(post.date).toLocaleString()}</a>`;
   if (session) {
     if (!post.likes) html += `<a class="like-btn like-solo like-like" href="#">like</a>`;
-    html += `<a class="respond-btn like-solo disabled" href="#">respond</a>`;
+    html += `<a class="respond-btn like-solo" href="#">respond</a>`;
   }
   html += `</div></div>`;
   return html;
@@ -282,6 +282,47 @@ document.addEventListener('DOMContentLoaded', e => {
           e.target.classList.remove('disabled');
         }));
         e.preventDefault();
+      } else if (e.target.classList.contains('respond-btn')) {
+        const postContent = e.target.parentNode;
+        const postID = postContent.parentNode.dataset.id;
+        postContent.removeChild(e.target);
+        const postarea = document.createElement('textarea');
+        postarea.className = 'postarea';
+        postarea.placeholder = 'start a controversy...'
+        const error = document.createElement('p');
+        error.className = 'error auth-p hidden';
+        const postBtn = document.createElement('button');
+        postBtn.className = 'auth-btn';
+        postBtn.textContent = 'respond';
+        postBtn.disabled = true;
+        postContent.appendChild(postarea);
+        postContent.appendChild(error);
+        postContent.appendChild(postBtn);
+        postarea.addEventListener('input', e => {
+          postBtn.disabled = false;
+        }, {once: true});
+        postBtn.addEventListener('click', e => {
+          postarea.disabled = postBtn.disabled = true;
+          askAPI('session=true&type=post', {
+            session: session.id,
+            content: postarea.value,
+            parent: postID
+          }).then(postID => {
+            switchView('?!' + postID);
+          }).catch(checkSessionExpire(err => {
+            error.classList.remove('hidden');
+            if (err === 'too long') {
+              error.textContent = 'Your argument is too long and boring.';
+              postarea.focus();
+            } else if (err === 'too short') {
+              error.textContent = 'An empty response is no response at all.';
+              postarea.focus();
+            } else {
+              error.textContent = 'Problem.';
+            }
+          }));
+        }, {once: true});
+        e.preventDefault();
       } else if (href && href[0] === '?') {
         switchView(href);
         e.preventDefault();
@@ -310,6 +351,7 @@ document.addEventListener('DOMContentLoaded', e => {
       document.body.classList.remove('hide-signed-in-top-nav');
       switchView('./');
     }).catch(err => {
+      elems.signIn.username.disabled = elems.signIn.password.disabled = elems.signIn.submit.disabled = false;
       if (err === 'incorrect password') {
         elems.signIn.error.textContent = 'Incorrect password.';
         elems.signIn.password.focus();
@@ -317,7 +359,6 @@ document.addEventListener('DOMContentLoaded', e => {
         elems.signIn.error.textContent = 'Problem.';
       }
       elems.signIn.error.classList.remove('hidden');
-      elems.signIn.username.disabled = elems.signIn.password.disabled = elems.signIn.submit.disabled = false;
     });
   });
   elems.signUp.username.addEventListener('keydown', e => {
@@ -375,6 +416,7 @@ document.addEventListener('DOMContentLoaded', e => {
         document.body.classList.remove('hide-signed-in-top-nav');
         switchView('./');
       }).catch(err => {
+        elems.signUp.username.disabled = elems.signUp.password.disabled = elems.signUp.submit.disabled = false;
         if (err === 'dumb username') {
           elems.signUp.error.textContent = 'Dangerous username.';
           elems.signUp.username.focus();
@@ -388,7 +430,6 @@ document.addEventListener('DOMContentLoaded', e => {
           elems.signUp.error.textContent = 'Problem.';
         }
         elems.signUp.error.classList.remove('hidden');
-        elems.signUp.username.disabled = elems.signUp.password.disabled = elems.signUp.submit.disabled = false;
       });
     }
   });
@@ -401,6 +442,7 @@ document.addEventListener('DOMContentLoaded', e => {
       elems.postContent.disabled = elems.postSubmit.disabled = false;
       switchView('?!' + postID);
     }).catch(checkSessionExpire(err => {
+      elems.postContent.disabled = elems.postSubmit.disabled = false;
       elems.postError.classList.remove('hidden');
       if (err === 'too long') {
         elems.postError.textContent = 'Not concise enough. OC disapproves';
@@ -411,8 +453,7 @@ document.addEventListener('DOMContentLoaded', e => {
       } else {
         elems.postError.textContent = 'Problem.';
       }
-      elems.postContent.disabled = elems.postSubmit.disabled = false;
-    }))
+    }));
   });
   elems.settings.bio.addEventListener('input', e => {
     elems.settings.saveBio.disabled = false;
@@ -497,6 +538,24 @@ document.addEventListener('DOMContentLoaded', e => {
       }
       elems.settings.newPassError.classList.remove('hidden');
     }));
+  });
+  function calcAngle(client) {
+    const rect = elems.settings.pfp.getBoundingClientRect();
+    const calcAngle = 90 + Math.atan2(client.clientY - rect.y - rect.height / 2, client.clientX - rect.x - rect.width / 2) * 180 / Math.PI;
+    elems.settings.savePFP.disabled = false;
+    elems.settings.savePFP.textContent = 'save';
+    elems.settings.pfpState[0] = Math.round((calcAngle + 360) % 360);
+    const [angle, colour1, colour2] = elems.settings.pfpState;
+    elems.settings.pfp.style.backgroundImage = `linear-gradient(${angle}deg, #${colour1}, #${colour2})`;
+  }
+  elems.settings.pfp.addEventListener('touchmove', e => {
+    calcAngle(e.changedTouches[0]);
+  });
+  elems.settings.pfp.addEventListener('mousedown', e => {
+    document.addEventListener('mousemove', calcAngle);
+    document.addEventListener('mouseup', e => {
+      document.removeEventListener('mousemove', calcAngle);
+    }, {once: true});
   });
   elems.settings.colour1.addEventListener('input', e => {
     elems.settings.savePFP.disabled = false;

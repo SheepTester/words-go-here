@@ -132,7 +132,7 @@ p {
   display: none;
 }
 .post {
-  display: block;
+  display: flex;
   padding: 20px;
   background-color: rgba(255, 255, 255, 0.1);
   margin-top: 20px;
@@ -187,6 +187,7 @@ p {
 .pfp-settings {
   width: 50px;
   height: 50px;
+  cursor: pointer;
 }
 .pfp-user {
   width: 1em;
@@ -200,6 +201,7 @@ p {
   vertical-align: middle;
   margin-right: 15px;
   margin-left: -5px;
+  flex: none;
 }
 .pfp-like {
   width: 15px;
