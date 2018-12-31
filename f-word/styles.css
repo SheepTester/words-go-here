@@ -140,11 +140,11 @@ p {
 .post span {
   display: block;
 }
-.post a {
+.post a, .text a {
   text-decoration: none;
   color: var(--lava);
 }
-.post a:hover, .tab-focus a:focus {
+.post a:hover, .tab-focus a:focus, .text a:hover {
   text-decoration: underline;
 }
 .post a::selection {
@@ -211,6 +211,15 @@ p {
   vertical-align: bottom;
   margin-bottom: 2px;
 }
+.tab-focus .pfp-like:focus {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+.pfp-child {
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+  pointer-events: none;
+}
 .likers {
   display: inline-block;
   padding-left: 5px;
@@ -255,4 +264,64 @@ p {
 .like-solo {
   font-size: 16px;
   margin-left: 10px;
+}
+.clear-float {
+  height: 16px;
+}
+.more-info {
+  margin: 0;
+}
+.above-post {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.below-post {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.main-post {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+.other-parent-btn, .expand-child-btn, .user-post {
+  display: block;
+  font-size: 16px;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 10px 20px;
+  white-space: pre;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+.other-parent-btn {
+  color: rgba(255, 255, 255, 0.7);
+}
+.other-parent-btn:hover, .expand-child-btn:hover, .user-post:hover, .tab-focus .other-parent-btn:focus, .tab-focus .expand-child-btn:focus, .tab-focus .user-post:focus {
+  background-color: rgba(255, 255, 255, 0.15);
+  text-decoration: none;
+}
+.children-wrapper {
+  margin-left: auto;
+  width: 95%;
+}
+.expand-child-btn {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-left: -5.26%;
+}
+.child-author {
+  font-weight: bold;
+  margin: 0 20px;
+  vertical-align: middle;
+  pointer-events: none;
+}
+.child-content {
+  vertical-align: middle;
+  pointer-events: none;
+}
+.user-post {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.user-post:first-child {
+  border-top: none;
+}
+.fake-link {
+  color: var(--lava);
 }

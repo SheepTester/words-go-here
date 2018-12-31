@@ -11,15 +11,33 @@ function clickOnEnter(input, btn) {
   });
 }
 async function renderPosts(wrapper, posts, session, pfps) {
-  let mentionedUsers = {};
+  const mentionedUsers = {};
   Object.values(posts).forEach(postData => {
-    if (!pfps[postData.author]) mentionedUsers[postData.author] = true;
-    if (postData.likes) {
-      Object.keys(postData.likes).forEach(user => {
-        if (!pfps[user]) mentionedUsers[user] = true;
-      });
-    }
+    addToMentionedUsers(pfps, mentionedUsers, postData);
   });
+  await getPFPs(pfps, mentionedUsers);
+  const ids = Object.keys(posts).reverse();
+  wrapper.innerHTML = ids.map(postID => {
+    return frontPagePostify(pfps, postID, posts[postID], session);
+  }).join('');
+  const continueDiv = document.createElement('div');
+  wrapper.appendChild(continueDiv);
+  return [ids[ids.length - 1], continueDiv];
+}
+function addToMentionedUsers(pfps, mentionedUsers, postData, checkChildren = false) {
+  if (!pfps[postData.author]) mentionedUsers[postData.author] = true;
+  if (postData.likes) {
+    Object.keys(postData.likes).forEach(user => {
+      if (!pfps[user]) mentionedUsers[user] = true;
+    });
+  }
+  if (checkChildren && postData.children) {
+    Object.values(postData.children).forEach(({author}) => {
+      if (!pfps[author]) mentionedUsers[author] = true;
+    });
+  }
+}
+async function getPFPs(pfps, mentionedUsers) {
   mentionedUsers = Object.keys(mentionedUsers);
   if (mentionedUsers.length) {
     const newPFPs = await askAPI('type=pfps&users=' + mentionedUsers.join('.'), {}, true);
@@ -29,19 +47,22 @@ async function renderPosts(wrapper, posts, session, pfps) {
     });
     Object.assign(pfps, newPFPs);
   }
-  const ids = Object.keys(posts).reverse();
-  wrapper.innerHTML = ids.map(postID => {
-    return frontPagePostify(pfps, postID, posts[postID], session);
-  }).join('');
-  const continueDiv = document.createElement('div');
-  wrapper.appendChild(continueDiv);
-  return [ids[ids.length - 1], continueDiv];
 }
-function frontPagePostify(pfps, postID, post, session) {
-  let html = `<div class="post" data-id="${postID}">`;
-  html += `<div class="pfp pfp-post" style="background-image: ${pfps[post.author]};"></div>`;
+function frontPagePostify(pfps, postID, post, session, moreInfo = false, showParent = false, showChildren = false, loadedParent = '') {
+  let html = '';
+  if (showParent && post.parent) {
+    html += loadedParent || `<a class="other-parent-btn" href="?*${post.author}" data-id="${post.parent}">see previous post</a> `;
+  }
+  html += `<div class="post`;
+  if (moreInfo) {
+    html += ` more-info`;
+    if (loadedParent) html += ` main-post`;
+  }
+  if (showParent) html += ` above-post`;
+  if (showChildren) html += ` below-post`;
+  html += `" data-id="${postID}"><div class="pfp pfp-post" style="background-image: ${pfps[post.author]};"></div>`;
   html += `<div class="post-right"><span class="author"><a href="?*${post.author}">${post.author}</a> `;
-  if (post.parent) html += `<a class="parent" href="?!${post.parent}">responds</a>`;
+  if (post.parent) html += moreInfo ? `responds` : `<a class="parent" href="?!${post.parent}">responds</a>`;
   else html += `says`;
   html += `</span><span class="post-content">${minimalMarkupToHTML(post.content)}</span>`;
   if (post.likes) {
@@ -61,6 +82,14 @@ function frontPagePostify(pfps, postID, post, session) {
     html += `<a class="respond-btn like-solo" href="#">respond</a>`;
   }
   html += `</div></div>`;
+  if (showChildren && post.children) {
+    html += `<div class="children-wrapper">`;
+    Object.keys(post.children).forEach(replyID => {
+      const {author, content} = post.children[replyID];
+      html += `<a href="?!${replyID}" data-id="${replyID}" class="expand-child-btn"><div class="pfp pfp-child" style="background-image: ${pfps[author]};"></div><span class="child-author">${author}</span><span class="child-content">${minimalMarkupToHTML(content, true)}</span></a>`;
+    });
+    html += `</div>`;
+  }
   return html;
 }
 const COOKIE_NAME = '[f word] session';
@@ -114,9 +143,9 @@ document.addEventListener('DOMContentLoaded', e => {
       name: document.getElementById('username'),
       bio: document.getElementById('bio'),
       joinDate: document.getElementById('join-date'),
-      pfp: document.getElementById('user-pfp')
+      pfp: document.getElementById('user-pfp'),
+      posts: document.getElementById('user-posts-wrapper')
     },
-    tempPostPage: document.getElementById('temp-post-page-content'),
     settings: {
       pfp: document.getElementById('self-pfp'),
       pfpState: null,
@@ -138,13 +167,16 @@ document.addEventListener('DOMContentLoaded', e => {
       newPassError: document.getElementById('new-pass-error'),
       savePass: document.getElementById('save-password')
     },
-    loadMore: document.getElementById('load-more')
+    loadMore: document.getElementById('load-more'),
+    mainPostWrapper: document.getElementById('main-post-wrapper'),
+    userPageLink: document.getElementById('user-page-link')
   };
   let currentView = 'home';
   let session = localStorage.getItem(COOKIE_NAME);
   if (session) {
     session = JSON.parse(session);
     document.body.classList.add('hide-signed-out-top-nav');
+    elems.userPageLink.href = '?*' + session.username;
   } else {
     document.body.classList.add('hide-signed-in-top-nav');
   }
@@ -210,18 +242,28 @@ document.addEventListener('DOMContentLoaded', e => {
       }
     } else if (search[0] === '!') {
       currentView = 'post-page';
-      elems.tempPostPage.value = 'Loading...';
-      askAPI('type=post&post=' + search.slice(1), {}, true).then(({content, author, date, parent, likes}) => {
-        elems.tempPostPage.value = `CONTENT:\n\n${content}\n\nAUTHOR: ${author}\nDATE: ${new Date(date).toLocaleString()}\nPARENT: ${parent || '[NOT A RESPONSE]'}\nLIKES: ${JSON.stringify(likes) || '[NONE]'}`;
+      elems.mainPostWrapper.innerHTML = `<p class="auth-p">Loading...</p>`;
+      const postID = search.slice(1);
+      askAPI('type=post&post=' + postID, {}, true).then(async postData => {
+        const parentData = postData.parent && await askAPI('type=post&post=' + postData.parent, {}, true);
+        const mentionedUsers = {};
+        if (parentData) addToMentionedUsers(pfps, mentionedUsers, parentData);
+        addToMentionedUsers(pfps, mentionedUsers, postData, true);
+        await getPFPs(pfps, mentionedUsers);
+        elems.mainPostWrapper.innerHTML = frontPagePostify(pfps, postID, postData, session, true, true, true, parentData ? frontPagePostify(pfps, postData.parent, parentData, session, true, true, false) : '');
+        const {content, author} = postData;
+        document.title = `${content.length > 50 ? content.slice(0, 47) + '...' : content} - ${author} on F Word`;
       }).catch(err => {
-        elems.tempPostPage.value = 'ERROR\n\n' + err;
+        document.title = 'An unknown post on F Word';
       });
+      document.title = 'A post on F Word';
     } else if (search[0] === '*') {
       currentView = 'user-page';
       const user = decodeURIComponent(search.slice(1));
       elems.user.name.textContent = user;
       elems.user.joinDate.textContent = 'Loading...';
       elems.user.bio.textContent = 'Loading...';
+      elems.user.pfp.style.backgroundImage = pfps[user];
       askAPI('type=user&user=' + user, {}, true).then(({bio, pfp, joinDate}) => {
         elems.user.joinDate.textContent = new Date(joinDate).toLocaleString();
         elems.user.bio.innerHTML = minimalMarkupToHTML(bio);
@@ -230,7 +272,17 @@ document.addEventListener('DOMContentLoaded', e => {
       }).catch(() => {
         elems.user.joinDate.textContent = 'Not yet';
         elems.user.bio.textContent = 'Hello! I don\'t exist. Oh well.';
+        document.title = 'An unknown user on F Word';
       });
+      elems.user.posts.innerHTML = '';
+      askAPI('type=user-posts&user=' + user, {}, true).then(posts => {
+        let html = '';
+        Object.keys(posts).reverse().forEach(postID => {
+          html += `<a href="?!${postID}" class="user-post">${minimalMarkupToHTML(posts[postID].content, true)}</a>`;
+        });
+        elems.user.posts.innerHTML = html;
+      });
+      document.title = user + ' on F Word';
     } else {
       currentView = 'home';
       if (search !== '') history.replaceState({}, '', './');
@@ -239,6 +291,7 @@ document.addEventListener('DOMContentLoaded', e => {
         [lastPostID, continueDiv] = await renderPosts(elems.posts, posts, session, pfps);
         elems.loadMore.disabled = false;
       });
+      document.title = 'F Word';
     }
     container.classList.add(currentView);
   }
@@ -251,6 +304,17 @@ document.addEventListener('DOMContentLoaded', e => {
     document.body.classList.add('hide-signed-in-top-nav');
     session = null;
     localStorage.removeItem(COOKIE_NAME);
+  }
+  function signIn(sessionID, username) {
+    session = {
+      id: sessionID,
+      username: username
+    };
+    localStorage.setItem(COOKIE_NAME, JSON.stringify(session));
+    document.body.classList.add('hide-signed-out-top-nav');
+    document.body.classList.remove('hide-signed-in-top-nav');
+    elems.userPageLink.href = '?*' + username;
+    switchView('./');
   }
   loadView(window.location.search);
   window.addEventListener('popstate', e => {
@@ -278,8 +342,11 @@ document.addEventListener('DOMContentLoaded', e => {
           e.target.textContent = like;
           e.target.setAttribute('href', '#');
           if (likeCount) likeCount.textContent = likes;
-        }).catch(checkSessionExpire(null, () => {
+        }).catch(checkSessionExpire(() => {
+          alert('You might be liking too fast! Google won\'t like that.');
+        }, () => {
           e.target.classList.remove('disabled');
+          e.target.setAttribute('href', '#');
         }));
         e.preventDefault();
       } else if (e.target.classList.contains('respond-btn')) {
@@ -323,6 +390,26 @@ document.addEventListener('DOMContentLoaded', e => {
           }));
         }, {once: true});
         e.preventDefault();
+      } else if (e.target.classList.contains('expand-child-btn')) {
+        e.target.classList.add('disabled');
+        const childID = e.target.dataset.id;
+        askAPI('type=post&post=' + childID, {}, true).then(async postData => {
+          const mentionedUsers = {};
+          addToMentionedUsers(pfps, mentionedUsers, postData, true);
+          await getPFPs(pfps, mentionedUsers);
+          e.target.outerHTML = frontPagePostify(pfps, childID, postData, session, true, false, true);
+        });
+        e.preventDefault();
+      } else if (e.target.classList.contains('other-parent-btn')) {
+        e.target.classList.add('disabled');
+        const parentID = e.target.dataset.id;
+        askAPI('type=post&post=' + parentID, {}, true).then(async postData => {
+          const mentionedUsers = {};
+          addToMentionedUsers(pfps, mentionedUsers, postData);
+          await getPFPs(pfps, mentionedUsers);
+          e.target.outerHTML = frontPagePostify(pfps, parentID, postData, session, true, true, false);
+        });
+        e.preventDefault();
       } else if (href && href[0] === '?') {
         switchView(href);
         e.preventDefault();
@@ -340,16 +427,9 @@ document.addEventListener('DOMContentLoaded', e => {
       user: elems.signIn.username.value,
       password: elems.signIn.password.value
     }).then(sessionID => {
-      session = {
-        id: sessionID,
-        username: elems.signIn.username.value
-      };
-      localStorage.setItem(COOKIE_NAME, JSON.stringify(session));
+      signIn(sessionID, elems.signIn.username.value);
       elems.signIn.password.value = '';
       elems.signIn.username.disabled = elems.signIn.password.disabled = elems.signIn.submit.disabled = false;
-      document.body.classList.add('hide-signed-out-top-nav');
-      document.body.classList.remove('hide-signed-in-top-nav');
-      switchView('./');
     }).catch(err => {
       elems.signIn.username.disabled = elems.signIn.password.disabled = elems.signIn.submit.disabled = false;
       if (err === 'incorrect password') {
@@ -405,16 +485,9 @@ document.addEventListener('DOMContentLoaded', e => {
         user: elems.signUp.username.value,
         password: elems.signUp.password.value
       }).then(sessionID => {
-        session = {
-          id: sessionID,
-          username: elems.signUp.username.value
-        };
-        localStorage.setItem(COOKIE_NAME, JSON.stringify(session));
-        elems.signUp.password.value = '';
+        signIn(sessionID, elems.signUp.username.value);
         elems.signUp.username.disabled = elems.signUp.password.disabled = elems.signUp.submit.disabled = false;
-        document.body.classList.add('hide-signed-out-top-nav');
-        document.body.classList.remove('hide-signed-in-top-nav');
-        switchView('./');
+        elems.signUp.password.value = '';
       }).catch(err => {
         elems.signUp.username.disabled = elems.signUp.password.disabled = elems.signUp.submit.disabled = false;
         if (err === 'dumb username') {
@@ -585,7 +658,6 @@ document.addEventListener('DOMContentLoaded', e => {
     elems.loadMore.disabled = true;
     askAPI('type=recent-posts&limit=21&from=' + lastPostID, {}, true).then(async posts => {
       const len = Object.keys(posts).length;
-      console.log(len);
       if (len) {
         delete posts[lastPostID];
         [lastPostID, continueDiv] = await renderPosts(continueDiv, posts, session, pfps);

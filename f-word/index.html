@@ -52,6 +52,8 @@
       </div>
       <div class="content" id="settings">
         <h1>settings<a class="top-nav" href="?">home</a><a class="top-nav sign-out" href="#">sign out</a></h1>
+        <p class="text auth-p"><a id="user-page-link">Link to user page</a></p>
+        <h2>Profile icon</h2>
         <div class="pfp-setter-wrapper">
           <div class="pfp pfp-settings" id="self-pfp"></div>
           <input type="color" class="colour-input" id="colour1">
@@ -80,14 +82,32 @@
         <button class="auth-btn" id="save-password">save</button>
       </div>
       <div class="content" id="post-page">
-        <a class="top-nav" href="?">home</a><a class="top-nav sign-out" href="#">sign out</a>
-        <textarea class="postarea" id="temp-post-page-content" readonly></textarea>
+        <div class="clear-float">
+          <span class="signed-out-top-nav">
+            <a class="top-nav" href="?sign-up">sign up</a>
+            <a class="top-nav" href="?sign-in">sign in</a>
+          </span>
+          <span class="signed-in-top-nav">
+            <a class="top-nav" href="?">home</a>
+            <a class="top-nav sign-out" href="#">sign out</a>
+          </span>
+        </div>
+        <div id="main-post-wrapper" class="auth-p"></div>
       </div>
       <div class="content" id="user-page">
-        <a class="top-nav" href="?">home</a><a class="top-nav sign-out" href="#">sign out</a>
+        <span class="signed-out-top-nav">
+          <a class="top-nav" href="?sign-up">sign up</a>
+          <a class="top-nav" href="?sign-in">sign in</a>
+        </span>
+        <span class="signed-in-top-nav">
+          <a class="top-nav" href="?">home</a>
+          <a class="top-nav sign-out" href="#">sign out</a>
+        </span>
         <h1><div class="pfp pfp-user" id="user-pfp"></div><span id="username"></span></h1>
         <p class="join-date" id="join-date"></p>
         <p id="bio" class="text"></p>
+        <h2>Posts</h2>
+        <div id="user-posts-wrapper" class="auth-p"></div>
       </div>
     </div>
   </body>
