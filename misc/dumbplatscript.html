@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>hello i am platty script</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="dumbest platty script of them all. checks x axis then y axis (or maybe other way around)"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+    <style>
+      body {
+        background-color: #68458a;
+        color: #ae71bc;
+      }
+      #container {
+        position: relative;
+        /* filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.3)); */
+      }
+      .box {
+        background-color: #ae71bc;
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        top: 0;
+        left: 0;
+      }
+      .player {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <script>
+const map = `
+  @@@@@@@@@@@@@@@@@@
+  @                @
+  @                @
+  @                @
+  @     @          @
+  @           @@@  @
+  @@             @@@
+  @ @              @
+  @@@@@@@@@@@@@@@@@@
+`.split(/\r?\n/).slice(1, -1).map(a => a.trim());
+const container = document.getElementById('container');
+let html = '';
+map.forEach((row, y) => {
+  html += row.split('').map((l, x) => {
+    return l === '@' ? `<div class="box" style="transform: translate(${x * 40}px, ${y * 40}px);"></div>` : '';
+  }).join('');
+});
+container.style.height = map.length * 40 + 'px';
+container.style.width = map[0].length * 40 + 'px';
+container.innerHTML = html;
+const playerElem = document.createElement('div');
+playerElem.className = 'box player';
+container.appendChild(playerElem);
+function isSolid(x, y) {
+  if (y < 0 || x < 0 || y >= map.length || x >= map[0].length) return true;
+  return map[y][x] !== ' ';
+}
+const player = {x: 1, y: 1, xv: 0, yv: 0, SIZE: 0.75, onGround: false};
+const BLOCKS_PER_METRE = 0.01;
+const GRAVITY = 9.8 * BLOCKS_PER_METRE / 1000; // blocks/ms
+let lastTime = Date.now(), nextFrameID = null;
+function togglePause() {
+  if (nextFrameID === null) {
+    lastTime = Date.now();
+    draw();
+  } else {
+    window.cancelAnimationFrame(nextFrameID);
+    nextFrameID = null;
+  }
+}
+function checkAxis(movement, currentCoord, otherCoord, isSolid, setPosition, onCollision, onNoCollision) {
+  const anchor = movement < 0 ? currentCoord : currentCoord + player.SIZE;
+  let next = movement < 0 ? Math.floor(anchor + Number.EPSILON) : Math.ceil(anchor - Number.EPSILON);
+  let collided = false;
+  while (movement < 0 ? next - anchor >= movement : next - anchor <= movement) {
+    const min = Math.floor(otherCoord);
+    const max = Math.ceil(otherCoord + player.SIZE);
+    const loc = movement < 0 ? next - 1 : next;
+    let collision = false;
+    for (let i = min; i < max; i++) if (isSolid(loc, i)) {
+      collision = true;
+      break;
+    }
+    if (collision) {
+      setPosition(movement < 0 ? next : next - player.SIZE);
+      if (onCollision) onCollision();
+      collided = true;
+      break;
+    }
+    movement < 0 ? next-- : next++;
+  }
+  if (!collided) {
+    setPosition(currentCoord + movement);
+    if (onNoCollision) onNoCollision();
+  }
+}
+function draw() {
+  const now = Date.now();
+  const elapsedTime = now - lastTime;
+  if (elapsedTime !== 0)
+    player.xv *= 1 / (elapsedTime / 40 + 1);
+  player.yv += GRAVITY * elapsedTime;
+  if (player.onGround && keys.up) player.yv = -0.025;
+  if (keys.left) player.xv -= 0.004;
+  if (keys.right) player.xv += 0.004;
+  const yMove = player.yv * elapsedTime;
+  if (yMove !== 0) {
+    checkAxis(yMove, player.y, player.x, (y, x) => isSolid(x, y), y => {
+      player.y = y;
+    }, () => {
+      if (yMove > 0) player.onGround = true;
+      player.yv = 0;
+    }, () => {
+      player.onGround = false;
+    });
+  }
+  const xMove = player.xv * elapsedTime;
+  if (xMove !== 0) {
+    checkAxis(xMove, player.x, player.y, (x, y) => isSolid(x, y), x => {
+      player.x = x;
+    }, () => {
+      player.xv = 0;
+    }, null);
+  }
+  playerElem.style.transform = `translate(${player.x * 40}px, ${player.y * 40}px)`;
+  lastTime = now;
+  nextFrameID = window.requestAnimationFrame(draw);
+}
+const keys = {};
+document.addEventListener('keydown', e => {
+  switch (e.keyCode) {
+    case 37: case 65: keys.left = true; break;
+    case 38: case 87: keys.up = true; break;
+    case 39: case 68: keys.right = true; break;
+    case 40: case 83: keys.down = true; break;
+    case 80: togglePause(); break;
+  }
+});
+document.addEventListener('keyup', e => {
+  switch (e.keyCode) {
+    case 37: case 65: keys.left = false; break;
+    case 38: case 87: keys.up = false; break;
+    case 39: case 68: keys.right = false; break;
+    case 40: case 83: keys.down = false; break;
+  }
+});
+draw();
+    </script>
+  </body>
+</html>
