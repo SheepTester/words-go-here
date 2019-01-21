@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Intelligent Navbar</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="A very user-friendly and well-designed navbar dropdown interface UI UX blockchain synergy thing"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+    <style>
+      body {
+        margin: 0;
+      }
+      .logo {
+        font-weight: normal;
+        margin: 10px;
+        color: #333;
+      }
+      .links {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .links > li {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+      }
+      .links > li:hover {
+        text-decoration: underline;
+      }
+      .but-not-really {
+        background-color: #64945d;
+        padding: 10px;
+      }
+      .but-not-really > li {
+        margin-right: 15px;
+        color: white;
+        font-family: sans-serif;
+      }
+      .has-more:hover {
+        text-decoration: none;
+      }
+      .has-more ul {
+        display: none;
+        position: absolute;
+        background-color: #7db175;
+        padding: 10px;
+        width: 300px;
+        top: calc(100% + 300px);
+      }
+      .has-more:hover ul {
+        display: table;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1 class="logo">Specific Innovations</h1>
+      <ul class="links but-not-really">
+        <li class="has-more">Actual links
+          <ul class="links">
+            <li>Donate Your Personal Information</li>
+            <li>Access Your Personal Information</li>
+            <li>Access Others' Personal Information</li>
+          </ul>
+        </li>
+        <li>Terms of Service</li>
+        <li>Cookie Policy</li>
+        <li>About</li>
+        <li>Privacy Policy</li>
+        <li>Terms of Use</li>
+        <li>Contact</li>
+        <li>Terms and Conditions</li>
+      </ul>
+    </header>
+  </body>
+</html>
