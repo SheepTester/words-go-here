@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Evolution Simulator Port</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="An attempt to translate carykh's evolution simulator physics to JavaScript"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+    <style>
+      body {
+        font-size: 0;
+        background-color: #77959b;
+        margin: 0;
+      }
+      .ground {
+        background-color: #3e6443;
+        height: 100px;
+        left: 0;
+        position: fixed;
+        width: 100%;
+        bottom: 0;
+      }
+      .ball {
+        background-color: hsl(0, 53%, 38%);
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        margin: -30px;
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+      }
+      #stuff {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        overflow: visible;
+        width: 100px;
+        height: 100px;
+        margin-left: -50px;
+      }
+      .muscle {
+        stroke-linecap: round;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ground"></div>
+    <svg xmlns="http://www.w3.org/2000/svg" fill='#4FA1A7' id="stuff"></svg>
+    <script>
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const MINIMUM_NODE_SIZE = 0.4; // Note: all units are 20 cm.  Meaning, a value of 1 equates to a 20 cm node.
+const MAXIMUM_NODE_SIZE = 0.4;
+const MINIMUM_NODE_FRICTION = 0.0;
+const MAXIMUM_NODE_FRICTION = 1.0;
+const GRAVITY = 0.005; // higher = more friction.
+const AIR_FRICTION = 0.95; // The lower the number, the more friction.  1 = no friction.  Above 1 = chaos.
+const MUTABILITY_FACTOR = 1.0; // How fast the creatures mutate.  1 is normal.
+const haveGround = true;  // true if the ground exists, false if no ground.
+const FRICTION = 4;
+
+const SCALE = 5;
+
+class Node {
+
+  constructor(x, y, xv, yv, m, friction) {
+    this.x = x;
+    this.y = y;
+    this.xv = xv;
+    this.yv = yv;
+    this.m = m; // what is this?
+    this.friction = friction; // I'm assuming it's friction?
+
+    this.elem = document.createElementNS(SVG_NS, 'circle');
+    this.elem.classList.add('ball');
+    this.elem.style.fill = `hsl(0, 53%, ${friction * 100}%)`;
+    this.elem.setAttributeNS(null, 'r', m * SCALE / 2);
+  }
+
+  applyForces() {
+    this.xv *= AIR_FRICTION;
+    this.yv *= AIR_FRICTION;
+    this.y += this.yv;
+    this.x += this.xv;
+  }
+
+  applyGravity() {
+    this.yv += GRAVITY;
+  }
+
+  hitWalls() {
+    const dif = this.y + this.m / 2;
+    // if node is below ground?
+    if (dif >= 0 && haveGround) {
+      this.y = -this.m / 2; // put back on ground
+      this.yv = 0; // don't try to go further down
+      this.x -= this.xv * this.friction; // apply friction from ground
+
+      // reverse possible x movement? might not be necessary
+      if (this.xv > 0) {
+        this.xv -= this.friction * dif * FRICTION;
+        if (this.xv < 0) {
+          this.xv = 0;
+        }
+      } else {
+        this.xv += this.friction * dif * FRICTION;
+        if (this.xv > 0) {
+          this.xv = 0;
+        }
+      }
+    }
+  }
+
+  addTo(parent) {
+    parent.appendChild(this.elem);
+  }
+
+  position() {
+    this.elem.setAttributeNS(null, 'cx', this.x * SCALE);
+    this.elem.setAttributeNS(null, 'cy', this.y * SCALE);
+  }
+
+}
+
+class Muscle {
+
+  constructor(period, node1, node2, contractTime, extendTime, contractLength, extendLength, contracted, rigidity) {
+    this.period = period;
+    this.node1 = node1;
+    this.node2 = node2;
+    this.contractTime = contractTime;
+    this.extendTime = extendTime;
+    this.contractLength = contractLength;
+    this.extendLength = extendLength;
+    this.contracted = contracted;
+    this.rigidity = rigidity;
+
+    this.elem = document.createElementNS(SVG_NS, 'path');
+    this.elem.classList.add('muscle');
+    this.elem.style.stroke = `rgba(158, 81, 81, ${rigidity})`;
+  }
+
+  applyForce(target) {
+    const node1 = this.node1;
+    const node2 = this.node2;
+    const distance = Math.hypot(node1.x - node2.x, node1.y - node2.y);
+    const angle = Math.atan2(node1.y - node2.y, node1.x - node2.x);
+    const force = Math.min(Math.max(1 - (distance / target), -0.4), 0.4); // should this be using the constants?
+    node1.xv += Math.cos(angle) * force * this.rigidity / node1.m;
+    node1.yv += Math.sin(angle) * force * this.rigidity / node1.m;
+    node2.xv -= Math.cos(angle) * force * this.rigidity / node2.m;
+    node2.yv -= Math.sin(angle) * force * this.rigidity / node2.m;
+  }
+
+  addTo(parent) {
+    parent.appendChild(this.elem);
+  }
+
+  position() {
+    this.elem.setAttributeNS(null, 'd', `M${this.node1.x * SCALE} ${this.node1.y * SCALE}L${this.node2.x * SCALE} ${this.node2.y * SCALE}`);
+    this.elem.style.strokeWidth = this.contracted ? '20' : '10';
+  }
+
+}
+
+class Creature {
+
+  constructor(nodes, muscles, timer, creatureTimer) {
+    this.nodes = nodes;
+    this.muscles = muscles;
+    this.timer = timer;
+    this.creatureTimer = creatureTimer;
+  }
+
+  // won't need for now
+  checkForOverlap() {
+    const badMuscles = [];
+    this.muscles.forEach((muscle1, i) => {
+      this.muscles.slice(i + 1).forEach(muscle2 => {
+        if (muscle1.node1 == muscle2.node1 && muscle1.node2 == muscle2.node2
+            || muscle1.node1 == muscle2.node2 && muscle1.node2 == muscle2.node1
+            || muscle1.node1 == muscle1.node2) {
+          badMuscles.push(muscle1);
+        }
+      });
+    });
+    badMuscles.forEach(muscle => {
+      const index = this.muscles.indexOf(muscle);
+      if (~index) this.muscles.splice(index, 1);
+    });
+  }
+
+  simulate() {
+    this.muscles.forEach(muscle => {
+      const thruPeriod = ((this.timer / this.creatureTimer) / muscle.period) % 1;
+      if ((thruPeriod <= muscle.extendTime && muscle.extendTime <= muscle.contractTime) ||
+         (muscle.contractTime <= thruPeriod && thruPeriod <= muscle.extendTime) ||
+         (muscle.extendTime <= muscle.contractTime && muscle.contractTime <= thruPeriod)) {
+        muscle.applyForce(muscle.contractLength);
+        muscle.contracted = true;
+      } else {
+        muscle.applyForce(muscle.extendLength);
+        muscle.contracted = false;
+      }
+    });
+    this.nodes.forEach(node => {
+      node.applyForces();
+      node.applyGravity();
+      node.hitWalls();
+    });
+    this.timer++;
+  }
+
+  addTo(parent) {
+    this.muscles.forEach(m => m.addTo(parent));
+    this.nodes.forEach(n => n.addTo(parent));
+  }
+
+  render() {
+    this.muscles.forEach(m => m.position());
+    this.nodes.forEach(n => n.position());
+  }
+
+}
+
+const svg = document.getElementById('stuff');
+let node1, node2, node3;
+const creature = new Creature(
+  [
+    node1 = new Node(5, -1, 0, 0, 10, 0.5),
+    node2 = new Node(-5, -1, 0, 0, 10, 0.5),
+    node3 = new Node(1, -50, 0, 0, 10, 0.5)
+  ],
+  [
+    new Muscle(5, node1, node2, 0.5, 0.5, 30, 100, false, 1),
+    new Muscle(5, node2, node3, 0.5, 0.5, 30, 100, false, 1),
+    new Muscle(5, node3, node1, 0.5, 0.5, 30, 100, false, 1)
+  ],
+  0, 50
+);
+creature.addTo(svg);
+(function paint() {
+  creature.simulate();
+  creature.render();
+  window.requestAnimationFrame(paint);
+})();
+    </script>
+  </body>
+</html>
