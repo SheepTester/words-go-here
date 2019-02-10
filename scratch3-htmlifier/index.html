@@ -79,7 +79,7 @@ function downloadAsHTML(title, id, username, quick = false, log = console.log) {
       getDataURL(projectJSON).then(data => projectJSON = data),
       ...Object.keys(assets).map(assetId => getDataURL(assets[assetId]).then(data => assets[assetId] = data))
     ]).then(async ([scripts, html]) => {
-      scripts = `const PROJECT_JSON = "${projectJSON}";\nconst ASSETS = ${JSON.stringify(assets)};\nconst DESIRED_USERNAME = ${username};\n` + scripts;
+      scripts = `const PROJECT_JSON = "${projectJSON}";\nconst ASSETS = ${JSON.stringify(assets)};\nconst DESIRED_USERNAME = ${JSON.stringify(username)};\n` + scripts;
       if (!quick) {
         log('Minifying...');
         scripts = await minifyScripts(scripts);
