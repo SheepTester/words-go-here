@@ -39,8 +39,8 @@ const runBenchmark = function () {
     const mouse = getEventXY(e);
     const rect = canvas.getBoundingClientRect();
     Scratch.vm.postIOData('mouse', {
-      x: mouse.clientX - rect.left,
-      y: mouse.clientY - rect.top,
+      x: mouse.x - rect.left,
+      y: mouse.y - rect.top,
       canvasWidth: rect.width,
       canvasHeight: rect.height
     });
@@ -50,8 +50,8 @@ const runBenchmark = function () {
     const rect = canvas.getBoundingClientRect();
     Scratch.vm.postIOData('mouse', {
       isDown: true,
-      x: mouse.clientX - rect.left,
-      y: mouse.clientY - rect.top,
+      x: mouse.x - rect.left,
+      y: mouse.y - rect.top,
       canvasWidth: rect.width,
       canvasHeight: rect.height
     });
@@ -62,8 +62,8 @@ const runBenchmark = function () {
     const rect = canvas.getBoundingClientRect();
     Scratch.vm.postIOData('mouse', {
       isDown: false,
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: mouse.x - rect.left,
+      y: mouse.y - rect.top,
       canvasWidth: rect.width,
       canvasHeight: rect.height
     });
