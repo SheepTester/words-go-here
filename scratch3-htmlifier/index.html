@@ -10,11 +10,8 @@
     <script src="./hacky-file-getter.js" charset="utf-8"></script>
   </head>
   <body>
-    <!-- <script src="https://llk.github.io/scratch-vm/vendor.js"></script> -->
-    <!-- Storage module -->
-    <script src="https://llk.github.io/scratch-vm/scratch-storage.js"></script>
-    <!-- VM -->
-    <script src="https://llk.github.io/scratch-vm/scratch-vm.js"></script>
+    <!-- Everything, probably -->
+    <script src="https://sheeptester.github.io/scratch-vm/vm.min.js"></script>
 
     <script src="./UglifyJS2/minify.js"></script>
     <script src="./UglifyJS2/utils.js"></script>
@@ -34,22 +31,19 @@
     <h1>Scratch 3.0 Project HTMLifier</h1>
     <p>This packages your Scratch project into a single HTML file that can run on its own. The HTML file will be pretty big because it contains the entire Scratch engine as well as the assets used in the projects.</p>
     <p>Also, because they're handled by Scratch GUI, which isn't included here, variable and list monitors won't show; the ask box has also been replaced with a simple JavaScript prompt. The project will automatically start, and there are no green flag or stop sign buttons to click on. The username block will report whatever you set as the "Username value."</p>
-    <p>Most of the time is spent minifying the Scratch engine; maybe I could speed this up by doing that for you, oh well.</p>
+    <p>Most of the time loading is spent minifying the Scratch engine. They say it's minified, but it doesn't look very minified to me, so you can minify if you want to.</p>
     <p><label for="title">Project title: </label><input type="text" placeholder="Project title" value="Zombie Cube Escape!" id="title"></p>
     <p><label for="id">Project ID: </label><input type="number" placeholder="Project ID" value="284516654" id="id"></p>
     <p><label for="username">Username value: </label><input type="text" placeholder="Username" value="griffpatch" id="username"></p>
-    <button id="load">HTMLify</button>
-    <button id="quick-load">Quick HTMLify*</button>
-    <p>*With Quick HTMLification, the HTML file won't include the Scratch engine; instead, it'll link to the unminified files on llk.github.io. You can use it to preview what the output will look like, or if there's a maximum file size and the Scratch engine already makes it too big.</p>
+    <button id="load">HTMLify with minification (slow)</button>
+    <button id="load-no-minify">HTMLify without minification (recommended)</button>
+    <button id="load-no-vm">HTMLify without VM*</button>
+    <p>*the Scratch engine won't be included in the HTML file, so it'll be smaller, but it'll require internet connection</p>
     <textarea id="error" rows="8" cols="40" placeholder="Log" readonly></textarea>
     <p>Libraries used: <a href="https://github.com/mishoo/UglifyJS2/tree/harmony">uglify-es</a>, <a href="https://github.com/LLK/scratch-vm/">scratch-vm</a>, <a href="http://danml.com/download.html">download.js</a></p>
     <script type="text/javascript">
 const scratchURLs = [
-  'https://llk.github.io/scratch-vm/vendor.js',
-  'https://llk.github.io/scratch-vm/scratch-storage.js',
-  'https://llk.github.io/scratch-vm/scratch-render.js',
-  'https://llk.github.io/scratch-vm/scratch-svg-renderer.js',
-  'https://llk.github.io/scratch-vm/scratch-vm.js',
+  'https://sheeptester.github.io/scratch-vm/vm.min.js',
   './benchmark.js'
 ];
 function getDataURL(url) {
@@ -66,21 +60,21 @@ function minifyScripts(scripts) { // so the "Minifying..." log shows
     }, 100);
   });
 }
-function downloadAsHTML(title, id, username, quick = false, log = console.log) {
+function downloadAsHTML(id, {title = 'Project', username = 'griffpatch', noVM = false, minify = true, log = console.log}) {
   log('Getting asset URLs...');
   return runBenchmark(id).then(({assets, projectJSON}) => {
     log('Getting assets...');
     return Promise.all([
-      Promise.all((quick ? ['./benchmark.js'] : scratchURLs).map(url => fetch(url).then(r => r.text()))).then(scripts => {
+      Promise.all((noVM ? ['./benchmark.js'] : scratchURLs).map(url => fetch(url).then(r => r.text()))).then(scripts => {
         log('Scratch scripts obtained...');
         return scripts.join('\n');
       }),
-      fetch(quick ? './template-quick.html' : './template.html').then(r => r.text()),
+      fetch(noVM ? './template-quick.html' : './template.html').then(r => r.text()),
       getDataURL(projectJSON).then(data => projectJSON = data),
       ...Object.keys(assets).map(assetId => getDataURL(assets[assetId]).then(data => assets[assetId] = data))
     ]).then(async ([scripts, html]) => {
-      scripts = `const PROJECT_JSON = "${projectJSON}";\nconst ASSETS = ${JSON.stringify(assets)};\nconst DESIRED_USERNAME = ${JSON.stringify(username)};\n` + scripts;
-      if (!quick) {
+      scripts = `const PROJECT_JSON = "${projectJSON}";\nconst ASSETS = ${JSON.stringify(assets)};\nconst DESIRED_USERNAME = ${JSON.stringify(username)};\n` + scripts.replace('</scr' + 'ipt>', ''); // dumb </ script> in a comment
+      if (minify) {
         log('Minifying...');
         scripts = await minifyScripts(scripts);
         if (scripts.error) throw scripts.error;
@@ -93,35 +87,50 @@ function downloadAsHTML(title, id, username, quick = false, log = console.log) {
   });
 }
 const loadBtn = document.getElementById('load');
-const quickLoadBtn = document.getElementById('quick-load');
+const loadNoMinifyBtn = document.getElementById('load-no-minify');
+const loadNoVMBtn = document.getElementById('load-no-vm');
 const title = document.getElementById('title');
 const id = document.getElementById('id');
 const username = document.getElementById('username');
 const error = document.getElementById('error');
+const buttons = [loadBtn, loadNoMinifyBtn, loadNoVMBtn];
 loadBtn.addEventListener('click', e => {
-  loadBtn.disabled = quickLoadBtn.disabled = true;
+  buttons.forEach(btn => btn.disabled = true);
   error.value = '';
-  downloadAsHTML(title.value, id.value, username.value, false, output => error.value += output + '\n')
+  downloadAsHTML(id.value, {title: title.value, username: username.value, log: output => error.value += output + '\n'})
     .then(html => {
       download(html, 'project.html', 'text/html');
-      loadBtn.disabled = quickLoadBtn.disabled = false;
+      buttons.forEach(btn => btn.disabled = false);
     }).catch(err => {
       console.log(err);
       error.value = err.message;
-      loadBtn.disabled = quickLoadBtn.disabled = false;
+      buttons.forEach(btn => btn.disabled = false);
     });
 });
-quickLoadBtn.addEventListener('click', e => {
-  loadBtn.disabled = quickLoadBtn.disabled = true;
+loadNoMinifyBtn.addEventListener('click', e => {
+  buttons.forEach(btn => btn.disabled = true);
   error.value = '';
-  downloadAsHTML(title.value, id.value, username.value, true, output => error.value += output + '\n')
+  downloadAsHTML(id.value, {title: title.value, username: username.value, minify: false, log: output => error.value += output + '\n'})
     .then(html => {
       download(html, 'project.html', 'text/html');
-      loadBtn.disabled = quickLoadBtn.disabled = false;
+      buttons.forEach(btn => btn.disabled = false);
     }).catch(err => {
       console.log(err);
       error.value = err.message;
-      loadBtn.disabled = quickLoadBtn.disabled = false;
+      buttons.forEach(btn => btn.disabled = false);
+    });
+});
+loadNoVMBtn.addEventListener('click', e => {
+  buttons.forEach(btn => btn.disabled = true);
+  error.value = '';
+  downloadAsHTML(id.value, {title: title.value, username: username.value, noVM: true, log: output => error.value += output + '\n'})
+    .then(html => {
+      download(html, 'project.html', 'text/html');
+      buttons.forEach(btn => btn.disabled = false);
+    }).catch(err => {
+      console.log(err);
+      error.value = err.message;
+      buttons.forEach(btn => btn.disabled = false);
     });
 });
     </script>

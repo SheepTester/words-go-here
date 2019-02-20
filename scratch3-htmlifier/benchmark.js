@@ -1,7 +1,7 @@
 const Scratch = window.Scratch = window.Scratch || {};
 
 const runBenchmark = function () {
-  const vm = new window.VirtualMachine();
+  const vm = new window.NotVirtualMachine();
   Scratch.vm = vm;
 
   const storage = new ScratchStorage();

@@ -38,7 +38,7 @@ const runBenchmark = function (id) {
   return new Promise(res => {
     // Lots of global variables to make debugging easier
     // Instantiate the VM.
-    const vm = new window.VirtualMachine();
+    const vm = new window.NotVirtualMachine();
 
     const storage = new ScratchStorage(); /* global ScratchStorage */
     const AssetType = storage.AssetType;
@@ -51,19 +51,6 @@ const runBenchmark = function (id) {
     vm.on('workspaceUpdate', () => {
         res(collecteyData);
     });
-
-    // Instantiate the renderer and connect it to the VM.
-
-    // const canvas = document.getElementById('scratch-stage');
-    // const rect = canvas.getBoundingClientRect();
-    // const renderer = new window.ScratchRender(canvas);
-    // renderer.resize(rect.width, rect.height);
-    // Scratch.renderer = renderer;
-    // vm.attachRenderer(renderer);
-    // const audioEngine = new window.AudioEngine();
-    // vm.attachAudioEngine(audioEngine);
-    // vm.attachV2SVGAdapter(new ScratchSVGRenderer.SVGRenderer());
-    // vm.attachV2BitmapAdapter(new ScratchSVGRenderer.BitmapAdapter());
 
     // Run threads
     vm.start();
