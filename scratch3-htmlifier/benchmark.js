@@ -16,10 +16,15 @@ const runBenchmark = function () {
     document.body.removeChild(document.getElementById('j'));
   });
 
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    renderer.resize(rect.width, rect.height);
+    monitorWrapper.style.transform = `scale(${rect.width / 480})`;
+  }
+  const monitorWrapper = document.getElementById('m');
   const canvas = document.getElementById('s');
-  const rect = canvas.getBoundingClientRect();
   const renderer = new window.ScratchRender(canvas);
-  renderer.resize(rect.width, rect.height);
+  resize();
   Scratch.renderer = renderer;
   vm.attachRenderer(renderer);
   const audioEngine = new window.AudioEngine();
@@ -82,6 +87,7 @@ const runBenchmark = function () {
     });
     e.preventDefault();
   });
+  window.addEventListener('resize', resize);
 
   document.addEventListener('keydown', e => {
     Scratch.vm.postIOData('keyboard', {
@@ -102,6 +108,75 @@ const runBenchmark = function () {
   Scratch.vm.runtime.addListener('QUESTION', question => {
     if (question !== null)
       Scratch.vm.runtime.emit('ANSWER', prompt(question));
+  });
+
+  const getVariable = (targetId, variableId) => {
+      const target = targetId ?
+          Scratch.vm.runtime.getTargetById(targetId) :
+          Scratch.vm.runtime.getTargetForStage();
+      return target.variables[variableId];
+  };
+  const monitorStates = {};
+  let once = false;
+  Scratch.vm.runtime.addListener('MONITORS_UPDATE', monitors => {
+    monitors.forEach((record, id) => {
+      if (!monitorStates[id]) {
+        const monitor = document.createElement('div');
+        monitor.className = 'monitor ' + record.mode;
+        monitor.style.left = record.x + 'px';
+        monitor.style.top = record.y + 'px';
+        if (record.mode === 'list') {
+          monitor.style.width = record.width + 'px';
+          monitor.style.height = record.height + 'px';
+        }
+        const label = document.createElement('span');
+        label.className = 'monitor-label';
+        let name = record.params.VARIABLE || record.params.LIST || record.opcode;
+        if (record.spriteName) name = `${record.spriteName}: ${name}`;
+        label.textContent = name;
+        monitor.appendChild(label);
+        const value = document.createElement('span');
+        value.className = 'monitor-value';
+        monitor.appendChild(value);
+        monitorStates[id] = {monitor, value};
+        if (record.mode === 'slider') {
+          const slider = document.createElement('input');
+          slider.type = 'range';
+          slider.min = record.sliderMin;
+          slider.max = record.sliderMax;
+          slider.step = record.isDiscrete ? 1 : 0.01;
+          slider.addEventListener('change', e => {
+            getVariable(record.targetId, id).value = slider.value;
+          });
+          monitorStates[id].slider = slider;
+          monitor.appendChild(slider);
+        }
+        monitorWrapper.appendChild(monitor);
+      }
+      monitorStates[id].monitor.style.display = record.visible ? null : 'none';
+      if (record.visible) {
+        let value = record.value;
+        if (typeof value === 'number') {
+          value = Number(value.toFixed(6));
+        }
+        if (typeof value === 'boolean') {
+          value = value.toString();
+        }
+        if (Array.isArray(value)) {
+          if (monitorStates[id].lastValue === JSON.stringify(value)) return;
+          monitorStates[id].value.innerHTML = '';
+          value.forEach(val => {
+            const row = document.createElement('div');
+            row.className = 'row';
+            row.textContent = val;
+            monitorStates[id].value.appendChild(row);
+          });
+        } else {
+          monitorStates[id].value.textContent = value;
+          if (monitorStates[id].slider) monitorStates[id].slider.value = value;
+        }
+      }
+    });
   });
 
   Scratch.vm.postIOData('userData', {username: DESIRED_USERNAME});
