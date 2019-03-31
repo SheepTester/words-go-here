@@ -3,7 +3,7 @@
   <head>
     <title>Scratch 3.0 HTMLifier</title>
     <meta charset="UTF-8">
-    <meta name="description" content="Steals and minifies Scratch 3.0 into a single HTML file."/>
+    <meta name="description" content="Converts a Scratch 3.0 to HTML/JavaScript"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <link rel="stylesheet" type="text/css" href="../../sheep3.css">
     <script src="../../sheep3.js" charset="utf-8"></script>
@@ -29,12 +29,12 @@
     <!-- This HTML file is truly ugly. -->
 
     <h1>Scratch 3.0 Project HTMLifier</h1>
+    <h3><em>Convert Scratch to HTML</em></h3>
     <p>This packages your Scratch project into a single HTML file that can run on its own. The HTML file will be pretty big because it contains the entire Scratch engine as well as the assets used in the projects.</p>
-    <p>Also, because they're handled by Scratch GUI, which isn't included here, variable and list monitors won't show; the ask box has also been replaced with a simple JavaScript prompt. The project will automatically start, and there are no green flag or stop sign buttons to click on. The username block will report whatever you set as the "Username value."</p>
-    <p>Most of the time loading is spent minifying the Scratch engine. They say it's minified, but it doesn't look very minified to me, so you can minify if you want to.</p>
-    <p><label for="title">Project title: </label><input type="text" placeholder="Project title" value="Zombie Cube Escape!" id="title"></p>
-    <p><label for="id">Project ID: </label><input type="number" placeholder="Project ID" value="284516654" id="id"></p>
-    <p><label for="username">Username value: </label><input type="text" placeholder="Username" value="griffpatch" id="username"></p>
+    <p>The ask box will just be a simple JavaScript prompt, and the variable and list watchers look different. The project will automatically start, and there are no green flag or stop sign buttons to click on. The username block will report whatever you set as the "Username value."</p>
+    <p><label for="title">Project title: </label><input type="text" placeholder="Project title" value="Zombie Cube Escape!" id="title" title="Text to display in the page tab"></p>
+    <p><label for="id">Project ID: </label><input type="number" placeholder="Project ID" value="284516654" id="id" title="ID of the project hosted on the Scratch website to convert"></p>
+    <p><label for="username">Username value: </label><input type="text" placeholder="Username" value="griffpatch" id="username" title="Value that the username block reports"></p>
     <button id="load">HTMLify with minification (slow)</button>
     <button id="load-no-minify">HTMLify without minification (recommended)</button>
     <button id="load-no-vm">HTMLify without VM*</button>
