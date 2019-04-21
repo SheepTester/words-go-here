@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>SVG Canvas</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="So I can draw SVG sheep with my pen"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+    <script src="./paper-core.min.js" charset="utf-8"></script>
+    <script src="../scratch3-htmlifier/download.js" charset="utf-8"></script>
+    <style>
+      html, body, #svg {
+        width: 100%;
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-size: 0;
+        background-color: black;
+        overflow: hidden;
+      }
+      svg {
+        touch-action: none;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      }
+      .settings {
+        position: fixed;
+        top: 0;
+        left: 0;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-bottom-right-radius: 5px;
+        padding: 5px;
+      }
+      #preview {
+        vertical-align: middle;
+      }
+      select, input, button {
+        border: none;
+        background: none;
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        font-family: monospace;
+        font-size: 16px;
+        margin: 5px;
+        padding: 5px;
+        border-radius: 5px;
+        height: 20px;
+        box-sizing: content-box;
+        vertical-align: middle;
+      }
+      input {
+        width: 7.1ch;
+      }
+      select, button {
+        cursor: pointer;
+      }
+      option {
+        background-color: black;
+      }
+      input:focus, select:focus, button:focus {
+        outline: none;
+        background-color: rgba(255, 255, 255, 0.3);
+      }
+      .knob {
+        position: fixed;
+        width: 40px;
+        height: 40px;
+        margin: -20px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.5);
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+      }
+      #rect {
+        position: fixed;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.8);
+        pointer-events: none;
+        margin: -2px;
+      }
+    </style>
+  </head>
+  <body>
+    <svg xmlns="http://www.w3.org/2000/svg" id="svg"></svg>
+    <div id="ui">
+      <div id="rect"></div>
+      <div class="settings">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="200 505 75 55" id="preview" height="55">
+          <path d="M217,541.5c-1.50819,0 -1.06462,-1.65307 -0.5,-2.5c1.31595,-1.97393 12.51702,-20.98298 16,-17.5c1.89984,1.89984 -6,16.56489 -6,19c0,0.40271 -0.26496,2 0.5,2c2.69936,0 11.39133,-18.46378 16,-20c0.40204,-0.13401 2.46018,-1.03982 3,-0.5c0.37268,0.37268 -0.2643,1.0286 -0.5,1.5c-2.88014,5.76028 -4.61119,12.72238 -7.5,18.5c-0.24087,0.48174 0.04282,1.27141 0.5,1.5c6.31931,3.15965 14.82567,-12.5 20.001,-12.5">
+        </svg>
+        <input type="range" id="thickness" value="5" min="1" max="50">
+        <input type="text" id="colour" value="#ffffff" placeholder="#123abc">
+        <select id="tool">
+          <option disabled>Drawing device</option>
+          <option value="mouse">mouse</option>
+          <option value="touch">finger</option>
+          <option value="pen" selected>pen</option>
+        </select>
+        <select id="mode">
+          <option disabled>Drawing mode</option>
+          <option value="draw" selected>drawing</option>
+          <option value="erase">deleting</option>
+          <option value="undo">undo</option>
+          <option value="redo">redo</option>
+        </select>
+        <button id="export">export</button>
+      </div>
+      <div class="knob" id="knob-1"></div>
+      <div class="knob" id="knob-2"></div>
+    </div>
+    <script>
+paper.setup();
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('svg');
+const ui = document.getElementById('ui');
+const preview = document.getElementById('preview');
+const thicknessSlider = document.getElementById('thickness');
+const colourInput = document.getElementById('colour');
+const toolSelect = document.getElementById('tool');
+const modeSelect = document.getElementById('mode');
+const knob1 = document.getElementById('knob-1');
+const knob2 = document.getElementById('knob-2');
+const rect = document.getElementById('rect');
+const options = {
+  tool: 'pen',
+  colour: '#ffffff',
+  thickness: 5,
+  mode: 'draw',
+  knob1X: 0,
+  knob1Y: 0,
+  knob2X: window.innerWidth,
+  knob2Y: window.innerHeight
+};
+function updateRect() {
+  knob1.style.left = options.knob1X + 'px';
+  knob1.style.top = options.knob1Y + 'px';
+  knob2.style.left = options.knob2X + 'px';
+  knob2.style.top = options.knob2Y + 'px';
+  const minX = Math.min(options.knob1X, options.knob2X);
+  const minY = Math.min(options.knob1Y, options.knob2Y);
+  rect.style.left = minX + 'px';
+  rect.style.top = minY + 'px';
+  rect.style.width = (Math.max(options.knob1X, options.knob2X) - minX) + 'px';
+  rect.style.height = (Math.max(options.knob1Y, options.knob2Y) - minY) + 'px';
+}
+function updatePreview() {
+  preview.style.stroke = options.colour;
+  preview.style.strokeWidth = options.thickness;
+}
+thicknessSlider.addEventListener('input', e => {
+  options.thickness = +thicknessSlider.value;
+  updatePreview();
+});
+colourInput.addEventListener('change', e => {
+  options.colour = colourInput.value;
+  updatePreview();
+});
+toolSelect.addEventListener('change', e => {
+  options.tool = toolSelect.value;
+});
+modeSelect.addEventListener('change', e => {
+  if (modeSelect.value === 'draw' || modeSelect.value === 'erase') {
+    options.mode = modeSelect.value;
+  } else {
+    if (modeSelect.value === 'undo') undo();
+    else if (modeSelect.value === 'redo') redo();
+    modeSelect.value = options.mode;
+  }
+});
+updatePreview();
+updateRect();
+const pointers = {};
+document.addEventListener('pointerdown', e => {
+  if (options.tool !== e.pointerType || ui.contains(e.target) || pointers[e.pointerId]) return;
+  if (options.mode === 'erase') {
+    pointers[e.pointerId] = {erase: true};
+  } else {
+    const elem = document.createElementNS(NS, 'path');
+    elem.style.stroke = options.colour;
+    elem.dataset.colour = options.colour;
+    elem.style.strokeWidth = options.thickness;
+    elem.dataset.thickness = options.thickness;
+    elem.setAttributeNS(null, 'd', `M${e.clientX} ${e.clientY}h0.001`);
+    svg.appendChild(elem);
+    const path = [[e.clientX, e.clientY]];
+    pointers[e.pointerId] = {
+      drawing: true,
+      elem,
+      path
+    };
+  }
+  e.preventDefault();
+}, {passive: false});
+knob1.addEventListener('pointerdown', e => {
+  pointers[e.pointerId] = {dragging: 'knob1'};
+  e.preventDefault();
+}, {passive: false});
+knob2.addEventListener('pointerdown', e => {
+  pointers[e.pointerId] = {dragging: 'knob2'};
+  e.preventDefault();
+}, {passive: false});
+svg.addEventListener('pointerover', e => {
+  const pointer = pointers[e.pointerId];
+  if (pointer) {
+    if (pointer.erase) {
+      if (e.target.tagName === 'path' && svg.contains(e.target)) {
+        svg.removeChild(e.target);
+        redoHistory.push(e.target);
+      }
+    }
+  }
+});
+const MIN_DIFF = 5;
+document.addEventListener('pointermove', e => {
+  const pointer = pointers[e.pointerId];
+  if (pointer) {
+    if (pointer.drawing) {
+      pointer.path.push([e.clientX, e.clientY]);
+      pointer.elem.setAttributeNS(null, 'd', 'M' + pointer.path.map(([x, y]) => x + ' ' + y).join('L'));
+      e.preventDefault();
+    } else if (pointer.dragging) {
+      options[pointer.dragging + 'X'] = e.clientX;
+      options[pointer.dragging + 'Y'] = e.clientY;
+      updateRect();
+    }
+  }
+}, {passive: false});
+document.addEventListener('pointerup', e => {
+  const pointer = pointers[e.pointerId];
+  if (pointer) {
+    if (pointer.drawing) {
+      pointer.path.push([e.clientX + 0.001, e.clientY]);
+      const pathObj = new paper.Path({
+        segments: pointer.path,
+        selected: false
+      });
+      pathObj.simplify();
+      pointer.elem.setAttributeNS(null, 'd', pathObj.exportSVG().getAttributeNS(null, 'd'));
+    }
+    delete pointers[e.pointerId];
+    e.preventDefault();
+  }
+}, {passive: false});
+const redoHistory = [];
+function undo() {
+  if (svg.children.length) {
+    const lastPath = svg.children[svg.children.length - 1];
+    svg.removeChild(lastPath);
+    redoHistory.push(lastPath);
+  }
+}
+function redo() {
+  if (redoHistory.length) {
+    svg.appendChild(redoHistory.pop());
+  }
+}
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+    if (e.key === 'z') {
+      undo();
+    } else if (e.key === 'Z' || e.key === 'y') {
+      redo();
+    }
+  }
+});
+document.getElementById('export').addEventListener('click', e => {
+  const paths = {};
+  Array.from(svg.children, path => {
+    const pathID = path.dataset.colour + ';' + path.dataset.thickness;
+    paths[pathID] = (paths[pathID] || '') + path.getAttributeNS(null, 'd');
+  });
+  const minX = Math.min(options.knob1X, options.knob2X);
+  const minY = Math.min(options.knob1Y, options.knob2Y);
+  const width = Math.max(options.knob1X, options.knob2X) - minX;
+  const height = Math.max(options.knob1Y, options.knob2Y) - minY;
+  let svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX} ${minY} ${width} ${height}"`;
+  svgStr += ` style="stroke-linejoin:round;stroke-linecap:round;fill:none;">`;
+  svgStr += Object.keys(paths).map(id => {
+    const [colour, thickness] = id.split(';');
+    return `<path d="${paths[id]}" style="stroke:${colour};stroke-width:${thickness};"/>`;
+  }).join('');
+  svgStr += '</svg>';
+  download(svgStr, 'happy.svg', 'image/svg+xml');
+});
+    </script>
+  </body>
+</html>
