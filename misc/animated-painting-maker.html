@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Minecraft GIF to animated texture</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="A bit hard to use; meant for those who know what they're doing."/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+    <script src="https://unpkg.com/gif-frames@0.4.0?main=bundled-min"></script>
+    <style>
+      #error {
+        color: red;
+      }
+      #preview {
+        margin: 0 auto;
+        width: 500px;
+      }
+      canvas {
+        image-rendering: pixelated;
+      }
+    </style>
+  </head>
+  <body>
+    <p id="error"></p>
+    <p><label for="gif">GIF: </label><input type="file" id="gif" accept="image/gif"> (you can also paste it in)</p>
+    <p><label for="width">Width of texture: </label><input type="number" id="width" value="64"></p>
+    <p><label for="height">Height of texture: </label><input type="number" id="height" value="64"></p>
+    <p><label for="fit">How to fit the image? </label><select id="fit">
+      <option value="cover" selected>cover (centred; part of the image might get cropped)</option>
+      <option value="contain">contain (centred; the longest side touches the edges, with gaps on either side)</option>
+      <option value="stretch">stretch</option>
+    </select></p>
+    <p><label for="background">Background colour: </label><input type="color" id="background" value="#000000"> (only shows if <code>fit</code> is set to <code>contain</code>)</p>
+    <p><label for="ticks">Ticks per frame: </label><input type="number" id="ticks" value="1"> (a positive integer; there are 20 ticks per second)</p>
+    <h2>Preview</h2>
+    <canvas id="preview"></canvas>
+    <h2><code>TEXTURE_NAME.png</code></h2>
+    <canvas id="output"></canvas>
+    <h2><code>TEXTURE_NAME.png.mcmeta</code></h2>
+    <pre>
+      {
+        "animation": {
+          "frametime": <span id="frametime">1</span>
+        }
+      }
+    </pre>
+    <h1>About</h1>
+    <p>Uses <a href="https://www.npmjs.com/package/gif-frames">gif-frames</a> to read the gif data.</p>
+    <p>You can read about how to use animations in your resource packs on the Wiki; <a href="https://minecraft.gamepedia.com/Resource_pack#Animation">these</a> <a href="https://minecraft.gamepedia.com/Tutorials/Creating_a_resource_pack#Animation_Properties">articles</a> may or may not be helpful.</p>
+    <script>
+let frames = null;
+function loadFile(file) {
+  if (!file) return;
+  error.textContent = '';
+  if (file.type !== 'image/gif') {
+    error.textContent = 'Not a gif';
+  }
+  const url = URL.createObjectURL(file);
+  gifFrames({
+    url,
+    frames: 'all',
+    outputType: 'canvas',
+    cumulative: true
+  }).then(frameData => {
+    URL.revokeObjectURL(url);
+    frames = frameData.map(frame => frame.getImage());
+    update();
+  });
+}
+let previewIntervalID = null;
+function update() {
+  if (previewIntervalID) {
+    clearInterval(previewIntervalID);
+    previewIntervalID = null;
+  }
+  if (!frames) return;
+  const width = +options.width.value >> 0;
+  const height = +options.height.value >> 0;
+  const fit = options.fit.value;
+  const background = options.background.value;
+  const ticks = +options.ticks.value >> 0;
+  error.textContent = '';
+  if (isNaN(width)) return error.textContent = "Width isn't a number.";
+  if (width < 1) return error.textContent = 'Width is too small.';
+  if (isNaN(height)) return error.textContent = "Height isn't a number.";
+  if (height < 1) return error.textContent = 'Height is too small.';
+  if (isNaN(ticks)) return error.textContent = "Ticks isn't a number.";
+  if (ticks < 1) return error.textContent = 'Ticks is too small.';
+  preview.width = output.width = width;
+  preview.height = height;
+  output.height = height * frames.length;
+  frameTime.textContent = ticks;
+  oc.fillStyle = background;
+  oc.fillRect(0, 0, output.width, output.height);
+  frames.forEach((frame, i) => {
+    switch (fit) {
+      case 'cover': {
+        let scale;
+        if (frame.width / frame.height < width / height) {
+          scale = width / frame.width;
+        } else {
+          scale = height / frame.height;
+        }
+        oc.drawImage(
+          frame,
+          width / 2 - scale * frame.width / 2,
+          height / 2 - scale * frame.height / 2 + i * height,
+          scale * frame.width,
+          scale * frame.height
+        );
+        break;
+      }
+      case 'contain': {
+        let scale;
+        if (frame.width / frame.height > width / height) {
+          scale = width / frame.width;
+        } else {
+          scale = height / frame.height;
+        }
+        oc.drawImage(
+          frame,
+          width / 2 - scale * frame.width / 2,
+          height / 2 - scale * frame.height / 2 + i * height,
+          scale * frame.width,
+          scale * frame.height
+        );
+        break;
+      }
+      case 'stretch': {
+        oc.drawImage(frame, 0, i * height, width, height);
+        break;
+      }
+    }
+  });
+  let frame = 0;
+  previewIntervalID = setInterval(() => {
+    pc.drawImage(output, 0, frame * height, width, height, 0, 0, width, height);
+    frame = (frame + 1) % frames.length;
+  }, 1000 / 20 * ticks);
+}
+const gifSelector = document.getElementById('gif');
+const error = document.getElementById('error');
+const options = {
+  width: document.getElementById('width'),
+  height: document.getElementById('height'),
+  fit: document.getElementById('fit'),
+  background: document.getElementById('background'),
+  ticks: document.getElementById('ticks')
+};
+const preview = document.getElementById('preview');
+const pc = preview.getContext('2d');
+const output = document.getElementById('output');
+const oc = output.getContext('2d');
+const frameTime = document.getElementById('frametime');
+Object.values(options).forEach(input => input.addEventListener('change', update));
+gifSelector.addEventListener('change', e => {
+  loadFile(gifSelector.files[0]);
+});
+document.addEventListener('paste', e => {
+  loadFile(e.clipboardData.files[0]);
+});
+    </script>
+  </body>
+</html>
