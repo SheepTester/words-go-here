@@ -123,16 +123,25 @@ const modeSelect = document.getElementById('mode');
 const knob1 = document.getElementById('knob-1');
 const knob2 = document.getElementById('knob-2');
 const rect = document.getElementById('rect');
+const params = new URL(window.location).searchParams;
+let windowWidth = window.innerWidth, windowHeight = window.innerHeight;
+window.addEventListener('resize', e => {
+  windowWidth = window.innerWidth, windowHeight = window.innerHeight;
+});
 const options = {
-  tool: 'pen',
-  colour: '#ffffff',
-  thickness: 5,
-  mode: 'draw',
+  tool: params.get('tool') || 'pen',
+  colour: params.get('colour') || '#ffffff',
+  thickness: +params.get('thickness') || 5,
+  mode: params.get('mode') || 'draw',
   knob1X: 0,
   knob1Y: 0,
-  knob2X: window.innerWidth,
-  knob2Y: window.innerHeight
+  knob2X: windowWidth,
+  knob2Y: windowHeight
 };
+toolSelect.value = options.tool;
+colourInput.value = options.colour;
+thicknessSlider.value = options.thickness;
+modeSelect.value = options.mode;
 function updateRect() {
   knob1.style.left = options.knob1X + 'px';
   knob1.style.top = options.knob1Y + 'px';
@@ -221,8 +230,8 @@ document.addEventListener('pointermove', e => {
       pointer.elem.setAttributeNS(null, 'd', 'M' + pointer.path.map(([x, y]) => x + ' ' + y).join('L'));
       e.preventDefault();
     } else if (pointer.dragging) {
-      options[pointer.dragging + 'X'] = e.clientX;
-      options[pointer.dragging + 'Y'] = e.clientY;
+      options[pointer.dragging + 'X'] = Math.max(0, Math.min(windowWidth, e.clientX));
+      options[pointer.dragging + 'Y'] = Math.max(0, Math.min(windowWidth, e.clientY));
       updateRect();
     }
   }
@@ -231,7 +240,9 @@ document.addEventListener('pointerup', e => {
   const pointer = pointers[e.pointerId];
   if (pointer) {
     if (pointer.drawing) {
-      pointer.path.push([e.clientX + 0.001, e.clientY]);
+      if (pointer.path.length < 2) {
+        pointer.path.push([e.clientX + 0.001, e.clientY]);
+      }
       const pathObj = new paper.Path({
         segments: pointer.path,
         selected: false
