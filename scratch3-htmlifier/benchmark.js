@@ -145,6 +145,9 @@ const runBenchmark = function () {
           slider.min = record.sliderMin;
           slider.max = record.sliderMax;
           slider.step = record.isDiscrete ? 1 : 0.01;
+          slider.addEventListener('input', e => {
+            getVariable(record.targetId, id).value = slider.value;
+          });
           slider.addEventListener('change', e => {
             getVariable(record.targetId, id).value = slider.value;
           });
