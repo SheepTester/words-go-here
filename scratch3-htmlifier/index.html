@@ -35,12 +35,19 @@
     <p><label for="title">Project title: </label><input type="text" placeholder="Project title" value="Zombie Cube Escape!" id="title" title="Text to display in the page tab"></p>
     <p><label for="id">Project ID: </label><input type="number" placeholder="Project ID" value="284516654" id="id" title="ID of the project hosted on the Scratch website to convert"></p>
     <p><label for="username">Username value: </label><input type="text" placeholder="Username" value="griffpatch" id="username" title="Value that the username block reports"></p>
-    <button id="load">HTMLify with minification (slow)</button>
-    <button id="load-no-minify">HTMLify without minification (recommended)</button>
-    <button id="load-no-vm">HTMLify without VM*</button>
-    <p>*the Scratch engine won't be included in the HTML file, so it'll be smaller, but it'll require internet connection</p>
+    <p>
+      <label><input type="checkbox" id="compatibility" checked> Compatibility mode?<sup>1</sup></label>
+      <label><input type="checkbox" id="turbo"> Turbo mode?</label>
+    </p>
+    <p>
+      <button id="load">HTMLify with minification (slow)</button>
+      <button id="load-no-minify">HTMLify without minification (recommended)</button>
+      <button id="load-no-vm">HTMLify without VM<sup>2</sup></button>
+    </p>
     <textarea id="error" rows="8" cols="40" placeholder="Log" readonly></textarea>
     <p>Libraries used: <a href="https://github.com/mishoo/UglifyJS2/tree/harmony">uglify-es</a>, <a href="https://github.com/LLK/scratch-vm/">scratch-vm</a>, <a href="http://danml.com/download.html">download.js</a></p>
+    <p><sup>1</sup>Compatibility mode forces projects to run at 30 FPS, like in Scratch 2.0. Turning this off allows the project to run at a higher framerate (usually 60 FPS, depending on the computer screen's refresh rate).</p>
+    <p><sup>2</sup>The Scratch engine won't be included in the HTML file, so it'll be smaller, but it'll require internet connection.</p>
     <script type="text/javascript">
 const scratchURLs = [
   'https://sheeptester.github.io/scratch-vm/vm.min.js',
@@ -73,7 +80,7 @@ function downloadAsHTML(id, {title = 'Project', username = 'griffpatch', noVM = 
       getDataURL(projectJSON).then(data => projectJSON = data),
       ...Object.keys(assets).map(assetId => getDataURL(assets[assetId]).then(data => assets[assetId] = data))
     ]).then(async ([scripts, html]) => {
-      scripts = `const PROJECT_JSON = "${projectJSON}";\nconst ASSETS = ${JSON.stringify(assets)};\nconst DESIRED_USERNAME = ${JSON.stringify(username)};\n` + scripts.replace('</scr' + 'ipt>', ''); // dumb </ script> in a comment
+      scripts = `var PROJECT_JSON = "${projectJSON}", ASSETS = ${JSON.stringify(assets)}, DESIRED_USERNAME = ${JSON.stringify(username)}, COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked};\n` + scripts.replace('</scr' + 'ipt>', ''); // dumb </ script> in a comment
       if (minify) {
         log('Minifying...');
         scripts = await minifyScripts(scripts);
@@ -93,6 +100,8 @@ const title = document.getElementById('title');
 const id = document.getElementById('id');
 const username = document.getElementById('username');
 const error = document.getElementById('error');
+const compatibility = document.getElementById('compatibility');
+const turbo = document.getElementById('turbo');
 const buttons = [loadBtn, loadNoMinifyBtn, loadNoVMBtn];
 loadBtn.addEventListener('click', e => {
   buttons.forEach(btn => btn.disabled = true);

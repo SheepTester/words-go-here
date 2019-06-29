@@ -3,6 +3,8 @@ const Scratch = window.Scratch = window.Scratch || {};
 const runBenchmark = function () {
   const vm = new window.NotVirtualMachine();
   Scratch.vm = vm;
+  vm.setCompatibilityMode(COMPAT);
+  vm.setTurboMode(TURBO);
 
   const storage = new ScratchStorage();
   const AssetType = storage.AssetType;
