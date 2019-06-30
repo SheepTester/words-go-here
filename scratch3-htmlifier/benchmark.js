@@ -12,7 +12,13 @@ const runBenchmark = function () {
   storage.addWebStore([AssetType.ImageVector, AssetType.ImageBitmap, AssetType.Sound], asset => ASSETS[asset.assetId]);
   vm.attachStorage(storage);
 
-  Scratch.vm.downloadProjectId('');
+  if (SRC === 'file') {
+    fetch(FILE)
+      .then(r => r.arrayBuffer())
+      .then(b => Scratch.vm.loadProject(b));
+  } else {
+    Scratch.vm.downloadProjectId('');
+  }
   vm.on('workspaceUpdate', () => {
     vm.greenFlag();
     document.body.removeChild(document.getElementById('j'));

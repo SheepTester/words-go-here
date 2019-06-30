@@ -32,8 +32,9 @@
     <h3><em>Convert Scratch to HTML</em></h3>
     <p>This packages your Scratch project into a single HTML file that can run on its own. The HTML file will be pretty big because it contains the entire Scratch engine as well as the assets used in the projects.</p>
     <p>The ask box will just be a simple JavaScript prompt, and the variable and list watchers look different. The project will automatically start, and there are no green flag or stop sign buttons to click on. The username block will report whatever you set as the "Username value."</p>
+    <p><label><input type="radio" name="upload-mode" value="id" checked> Project ID: <input type="number" placeholder="Project ID" value="284516654" id="id" title="ID of the project hosted on the Scratch website to convert"></label></p>
+    <p><label><input type="radio" name="upload-mode" value="file"> Upload project: <input type="file" id="file" accept=".sb,.sb2,.sb3"></label></p>
     <p><label for="title">Project title: </label><input type="text" placeholder="Project title" value="Zombie Cube Escape!" id="title" title="Text to display in the page tab"></p>
-    <p><label for="id">Project ID: </label><input type="number" placeholder="Project ID" value="284516654" id="id" title="ID of the project hosted on the Scratch website to convert"></p>
     <p><label for="username">Username value: </label><input type="text" placeholder="Username" value="griffpatch" id="username" title="Value that the username block reports"></p>
     <p>
       <label><input type="checkbox" id="compatibility" checked> Compatibility mode?<sup>1</sup></label>
@@ -67,30 +68,53 @@ function minifyScripts(scripts) { // so the "Minifying..." log shows
     }, 100);
   });
 }
-function downloadAsHTML(id, {title = 'Project', username = 'griffpatch', noVM = false, minify = true, log = console.log}) {
-  log('Getting asset URLs...');
-  return runBenchmark(id).then(({assets, projectJSON}) => {
-    log('Getting assets...');
-    return Promise.all([
-      Promise.all((noVM ? ['./benchmark.js'] : scratchURLs).map(url => fetch(url).then(r => r.text()))).then(scripts => {
+function downloadAsHTML(projectSrc, {title = 'Project', username = 'griffpatch', mode, log = console.log}) {
+  const noVM = mode === 'no-vm';
+  const minify = mode !== 'no-minify';
+  return Promise.all([
+    // make preface variables
+    projectSrc.id
+      ? log('Getting asset URLs...') && runBenchmark(projectSrc.id).then(({assets, projectJSON}) => {
+        log('Getting assets...');
+        return Promise.all([
+          getDataURL(projectJSON).then(data => projectJSON = data),
+          ...Object.keys(assets).map(assetId => getDataURL(assets[assetId]).then(data => assets[assetId] = data))
+        ]).then(() => {
+          return `var SRC = "id", PROJECT_JSON = "${projectJSON}",`
+            + `ASSETS = ${JSON.stringify(assets)},`
+            + `DESIRED_USERNAME = ${JSON.stringify(username)},`
+            + `COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked};`;
+        });
+      })
+      : Promise.resolve(`var SRC = "file", FILE = "${projectSrc.data}";`
+        + `DESIRED_USERNAME = ${JSON.stringify(username)},`
+        + `COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked};`),
+
+    // fetch scripts
+    Promise.all((noVM ? ['./benchmark.js'] : scratchURLs)
+      .map(url => fetch(url)
+      .then(r => r.text())))
+      .then(scripts => {
         log('Scratch scripts obtained...');
-        return scripts.join('\n');
+        // remove dumb </ script>s in comments
+        return scripts.join('\n').replace('</scr' + 'ipt>', '');
       }),
-      fetch(noVM ? './template-quick.html' : './template.html').then(r => r.text()),
-      getDataURL(projectJSON).then(data => projectJSON = data),
-      ...Object.keys(assets).map(assetId => getDataURL(assets[assetId]).then(data => assets[assetId] = data))
-    ]).then(async ([scripts, html]) => {
-      scripts = `var PROJECT_JSON = "${projectJSON}", ASSETS = ${JSON.stringify(assets)}, DESIRED_USERNAME = ${JSON.stringify(username)}, COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked};\n` + scripts.replace('</scr' + 'ipt>', ''); // dumb </ script> in a comment
-      if (minify) {
-        log('Minifying...');
-        scripts = await minifyScripts(scripts);
-        if (scripts.error) throw scripts.error;
-        else scripts = scripts.code;
-      }
-      log('Done!');
-      return html.replace('{TITLE}', () => title).replace('{SCRIPTS}', () => scripts);
-        // using function because $& will get set to '{SCRIPTS}' >:(
-    });
+
+    // fetch template
+    fetch(noVM ? './template-quick.html' : './template.html')
+      .then(r => r.text())
+  ]).then(async ([preface, scripts, template]) => {
+    scripts = preface + scripts;
+    if (minify) {
+      log('Minifying...');
+      scripts = await minifyScripts(scripts);
+      if (scripts.error) throw scripts.error;
+      else scripts = scripts.code;
+    }
+    log('Done!');
+    return template
+      .replace('{TITLE}', () => title)
+      .replace('{SCRIPTS}', () => scripts);
   });
 }
 const loadBtn = document.getElementById('load');
@@ -99,14 +123,33 @@ const loadNoVMBtn = document.getElementById('load-no-vm');
 const title = document.getElementById('title');
 const id = document.getElementById('id');
 const username = document.getElementById('username');
+const file = document.getElementById('file');
 const error = document.getElementById('error');
 const compatibility = document.getElementById('compatibility');
 const turbo = document.getElementById('turbo');
 const buttons = [loadBtn, loadNoMinifyBtn, loadNoVMBtn];
-loadBtn.addEventListener('click', e => {
+function getProject() {
+  if (document.querySelector('input[name="upload-mode"]:checked').value === 'file') {
+    if (!file.files || !file.files[0]) return Promise.reject(new Error('No file selected'));
+    return new Promise(res => {
+      const reader = new FileReader();
+      reader.onload = () => res({data: reader.result});
+      reader.readAsDataURL(file.files[0]);
+    });
+  } else {
+    return Promise.resolve({id: id.value});
+  }
+}
+function load(mode) {
   buttons.forEach(btn => btn.disabled = true);
   error.value = '';
-  downloadAsHTML(id.value, {title: title.value, username: username.value, log: output => error.value += output + '\n'})
+  getProject()
+    .then(src => downloadAsHTML(src, {
+      title: title.value,
+      username: username.value,
+      log: output => error.value += output + '\n',
+      mode: mode
+    }))
     .then(html => {
       download(html, 'project.html', 'text/html');
       buttons.forEach(btn => btn.disabled = false);
@@ -115,33 +158,10 @@ loadBtn.addEventListener('click', e => {
       error.value = err.message;
       buttons.forEach(btn => btn.disabled = false);
     });
-});
-loadNoMinifyBtn.addEventListener('click', e => {
-  buttons.forEach(btn => btn.disabled = true);
-  error.value = '';
-  downloadAsHTML(id.value, {title: title.value, username: username.value, minify: false, log: output => error.value += output + '\n'})
-    .then(html => {
-      download(html, 'project.html', 'text/html');
-      buttons.forEach(btn => btn.disabled = false);
-    }).catch(err => {
-      console.log(err);
-      error.value = err.message;
-      buttons.forEach(btn => btn.disabled = false);
-    });
-});
-loadNoVMBtn.addEventListener('click', e => {
-  buttons.forEach(btn => btn.disabled = true);
-  error.value = '';
-  downloadAsHTML(id.value, {title: title.value, username: username.value, noVM: true, log: output => error.value += output + '\n'})
-    .then(html => {
-      download(html, 'project.html', 'text/html');
-      buttons.forEach(btn => btn.disabled = false);
-    }).catch(err => {
-      console.log(err);
-      error.value = err.message;
-      buttons.forEach(btn => btn.disabled = false);
-    });
-});
+}
+loadBtn.addEventListener('click', e => load('normal'));
+loadNoMinifyBtn.addEventListener('click', e => load('no-minify'));
+loadNoVMBtn.addEventListener('click', e => load('no-vm'));
     </script>
   </body>
 </html>
