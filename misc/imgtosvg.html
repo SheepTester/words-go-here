@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Bitmap to SVG</title>
+    <meta name="description" content="Every pixel becomes a square path"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <p><label>image to svgify: <input type="file" id="image" accept="image/*"></label>(you can also paste in an image)</p>
+    <svg xmlns="http://www.w3.org/2000/svg" id="svg"></svg>
+    <p><button id="download" disabled>download</button></p>
+    <p>all pixels of the same colour become part of a single path for minimum file size</p>
+    <p>inspired by <a href="https://twitter.com/JasperBoerstra/status/1146043959153778688">tweet by jappa</a></p>
+    <script>
+const SCALE = 5;
+const image = document.getElementById('image');
+const output = document.getElementById('svg');
+const download = document.getElementById('download');
+const svgNS = 'http://www.w3.org/2000/svg';
+const canvas = document.createElement('canvas');
+const c = canvas.getContext('2d');
+function loadImg(file) {
+  if (!file) return;
+  createImageBitmap(file).then(bitmap => {
+    while (output.firstChild) output.removeChild(output.firstChild);
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    output.setAttributeNS(null, 'width', bitmap.width);
+    output.setAttributeNS(null, 'height', bitmap.height);
+    output.setAttributeNS(null, 'viewBox', `0 0 ${bitmap.width} ${bitmap.height}`);
+    output.style.width = bitmap.width * SCALE + 'px';
+    output.style.height = bitmap.height * SCALE + 'px';
+    c.drawImage(bitmap, 0, 0);
+    const {data, width} = c.getImageData(0, 0, bitmap.width, bitmap.height);
+    const colours = {};
+    const paths = {};
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] === 0) continue;
+      const x = i / 4 % width;
+      const y = Math.floor(i / 4 / width);
+      const colour = data[i + 3] === 255
+        ? '#' + ('0' + data[i].toString(16)).slice(-2)
+          + ('0' + data[i + 1].toString(16)).slice(-2)
+          + ('0' + data[i + 2].toString(16)).slice(-2)
+        : `rgba(${data[i]},${data[i + 1]},${data[i + 2]},${Math.round(data[i + 3] * 100 / 255) / 100})`;
+      if (!colours[colour]) {
+        colours[colour] = document.createElementNS(svgNS, 'path');
+        colours[colour].setAttributeNS(null, 'fill', colour);
+        output.appendChild(colours[colour]);
+        paths[colour] = '';
+      }
+      paths[colour] += `M${x} ${y}h1v1h-1z`;
+      colours[colour].setAttributeNS(null, 'd', paths[colour]);
+    }
+    download.disabled = false;
+  }).catch(err => {
+    console.dir(err);
+  });
+}
+image.addEventListener('change', e => {
+  loadImg(image.files[0]);
+});
+document.addEventListener('paste', e => {
+  loadImg(e.clipboardData.files[0]);
+});
+download.addEventListener('click', e => {
+  const saveLink = document.createElement('a');
+  document.body.appendChild(saveLink);
+
+  const filename = 'pixels.svg';
+  const content = new Blob([output.outerHTML], {type: 'image/svg+xml'})
+
+  // Use special ms version if available to get it working on Edge.
+  if (navigator.msSaveOrOpenBlob) {
+    navigator.msSaveOrOpenBlob(content, filename);
+    return;
+  }
+
+  const url = window.URL.createObjectURL(content);
+  saveLink.href = url;
+  saveLink.download = filename;
+  saveLink.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(saveLink);
+});
+    </script>
+  </body>
+</html>
