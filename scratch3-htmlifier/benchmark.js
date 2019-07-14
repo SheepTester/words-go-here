@@ -3,8 +3,6 @@ const Scratch = window.Scratch = window.Scratch || {};
 const runBenchmark = function () {
   const vm = new window.NotVirtualMachine();
   Scratch.vm = vm;
-  vm.setCompatibilityMode(COMPAT);
-  vm.setTurboMode(TURBO);
 
   const storage = new ScratchStorage();
   const AssetType = storage.AssetType;
@@ -20,7 +18,52 @@ const runBenchmark = function () {
     Scratch.vm.downloadProjectId('');
   }
   vm.on('workspaceUpdate', () => {
+    try {
+      const storage = localStorage;
+      const set = (name, value) => storage.setItem('[s3] ' + name, value);
+      const get = name => storage.getItem('[s3] ' + name);
+      const remove = name => storage.removeItem('[s3] ' + name);
+
+      vm.setCloudProvider({
+        createVariable({name, value}) {
+          set(name, value);
+        },
+        updateVariable(name, value) {
+          set(name, value);
+        },
+        renameVariable(oldName, newName) {
+          set(newName, get(oldName));
+          remove(oldName);
+        },
+        deleteVariable(name) {
+          remove(name);
+        },
+        requestCloseConnection() {
+          // do nothing
+        }
+      });
+
+      setTimeout(() => {
+        for (let i = 0; i < storage.length; i++) {
+          const key = storage.key(i);
+          if (key.slice(0, 5) === '[s3] ') {
+            vm.postIOData('cloud', {
+              varUpdate: {
+                name: key.slice(5),
+                value: storage.getItem(key)
+              }
+            });
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('Cannot use localStorage?', e);
+    }
+
+    vm.setCompatibilityMode(COMPAT);
+    vm.setTurboMode(TURBO);
     vm.greenFlag();
+
     document.body.removeChild(document.getElementById('j'));
   });
 
