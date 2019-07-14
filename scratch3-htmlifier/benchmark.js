@@ -18,36 +18,35 @@ const runBenchmark = function () {
     Scratch.vm.downloadProjectId('');
   }
   vm.on('workspaceUpdate', () => {
-    try {
-      const storage = localStorage;
-      const doNothing = () => null;
-      vm.setCloudProvider({
-        updateVariable(name, value) {
-          storage.setItem('[s3] ' + name, value);
-        },
-        // variables won't be changed because the project is view-only
-        createVariable: doNothing,
-        renameVariable: doNothing,
-        deleteVariable: doNothing,
-        requestCloseConnection: doNothing
-      });
-
-      setTimeout(() => {
-        for (let i = 0; i < storage.length; i++) {
-          const key = storage.key(i);
-          if (key.slice(0, 5) === '[s3] ') {
-            vm.postIOData('cloud', {
-              varUpdate: {
-                name: key.slice(5),
-                value: storage.getItem(key)
-              }
-            });
-          }
+    const doNothing = () => null;
+    vm.setCloudProvider({
+      updateVariable(name, value) {
+        try {
+          localStorage.setItem('[s3] ' + name, value);
+        } catch (e) {
+          console.log('Cannot use localStorage?', e);
         }
-      });
-    } catch (e) {
-      console.warn('Cannot use localStorage?', e);
-    }
+      },
+      // variables won't be changed because the project is view-only
+      createVariable: doNothing,
+      renameVariable: doNothing,
+      deleteVariable: doNothing,
+      requestCloseConnection: doNothing
+    });
+
+    setTimeout(() => {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.slice(0, 5) === '[s3] ') {
+          vm.postIOData('cloud', {
+            varUpdate: {
+              name: key.slice(5),
+              value: localStorage.getItem(key)
+            }
+          });
+        }
+      }
+    });
 
     vm.setCompatibilityMode(COMPAT);
     vm.setTurboMode(TURBO);
