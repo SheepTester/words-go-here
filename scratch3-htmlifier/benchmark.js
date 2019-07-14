@@ -20,27 +20,16 @@ const runBenchmark = function () {
   vm.on('workspaceUpdate', () => {
     try {
       const storage = localStorage;
-      const set = (name, value) => storage.setItem('[s3] ' + name, value);
-      const get = name => storage.getItem('[s3] ' + name);
-      const remove = name => storage.removeItem('[s3] ' + name);
-
+      const doNothing = () => null;
       vm.setCloudProvider({
-        createVariable({name, value}) {
-          set(name, value);
-        },
         updateVariable(name, value) {
-          set(name, value);
+          storage.setItem('[s3] ' + name, value);
         },
-        renameVariable(oldName, newName) {
-          set(newName, get(oldName));
-          remove(oldName);
-        },
-        deleteVariable(name) {
-          remove(name);
-        },
-        requestCloseConnection() {
-          // do nothing
-        }
+        // variables won't be changed because the project is view-only
+        createVariable: doNothing,
+        renameVariable: doNothing,
+        deleteVariable: doNothing,
+        requestCloseConnection: doNothing
       });
 
       setTimeout(() => {
