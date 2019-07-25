@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>String-based factorial calculator</title>
+    <meta name="description" content="Uses elementary school level methods to multiply a lot of numbers"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+    <style>
+      html, body {
+        height: 100%;
+      }
+      body {
+        display: flex;
+        margin: 0;
+        /* justify-content: center; */
+        align-items: center;
+        font-size: 48px;
+        flex-direction: column;
+        text-align: center;
+        word-break: break-all;
+      }
+      input {
+        font-size: inherit;
+        width: 200px;
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <label><input type="number" value="0" id="int" autofocus>!</label>
+    <span>= <span id="answer">1</span></span>
+    <script>
+const int = document.getElementById('int');
+const answer = document.getElementById('answer');
+function add(a, b) {
+  let carry = 0, i = 0, sum = '';
+  while (i < a.length || i < b.length) {
+    const digitSum = (+a[a.length - i - 1] || 0) + (+b[b.length - i - 1] || 0) + carry;
+    sum = digitSum % 10 + sum;
+    carry = Math.floor(digitSum / 10);
+    i++;
+  }
+  if (carry) sum = carry + sum;
+  return sum;
+}
+function multiply(a, b) {
+  const products = [];
+  for (let i = 0; i < b.length; i++) {
+    const digit = +b[b.length - i - 1];
+    let carry = 0, product = '';
+    for (let j = 0; j < a.length; j++) {
+      const digitProduct = +a[a.length - j - 1] * digit + carry;
+      product = digitProduct % 10 + product;
+      carry = Math.floor(digitProduct / 10);
+    }
+    if (carry) product = carry + product;
+    products.push(product + '0'.repeat(i));
+  }
+  return products.reduce(add);
+}
+function factorial(n) {
+  let product = '1';
+  for (let i = 2; i <= n; i++) {
+    product = multiply(product, i + '');
+  }
+  return product;
+}
+int.addEventListener('input', e => {
+  answer.textContent = factorial(+int.value.replace(/[^0-9]/g, ''));
+});
+    </script>
+  </body>
+</html>
