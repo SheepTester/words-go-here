@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Factorial calculator but the exponent is just decoration</title>
+    <meta name="description" content="Although the factorial is in scientific notation, BigInt is still used for maximum accuracy in the coefficient."/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+    <style>
+      html, body {
+        height: 100%;
+      }
+      body {
+        display: flex;
+        margin: 0;
+        justify-content: center;
+        align-items: center;
+        font-size: 48px;
+        flex-direction: column;
+        text-align: center;
+        word-break: break-all;
+      }
+      input {
+        font-size: inherit;
+        width: 200px;
+        text-align: right;
+      }
+      p {
+        font-size: initial
+      }
+    </style>
+  </head>
+  <body>
+    <label><input type="number" value="0" id="int" autofocus>!</label>
+    <span>= <span id="answer">1. &times; 10<sup>0</sup></span></span>
+    <p>Add <strong><a href="?sigfigs=10">?sigfigs=10</a></strong> or whatever to the URL to change the maximum number of significant figures.</p>
+    <script>
+const sigfigs = +new URL(location).searchParams.get('sigfigs') || 5;
+const int = document.getElementById('int');
+const answer = document.getElementById('answer');
+function factorial(n) {
+  let coefficient = 1n, exponent = 0;
+  for (let i = 2n; i <= n; i++) {
+    coefficient *= i;
+    while (coefficient.toString().length > sigfigs) {
+      coefficient /= 10n;
+      exponent++;
+    }
+  }
+  const coeffStr = coefficient.toString();
+  return `${coeffStr[0]}.${coeffStr.slice(1)} &times; 10<sup>${exponent}</sup>`;
+}
+int.addEventListener('input', e => {
+  answer.innerHTML = factorial(BigInt(int.value.replace(/[^0-9]/g, '')));
+});
+    </script>
+  </body>
+</html>
