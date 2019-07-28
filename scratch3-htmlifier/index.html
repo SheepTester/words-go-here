@@ -39,9 +39,10 @@
     <p>
       <label><input type="checkbox" id="compatibility" checked> Compatibility mode?<sup>2</sup></label>
       <label><input type="checkbox" id="turbo"> Turbo mode?</label>
+      <label><input type="checkbox" id="wider"> 16:9? (for projects <a href="https://sheeptester.github.io/scratch-gui/16-9/">made with a 16:9 aspect ratio</a>)</label>
     </p>
     <p>
-      <button id="load">HTMLify with minification (slow)</button>
+      <!-- <button id="load">HTMLify with minification (slow)</button> -->
       <button id="load-no-minify">HTMLify without minification (recommended)</button>
       <button id="load-no-vm">HTMLify without VM<sup>3</sup></button>
     </p>
@@ -51,10 +52,22 @@
     <p><sup>2</sup>Compatibility mode forces projects to run at 30 FPS, like in Scratch 2.0. Turning this off allows the project to run at a higher framerate (usually 60 FPS, depending on the computer screen's refresh rate).</p>
     <p><sup>3</sup>The Scratch engine won't be included in the HTML file, so it'll be smaller, but it'll require internet connection.</p>
     <script type="text/javascript">
-const scratchURLs = [
-  'https://sheeptester.github.io/scratch-vm/vm.min.js',
-  './benchmark.js'
-];
+function removePercentSection(str, key) {
+  /*
+  performs the following on str:
+  % key %
+  this part (and other parts surrounded in a similar fashion) will be removed
+  % /key %
+  returns str with the parts removed
+  */
+  const startKey = `% ${key} %`;
+  const endKey = `% /${key} %`;
+  while (str.includes(startKey) && str.includes(endKey)) {
+    str = str.slice(0, str.indexOf(startKey))
+      + str.slice(str.indexOf(endKey) + endKey.length);
+  }
+  return str;
+}
 function getDataURL(url) {
   return fetch(url).then(r => r.blob()).then(blob => new Promise(res => {
     const reader = new FileReader();
@@ -69,7 +82,13 @@ function minifyScripts(scripts) { // so the "Minifying..." log shows
     }, 100);
   });
 }
-function downloadAsHTML(projectSrc, {title = 'Project', username = 'griffpatch', mode, log = console.log}) {
+function downloadAsHTML(projectSrc, {
+  title = 'Project',
+  username = 'griffpatch',
+  mode = null,
+  ratio16to9 = false,
+  log = console.log
+} = {}) {
   const noVM = mode === 'no-vm';
   const minify = mode !== 'no-minify';
   return Promise.all([
@@ -82,17 +101,18 @@ function downloadAsHTML(projectSrc, {title = 'Project', username = 'griffpatch',
           ...Object.keys(assets).map(assetId => getDataURL(assets[assetId]).then(data => assets[assetId] = data))
         ]).then(() => {
           return `var SRC = "id", PROJECT_JSON = "${projectJSON}",`
-            + `ASSETS = ${JSON.stringify(assets)},`
-            + `DESIRED_USERNAME = ${JSON.stringify(username)},`
-            + `COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked};`;
+            + `ASSETS = ${JSON.stringify(assets)},`;
         });
       })
-      : Promise.resolve(`var SRC = "file", FILE = "${projectSrc.data}";`
-        + `DESIRED_USERNAME = ${JSON.stringify(username)},`
-        + `COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked};`),
+      : Promise.resolve(`var SRC = "file", FILE = "${projectSrc.data}",`),
 
     // fetch scripts
-    Promise.all((noVM ? ['./benchmark.js'] : scratchURLs)
+    Promise.all((noVM ? ['./benchmark.js'] : [
+      ratio16to9
+        ? 'https://sheeptester.github.io/scratch-vm/16-9/vm.min.js'
+        : 'https://sheeptester.github.io/scratch-vm/vm.min.js',
+      './benchmark.js'
+    ])
       .map(url => fetch(url)
       .then(r => r.text())))
       .then(scripts => {
@@ -102,10 +122,13 @@ function downloadAsHTML(projectSrc, {title = 'Project', username = 'griffpatch',
       }),
 
     // fetch template
-    fetch(noVM ? './template-quick.html' : './template.html')
-      .then(r => r.text())
+    fetch('./template.html').then(r => r.text())
   ]).then(async ([preface, scripts, template]) => {
-    scripts = preface + scripts;
+    scripts = preface
+      + `DESIRED_USERNAME = ${JSON.stringify(username)},`
+      + `COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked},`
+      + `HORIZ_RAD = ${ratio16to9 ? 320 : 240};`
+      + scripts;
     if (minify) {
       log('Minifying...');
       scripts = await minifyScripts(scripts);
@@ -113,7 +136,12 @@ function downloadAsHTML(projectSrc, {title = 'Project', username = 'griffpatch',
       else scripts = scripts.code;
     }
     log('Done!');
+    if (!noVM) template = removePercentSection(template, 'no-vm');
+    if (ratio16to9) template = removePercentSection(template, '4-3');
+    else template = removePercentSection(template, '16-9');
     return template
+      .replace(/% \/?[a-z0-9-]+ %/g, '')
+      .replace(/\s*\r?\n\s*/g, '')
       .replace('{TITLE}', () => title)
       .replace('{SCRIPTS}', () => scripts);
   });
@@ -128,7 +156,8 @@ const file = document.getElementById('file');
 const error = document.getElementById('error');
 const compatibility = document.getElementById('compatibility');
 const turbo = document.getElementById('turbo');
-const buttons = [loadBtn, loadNoMinifyBtn, loadNoVMBtn];
+const wider = document.getElementById('wider');
+const buttons = [/* loadBtn, */ loadNoMinifyBtn, loadNoVMBtn];
 function getProject() {
   if (document.querySelector('input[name="upload-mode"]:checked').value === 'file') {
     if (!file.files || !file.files[0]) return Promise.reject(new Error('No file selected'));
@@ -149,7 +178,8 @@ function load(mode) {
       title: title.value,
       username: username.value,
       log: output => error.value += output + '\n',
-      mode: mode
+      mode: mode,
+      ratio16to9: wider.checked
     }))
     .then(html => {
       download(html, 'project.html', 'text/html');
@@ -160,9 +190,14 @@ function load(mode) {
       buttons.forEach(btn => btn.disabled = false);
     });
 }
-loadBtn.addEventListener('click', e => load('normal'));
+// loadBtn.addEventListener('click', e => load('normal'));
 loadNoMinifyBtn.addEventListener('click', e => load('no-minify'));
 loadNoVMBtn.addEventListener('click', e => load('no-vm'));
+file.addEventListener('change', e => {
+  if (file.files[0]) {
+    document.querySelector('input[name="upload-mode"][value="file"]').checked = true;
+  }
+});
     </script>
   </body>
 </html>

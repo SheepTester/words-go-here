@@ -58,11 +58,11 @@ const runBenchmark = function () {
   function resize() {
     const rect = canvas.getBoundingClientRect();
     renderer.resize(rect.width, rect.height);
-    monitorWrapper.style.transform = `scale(${rect.width / 480})`;
+    monitorWrapper.style.transform = `scale(${rect.height / 360})`;
   }
   const monitorWrapper = document.getElementById('m');
   const canvas = document.getElementById('s');
-  const renderer = new window.ScratchRender(canvas);
+  const renderer = new window.ScratchRender(canvas, -HORIZ_RAD, HORIZ_RAD);
   resize();
   Scratch.renderer = renderer;
   vm.attachRenderer(renderer);
