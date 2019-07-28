@@ -13,16 +13,6 @@
     <!-- Everything, probably -->
     <script src="https://sheeptester.github.io/scratch-vm/vm.min.js"></script>
 
-    <script src="./UglifyJS2/minify.js"></script>
-    <script src="./UglifyJS2/utils.js"></script>
-    <script src="./UglifyJS2/ast.js"></script>
-    <script src="./UglifyJS2/parse.js"></script>
-    <script src="./UglifyJS2/transform.js"></script>
-    <script src="./UglifyJS2/scope.js"></script>
-    <script src="./UglifyJS2/output.js"></script>
-    <script src="./UglifyJS2/compress.js"></script>
-    <script src="./UglifyJS2/propmangle.js"></script>
-
     <script src="./hacky-file-getter.js" charset="utf-8"></script>
     <script src="./download.js" charset="utf-8"></script>
 
@@ -42,9 +32,7 @@
       <label><input type="checkbox" id="wider"> 16:9? (for projects <a href="https://sheeptester.github.io/scratch-gui/16-9/">made with a 16:9 aspect ratio</a>)</label>
     </p>
     <p>
-      <!-- <button id="load">HTMLify with minification (slow)</button> -->
-      <button id="load-no-minify">HTMLify without minification (recommended)</button>
-      <button id="load-no-vm">HTMLify without VM<sup>3</sup></button>
+      <button id="load-no-minify">HTMLify</button>
     </p>
     <textarea id="error" rows="8" cols="40" placeholder="Log" readonly></textarea>
     <p>Made by <a href="https://scratch.mit.edu/users/Sheep_maker/">Sheep_maker</a>, who used: <a href="https://github.com/mishoo/UglifyJS2/tree/harmony">uglify-es</a>, <a href="https://github.com/LLK/scratch-vm/">scratch-vm</a>, <a href="http://danml.com/download.html">download.js</a>, and their dependencies for this project.</p>
@@ -75,22 +63,12 @@ function getDataURL(url) {
     reader.readAsDataURL(blob);
   }));
 }
-function minifyScripts(scripts) { // so the "Minifying..." log shows
-  return new Promise(res => {
-    setTimeout(() => {
-      res(minify(scripts, {}));
-    }, 100);
-  });
-}
 function downloadAsHTML(projectSrc, {
   title = 'Project',
   username = 'griffpatch',
-  mode = null,
   ratio16to9 = false,
   log = console.log
 } = {}) {
-  const noVM = mode === 'no-vm';
-  const minify = mode !== 'no-minify';
   return Promise.all([
     // make preface variables
     projectSrc.id
@@ -107,18 +85,14 @@ function downloadAsHTML(projectSrc, {
       : Promise.resolve(`var SRC = "file", FILE = "${projectSrc.data}",`),
 
     // fetch scripts
-    Promise.all((noVM ? ['./benchmark.js'] : [
-      ratio16to9
-        ? 'https://sheeptester.github.io/scratch-vm/16-9/vm.min.js'
-        : 'https://sheeptester.github.io/scratch-vm/vm.min.js',
-      './benchmark.js'
-    ])
-      .map(url => fetch(url)
-      .then(r => r.text())))
-      .then(scripts => {
-        log('Scratch scripts obtained...');
+    fetch(ratio16to9
+      ? 'https://sheeptester.github.io/scratch-vm/16-9/vm.min.js'
+      : 'https://sheeptester.github.io/scratch-vm/vm.min.js')
+      .then(r => r.text())
+      .then(vmCode => {
+        log('Scratch engine obtained...');
         // remove dumb </ script>s in comments
-        return scripts.join('\n').replace('</scr' + 'ipt>', '');
+        return vmCode.replace('</scr' + 'ipt>', '');
       }),
 
     // fetch template
@@ -126,17 +100,9 @@ function downloadAsHTML(projectSrc, {
   ]).then(async ([preface, scripts, template]) => {
     scripts = preface
       + `DESIRED_USERNAME = ${JSON.stringify(username)},`
-      + `COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked},`
-      + `HORIZ_RAD = ${ratio16to9 ? 320 : 240};`
+      + `COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked};`
       + scripts;
-    if (minify) {
-      log('Minifying...');
-      scripts = await minifyScripts(scripts);
-      if (scripts.error) throw scripts.error;
-      else scripts = scripts.code;
-    }
     log('Done!');
-    if (!noVM) template = removePercentSection(template, 'no-vm');
     if (ratio16to9) template = removePercentSection(template, '4-3');
     else template = removePercentSection(template, '16-9');
     return template
@@ -146,9 +112,7 @@ function downloadAsHTML(projectSrc, {
       .replace('{SCRIPTS}', () => scripts);
   });
 }
-const loadBtn = document.getElementById('load');
 const loadNoMinifyBtn = document.getElementById('load-no-minify');
-const loadNoVMBtn = document.getElementById('load-no-vm');
 const title = document.getElementById('title');
 const id = document.getElementById('id');
 const username = document.getElementById('username');
@@ -157,7 +121,6 @@ const error = document.getElementById('error');
 const compatibility = document.getElementById('compatibility');
 const turbo = document.getElementById('turbo');
 const wider = document.getElementById('wider');
-const buttons = [/* loadBtn, */ loadNoMinifyBtn, loadNoVMBtn];
 function getProject() {
   if (document.querySelector('input[name="upload-mode"]:checked').value === 'file') {
     if (!file.files || !file.files[0]) return Promise.reject(new Error('No file selected'));
@@ -170,29 +133,26 @@ function getProject() {
     return Promise.resolve({id: id.value});
   }
 }
-function load(mode) {
-  buttons.forEach(btn => btn.disabled = true);
+function load() {
+  loadNoMinifyBtn.disabled = true;
   error.value = '';
   getProject()
     .then(src => downloadAsHTML(src, {
       title: title.value,
       username: username.value,
       log: output => error.value += output + '\n',
-      mode: mode,
       ratio16to9: wider.checked
     }))
     .then(html => {
       download(html, 'project.html', 'text/html');
-      buttons.forEach(btn => btn.disabled = false);
+      loadNoMinifyBtn.disabled = false;
     }).catch(err => {
       console.log(err);
       error.value = err.message;
-      buttons.forEach(btn => btn.disabled = false);
+      loadNoMinifyBtn.disabled = false;
     });
 }
-// loadBtn.addEventListener('click', e => load('normal'));
-loadNoMinifyBtn.addEventListener('click', e => load('no-minify'));
-loadNoVMBtn.addEventListener('click', e => load('no-vm'));
+loadNoMinifyBtn.addEventListener('click', load);
 file.addEventListener('change', e => {
   if (file.files[0]) {
     document.querySelector('input[name="upload-mode"][value="file"]').checked = true;
