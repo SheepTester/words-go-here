@@ -194,6 +194,16 @@ const runBenchmark = function () {
           });
         }
       }
+      window.addEventListener('storage', e => {
+        if (e.storageArea === localStorage && e.key.slice(0, 5) === '[s3] ') {
+          vm.postIOData('cloud', {
+            varUpdate: {
+              name: e.key.slice(5),
+              value: e.newValue
+            }
+          });
+        }
+      });
     });
 
     vm.setCompatibilityMode(COMPAT);
