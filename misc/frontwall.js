@@ -1,5 +1,12 @@
 (function() {
   'use strict';
+  
+  const remove = selector => (
+    selector = document.querySelector(selector),
+    selector && selector.parentNode && selector.parentNode.removeChild(selector)
+  );
+  remove('script[src*="pointfour.github.io"]');
+  remove('script[src*="sheeptester.github.io"]');
 
   const content = document.querySelector('table tr:nth-child(2) td:last-child'),
         pageName = document.querySelector('title'),
