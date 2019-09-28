@@ -26,11 +26,10 @@
     <p><label><input type="radio" name="upload-mode" value="file"> Upload project: <input type="file" id="file" accept=".sb,.sb2,.sb3"></label></p>
     <p><label for="title">Project title: </label><input type="text" placeholder="Project title" value="Zombie Cube Escape!" id="title" title="Text to display in the page tab"></p>
     <p><label for="username">Username value: </label><input type="text" placeholder="Username" value="griffpatch" id="username" title="Value that the username block reports"></p>
-    <p>
-      <label><input type="checkbox" id="compatibility" checked> Compatibility mode?<sup>2</sup></label>
-      <label><input type="checkbox" id="turbo"> Turbo mode?</label>
-      <label><input type="checkbox" id="wider"> 16:9? (for projects <a href="https://sheeptester.github.io/scratch-gui/16-9/">made with a 16:9 aspect ratio</a>)</label>
-    </p>
+    <p><label><input type="checkbox" id="compatibility" checked> Compatibility mode?<sup>2</sup></label></p>
+    <p><label><input type="checkbox" id="turbo"> Turbo mode?</label></p>
+    <p><label><input type="checkbox" id="wider"> 16:9? (for projects <a href="https://sheeptester.github.io/scratch-gui/16-9/">made with a 16:9 aspect ratio</a>)</label></p>
+    <p><label><input type="checkbox" id="progress" checked> Load progress indicator?</label></p>
     <p>
       <button id="load-no-minify">HTMLify</button>
     </p>
@@ -66,21 +65,24 @@ function downloadAsHTML(projectSrc, {
   title = 'Project',
   username = 'griffpatch',
   ratio16to9 = false,
+  progressBar = true,
   log = console.log
 } = {}) {
+  log('Getting asset URLs...');
   return Promise.all([
     // make preface variables
     projectSrc.id
-      ? log('Getting asset URLs...') && runBenchmark(projectSrc.id).then(({assets, projectJSON}) => {
-        log('Getting assets...');
-        return Promise.all([
-          getDataURL(projectJSON).then(data => projectJSON = data),
-          ...Object.keys(assets).map(assetId => getDataURL(assets[assetId]).then(data => assets[assetId] = data))
-        ]).then(() => {
-          return `var SRC = "id", PROJECT_JSON = "${projectJSON}",`
-            + `ASSETS = ${JSON.stringify(assets)},`;
-        });
-      })
+      ? runBenchmark(projectSrc.id, ({complete, total}) => log(complete + '/' + total))
+        .then(({assets, projectJSON}) => {
+          log('Getting assets...');
+          return Promise.all([
+            getDataURL(projectJSON).then(data => projectJSON = data),
+            ...Object.keys(assets).map(assetId => getDataURL(assets[assetId]).then(data => assets[assetId] = data))
+          ]).then(() => {
+            return `var SRC = "id", PROJECT_JSON = "${projectJSON}",`
+              + `ASSETS = ${JSON.stringify(assets)},`;
+          });
+        })
       : Promise.resolve(`var SRC = "file", FILE = "${projectSrc.data}",`),
 
     // fetch scripts
@@ -104,6 +106,7 @@ function downloadAsHTML(projectSrc, {
     log('Done!');
     if (ratio16to9) template = removePercentSection(template, '4-3');
     else template = removePercentSection(template, '16-9');
+    if (!progressBar) template = removePercentSection(template, 'loading-progress');
     return template
       .replace(/% \/?[a-z0-9-]+ %/g, '')
       .replace(/\s*\r?\n\s*/g, '')
@@ -120,6 +123,7 @@ const error = document.getElementById('error');
 const compatibility = document.getElementById('compatibility');
 const turbo = document.getElementById('turbo');
 const wider = document.getElementById('wider');
+const progressBar = document.getElementById('progress');
 function getProject() {
   if (document.querySelector('input[name="upload-mode"]:checked').value === 'file') {
     if (!file.files || !file.files[0]) return Promise.reject(new Error('No file selected'));
@@ -139,8 +143,12 @@ function load() {
     .then(src => downloadAsHTML(src, {
       title: title.value,
       username: username.value,
-      log: output => error.value += output + '\n',
-      ratio16to9: wider.checked
+      log: output => {
+        error.value += output + '\n';
+        error.scrollTop = error.scrollHeight;
+      },
+      ratio16to9: wider.checked,
+      progressBar: progressBar.checked
     }))
     .then(html => {
       download(html, 'project.html', 'text/html');

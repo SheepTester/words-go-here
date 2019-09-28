@@ -52,6 +52,16 @@ body {
   width: 100%;
   height: 100%;
 }
+% loading-progress %
+#l {
+  color: #0ff;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  font-size: 16px;
+  font-family: monospace;
+}
+% /loading-progress %
 .monitor {
   position: absolute;
   background-color: rgba(0, 0, 0, 0.3);
@@ -144,6 +154,9 @@ body {
 <script src="https://sheeptester.github.io/scratch-vm/16-9/vm.min.js"></script>
 % /16-9 %
 % /no-vm %
+% loading-progress %
+<span id="l"></span>
+% /loading-progress %
 <script type="text/javascript" id="j">
 {SCRIPTS}
 
@@ -159,6 +172,22 @@ const runBenchmark = function () {
   storage.addWebStore([AssetType.ImageVector, AssetType.ImageBitmap, AssetType.Sound], asset => ASSETS[asset.assetId]);
   vm.attachStorage(storage);
 
+  % loading-progress %
+  const progress = document.getElementById('l');
+  const _load = storage.webHelper.load;
+  let total = 0, complete = 0;
+  storage.webHelper.load = function (...args) {
+    const result = _load.call(this, ...args);
+    total += 1;
+    progress.textContent = complete + '/' + total;
+    result.then(() => {
+      complete += 1;
+      progress.textContent = complete + '/' + total;
+    });
+    return result;
+  };
+  % /loading-progress %
+
   if (SRC === 'file') {
     fetch(FILE)
       .then(r => r.arrayBuffer())
@@ -167,6 +196,10 @@ const runBenchmark = function () {
     Scratch.vm.downloadProjectId('');
   }
   vm.on('workspaceUpdate', () => {
+    % loading-progress %
+    document.body.removeChild(progress);
+    % /loading-progress %
+
     const doNothing = () => null;
     vm.setCloudProvider({
       updateVariable(name, value) {
