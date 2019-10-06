@@ -15,6 +15,7 @@ body {
   justify-content: center;
   background-color: black;
   font-size: 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 #w {
   display: block;
@@ -59,7 +60,6 @@ body {
   bottom: 0;
   left: 0;
   font-size: 16px;
-  font-family: monospace;
 }
 % /loading-progress %
 .monitor {
@@ -67,7 +67,6 @@ body {
   background-color: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 0.25rem;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 0.75rem;
   overflow: hidden;
   padding: 3px;
@@ -139,12 +138,47 @@ body {
   width: 100%;
   transform: translateZ(0);
 }
+#b {
+  display: none;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+}
+.asking #b {
+  display: block;
+}
+#q {
+  display: block;
+  margin: 0 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: white;
+}
+#a {
+  border: none;
+  background: none;
+  width: 100%;
+  font: inherit;
+  font-size: 16px;
+  color: white;
+  padding: 10px;
+  box-sizing: border-box;
+}
+#a:focus {
+  outline: none;
+}
 </style>
 </head>
 <body>
 <div id="w">
 <canvas id="s"></canvas>
 <div id="m"></div>
+<div id="b">
+<label id="q" for="a">Question</label>
+<input type="text" id="a">
+</div>
 </div>
 % no-vm %
 % 4-3 %
@@ -483,6 +517,10 @@ const runBenchmark = function () {
   vm.attachV2SVGAdapter(new ScratchSVGRenderer.SVGRenderer());
   vm.attachV2BitmapAdapter(new ScratchSVGRenderer.BitmapAdapter());
 
+  const askBoxWrapper = document.getElementById('b');
+  const question = document.getElementById('q');
+  const askBox = document.getElementById('a');
+
   /* https://github.com/LLK/scratch-gui/blob/7b658c60c7c04055e575601a861195fe6c9933f3/src/containers/stage.jsx */
   const getEventXY = e => {
     if (e.touches && e.touches[0]) {
@@ -556,6 +594,7 @@ const runBenchmark = function () {
     });
   }
   function mousedown(e) {
+    if (askBoxWrapper.contains(e.target)) return;
     const {x, y} = getEventXY(e);
     const rect = canvas.getBoundingClientRect();
     const mousePosition = [x - rect.left, y - rect.top];
@@ -590,7 +629,7 @@ const runBenchmark = function () {
       canvasWidth: rect.width,
       canvasHeight: rect.height
     });
-    e.preventDefault();
+    if (!askBoxWrapper.contains(e.target)) e.preventDefault();
   }
   document.addEventListener('mousemove', mousemove);
   canvas.addEventListener('mousedown', mousedown);
@@ -608,6 +647,7 @@ const runBenchmark = function () {
   window.addEventListener('resize', resize);
 
   document.addEventListener('keydown', e => {
+    if (e.target === askBox) return;
     Scratch.vm.postIOData('keyboard', {
       keyCode: e.keyCode,
       key: e.key,
@@ -616,6 +656,7 @@ const runBenchmark = function () {
     e.preventDefault();
   });
   document.addEventListener('keyup', e => {
+    if (e.target === askBox) return;
     Scratch.vm.postIOData('keyboard', {
       keyCode: e.keyCode,
       key: e.key,
@@ -623,9 +664,23 @@ const runBenchmark = function () {
     });
   });
 
-  Scratch.vm.runtime.addListener('QUESTION', question => {
-    if (question !== null)
-      Scratch.vm.runtime.emit('ANSWER', prompt(question));
+  Scratch.vm.runtime.addListener('QUESTION', questionData => {
+    /* null means the asking was interrupted by stop script block */
+    if (questionData === null) {
+      document.body.classList.remove('asking');
+    } else {
+      document.body.classList.add('asking');
+      question.textContent = questionData;
+      askBox.value = '';
+      askBox.focus();
+    }
+  });
+  askBox.addEventListener('keydown', e => {
+    if (e.keyCode === 13) {
+      document.body.classList.remove('asking');
+      /* submit answer after because it starts the next question synchronously */
+      Scratch.vm.runtime.emit('ANSWER', askBox.value);
+    }
   });
 
   const getVariable = (targetId, variableId) => {
