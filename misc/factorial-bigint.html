@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>BigInt-based factorial calculator</title>
+    <meta name="description" content="Uses BigInt to multiply a lot of numbers (a lot faster than using strings, as it turns out)"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
+    <script src="../../sheep3.js" charset="utf-8"></script>
+    <style>
+      html, body {
+        height: 100%;
+      }
+      body {
+        display: flex;
+        margin: 0;
+        /* justify-content: center; */
+        align-items: center;
+        font-size: 48px;
+        flex-direction: column;
+        text-align: center;
+        word-break: break-all;
+      }
+      input {
+        font-size: inherit;
+        width: 200px;
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <label><input type="number" value="0" id="int" autofocus>!</label>
+    <span>= <span id="answer">1</span></span>
+    <script>
+const int = document.getElementById('int');
+const answer = document.getElementById('answer');
+function factorialBigInt(n) {
+  let product = 1n;
+  for (let i = 2n; i <= n; i++) {
+    product *= i;
+  }
+  return product;
+}
+int.addEventListener('input', e => {
+  answer.textContent = factorialBigInt(BigInt(int.value.replace(/[^0-9]/g, '')));
+});
+    </script>
+  </body>
+</html>

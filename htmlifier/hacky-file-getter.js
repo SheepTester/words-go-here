@@ -30,11 +30,34 @@ const getAssetUrl = function (asset) {
     return collecteyData.assets[asset.assetId] = assetUrlParts.join('');
 };
 
+class LoadingProgress {
+    constructor (callback) {
+        this.total = 0;
+        this.complete = 0;
+        this.callback = callback;
+    }
+
+    on (storage) {
+        const _this = this;
+        const _load = storage.webHelper.load;
+        storage.webHelper.load = function (...args) {
+            const result = _load.call(this, ...args);
+            _this.total += 1;
+            _this.callback(_this);
+            result.then(() => {
+                _this.complete += 1;
+                _this.callback(_this);
+            });
+            return result;
+        };
+    }
+}
+
 /**
  * Run the benchmark with given parameters in the location's hash field or
  * using defaults.
  */
-const runBenchmark = function (id) {
+const runBenchmark = function (id, logProgress) {
   return new Promise(res => {
     // Lots of global variables to make debugging easier
     // Instantiate the VM.
@@ -45,6 +68,8 @@ const runBenchmark = function (id) {
     storage.addWebStore([AssetType.Project], getProjectUrl);
     storage.addWebStore([AssetType.ImageVector, AssetType.ImageBitmap, AssetType.Sound], getAssetUrl);
     vm.attachStorage(storage);
+
+    if (logProgress) new LoadingProgress(logProgress).on(storage);
 
     vm.downloadProjectId(id);
 
