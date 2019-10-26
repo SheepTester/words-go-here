@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Triangulated coordinates</title>
+    <meta name="description" content="Using two angles to represent a point on a plane (or three in 3D space)"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <h1>Triangulated coordinates</h1>
+    <h2>2D plane</h2>
+    <p>Rectangular coordinates consist of two distances (x, y), and polar coordinates consist of a distance and an angle (r, &theta;). Perhaps there could be a coordinate system consisting of two angles (<em>&alpha;</em>, <em>&beta;</em>):</p>
+    <img src="2d-triangulation.svg" alt="A diagram of 2D triangulated coordinates">
+    <p>There are two arbitrarily chosen points: the origin, which is (0, 0) in rectangular coordinates, and the ascended origin, which I arbitrarily choose to be (1, 0). The axis that the origin and ascended origin are on is the cool axis (or x-axis in this case). A point (<em>&alpha;</em>, <em>&beta;</em>) is the intersection between a line that forms the angle <em>&alpha;</em> with the cool axis from the origin and a line that forms the angle <em>&beta;</em> with the cool axis from the ascended origin.</p>
+    <p>For example, the triangulated point (45&deg;, 90&deg;) would be (1, 1) in rectangular, and (5, 4) in rectangular would be (tan<sup>&minus;1</sup>0.8, 45&deg;).</p>
+    <p>Like polar coordinates, there are many ways to state a point. (45&deg;, 90&deg;) can also be (225&deg;, 90&deg;), (-135&deg;, 270&deg;), etc.</p>
+    <p>A limitation of this system is that specific points on the cool axis can't be expressed; maybe a third, noncollinear origin and angle could be used. For this reason, neither <em>&alpha;</em> nor <em>&beta;</em> can be <em>k&pi;</em>, where <em>k</em> is an integer (e.g. 0, <em>&pi;</em>, etc.).</p>
+    <fieldset>
+      <legend>Rectangular to triangulated</legend>
+      <p>(<em>x</em>, <em>y</em>) = (tan<sup>&minus;1</sup>(<em>y</em> / <em>x</em>), tan<sup>&minus;1</sup>(<em>y</em> / (<em>x</em> &minus; 1)))</p>
+      <p><label>Rectangular <em>x</em>: <input type="number" id="in-x" value="1"></label></p>
+      <p><label>Rectangular <em>y</em>: <input type="number" id="in-y" value="1"></label></p>
+      <p><label>Triangulated: <input type="text" id="out-ab" readonly></label></p>
+    </fieldset>
+    <fieldset>
+      <legend>Triangulated to rectangular</legend>
+      <p>(<em>&alpha;</em>, <em>&beta;</em>) = (tan<em>&beta;</em> / (tan<em>&beta;</em> - tan<em>&alpha;</em>), (tan<em>&alpha;</em> &middot; tan<em>&beta;</em>) / (tan<em>&beta;</em> - tan<em>&alpha;</em>))</p>
+      <p><label>Triangulated <em>&alpha;</em>: <input type="number" id="in-a" value="45">&deg;</label></p>
+      <p><label>Triangulated <em>&beta;</em>: <input type="number" id="in-b" value="90">&deg;</label></p>
+      <p><label>Rectangular: <input type="text" id="out-xy" readonly></label></p>
+    </fieldset>
+    <p>Graphs can be made with triangulated coordinates as well:</p>
+    <ul>
+      <li><em>&alpha;</em> = 45&deg; produces the triangulated equivalent of <em>y</em> = <em>x</em> (<em>&alpha;</em> = 0 could also work despite points on the cool axis not being expressible because if they were, they would have an <em>&alpha;</em> of 0).</li>
+      <li><em>&alpha;</em> = <em>&beta;</em> produces nothing because parallel lines can't intersect.</li>
+      <li>However, <em>&alpha;</em> = 2<em>&beta;</em> produces a circle of radius 1 with centre (0, 0).</li>
+      <li><em>&alpha;</em> = 3<em>&beta;</em> produces a weird loopity-loop thing with an asymptote at <em>x</em> = 3/2</li>
+      <li><em>&alpha;</em> = 4<em>&beta;</em> and <em>&alpha;</em> = 5<em>&beta;</em>are rather sophisticated.</li>
+    </ul>
+    <p><em>...I think?</em></p>
+    <script>
+function round (num, to) {
+  return Math.round(num / to) * to
+}
+function presentRadians (radians) {
+  return round(radians * 180 / Math.PI, 0.001) + '\u00B0'
+}
+
+const inX = document.getElementById('in-x')
+const inY = document.getElementById('in-y')
+const outAB = document.getElementById('out-ab')
+function calculateRectToTriangulated () {
+  const x = +inX.value
+  const y = +inY.value
+  if (y === 0) {
+    outAB.value = 'On cool axis'
+    return
+  }
+  outAB.value = `(${presentRadians(Math.atan(y / x))}, ${presentRadians(Math.atan(y / (x - 1)))})`
+}
+calculateRectToTriangulated()
+inX.addEventListener('input', e => {
+  calculateRectToTriangulated()
+})
+inY.addEventListener('input', e => {
+  calculateRectToTriangulated()
+})
+
+const inA = document.getElementById('in-a')
+const inB = document.getElementById('in-b')
+const outXY = document.getElementById('out-xy')
+function calculateTriangulatedToRect () {
+  const tanA = Math.tan(+inA.value * Math.PI / 180)
+  const tanB = Math.tan(+inB.value * Math.PI / 180)
+  if (tanA === tanB) {
+    outXY.value = 'Undefined'
+    return
+  }
+  if (Math.abs(tanA) < Number.EPSILON || Math.abs(tanB) < Number.EPSILON) {
+    outXY.value = 'On cool axis'
+    return
+  }
+  outXY.value = `(${round(tanB / (tanB - tanA), 0.001)}, ${round(tanA * tanB / (tanB - tanA), 0.001)})`
+}
+calculateTriangulatedToRect()
+inA.addEventListener('input', e => {
+  calculateTriangulatedToRect()
+})
+inB.addEventListener('input', e => {
+  calculateTriangulatedToRect()
+})
+    </script>
+  </body>
+</html>
