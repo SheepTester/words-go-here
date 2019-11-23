@@ -16,6 +16,7 @@ body {
   background-color: black;
   font-size: 0;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  overflow: hidden;
 }
 #w {
   display: block;
@@ -71,7 +72,7 @@ body {
   overflow: hidden;
   padding: 3px;
   color: white;
-  white-space: nowrap;
+  white-space: pre;
 }
 .monitor-label {
   margin: 0 5px;
@@ -108,6 +109,7 @@ body {
 .list {
   padding: 0;
   overflow: auto;
+  overflow-x: hidden;
 }
 .list .monitor-label {
   text-align: center;
@@ -116,6 +118,7 @@ body {
   display: block;
   margin: 0;
   box-sizing: border-box;
+  white-space: pre-wrap;
 }
 .list .monitor-value {
   display: block;
@@ -521,7 +524,7 @@ const runBenchmark = function () {
   const question = document.getElementById('q');
   const askBox = document.getElementById('a');
 
-  /* https://github.com/LLK/scratch-gui/blob/7b658c60c7c04055e575601a861195fe6c9933f3/src/containers/stage.jsx */
+  /* https://github.com/LLK/scratch-gui/blob/develop/src/containers/stage.jsx#L176-L300 */
   const getEventXY = e => {
     if (e.touches && e.touches[0]) {
       return {x: e.touches[0].clientX, y: e.touches[0].clientY};
@@ -594,7 +597,6 @@ const runBenchmark = function () {
     });
   }
   function mousedown(e) {
-    if (askBoxWrapper.contains(e.target)) return;
     const {x, y} = getEventXY(e);
     const rect = canvas.getBoundingClientRect();
     const mousePosition = [x - rect.left, y - rect.top];
@@ -609,6 +611,9 @@ const runBenchmark = function () {
       canvasHeight: rect.height
     });
     e.preventDefault();
+    if (!document.body.classList.contains('asking')) {
+      window.focus();
+    }
   }
   function mouseup(e) {
     const {x, y} = getEventXY(e);
@@ -629,7 +634,6 @@ const runBenchmark = function () {
       canvasWidth: rect.width,
       canvasHeight: rect.height
     });
-    if (!askBoxWrapper.contains(e.target)) e.preventDefault();
   }
   document.addEventListener('mousemove', mousemove);
   canvas.addEventListener('mousedown', mousedown);
@@ -646,22 +650,27 @@ const runBenchmark = function () {
   });
   window.addEventListener('resize', resize);
 
+  /* https://github.com/LLK/scratch-gui/blob/develop/src/lib/vm-listener-hoc.jsx#L86-L115 */
   document.addEventListener('keydown', e => {
-    if (e.target === askBox) return;
+    if (e.target !== document && e.target !== document.body) return;
+    const key = !e.key || e.key === 'Dead' ? e.keyCode : e.key;
     Scratch.vm.postIOData('keyboard', {
-      keyCode: e.keyCode,
-      key: e.key,
+      key: key,
       isDown: true
     });
-    e.preventDefault();
+    if (e.keyCode === 32 || e.keyCode >= 37 && e.keyCode <= 40) {
+      e.preventDefault();
+    }
   });
   document.addEventListener('keyup', e => {
-    if (e.target === askBox) return;
+    const key = !e.key || e.key === 'Dead' ? e.keyCode : e.key;
     Scratch.vm.postIOData('keyboard', {
-      keyCode: e.keyCode,
-      key: e.key,
+      key: key,
       isDown: false
     });
+    if (e.target !== document && e.target !== document.body) {
+      e.preventDefault();
+    }
   });
 
   Scratch.vm.runtime.addListener('QUESTION', questionData => {
@@ -762,6 +771,7 @@ const runBenchmark = function () {
 
 window.onload = function () {
   runBenchmark();
+  window.focus();
 };
 </script>
 </body>
