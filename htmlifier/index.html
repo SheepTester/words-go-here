@@ -38,24 +38,25 @@
     <h1>Project HTMLifier</h1>
     <h3><em>Convert a Scratch project to HTML</em></h3>
     <p>This packages your Scratch project into a single HTML file that can run on its own. The HTML file will be pretty big because it contains the entire Scratch engine as well as the assets used in the projects.</p>
-    <p>The ask box and the variable and list watchers look different. The project will automatically start, and there are no green flag or stop sign buttons to click on. The username block will report whatever you set as the "Username value." Cloud variables will be stored locally and support strings, so they can be used to store game data.<a id="ref-1" href="#note-1"><sup>1</sup></a></p>
-    <p><label><input type="radio" name="upload-mode" value="id" checked> Project ID: <input type="number" placeholder="Project ID" value="284516654" id="id" title="ID of the project hosted on the Scratch website to convert"></label></p>
-    <p><label><input type="radio" name="upload-mode" value="file"> Upload project: <input type="file" id="file" accept=".sb,.sb2,.sb3"></label></p>
+    <p>The project will automatically start, and there are no green flag or stop sign buttons. Cloud variables are stored <a href="https://en.wikipedia.org/wiki/Web_storage">on your computer</a><a id="ref-1" href="#note-1"><sup>1</sup></a> and allow strings, so they can be used to store game data.</p>
+    <p><label><input type="radio" name="upload-mode" value="id" checked> Project ID: <input type="number" placeholder="Project ID" value="284516654" id="id"> (the ID of the project on the Scratch website)</label></p>
+    <p><label><input type="radio" name="upload-mode" value="file"> Upload project file: <input type="file" id="file" accept=".sb,.sb2,.sb3"></label></p>
     <fieldset>
       <legend>Options</legend>
-      <p><label for="title">Project title: </label><input type="text" placeholder="Project title" value="Zombie Cube Escape!" id="title" title="Text to display in the page tab"></p>
-      <p><label for="username">Username value: </label><input type="text" placeholder="Username" value="griffpatch" id="username" title="Value that the username block reports"></p>
-      <p><label><input type="checkbox" id="compatibility" checked> Compatibility mode?<a id="ref-2" href="#note-2"><sup>2</sup></a></label></p>
-      <p><label><input type="checkbox" id="turbo"> Turbo mode?</label></p>
-      <p><label><input type="checkbox" id="wider"> 16:9? (for projects <a href="https://sheeptester.github.io/scratch-gui/16-9/">made with a 16:9 aspect ratio</a>)</label></p>
+      <p><label for="title">Project name: </label><input type="text" placeholder="Project name" value="Zombie Cube Escape!" id="title"> (the text displayed in the browser tab)</p>
+      <p><label for="username">Username value: </label><input type="text" placeholder="Username" value="griffpatch" id="username"> (the value the username block reports)</p>
+      <p><label><input type="checkbox" id="compatibility" checked> Enable compatibility mode?<a id="ref-2" href="#note-2"><sup>2</sup></a></label></p>
+      <p><label><input type="checkbox" id="turbo"> Enable <a href="https://en.scratch-wiki.info/wiki/Turbo_Mode">turbo mode</a>?</label></p>
       <p><label><input type="checkbox" id="progress" checked> Load progress indicator?</label></p>
+      <p><label><input type="checkbox" id="fullscreen" checked> Show fullscreen button?</label></p>
+      <p><label><input type="checkbox" id="wider"> Is this a project <a href="https://sheeptester.github.io/scratch-gui/16-9/">made with a 16:9 aspect ratio</a>?</label></p>
     </fieldset>
     <p>
       <button id="load-no-minify">HTMLify</button>
     </p>
     <textarea id="error" rows="8" cols="40" placeholder="Log" readonly></textarea>
     <p>Made by <a href="https://scratch.mit.edu/users/Sheep_maker/">Sheep_maker</a>, who used: <a href="https://github.com/LLK/scratch-vm/">scratch-vm</a>, <a href="http://danml.com/download.html">download.js</a>, and their dependencies for this project.</p>
-    <p id="note-1"><a href="#ref-1"><sup>1</sup></a>Your jurisdiction may have privacy laws around cookies that you may have to deal with outside of Scratch.</p>
+    <p id="note-1"><a href="#ref-1"><sup>1</sup></a>You may have to deal with privacy laws around cookies outside of Scratch.</p>
     <p id="note-2"><a href="#ref-2"><sup>2</sup></a>Compatibility mode forces projects to run at 30 FPS, like in Scratch 2.0. Turning this off allows the project to run at a higher framerate (usually 60 FPS, depending on the computer screen's refresh rate).</p>
     <script type="text/javascript">
 function removePercentSection(str, key) {
@@ -86,6 +87,7 @@ function downloadAsHTML(projectSrc, {
   username = 'griffpatch',
   ratio16to9 = false,
   progressBar = true,
+  fullscreen = true,
   log = console.log
 } = {}) {
   log('Getting assets...');
@@ -127,9 +129,10 @@ function downloadAsHTML(projectSrc, {
     if (ratio16to9) template = removePercentSection(template, '4-3');
     else template = removePercentSection(template, '16-9');
     if (!progressBar) template = removePercentSection(template, 'loading-progress');
+    if (!fullscreen) template = removePercentSection(template, 'fullscreen');
     return template
       .replace(/% \/?[a-z0-9-]+ %/g, '')
-      .replace(/\s*\r?\n\s*/g, '')
+      // .replace(/\s*\r?\n\s*/g, '')
       .replace('{TITLE}', () => title)
       .replace('{SCRIPTS}', () => scripts);
   });
@@ -144,6 +147,7 @@ const compatibility = document.getElementById('compatibility');
 const turbo = document.getElementById('turbo');
 const wider = document.getElementById('wider');
 const progressBar = document.getElementById('progress');
+const fullscreen = document.getElementById('fullscreen');
 function getProject() {
   if (document.querySelector('input[name="upload-mode"]:checked').value === 'file') {
     if (!file.files || !file.files[0]) return Promise.reject(new Error('No file selected'));
@@ -168,7 +172,8 @@ function load() {
         error.scrollTop = error.scrollHeight;
       },
       ratio16to9: wider.checked,
-      progressBar: progressBar.checked
+      progressBar: progressBar.checked,
+      fullscreen: fullscreen.checked
     }))
     .then(html => {
       download(html, 'project.html', 'text/html');

@@ -63,6 +63,28 @@ body {
   font-size: 16px;
 }
 % /loading-progress %
+% fullscreen %
+#f {
+  -webkit-appearance: none;
+  border: none;
+  background: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 24px;
+  background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Cpath d="M14 28h-4v10h10v-4h-6v-6zm-4-8h4v-6h6v-4H10v10zm24 14h-6v4h10V28h-4v6zm-6-24v4h6v6h4V10H28z" fill="%23fff"/%3E%3C/svg%3E');
+  background-color: rgba(0, 0, 0, 0.5);
+  border-bottom-left-radius: 10px;
+}
+.fullscreen #f {
+  background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Cpath d="M10 32h6v6h4V28H10v4zm6-16h-6v4h10V10h-4v6zm12 22h4v-6h6v-4H28v10zm4-22v-6h-4v10h10v-4h-6z" fill="%23fff"/%3E%3C/svg%3E');
+}
+% /fullscreen %
 .monitor {
   position: absolute;
   background-color: rgba(0, 0, 0, 0.3);
@@ -194,6 +216,9 @@ body {
 % loading-progress %
 <span id="l">...</span>
 % /loading-progress %
+% fullscreen %
+<button id="f"></button>
+% /fullscreen %
 <script type="text/javascript" id="j">
 {SCRIPTS}
 
@@ -326,7 +351,7 @@ class VideoProvider {
                 formatCache.lastUpdate = Infinity;
                 formatCache.lastData = canvas;
             } else {
-                console.log.error(`video io error - unimplemented format ${format}`);
+                console.error(`video io error - unimplemented format ${format}`);
                 formatCache.lastUpdate = Infinity;
                 formatCache.lastData = null;
             }
@@ -338,7 +363,7 @@ class VideoProvider {
     }
 
     onError (error) {
-        console.log.error('Unhandled video io device error', error);
+        console.error('Unhandled video io device error', error);
     }
 
     _setupVideo () {
@@ -459,7 +484,7 @@ const runBenchmark = function () {
         try {
           localStorage.setItem('[s3] ' + name, value);
         } catch (e) {
-          console.log('Cannot use localStorage?', e);
+          console.error('Cannot use localStorage?', e);
         }
       },
       createVariable: doNothing,
@@ -773,6 +798,39 @@ window.onload = function () {
   runBenchmark();
   window.focus();
 };
+
+% fullscreen %
+function isFullscreen() {
+  return document.fullscreenElement || document.mozFullScreenElement
+    || document.webkitFullscreenElement || document.msFullscreenElement;
+}
+const fullscreenBtn = document.getElementById('f');
+fullscreenBtn.addEventListener('click', e => {
+  fullscreenBtn.blur();
+  if (isFullscreen()) {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.msExitFullscreen) document.msExitFullscreen();
+    else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  } else {
+    if (document.body.requestFullscreen) document.body.requestFullscreen();
+    else if (document.body.msRequestFullscreen) document.body.msRequestFullscreen();
+    else if (document.body.mozRequestFullScreen) document.body.mozRequestFullScreen();
+    else if (document.body.webkitRequestFullscreen) document.body.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+  }
+});
+function onFullscreenChange() {
+  if (isFullscreen()) {
+    document.body.classList.add('fullscreen');
+  } else {
+    document.body.classList.remove('fullscreen');
+  }
+}
+document.addEventListener('fullscreenchange', onFullscreenChange);
+document.addEventListener('mozfullscreenchange', onFullscreenChange);
+document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+document.addEventListener('msfullscreenchange', onFullscreenChange);
+% /fullscreen %
 </script>
 </body>
 </html>
