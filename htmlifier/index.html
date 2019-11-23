@@ -8,6 +8,23 @@
     <link rel="stylesheet" type="text/css" href="../../sheep3.css">
     <script src="../../sheep3.js" charset="utf-8"></script>
     <script src="./hacky-file-getter.js" charset="utf-8"></script>
+    <style media="screen">
+      :target {
+        animation: flash 3s;
+      }
+      @keyframes flash {
+        0% {
+          background-color: rgba(255, 255, 0, 0.5);
+        }
+        100% {
+          background-color: transparent;
+        }
+      }
+      #load-no-minify {
+        font-size: 1.2em;
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
     <!-- Everything, probably -->
@@ -21,22 +38,25 @@
     <h1>Project HTMLifier</h1>
     <h3><em>Convert a Scratch project to HTML</em></h3>
     <p>This packages your Scratch project into a single HTML file that can run on its own. The HTML file will be pretty big because it contains the entire Scratch engine as well as the assets used in the projects.</p>
-    <p>The ask box and the variable and list watchers look different. The project will automatically start, and there are no green flag or stop sign buttons to click on. The username block will report whatever you set as the "Username value." Cloud variables will be stored locally and support strings, so they can be used to store game data.<sup>1</sup></p>
+    <p>The ask box and the variable and list watchers look different. The project will automatically start, and there are no green flag or stop sign buttons to click on. The username block will report whatever you set as the "Username value." Cloud variables will be stored locally and support strings, so they can be used to store game data.<a id="ref-1" href="#note-1"><sup>1</sup></a></p>
     <p><label><input type="radio" name="upload-mode" value="id" checked> Project ID: <input type="number" placeholder="Project ID" value="284516654" id="id" title="ID of the project hosted on the Scratch website to convert"></label></p>
     <p><label><input type="radio" name="upload-mode" value="file"> Upload project: <input type="file" id="file" accept=".sb,.sb2,.sb3"></label></p>
-    <p><label for="title">Project title: </label><input type="text" placeholder="Project title" value="Zombie Cube Escape!" id="title" title="Text to display in the page tab"></p>
-    <p><label for="username">Username value: </label><input type="text" placeholder="Username" value="griffpatch" id="username" title="Value that the username block reports"></p>
-    <p><label><input type="checkbox" id="compatibility" checked> Compatibility mode?<sup>2</sup></label></p>
-    <p><label><input type="checkbox" id="turbo"> Turbo mode?</label></p>
-    <p><label><input type="checkbox" id="wider"> 16:9? (for projects <a href="https://sheeptester.github.io/scratch-gui/16-9/">made with a 16:9 aspect ratio</a>)</label></p>
-    <p><label><input type="checkbox" id="progress" checked> Load progress indicator?</label></p>
+    <fieldset>
+      <legend>Options</legend>
+      <p><label for="title">Project title: </label><input type="text" placeholder="Project title" value="Zombie Cube Escape!" id="title" title="Text to display in the page tab"></p>
+      <p><label for="username">Username value: </label><input type="text" placeholder="Username" value="griffpatch" id="username" title="Value that the username block reports"></p>
+      <p><label><input type="checkbox" id="compatibility" checked> Compatibility mode?<a id="ref-2" href="#note-2"><sup>2</sup></a></label></p>
+      <p><label><input type="checkbox" id="turbo"> Turbo mode?</label></p>
+      <p><label><input type="checkbox" id="wider"> 16:9? (for projects <a href="https://sheeptester.github.io/scratch-gui/16-9/">made with a 16:9 aspect ratio</a>)</label></p>
+      <p><label><input type="checkbox" id="progress" checked> Load progress indicator?</label></p>
+    </fieldset>
     <p>
       <button id="load-no-minify">HTMLify</button>
     </p>
     <textarea id="error" rows="8" cols="40" placeholder="Log" readonly></textarea>
     <p>Made by <a href="https://scratch.mit.edu/users/Sheep_maker/">Sheep_maker</a>, who used: <a href="https://github.com/LLK/scratch-vm/">scratch-vm</a>, <a href="http://danml.com/download.html">download.js</a>, and their dependencies for this project.</p>
-    <p><sup>1</sup>Your jurisdiction may have privacy laws around cookies that you may have to deal with outside of Scratch.</p>
-    <p><sup>2</sup>Compatibility mode forces projects to run at 30 FPS, like in Scratch 2.0. Turning this off allows the project to run at a higher framerate (usually 60 FPS, depending on the computer screen's refresh rate).</p>
+    <p id="note-1"><a href="#ref-1"><sup>1</sup></a>Your jurisdiction may have privacy laws around cookies that you may have to deal with outside of Scratch.</p>
+    <p id="note-2"><a href="#ref-2"><sup>2</sup></a>Compatibility mode forces projects to run at 30 FPS, like in Scratch 2.0. Turning this off allows the project to run at a higher framerate (usually 60 FPS, depending on the computer screen's refresh rate).</p>
     <script type="text/javascript">
 function removePercentSection(str, key) {
   /*
@@ -68,13 +88,13 @@ function downloadAsHTML(projectSrc, {
   progressBar = true,
   log = console.log
 } = {}) {
-  log('Getting asset URLs...');
+  log('Getting assets...');
   return Promise.all([
     // make preface variables
     projectSrc.id
       ? runBenchmark(projectSrc.id, ({complete, total}) => log(complete + '/' + total))
         .then(({assets, projectJSON}) => {
-          log('Getting assets...');
+          log('Assembling assets...');
           return Promise.all([
             getDataURL(projectJSON).then(data => projectJSON = data),
             ...Object.keys(assets).map(assetId => getDataURL(assets[assetId]).then(data => assets[assetId] = data))
@@ -98,7 +118,7 @@ function downloadAsHTML(projectSrc, {
 
     // fetch template
     fetch('./template.html').then(r => r.text())
-  ]).then(async ([preface, scripts, template]) => {
+  ]).then(([preface, scripts, template]) => {
     scripts = preface
       + `DESIRED_USERNAME = ${JSON.stringify(username)},`
       + `COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked};`
