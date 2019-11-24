@@ -37,7 +37,7 @@
 
     <h1>Project HTMLifier</h1>
     <h3><em>Convert a Scratch project to HTML</em></h3>
-    <p>This packages your Scratch project into a single HTML file that can run on its own. The HTML file will be pretty big because it contains the entire Scratch engine as well as the assets used in the projects.</p>
+    <p>This packages your Scratch project into a single HTML file that can run on its own in a web browser. The HTML file will be pretty big because it contains the entire Scratch engine and the costume and sound files used in the project.</p>
     <p>The project will automatically start, and there are no green flag or stop sign buttons. Cloud variables are stored <a href="https://en.wikipedia.org/wiki/Web_storage">on your computer</a><a id="ref-1" href="#note-1"><sup>1</sup></a> and allow strings, so they can be used to store game data.</p>
     <p><label><input type="radio" name="upload-mode" value="id" checked> Project ID: <input type="number" placeholder="Project ID" value="284516654" id="id"> (the ID of the project on the Scratch website)</label></p>
     <p><label><input type="radio" name="upload-mode" value="file"> Upload project file: <input type="file" id="file" accept=".sb,.sb2,.sb3"></label></p>
@@ -49,6 +49,7 @@
       <p><label><input type="checkbox" id="turbo"> Enable <a href="https://en.scratch-wiki.info/wiki/Turbo_Mode">turbo mode</a>?</label></p>
       <p><label><input type="checkbox" id="progress" checked> Load progress indicator?</label></p>
       <p><label><input type="checkbox" id="fullscreen" checked> Show fullscreen button?</label></p>
+      <p><label><input type="checkbox" id="use-colour"> Use custom variable/list monitor colour: <input type="color" id="monitor-colour" value="#ff8c1a">? (If unchecked, a translucent black will be used.)</label></p>
       <p><label><input type="checkbox" id="wider"> Is this a project <a href="https://sheeptester.github.io/scratch-gui/16-9/">made with a 16:9 aspect ratio</a>?</label></p>
     </fieldset>
     <p>
@@ -88,7 +89,8 @@ function downloadAsHTML(projectSrc, {
   ratio16to9 = false,
   progressBar = true,
   fullscreen = true,
-  log = console.log
+  log = console.log,
+  monitorColour = null
 } = {}) {
   log('Getting assets...');
   return Promise.all([
@@ -130,6 +132,8 @@ function downloadAsHTML(projectSrc, {
     else template = removePercentSection(template, '16-9');
     if (!progressBar) template = removePercentSection(template, 'loading-progress');
     if (!fullscreen) template = removePercentSection(template, 'fullscreen');
+    if (monitorColour) template = template.replace('{COLOUR}', () => monitorColour);
+    else template = removePercentSection(template, 'monitor-colour');
     return template
       .replace(/% \/?[a-z0-9-]+ %/g, '')
       // .replace(/\s*\r?\n\s*/g, '')
@@ -148,6 +152,8 @@ const turbo = document.getElementById('turbo');
 const wider = document.getElementById('wider');
 const progressBar = document.getElementById('progress');
 const fullscreen = document.getElementById('fullscreen');
+const useColour = document.getElementById('use-colour');
+const monitorColour = document.getElementById('monitor-colour');
 function getProject() {
   if (document.querySelector('input[name="upload-mode"]:checked').value === 'file') {
     if (!file.files || !file.files[0]) return Promise.reject(new Error('No file selected'));
@@ -173,7 +179,8 @@ function load() {
       },
       ratio16to9: wider.checked,
       progressBar: progressBar.checked,
-      fullscreen: fullscreen.checked
+      fullscreen: fullscreen.checked,
+      monitorColour: useColour.checked ? monitorColour.value : null
     }))
     .then(html => {
       download(html, 'project.html', 'text/html');
@@ -189,6 +196,9 @@ file.addEventListener('change', e => {
   if (file.files[0]) {
     document.querySelector('input[name="upload-mode"][value="file"]').checked = true;
   }
+});
+monitorColour.addEventListener('change', e => {
+  useColour.checked = true;
 });
     </script>
   </body>
