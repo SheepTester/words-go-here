@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>nodes and muscles</title>
+    <meta name="description" content="weeee inspired by cary kh's evo sim, with ap physics 1 semester 1 knwoeldge yety"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-size: 0;
+        background-color: #90e1ee;
+      }
+      canvas {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script>
+class Vector2 {
+  constructor (x = 0, y = 0) {
+    this.set({ x, y })
+  }
+
+  get length () {
+    if (this._length === undefined) {
+      this._length = Math.hypot(this.x, this.y)
+    }
+    return this._length
+  }
+
+  // components
+  get comps () {
+    return [this.x, this.y]
+  }
+
+  set ({ x, y }) {
+    if (Number.isNaN(x) || Number.isNaN(y) ||
+      !Number.isFinite(x) || !Number.isFinite(y)) {
+      throw new Error('nan/inf spooted')
+    }
+    this.x = x
+    this.y = y
+    return this
+  }
+
+  add ({ x, y }) {
+    if (Number.isNaN(x) || Number.isNaN(y) ||
+      !Number.isFinite(x) || !Number.isFinite(y)) {
+      throw new Error('nan/inf spooted')
+    }
+    this.x += x
+    this.y += y
+    return this
+  }
+
+  sub ({ x, y }) {
+    if (Number.isNaN(x) || Number.isNaN(y) ||
+      !Number.isFinite(x) || !Number.isFinite(y)) {
+      throw new Error('nan/inf spooted')
+    }
+    this.x -= x
+    this.y -= y
+    return this
+  }
+
+  scale (factor) {
+    if (Number.isNaN(factor) || !Number.isFinite(factor)) {
+      throw new Error('nan/inf spooted')
+    }
+    this.x *= factor
+    this.y *= factor
+    return this
+  }
+
+  unit () {
+    return this.scale(1 / this.length)
+  }
+
+  clone () {
+    return new Vector2(this.x, this.y)
+  }
+}
+
+const GRAVITY = 9.8 // acceleration due to gravity (m/s^2)
+const GROUND = 0 // Ground height (m)
+const NODE_RADIUS = 0.1 // radius of a node (m)
+
+class Node {
+  // friction is coefficient of friction
+  constructor(friction, mass = 10) {
+    this.friction = friction
+    this.mass = mass
+    this.pos = new Vector2()
+    this.vel = new Vector2()
+    this.forces = new Vector2()
+  }
+
+  resetForces () {
+    this.forces.set({x: 0, y: 0})
+  }
+
+  calcForces () {
+    // Weight
+    this.forces.add({x: 0, y: this.mass * GRAVITY})
+
+    if (this.touchingGround()) {
+      const normal = this.forces.y
+      this.forces.add({x: 0, y: -normal})
+      const friction = normal * this.friction
+      this.forces.add({
+        x: Math.sign(-this.vel.x) * friction,
+        y: 0
+      })
+    }
+  }
+
+  touchingGround () {
+    // If mass and size are correlated, then should adjust radius here
+    return this.pos.y >= GROUND - NODE_RADIUS
+  }
+
+  move (time) {
+    // a = F/m
+    const acceleration = this.forces.clone().scale(1 / this.mass)
+    // v_f = v_i + at
+    this.vel.add(acceleration.scale(time))
+    // x_f = x_i + vt
+    this.pos.add(this.vel.clone().scale(time))
+
+    if (this.pos.y > GROUND - NODE_RADIUS) {
+      this.pos.y = GROUND - NODE_RADIUS
+    }
+  }
+}
+
+class Muscle {
+  // constant is spring constant
+  // length is like the normal length
+  constructor(constant, length, node1, node2) {
+    this.constant = constant
+    this.length = length
+    this.node1 = node1
+    this.node2 = node2
+  }
+
+  applyForces () {
+    // Vector from node 1 to 2's position
+    const oneToTwo = this.node2.pos.clone().sub(this.node1.pos)
+    const nodeLength = oneToTwo.length
+    const displacement = nodeLength - this.length
+    const force = this.constant * displacement
+    // Apply elastic force in other's direction with magnitude of force
+    this.node1.forces.add(oneToTwo.clone().unit().scale(force))
+    this.node2.forces.add(oneToTwo.clone().unit().scale(-force))
+  }
+}
+
+class Creature {
+  constructor () {
+    this.nodes = []
+    this.muscles = []
+  }
+
+  addMuscle (newMuscle) {
+    const { node1, node2 } = newMuscle
+    for (const muscle of this.muscles) {
+      if (muscle === newMuscle) {
+        throw new Error('already have musccle!')
+      }
+      if (muscle.node1 === node1 && muscle.node2 === node2 ||
+        muscle.node1 === node2 && muscle.node1 === mode1) {
+        throw new Error('Nodes already connected by a muscle!')
+      }
+    }
+    if (!this.nodes.includes(node1)) this.nodes.push(node1)
+    if (!this.nodes.includes(node2)) this.nodes.push(node2)
+    this.muscles.push(newMuscle)
+    return this
+  }
+
+  sim (time) {
+    for (const node of this.nodes) {
+      node.resetForces()
+    }
+    for (const muscle of this.muscles) {
+      muscle.applyForces()
+    }
+    for (const node of this.nodes) {
+      node.calcForces()
+      node.move(time)
+    }
+  }
+
+  render (c) {
+    c.strokeStyle = 'rgb(129, 85, 49, 0.5)'
+    c.lineWidth = 0.1
+    c.beginPath()
+    for (const muscle of this.muscles) {
+      c.moveTo(...muscle.node1.pos.comps)
+      c.lineTo(...muscle.node2.pos.comps)
+    }
+    c.stroke()
+
+    c.fillStyle = 'hsl(0, 50%, 50%)'
+    c.beginPath()
+    for (const node of this.nodes) {
+      const { x, y } = node.pos
+      c.moveTo(x + NODE_RADIUS, y)
+      c.arc(x, y, NODE_RADIUS, 0, 2 * Math.PI)
+    }
+    c.fill()
+
+    c.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+    c.lineWidth = 0.05
+    c.beginPath()
+    for (const node of this.nodes) {
+      c.moveTo(...node.pos.comps)
+      c.lineTo(...node.pos.clone().add(node.vel).comps)
+      c.moveTo(...node.pos.comps)
+      c.lineTo(...node.pos.clone().add(node.forces).comps)
+    }
+    c.stroke()
+  }
+}
+
+const A = new Node(0.5, 50)
+const B = new Node(1, 50)
+const C = new Node(0.1, 1)
+A.pos.set({x: -1, y: -1})
+B.pos.set({x: 1, y: -1})
+C.pos.set({x: 0, y: -2})
+const creature = new Creature()
+  .addMuscle(new Muscle(0.5, 1.5, A, B))
+  .addMuscle(new Muscle(5, 3, A, C))
+  .addMuscle(new Muscle(5, 3, B, C))
+
+const canvas = document.getElementById('canvas')
+const c = canvas.getContext('2d')
+let width, height
+let scrollX = 0
+let scrollY = 0
+let zoom = 100
+function resizeCanvas () {
+  const dpr = window.devicePixelRatio
+  width = window.innerWidth
+  height = window.innerHeight
+  canvas.width = width * dpr
+  canvas.height = height * dpr
+  c.scale(dpr, dpr)
+}
+window.addEventListener('resize', resizeCanvas)
+
+const SECS_PER_SIM = 1 / 200
+let lastTime = Date.now()
+let totalTime = 0
+let stepsDone = 0
+function paint () {
+  const now = Date.now()
+  const elapsedTime = now - lastTime
+
+  if (elapsedTime < 200) {
+    totalTime += elapsedTime
+    // ms * s/1000ms * sim/(1/200 s)
+    const idealSteps = Math.floor(totalTime / 1000 / SECS_PER_SIM)
+    const steps = idealSteps - stepsDone
+    for (let i = 0; i < steps; i++) {
+      creature.sim(SECS_PER_SIM)
+    }
+    stepsDone += steps
+  }
+
+  c.clearRect(0, 0, width, height)
+  c.fillStyle = '#2ba81a'
+
+  const visualGroundLevel = Math.max(GROUND - scrollY, 0)
+  c.fillRect(0, visualGroundLevel, width, height - visualGroundLevel)
+
+  c.save()
+  c.translate(-scrollX, -scrollY)
+  c.scale(zoom, zoom)
+  creature.render(c)
+  c.restore()
+
+  lastTime = now
+  window.requestAnimationFrame(paint)
+}
+
+resizeCanvas()
+scrollX = -width / 2
+scrollY = -height + 100
+paint()
+    </script>
+  </body>
+</html>
