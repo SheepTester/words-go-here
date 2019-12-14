@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>falppy bird</title>
+    <meta name="description" content="extreme aia goo"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+    <style>
+      html, body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-size: 0;
+        display: flex;
+        flex-direction: column;
+        background-color: black;
+        color: white;
+        font-family: sans-serif;
+      }
+      .wrapper {
+        flex: auto;
+        position: relative;
+      }
+      .canvaso {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      p {
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>poorly made. mouse wheel to scroll. <button id="zoom">zoom</button></p>
+    <div class="wrapper">
+      <canvas class="canvaso" id="epic"></canvas>
+    </div>
+    <script>
+/**
+ * Happy helper method that takes in some ugly number and forces it to be
+ * between 0 and 1. It's a logistic curve!
+ */
+function sigmoid (n) {
+  return 1 / (1 + Math.exp(-n))
+}
+
+class HappyAI {
+  constructor (inputs = 1, weights = []) {
+    this.inputs = inputs
+    this.weights = weights
+    if (!this.areMyWeightsSentient()) {
+      throw new Error('not sentient')
+    }
+  }
+
+  areMyWeightsSentient () {
+    let previousCount = this.inputs
+    for (let i = 0; i < this.weights.length; i++) {
+      if (this.weights[i].length % previousCount !== 0) {
+        return false
+      }
+      previousCount = this.weights[i].length / previousCount
+    }
+    return true
+  }
+
+  think (inputs) {
+    if (inputs.length !== this.inputs) {
+      throw new Error('not! accept')
+    }
+    // Values of previous layer
+    let previousValues = [...inputs]
+    for (const layer of this.weights) {
+      const layerNodes = layer.length / previousValues.length
+      const layerValues = new Array(layerNodes)
+      // For each node in the layer
+      for (let i = 0; i < layerNodes; i++) {
+        // Take of the sum of the weighted inputs
+        layerValues[i] = previousValues.reduce((acc, prevNodeVal, j) => {
+          return acc + prevNodeVal * layer[i * previousValues.length + j]
+        }, 0)
+        // Should it be sigmoided?
+      }
+      previousValues = layerValues
+    }
+    return previousValues
+  }
+
+  mutate () {
+    // idk if this is tolerable
+    const weights = this.weights.map(layer =>
+      layer.map(weight =>
+        weight + Math.random() * 2 - 1))
+    return new HappyAI(this.inputs, weights)
+  }
+
+  static makeRandomThinker (inputs = 1, layers = [], outputs = 1) {
+    const weights = []
+    let previousLayerNodes = inputs
+    for (const layerNodes of layers) {
+      const weightCount = layerNodes * previousLayerNodes
+      const layer = new Array(weightCount)
+      for (let i = 0; i < weightCount; i++) {
+        layer[i] = Math.random() * 2 - 1
+      }
+      weights.push(layer)
+      previousLayerNodes = layerNodes
+    }
+    const weightCount = outputs * previousLayerNodes
+    const layer = new Array(weightCount)
+    for (let i = 0; i < weightCount; i++) {
+      layer[i] = Math.random() * 2 - 1
+    }
+    weights.push(layer)
+    return new HappyAI(inputs, weights)
+  }
+}
+
+class BirdAttempt {
+  constructor (brain) {
+    this.brain = brain
+    this.hue = Math.random() * 360 | 0
+  }
+
+  resetState (pipes) {
+    this.memory = 0
+    this.scroll = INIT_SIDE_SCROLL
+    this.scrollVel = SPEED
+    this.x = 0
+    this.xv = SPEED
+    this.y = WINDOW_HEIGHT / 2
+    this.yv = 0
+    this.dead = false
+    this.pipes = pipes
+    this.deaths = 0
+    this.wasFlapping = false
+  }
+
+  sim (pipes) {
+    this.x += this.xv
+    this.y += this.yv
+    this.scroll += this.scrollVel
+    this.yv += GRAVITY
+    if (this.dead) {
+      if (this.scrollVel > 0) {
+        this.scrollVel -= DEATH_SCROLL_DECEL
+        if (this.scrollVel < 0) this.scrollVel = 0
+      }
+    } else {
+      const nextPipe = this.pipes.find(([pos]) => pos > this.x)
+      if (nextPipe) {
+        const [pos, height] = nextPipe
+        if (this.flap(pos - this.x, height)) {
+          if (!this.wasFlapping) {
+            this.yv -= BOOST
+            this.wasFlapping = true
+          }
+        } else if (this.wasFlapping) {
+          this.wasFlapping = false
+        }
+        if (this.y < 0 || this.y + BIRD_HEIGHT > WINDOW_HEIGHT ||
+          this.intersectsPipe(nextPipe)) {
+          this.dead = true
+          this.deaths++
+        }
+      }
+    }
+  }
+
+  revive () {
+    if (this.dead) {
+      this.dead = false
+      this.scrollVel = this.xv
+      this.y = WINDOW_HEIGHT / 2
+      this.yv = 0
+      this.wasFlapping = false
+    }
+  }
+
+  render (c) {
+    c.fillStyle = `hsl(${this.hue}, ${this.dead ? 0 : 100}%, 50%)`
+    c.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
+    c.fillStyle = 'rgba(0, 0, 0, 0.7)'
+    for (const [pos, height] of this.pipes) {
+      if (pos - PIPE_WIDTH < this.scroll + WINDOW_WIDTH && this.scroll < pos) {
+        const pipeHeight = height * (WINDOW_HEIGHT - PIPE_OPENING)
+        c.fillRect(pos - this.scroll, 0, PIPE_WIDTH, WINDOW_HEIGHT - pipeHeight - PIPE_OPENING)
+        c.fillRect(pos - this.scroll, WINDOW_HEIGHT - pipeHeight, PIPE_WIDTH, pipeHeight)
+      }
+    }
+    c.fillRect(this.x - this.scroll, this.y, BIRD_WIDTH, BIRD_HEIGHT)
+  }
+
+  intersectsPipe ([pos, height]) {
+    // this.x is the left side of the bird, but pipe pos is the *right* side
+    // this.y is top of bird, pipe height is % from bottom
+    const pipeHeight = height * (WINDOW_HEIGHT - PIPE_OPENING)
+    return this.x < pos && pos - PIPE_WIDTH < this.x + BIRD_WIDTH &&
+      (WINDOW_HEIGHT - pipeHeight < this.y + BIRD_HEIGHT ||
+      this.y < WINDOW_HEIGHT - pipeHeight - PIPE_OPENING)
+  }
+
+  /**
+   * whether should flap or no
+   */
+  flap (distToNext, nextHeight) {
+    const [shouldFlap, memory] = this.brain.think([distToNext, nextHeight, this.memory])
+    this.memory = memory
+    return shouldFlap > 0
+  }
+
+  reproduce () {
+    return new BirdAttempt(this.brain.mutate())
+  }
+}
+
+const canvas = document.getElementById('epic')
+const c = canvas.getContext('2d')
+
+function resizeCanvas () {
+  const rect = canvas.getBoundingClientRect()
+  const dpr = window.devicePixelRatio
+  canvas.width = rect.width * dpr
+  canvas.height = rect.height * dpr
+}
+window.addEventListener('resize', resizeCanvas)
+window.requestAnimationFrame(resizeCanvas)
+
+const START = 200
+const END = 0
+const PIPE_DIST = 200
+const PIPE_WIDTH = 10
+const PIPE_OPENING = 50
+const PIPES = 10
+const INIT_SIDE_SCROLL = -50
+const SPEED = 5
+const GRAVITY = 1
+const BOOST = 10
+const DEATH_SCROLL_DECEL = 0.5
+const WINDOW_WIDTH = 400
+const WINDOW_HEIGHT = 400
+const BIRD_WIDTH = 20
+const BIRD_HEIGHT = 20
+const GAME_RATIO = 1
+let level, end, gameProgress
+let scroll = 0
+let birds
+
+document.addEventListener('wheel', e => {
+  scroll += e.deltaY
+})
+
+function genGame () {
+  level = []
+  for (let i = 0; i < PIPES; i++) {
+    level.push([
+      i * PIPE_DIST + START,
+      Math.random()
+    ])
+  }
+  gameProgress = 0
+  end = START + PIPES * PIPE_DIST + END
+  for (const bird of birds) {
+    bird.resetState(level)
+  }
+}
+
+function paint (render = true) {
+  if (render) c.clearRect(0, 0, canvas.width, canvas.height)
+  const column = canvas.width / 4
+  const gameHeight = column / GAME_RATIO
+  for (let i = 0; i < birds.length; i++) {
+    birds[i].sim()
+    const y = (i / 4 | 0) * gameHeight - scroll
+    if (render && y < canvas.height && 0 < y + gameHeight) {
+      c.save()
+      c.translate(i % 4 * column, y)
+      c.scale(column / WINDOW_WIDTH, gameHeight / WINDOW_HEIGHT)
+      c.beginPath()
+      c.rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
+      c.clip()
+      birds[i].render(c)
+      c.restore()
+    }
+    if (birds[i].dead) birds[i].revive()
+  }
+  gameProgress += SPEED
+  if (gameProgress > end) {
+    const okBirds = birds.filter(bird => bird.deaths < 50)
+    if (okBirds.length) {
+      // console.log('keeping', okBirds);
+    }
+    birds = [...okBirds]
+    for (const bird of okBirds) {
+      const children = Math.min(Math.floor(25 / bird.deaths), 5)
+      for (let i = 0; i < children; i++) {
+        birds.push(bird.reproduce())
+        console.log('repro!');
+      }
+    }
+    while (birds.length < 100) {
+      birds.push(new BirdAttempt(HappyAI.makeRandomThinker(3, [4, 4], 2)))
+    }
+    genGame()
+  }
+  if (render) window.requestAnimationFrame(paint)
+}
+
+birds = []
+for (let i = 0; i < 100; i++) {
+  birds.push(new BirdAttempt(HappyAI.makeRandomThinker(3, [4, 4], 2)))
+}
+genGame()
+window.requestAnimationFrame(paint)
+
+const zoomTrigger = document.getElementById('zoom')
+let zoomID = null
+zoomTrigger.addEventListener('mousedown', e => {
+  if (zoomID === null) {
+    const sim = () => {
+      for (let i = 0; i < 500; i++) {
+        paint(false)
+      }
+      zoomID = window.requestAnimationFrame(sim)
+    }
+    sim()
+  }
+})
+zoomTrigger.addEventListener('mouseup', e => {
+  if (zoomID !== null) {
+    window.cancelAnimationFrame(zoomID)
+    zoomID = null
+  }
+})
+    </script>
+  </body>
+</html>
