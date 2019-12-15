@@ -44,9 +44,9 @@ class LoadingProgress {
             const result = _load.call(this, ...args);
             _this.total += 1;
             _this.callback(_this);
-            result.then(() => {
+            result.then(asset => {
                 _this.complete += 1;
-                _this.callback(_this);
+                _this.callback(_this, asset);
             });
             return result;
         };
