@@ -479,7 +479,9 @@ const runBenchmark = function () {
   }
   vm.on('workspaceUpdate', () => {
     % loading-progress %
-    document.body.removeChild(progress);
+    if (progress.parentNode) {
+      progress.parentNode.removeChild(progress);
+    }
     % /loading-progress %
 
     const doNothing = () => null;
