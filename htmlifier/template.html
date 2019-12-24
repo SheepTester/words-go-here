@@ -445,7 +445,12 @@ class VideoProvider {
 const Scratch = window.Scratch = window.Scratch || {};
 
 const runBenchmark = function () {
+  % 4-3 %
   const vm = new window.NotVirtualMachine();
+  % /4-3 %
+  % 16-9 %
+  const vm = new window.NotVirtualMachine(640, 360);
+  % /16-9 %
   Scratch.vm = vm;
 
   const storage = new ScratchStorage();
@@ -542,7 +547,7 @@ const runBenchmark = function () {
   const renderer = new window.ScratchRender(canvas);
   % /4-3 %
   % 16-9 %
-  const renderer = new window.ScratchRender(canvas, -320, 320);
+  const renderer = new window.ScratchRender(canvas, -320, 320, -180, 180);
   % /16-9 %
   resize();
   Scratch.renderer = renderer;
@@ -550,7 +555,12 @@ const runBenchmark = function () {
   const audioEngine = new window.AudioEngine();
   vm.attachAudioEngine(audioEngine);
   vm.attachV2SVGAdapter(new ScratchSVGRenderer.SVGRenderer());
+  % 4-3 %
   vm.attachV2BitmapAdapter(new ScratchSVGRenderer.BitmapAdapter());
+  % /4-3 %
+  % 16-9 %
+  vm.attachV2BitmapAdapter(new ScratchSVGRenderer.BitmapAdapter(640, 360));
+  % /16-9 %
 
   const askBoxWrapper = document.getElementById('b');
   const question = document.getElementById('q');
