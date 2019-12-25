@@ -35,18 +35,20 @@
     <h1>Project HTMLifier</h1>
     <h3><em>Convert a Scratch project to HTML</em></h3>
     <p>This packages your Scratch project into a single HTML file that can run on its own in a web browser. The HTML file will be pretty big because it contains the entire Scratch engine (2.6 MB) and the costume and sound files used in the project. There is no direct translation between a Scratch block and a JavaScript equivalent because the two languages are fundamentally different, so you should not use the code in the generated file for learning HTML or JavaScript after Scratch.</p>
-    <p>The project will automatically start, and there are no green flag or stop sign buttons. Cloud variables are stored <a href="https://en.wikipedia.org/wiki/Web_storage">on your computer</a><a id="ref-1" href="#note-1"><sup>1</sup></a> and allow strings, so they can be used to store game data.</p>
+    <p>The project will automatically start, and there are no green flag or stop sign buttons.</p>
     <p><label><input type="radio" name="upload-mode" value="id" checked> Project ID: <input type="number" placeholder="Project ID" value="284516654" id="id"> (the ID of the project on the Scratch website)</label></p>
     <p><label><input type="radio" name="upload-mode" value="file"> Upload project file: <input type="file" id="file" accept=".sb,.sb2,.sb3"></label></p>
     <fieldset>
       <legend>Options</legend>
       <p><label for="title">Project name: </label><input type="text" placeholder="Project name" value="Zombie Cube Escape!" id="title"> (the text displayed in the browser tab)</p>
       <p><label for="username">Username value: </label><input type="text" placeholder="Username" value="griffpatch" id="username"> (the value the username block reports)</p>
-      <p><label><input type="checkbox" id="compatibility" checked> Enable compatibility mode?<a id="ref-2" href="#note-2"><sup>2</sup></a></label></p>
-      <p><label><input type="checkbox" id="turbo"> Enable <a href="https://en.scratch-wiki.info/wiki/Turbo_Mode">turbo mode</a>?</label></p>
-      <p><label><input type="checkbox" id="progress" checked> Load progress indicator?</label></p>
       <p><label><input type="checkbox" id="fullscreen" checked> Show fullscreen button?</label></p>
+      <p><label><input type="checkbox" id="turbo"> Enable <a href="https://en.scratch-wiki.info/wiki/Turbo_Mode">turbo mode</a>?</label></p>
       <p><label><input type="checkbox" id="use-colour"> Use custom variable/list monitor colour: <input type="color" id="monitor-colour" value="#ff8c1a">? (If unchecked, a translucent black will be used.)</label></p>
+      <p><label><input type="checkbox" id="progress" checked> Load progress indicator?</label></p>
+      <p><label><input type="checkbox" id="compatibility" checked> Enable compatibility mode?<a id="ref-2" href="#note-2"><sup>2</sup></a></label></p>
+      <p><label><input type="radio" name="cloud-provider" value="localstorage" checked> Save cloud variables locally using localStorage<a id="ref-1" href="#note-1"><sup>1</sup></a></label></p>
+      <p><label><input type="radio" name="cloud-provider" value="ws"> Use a <a href="https://github.com/SheepTester/primitive-cloud-server">cloud server</a>: <input type="url" id="cloud-ws" placeholder="ws://localhost:3000/"></label> <label>(optional project ID: <input type="text" id="project-id">)</label></p>
       <p><label><input type="checkbox" id="wider"> Is this a project <a href="https://sheeptester.github.io/scratch-gui/16-9/">made with a 16:9 aspect ratio</a>?</label></p>
     </fieldset>
     <p>
@@ -56,6 +58,10 @@
     <p id="note-1"><a href="#ref-1"><sup>1</sup></a>You may have to deal with privacy laws around cookies outside of Scratch.</p>
     <p id="note-2"><a href="#ref-2"><sup>2</sup></a>Compatibility mode forces projects to run at 30 FPS, like in Scratch 2.0. Turning this off allows the project to run at a higher framerate (usually 60 FPS, depending on the computer screen's refresh rate).</p>
     <h2>Update history</h2>
+    <h3>2019-12-25</h3>
+    <ul>
+      <li>An option to use a custom cloud server for cloud variables instead of saving to localStorage</li>
+    </ul>
     <h3>2019-11-23</h3>
     <ul>
       <li>A fullscreen button</li>
@@ -129,7 +135,10 @@ function downloadAsHTML(projectSrc, {
   progressBar = true,
   fullscreen = true,
   log = console.log,
-  monitorColour = null
+  monitorColour = null,
+  cloudServer = false,
+  projectId = null,
+  noVM = false
 } = {}) {
   log('Getting assets...');
   return Promise.all([
@@ -151,30 +160,42 @@ function downloadAsHTML(projectSrc, {
       : Promise.resolve(`var SRC = "file", FILE = "${projectSrc.data}",`),
 
     // fetch scripts
-    fetch(ratio16to9
-      ? 'https://sheeptester.github.io/scratch-vm/16-9/vm.min.js'
-      : 'https://sheeptester.github.io/scratch-vm/vm.min.js')
-      .then(r => r.text())
-      .then(vmCode => {
-        log('Scratch engine obtained...');
-        // remove dumb </ script>s in comments
-        return vmCode.replace('</scr' + 'ipt>', '');
-      }),
+    noVM
+      ? ''
+      : fetch(ratio16to9
+        ? 'https://sheeptester.github.io/scratch-vm/16-9/vm.min.js'
+        : 'https://sheeptester.github.io/scratch-vm/vm.min.js')
+        .then(r => r.text())
+        .then(vmCode => {
+          log('Scratch engine obtained...');
+          // remove dumb </ script>s in comments
+          return vmCode.replace('</scr' + 'ipt>', '');
+        }),
 
     // fetch template
     fetch('./template.html').then(r => r.text())
   ]).then(([preface, scripts, template]) => {
     scripts = preface
       + `DESIRED_USERNAME = ${JSON.stringify(username)},`
-      + `COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked};`
+      + `COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked},`
+      + `PROJECT_ID = ${JSON.stringify(projectId)};`
       + scripts;
     log('Done!');
+    if (!noVM) {
+      template = removePercentSection(template, 'no-vm');
+    }
     if (ratio16to9) template = removePercentSection(template, '4-3');
     else template = removePercentSection(template, '16-9');
     if (!progressBar) template = removePercentSection(template, 'loading-progress');
     if (!fullscreen) template = removePercentSection(template, 'fullscreen');
-    if (monitorColour) template = template.replace('{COLOUR}', () => monitorColour);
+    if (monitorColour) template = template.replace(/\{COLOUR\}/g, () => monitorColour);
     else template = removePercentSection(template, 'monitor-colour');
+    if (cloudServer) {
+      template = removePercentSection(template, 'cloud-localstorage')
+        .replace(/\{CLOUD_HOST\}/g, () => JSON.stringify(cloudServer));
+    } else {
+      template = removePercentSection(template, 'cloud-ws');
+    }
     return template
       .replace(/% \/?[a-z0-9-]+ %/g, '')
       // .replace(/\s*\r?\n\s*/g, '')
@@ -195,6 +216,8 @@ const progressBar = document.getElementById('progress');
 const fullscreen = document.getElementById('fullscreen');
 const useColour = document.getElementById('use-colour');
 const monitorColour = document.getElementById('monitor-colour');
+const cloudServer = document.getElementById('cloud-ws');
+const projectId = document.getElementById('project-id');
 function getProject() {
   if (document.querySelector('input[name="upload-mode"]:checked').value === 'file') {
     if (!file.files || !file.files[0]) return Promise.reject(new Error('No file selected'));
@@ -221,7 +244,10 @@ function load() {
       ratio16to9: wider.checked,
       progressBar: progressBar.checked,
       fullscreen: fullscreen.checked,
-      monitorColour: useColour.checked ? monitorColour.value : null
+      monitorColour: useColour.checked ? monitorColour.value : null,
+      cloudServer: document.querySelector('input[name="cloud-provider"]:checked').value === 'ws'
+        ? cloudServer.value : null,
+      projectId: projectId.value
     }))
     .then(html => {
       download(html, 'project.html', 'text/html');

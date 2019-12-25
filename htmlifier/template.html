@@ -276,7 +276,12 @@ class VideoProvider {
     }
 
     static get DIMENSIONS () {
+        % 4-3 %
         return [480, 360];
+        % /4-3 %
+        % 16-9 %
+        return [640, 360];
+        % /16-9 %
     }
 
     static get ORDER () {
@@ -377,8 +382,14 @@ class VideoProvider {
         }
 
         this._singleSetup = requestVideoStream({
+            % 4-3 %
             width: {min: 480, ideal: 640},
             height: {min: 360, ideal: 480}
+            % /4-3 %
+            % 16-9 %
+            width: {min: 640, ideal: 640*640/480},
+            height: {min: 360, ideal: 480}
+            % /16-9 %
         })
             .then(stream => {
                 this._video = document.createElement('video');
@@ -489,8 +500,9 @@ const runBenchmark = function () {
     }
     % /loading-progress %
 
-    const doNothing = () => null;
+    const noop = () => null;
     vm.setVideoProvider(new VideoProvider());
+    % cloud-localstorage %
     vm.setCloudProvider({
       updateVariable(name, value) {
         try {
@@ -499,10 +511,10 @@ const runBenchmark = function () {
           console.error('Cannot use localStorage?', e);
         }
       },
-      createVariable: doNothing,
-      renameVariable: doNothing,
-      deleteVariable: doNothing,
-      requestCloseConnection: doNothing
+      createVariable: noop,
+      renameVariable: noop,
+      deleteVariable: noop,
+      requestCloseConnection: noop
     });
 
     setTimeout(() => {
@@ -528,6 +540,57 @@ const runBenchmark = function () {
         }
       });
     });
+    % /cloud-localstorage %
+    % cloud-ws %
+    let ws;
+    function openConnection() {
+      try {
+        ws = new WebSocket({CLOUD_HOST});
+      } catch (err) {
+        console.warn(err);
+        return;
+      }
+      ws.onmessage = onMessage;
+      ws.onopen = onOpen;
+      ws.onclose = onClose;
+    }
+    openConnection();
+    function onMessage(e) {
+      e.data.split('\n').forEach(message => {
+        if (message) {
+          const { name, value } = JSON.parse(message)
+          vm.postIOData('cloud', {
+            varUpdate: {name, value}
+          });
+        }
+      });
+    }
+    function sendData(data) {
+      data.user = DESIRED_USERNAME;
+      data.project_id = PROJECT_ID;
+      ws.send(JSON.stringify(data) + '\n');
+    }
+    function onOpen() {
+      sendData({method: 'handshake'});
+    }
+    function onClose() {
+      setTimeout(openConnection, 500);
+    }
+    vm.setCloudProvider({
+      updateVariable(name, value) {
+        sendData({method: 'set', name, value});
+      },
+      createVariable: noop,
+      renameVariable: noop,
+      deleteVariable: noop,
+      requestCloseConnection() {
+        if (ws && ws.readyState !== WebSocket.CLOSING && ws.readyState !== WebSocket.CLOSED) {
+          ws.onclose = noop;
+          ws.close();
+        }
+      }
+    })
+    % /cloud-ws %
 
     vm.setCompatibilityMode(COMPAT);
     vm.setTurboMode(TURBO);
