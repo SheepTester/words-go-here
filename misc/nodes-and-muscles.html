@@ -133,10 +133,11 @@ class Node {
   move (time) {
     // a = F/m
     const acceleration = this.forces.clone().scale(1 / this.mass)
-    // v_f = v_i + at
-    this.vel.add(acceleration.scale(time))
-    // x_f = x_i + vt
+    // x_f = x_i + v_i * t + a * t^2 / 2
     this.pos.add(this.vel.clone().scale(time))
+      .add(acceleration.clone().scale(time * time / 2))
+    // v_f = v_i + a * t
+    this.vel.add(acceleration.scale(time))
 
     if (this.pos.y > GROUND - NODE_RADIUS) {
       this.pos.y = GROUND - NODE_RADIUS
