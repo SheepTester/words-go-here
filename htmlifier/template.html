@@ -18,29 +18,29 @@ body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   overflow: hidden;
 }
-#w {
+#wrapper {
   display: block;
   width: 100vw;
   height: {HEIGHT/WIDTH%}vw;
   position: relative;
 }
-#m {
+#monitors {
   position: absolute;
   top: 0;
   left: 0;
 }
 @media (min-aspect-ratio: {PROJECT_RATIO}) {
-  #w {
+  #wrapper {
     height: 100vh;
     width: {WIDTH/HEIGHT%}vh;
   }
 }
-#s {
+#stage {
   width: 100%;
   height: 100%;
 }
 % loading-progress %
-#l {
+#loading-progress {
   color: #0ff;
   position: fixed;
   bottom: 0;
@@ -49,7 +49,7 @@ body {
 }
 % /loading-progress %
 % fullscreen %
-#f {
+#fullscreen-btn {
   -webkit-appearance: none;
   border: none;
   background: none;
@@ -66,7 +66,7 @@ body {
   background-color: rgba(0, 0, 0, 0.5);
   border-bottom-left-radius: 10px;
 }
-.fullscreen #f {
+.fullscreen #fullscreen-btn {
   background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Cpath d="M10 32h6v6h4V28H10v4zm6-16h-6v4h10V10h-4v6zm12 22h4v-6h6v-4H28v10zm4-22v-6h-4v10h10v-4h-6z" fill="%23fff"/%3E%3C/svg%3E');
 }
 % /fullscreen %
@@ -153,7 +153,7 @@ body {
   width: 100%;
   transform: translateZ(0);
 }
-#b {
+#asking-box {
   display: none;
   position: absolute;
   left: 0;
@@ -161,17 +161,17 @@ body {
   right: 0;
   background-color: rgba(33, 33, 33, 0.7);
 }
-.asking #b {
+.asking #asking-box {
   display: block;
 }
-#q {
+#question {
   display: block;
   margin: 0 10px;
   margin-top: 10px;
   font-size: 12px;
   color: white;
 }
-#a {
+#answer {
   border: none;
   background: none;
   width: 100%;
@@ -181,18 +181,18 @@ body {
   padding: 10px;
   box-sizing: border-box;
 }
-#a:focus {
+#answer:focus {
   outline: none;
 }
 </style>
 </head>
 <body>
-<div id="w">
-<canvas id="s"></canvas>
-<div id="m"></div>
-<div id="b">
-<label id="q" for="a">Question</label>
-<input type="text" id="a">
+<div id="wrapper">
+<canvas id="stage"></canvas>
+<div id="monitors"></div>
+<div id="asking-box">
+<label id="question" for="answer">Question</label>
+<input type="text" id="answer">
 </div>
 </div>
 % no-vm %
@@ -204,12 +204,12 @@ body {
 % /16-9 %
 % /no-vm %
 % loading-progress %
-<span id="l">...</span>
+<span id="loading-progress">...</span>
 % /loading-progress %
 % fullscreen %
-<button id="f"></button>
+<button id="fullscreen-btn"></button>
 % /fullscreen %
-<script type="text/javascript" id="j">
+<script type="text/javascript">
 {SCRIPTS}
 
 /* https://www.npmjs.com/package/get-user-media-promise */
@@ -440,7 +440,7 @@ const runBenchmark = function () {
   vm.attachStorage(storage);
 
   % loading-progress %
-  const progress = document.getElementById('l');
+  const progress = document.getElementById('loading-progress');
   const _load = storage.webHelper.load;
   let total = 0, complete = 0;
   storage.webHelper.load = function (...args) {
@@ -564,8 +564,6 @@ const runBenchmark = function () {
     vm.setCompatibilityMode(COMPAT);
     vm.setTurboMode(TURBO);
     vm.greenFlag();
-
-    document.body.removeChild(document.getElementById('j'));
   });
 
   function resize() {
@@ -573,8 +571,8 @@ const runBenchmark = function () {
     renderer.resize(rect.width, rect.height);
     monitorWrapper.style.transform = `scale(${rect.height / 360})`;
   }
-  const monitorWrapper = document.getElementById('m');
-  const canvas = document.getElementById('s');
+  const monitorWrapper = document.getElementById('monitors');
+  const canvas = document.getElementById('stage');
   const renderer = new window.ScratchRender(canvas % 16-9 % , -WIDTH / 2, WIDTH / 2, -HEIGHT / 2, HEIGHT / 2 % /16-9 %);
   resize();
   Scratch.renderer = renderer;
@@ -584,9 +582,9 @@ const runBenchmark = function () {
   vm.attachV2SVGAdapter(new ScratchSVGRenderer.SVGRenderer());
   vm.attachV2BitmapAdapter(new ScratchSVGRenderer.BitmapAdapter(% 16-9 % WIDTH, HEIGHT % /16-9 %));
 
-  const askBoxWrapper = document.getElementById('b');
-  const question = document.getElementById('q');
-  const askBox = document.getElementById('a');
+  const askBoxWrapper = document.getElementById('asking-box');
+  const question = document.getElementById('question');
+  const askBox = document.getElementById('answer');
 
   /* https://github.com/LLK/scratch-gui/blob/develop/src/containers/stage.jsx#L176-L300 */
   const getEventXY = e => {
@@ -843,7 +841,7 @@ function isFullscreen() {
   return document.fullscreenElement || document.mozFullScreenElement
     || document.webkitFullscreenElement || document.msFullscreenElement;
 }
-const fullscreenBtn = document.getElementById('f');
+const fullscreenBtn = document.getElementById('fullscreen-btn');
 fullscreenBtn.addEventListener('click', e => {
   fullscreenBtn.blur();
   if (isFullscreen()) {
