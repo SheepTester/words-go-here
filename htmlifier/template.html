@@ -21,12 +21,7 @@ body {
 #w {
   display: block;
   width: 100vw;
-  % 4-3 %
-  height: 75vw;
-  % /4-3 %
-  % 16-9 %
-  height: 56.25vw;
-  % /16-9 %
+  height: {HEIGHT/WIDTH%}vw;
   position: relative;
 }
 #m {
@@ -34,22 +29,12 @@ body {
   top: 0;
   left: 0;
 }
-% 4-3 %
-@media (min-aspect-ratio: 4/3) {
+@media (min-aspect-ratio: {PROJECT_RATIO}) {
   #w {
     height: 100vh;
-    width: calc(400vh / 3);
+    width: {WIDTH/HEIGHT%}vh;
   }
 }
-% /4-3 %
-% 16-9 %
-@media (min-aspect-ratio: 16/9) {
-  #w {
-    height: 100vh;
-    width: calc(1600vh / 9);
-  }
-}
-% /16-9 %
 #s {
   width: 100%;
   height: 100%;
@@ -174,7 +159,7 @@ body {
   left: 0;
   bottom: 0;
   right: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(33, 33, 33, 0.7);
 }
 .asking #b {
   display: block;
@@ -276,12 +261,7 @@ class VideoProvider {
     }
 
     static get DIMENSIONS () {
-        % 4-3 %
-        return [480, 360];
-        % /4-3 %
-        % 16-9 %
-        return [640, 360];
-        % /16-9 %
+        return [WIDTH, HEIGHT];
     }
 
     static get ORDER () {
@@ -382,14 +362,8 @@ class VideoProvider {
         }
 
         this._singleSetup = requestVideoStream({
-            % 4-3 %
-            width: {min: 480, ideal: 640},
-            height: {min: 360, ideal: 480}
-            % /4-3 %
-            % 16-9 %
-            width: {min: 640, ideal: 640*640/480},
-            height: {min: 360, ideal: 480}
-            % /16-9 %
+            width: {min: WIDTH, ideal: 480 * WIDTH / HEIGHT},
+            height: {min: HEIGHT, ideal: 480}
         })
             .then(stream => {
                 this._video = document.createElement('video');
@@ -456,12 +430,7 @@ class VideoProvider {
 const Scratch = window.Scratch = window.Scratch || {};
 
 const runBenchmark = function () {
-  % 4-3 %
-  const vm = new window.NotVirtualMachine();
-  % /4-3 %
-  % 16-9 %
-  const vm = new window.NotVirtualMachine(640, 360);
-  % /16-9 %
+  const vm = new window.NotVirtualMachine(% 16-9 % WIDTH, HEIGHT % /16-9 %);
   Scratch.vm = vm;
 
   const storage = new ScratchStorage();
@@ -606,24 +575,14 @@ const runBenchmark = function () {
   }
   const monitorWrapper = document.getElementById('m');
   const canvas = document.getElementById('s');
-  % 4-3 %
-  const renderer = new window.ScratchRender(canvas);
-  % /4-3 %
-  % 16-9 %
-  const renderer = new window.ScratchRender(canvas, -320, 320, -180, 180);
-  % /16-9 %
+  const renderer = new window.ScratchRender(canvas % 16-9 % , -WIDTH / 2, WIDTH / 2, -HEIGHT / 2, HEIGHT / 2 % /16-9 %);
   resize();
   Scratch.renderer = renderer;
   vm.attachRenderer(renderer);
   const audioEngine = new window.AudioEngine();
   vm.attachAudioEngine(audioEngine);
   vm.attachV2SVGAdapter(new ScratchSVGRenderer.SVGRenderer());
-  % 4-3 %
-  vm.attachV2BitmapAdapter(new ScratchSVGRenderer.BitmapAdapter());
-  % /4-3 %
-  % 16-9 %
-  vm.attachV2BitmapAdapter(new ScratchSVGRenderer.BitmapAdapter(640, 360));
-  % /16-9 %
+  vm.attachV2BitmapAdapter(new ScratchSVGRenderer.BitmapAdapter(% 16-9 % WIDTH, HEIGHT % /16-9 %));
 
   const askBoxWrapper = document.getElementById('b');
   const question = document.getElementById('q');

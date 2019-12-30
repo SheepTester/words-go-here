@@ -115,7 +115,9 @@ function downloadAsHTML(projectSrc, {
   monitorColour = null,
   cloudServer = false,
   projectId = null,
-  noVM = false
+  noVM = false,
+  width = 480,
+  height = 360
 } = {}) {
   log('Getting assets...');
   return Promise.all([
@@ -130,11 +132,11 @@ function downloadAsHTML(projectSrc, {
             getDataURL(projectJSON).then(data => projectJSON = data),
             ...Object.keys(assets).map(assetId => getDataURL(assets[assetId]).then(data => assets[assetId] = data))
           ]).then(() => {
-            return `var SRC = "id", PROJECT_JSON = "${projectJSON}",`
-              + `ASSETS = ${JSON.stringify(assets)},`;
+            return `var SRC = "id",\nPROJECT_JSON = "${projectJSON}",\n`
+              + `ASSETS = ${JSON.stringify(assets)},\n`;
           });
         })
-      : Promise.resolve(`var SRC = "file", FILE = "${projectSrc.data}",`),
+      : Promise.resolve(`var SRC = "file",\nFILE = "${projectSrc.data}",\n`),
 
     // fetch scripts
     noVM
@@ -153,9 +155,10 @@ function downloadAsHTML(projectSrc, {
     fetch('./template.html').then(r => r.text())
   ]).then(([preface, scripts, template]) => {
     scripts = preface
-      + `DESIRED_USERNAME = ${JSON.stringify(username)},`
-      + `COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked},`
-      + `PROJECT_ID = ${JSON.stringify(projectId)};`
+      + `DESIRED_USERNAME = ${JSON.stringify(username)},\n`
+      + `COMPAT = ${compatibility.checked},\nTURBO = ${turbo.checked},\n`
+      + `PROJECT_ID = ${JSON.stringify(projectId)},\n`
+      + `WIDTH = ${width},\nHEIGHT = ${height};\n`
       + scripts;
     log('Done!');
     if (!noVM) {
@@ -176,8 +179,11 @@ function downloadAsHTML(projectSrc, {
     return template
       .replace(/% \/?[a-z0-9-]+ %/g, '')
       // .replace(/\s*\r?\n\s*/g, '')
-      .replace('{TITLE}', () => title)
-      .replace('{SCRIPTS}', () => scripts);
+      .replace(/\{TITLE\}/g, () => title)
+      .replace(/\{SCRIPTS\}/g, () => scripts)
+      .replace(/\{HEIGHT\/WIDTH%\}/g, () => 100 * height / width)
+      .replace(/\{WIDTH\/HEIGHT%\}/g, () => 100 * width / height)
+      .replace(/\{PROJECT_RATIO\}/g, () => `${width}/${height}`);
   });
 }
 
