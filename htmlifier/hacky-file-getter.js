@@ -1,4 +1,4 @@
-window.runBenchmark = (() => {
+window.downloadAsHTML = (() => {
 const collecteyData = {assets: {}};
 
 /**
@@ -81,5 +81,105 @@ const runBenchmark = function (id, logProgress) {
     vm.start();
   });
 };
-return runBenchmark;
+
+function removePercentSection(str, key) {
+  /*
+  performs the following on str:
+  % key %
+  this part (and other parts surrounded in a similar fashion) will be removed
+  % /key %
+  returns str with the parts removed
+  */
+  const startKey = `% ${key} %`;
+  const endKey = `% /${key} %`;
+  while (str.includes(startKey) && str.includes(endKey)) {
+    str = str.slice(0, str.indexOf(startKey))
+      + str.slice(str.indexOf(endKey) + endKey.length);
+  }
+  return str;
+}
+function getDataURL(url) {
+  return fetch(url).then(r => r.blob()).then(blob => new Promise(res => {
+    const reader = new FileReader();
+    reader.onload = e => res(e.target.result);
+    reader.readAsDataURL(blob);
+  }));
+}
+function downloadAsHTML(projectSrc, {
+  title = 'Project',
+  username = 'griffpatch',
+  ratio16to9 = false,
+  progressBar = true,
+  fullscreen = true,
+  log = console.log,
+  monitorColour = null,
+  cloudServer = false,
+  projectId = null,
+  noVM = false
+} = {}) {
+  log('Getting assets...');
+  return Promise.all([
+    // make preface variables
+    projectSrc.id
+      ? runBenchmark(projectSrc.id, ({complete, total}, file) => {
+        log(complete + '/' + total + (file ? ` (+ ${file.data.length / 1000} kB ${file.dataFormat})` : ''))
+      })
+        .then(({assets, projectJSON}) => {
+          log('Assembling assets...');
+          return Promise.all([
+            getDataURL(projectJSON).then(data => projectJSON = data),
+            ...Object.keys(assets).map(assetId => getDataURL(assets[assetId]).then(data => assets[assetId] = data))
+          ]).then(() => {
+            return `var SRC = "id", PROJECT_JSON = "${projectJSON}",`
+              + `ASSETS = ${JSON.stringify(assets)},`;
+          });
+        })
+      : Promise.resolve(`var SRC = "file", FILE = "${projectSrc.data}",`),
+
+    // fetch scripts
+    noVM
+      ? ''
+      : fetch(ratio16to9
+        ? 'https://sheeptester.github.io/scratch-vm/16-9/vm.min.js'
+        : 'https://sheeptester.github.io/scratch-vm/vm.min.js')
+        .then(r => r.text())
+        .then(vmCode => {
+          log('Scratch engine obtained...');
+          // remove dumb </ script>s in comments
+          return vmCode.replace('</scr' + 'ipt>', '');
+        }),
+
+    // fetch template
+    fetch('./template.html').then(r => r.text())
+  ]).then(([preface, scripts, template]) => {
+    scripts = preface
+      + `DESIRED_USERNAME = ${JSON.stringify(username)},`
+      + `COMPAT = ${compatibility.checked}, TURBO = ${turbo.checked},`
+      + `PROJECT_ID = ${JSON.stringify(projectId)};`
+      + scripts;
+    log('Done!');
+    if (!noVM) {
+      template = removePercentSection(template, 'no-vm');
+    }
+    if (ratio16to9) template = removePercentSection(template, '4-3');
+    else template = removePercentSection(template, '16-9');
+    if (!progressBar) template = removePercentSection(template, 'loading-progress');
+    if (!fullscreen) template = removePercentSection(template, 'fullscreen');
+    if (monitorColour) template = template.replace(/\{COLOUR\}/g, () => monitorColour);
+    else template = removePercentSection(template, 'monitor-colour');
+    if (cloudServer) {
+      template = removePercentSection(template, 'cloud-localstorage')
+        .replace(/\{CLOUD_HOST\}/g, () => JSON.stringify(cloudServer));
+    } else {
+      template = removePercentSection(template, 'cloud-ws');
+    }
+    return template
+      .replace(/% \/?[a-z0-9-]+ %/g, '')
+      // .replace(/\s*\r?\n\s*/g, '')
+      .replace('{TITLE}', () => title)
+      .replace('{SCRIPTS}', () => scripts);
+  });
+}
+
+return downloadAsHTML;
 })();
