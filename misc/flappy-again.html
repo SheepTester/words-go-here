@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>falppy again</title>
+    <meta name="description" content="i look at XVINIETTE for reverefnece"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+    <style>
+      /* TEMP */
+    </style>
+  </head>
+  <body>
+    <script>
+/**
+ * Fancy logistic growth function that outputs a number in (0, 1)
+ */
+function logistic (n) {
+  return 1 / (1 + Math.exp(-n))
+}
+
+class BrainType {
+  constructor (options = {}) {
+    this.options = options
+
+    const {
+      inputs = 1,
+      hiddens = [],
+      outputs = 1
+    } = options
+    this.layers = [this.inputs, ...this.hiddens, this.outputs]
+    this.weights = 0
+    for (let i = 0; i < layers.length - 1; i++) {
+      this.weights += layers[i] * layers[i + 1]
+    }
+  }
+
+  makeRandom () {
+    const weights = []
+    for (let i = 0; i < this.weights; i++) {
+      const count = layers[i] * layers[i + 1]
+      weights.push(Math.random() * 2 - 1)
+    }
+    return weights
+  }
+
+  radiation (weights) {
+    const { mutationRange = 0.5, mutationChance = 0.1 } = this.options
+    const newWeights = []
+    for (const weight of weights) {
+      if (Math.random() < mutationChance) {
+        newWeights.push(weight + mutationRange * (Math.random() * 2 - 1))
+      }
+    }
+    return newWeights
+  }
+
+  sex (a, b) {
+    if (a.length !== this.weights || b.length !== this.weights) {
+      throw new Error('Wucky: These are not my people!')
+    }
+    const { aPreference = 0.5 } = this.options
+    const newWeights = []
+    for (let i = 0; i < this.weights; i++) {
+      if (Math.random() < aPreference) {
+        newWeights.push(a[i])
+      } else {
+        newWeights.push(b[i])
+      }
+    }
+    return newWeights
+  }
+
+  ponder (weights, inputs) {
+    const { layers } = this
+    if (inputs.length !== layers[0]) {
+      throw new Error('Wucky: Weird number of inputs given')
+    }
+    let previousLayer = inputs
+    let weight = 0
+    for (const layerLength of this.layers.slice(1)) {
+      const currentLayer = []
+      for (let i = 0; i < layerLength; i++) {
+        let sum = 0
+        for (const val of previousLayer) {
+          sum += weights[weight] * val
+          weight++
+        }
+        currentLayer.push(logistic(sum))
+      }
+      previousLayer = currentLayer
+    }
+    return previousLayer
+  }
+}
+
+class Generations {
+  constructor (options = {}) {
+    this.options = options
+  }
+}
+    </script>
+  </body>
+</html>
