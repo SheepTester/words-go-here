@@ -210,30 +210,34 @@ class Generations {
   }
 }
 
-// Horizontal velocity of the birds (and the scrolling camera)
-const FLY_SPEED = 5
-// Acceleration due to gravity
-const GRAVITY = 16
-// Vertical velocity of the birds when flapping
-const FLAP_SPEED = -8
+// Horizontal velocity of the birds (and the scrolling camera) (un/s)
+const FLY_SPEED = 180
+// Acceleration due to gravity (un/s^2)
+const GRAVITY = 1080
+// Vertical velocity of the birds when flapping (un/s)
+const FLAP_SPEED = -360
 // Height of the screen (birds will die if they hit the floor or ceiling)
-const STAGE_HEIGHT = 10
+const STAGE_HEIGHT = 512
 // Size of the birds
-const BIRD_WIDTH = 1
-const BIRD_HEIGHT = 1
+const BIRD_WIDTH = 40
+const BIRD_HEIGHT = 30
+// Spawning height of the birds
+const START_Y = 250
+// The pipe gaps will be this much away from the top and bottom of the screen
+const PIPE_PADDING = 50
 // Width of the pipes
-const PIPE_WIDTH = 0.7
+const PIPE_WIDTH = 50
 // Vertical distance between the upper and lower pipe parts
-const GAP_HEIGHT = 3
+const GAP_HEIGHT = 120
 // Horizontal distance between pipes from their left sides
-const PIPE_DISTANCE = 7
+const PIPE_DISTANCE = 270
 // X position of the first pipe
-const INIT_PIPE_POS = PIPE_DISTANCE
+const INIT_PIPE_POS = 420
 // Horizontal distance off the screen
 const PIPE_REGION = 10
 // Initial scrollX
-const INIT_SCROLL = -10
-// Time to simulate per round
+const INIT_SCROLL = -80
+// Time to simulate per round (s)
 const SIM_TIME = 0.01
 
 class Bird {
@@ -248,7 +252,7 @@ class Bird {
 
   reset () {
     this.x = 0
-    this.y = STAGE_HEIGHT / 2
+    this.y = START_Y
     this.xv = FLY_SPEED
     this.yv = 0
     this.dead = false
@@ -262,8 +266,7 @@ class Bird {
   flapping (nextPipe) {
     const [flap] = this.think([
       this.y / STAGE_HEIGHT,
-      nextPipe.height / STAGE_HEIGHT,
-      (nextPipe.pos + PIPE_WIDTH - this.x) / PIPE_DISTANCE
+      nextPipe.height / STAGE_HEIGHT
     ])
     return flap > 0.5
   }
@@ -295,7 +298,7 @@ class Bird {
 }
 
 class Pipe {
-  constructor (pos, height = Math.random() * (STAGE_HEIGHT - GAP_HEIGHT)) {
+  constructor (pos, height = Pipe.randomHeight()) {
     this.pos = pos
     // Height represents the distance from the top of the screen to the bottom
     // of the top pipe part
@@ -314,13 +317,18 @@ class Pipe {
       STAGE_HEIGHT - (this.height + GAP_HEIGHT))
     return this
   }
+
+  static randomHeight () {
+    return Math.random() * (STAGE_HEIGHT - PIPE_PADDING * 2 - GAP_HEIGHT) +
+      PIPE_PADDING
+  }
 }
 
 const canvas = document.getElementById('canvas')
 const c = canvas.getContext('2d')
 
-const brainType = new BrainType({ inputs: 3, hiddens: [4], outputs: 1 })
-const generationManager = new Generations({ brainType, randomRate: 0.1 })
+const brainType = new BrainType({ inputs: 2, hiddens: [2], outputs: 1 })
+const generationManager = new Generations({ brainType })
 const birds = []
 for (let i = 0; i < generationManager.count; i++) {
   birds.push(new Bird(brainType))
@@ -356,8 +364,9 @@ function simulate () {
   while (pipes[0] && pipes[0].pos < scrollX - PIPE_REGION) {
     pipes.splice(0, 1)
   }
+  const visibleWidth = screenWidth * STAGE_HEIGHT / screenHeight
   while (pipes[pipes.length - 1] &&
-    pipes[pipes.length - 1].pos < scrollX + screenWidth + PIPE_REGION) {
+    pipes[pipes.length - 1].pos < scrollX + visibleWidth + PIPE_REGION) {
     pipes.push(new Pipe(pipes[pipes.length - 1].pos + PIPE_DISTANCE))
   }
 
