@@ -13,17 +13,42 @@
         height: 100%;
       }
       body {
+        display: flex;
+        align-items: center;
         margin: 0;
         font-size: 0;
+        background-color: black;
+        font-family: monospace;
+        color: white;
       }
       #canvas {
         width: 100%;
         height: 100%;
+        max-height: 200px;
+      }
+      .speed {
+        display: flex;
+        align-items: center;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 70px;
+        font-size: 14px;
+        margin: 5px;
+      }
+      #speed {
+        flex: auto;
+        margin: 0 10px;
       }
     </style>
   </head>
   <body>
     <canvas id="canvas"></canvas>
+    <label class="speed">
+      <span>Speed</span>
+      <input type="range" id="speed" value="0" min="0" max="10" step="any">
+      (<span id="speed-display">1.00</span>)
+    </label>
     <script>
 /**
  * Fancy logistic growth function that outputs a number in (0, 1)
@@ -41,7 +66,8 @@ class BrainType {
       hiddens = [],
       outputs = 1
     } = options
-    this.layers = [this.inputs, ...this.hiddens, this.outputs]
+    const layers = [inputs, ...hiddens, outputs]
+    this.layers = layers
     this.weights = 0
     for (let i = 0; i < layers.length - 1; i++) {
       this.weights += layers[i] * layers[i + 1]
@@ -49,23 +75,29 @@ class BrainType {
   }
 
   makeRandom () {
+    const layers = this.layers
     const weights = []
     for (let i = 0; i < this.weights; i++) {
-      const count = layers[i] * layers[i + 1]
       weights.push(Math.random() * 2 - 1)
     }
     return weights
   }
 
+  /**
+   * Actually *mutates* the array lol (as in, it edits the items of the given
+   * array)
+   */
   radiation (weights) {
+    if (weights.length !== this.weights) {
+      throw new Error('Wucky: I do not associate with these aliens!')
+    }
     const { mutationRange = 0.5, mutationChance = 0.1 } = this.options
-    const newWeights = []
-    for (const weight of weights) {
+    for (let i = 0; i < weights.length; i++) {
       if (Math.random() < mutationChance) {
-        newWeights.push(weight + mutationRange * (Math.random() * 2 - 1))
+        weights[i] += mutationRange * (Math.random() * 2 - 1)
       }
     }
-    return newWeights
+    return weights
   }
 
   sex (a, b) {
@@ -117,6 +149,8 @@ class Generations {
 
   makeGeneration () {
     const { brainType } = this.options
+    const count = this.count
+
     const generation = []
     for (let i = 0; i < count; i++) {
       generation.push(brainType.makeRandom())
@@ -147,14 +181,16 @@ class Generations {
       newGeneration.push(brainType.makeRandom())
     }
 
-    // For each individual, breed it with each winner before it
+    // For each individual, breed it with each winner before it (until the
+    // required population count is met)
+    // (Children are also given radiation treatment for mutations)
     for (let i = 0; i < generation.length; i++) {
       for (let j = 0; j < i; j++) {
         if (newGeneration.length >= count) {
           return newGeneration
         }
         for (let k = 0; k < children; k++) {
-          newGeneration.push(brainType.breed(generation[i], generation[j]))
+          newGeneration.push(brainType.radiation(brainType.sex(generation[i], generation[j])))
         }
       }
     }
@@ -163,28 +199,28 @@ class Generations {
 }
 
 // Horizontal velocity of the birds (and the scrolling camera)
-const FLY_SPEED = 1
+const FLY_SPEED = 5
 // Acceleration due to gravity
-const GRAVITY = 9.8
+const GRAVITY = 16
 // Vertical velocity of the birds when flapping
-const FLAP_SPEED = 6
+const FLAP_SPEED = -8
 // Height of the screen (birds will die if they hit the floor or ceiling)
-const STAGE_HEIGHT = 100
+const STAGE_HEIGHT = 10
 // Size of the birds
-const BIRD_WIDTH = 10
-const BIRD_HEIGHT = 10
+const BIRD_WIDTH = 1
+const BIRD_HEIGHT = 1
 // Width of the pipes
-const PIPE_WIDTH = 10
+const PIPE_WIDTH = 1
 // Vertical distance between the upper and lower pipe parts
-const GAP_HEIGHT = 30
+const GAP_HEIGHT = 3
 // X position of the first pipe
-const INIT_PIPE_POS = 100
+const INIT_PIPE_POS = 10
 // Horizontal distance between pipes from their left sides
-const PIPE_DISTANCE = 100
+const PIPE_DISTANCE = 10
 // Horizontal distance off the screen
-const PIPE_REGION = 100
+const PIPE_REGION = 10
 // Initial scrollX
-const INIT_SCROLL = -50
+const INIT_SCROLL = -10
 // Time to simulate per round
 const SIM_TIME = 0.01
 
@@ -274,17 +310,18 @@ class Pipe {
 const canvas = document.getElementById('canvas')
 const c = canvas.getContext('2d')
 
-const brainType = new BrainType(4, [4, 4], 2)
+const brainType = new BrainType({ inputs: 4, hiddens: [4, 4], outputs: 2 })
 const generationManager = new Generations({ brainType })
 const birds = []
 for (let i = 0; i < generationManager.count; i++) {
-  this.birds.push(new Bird(brainType))
+  birds.push(new Bird(brainType))
 }
 
 let generation = generationManager.makeGeneration()
 let generations = 1
 let aliveBirds
 let pipes
+let longestTravelled = 0
 
 let screenWidth
 let screenHeight
@@ -315,7 +352,7 @@ function simulate () {
     pipes.push(new Pipe(pipes[pipes.length - 1].pos + PIPE_DISTANCE))
   }
 
-  scrollX += FLY_SPEED
+  scrollX += FLY_SPEED * SIM_TIME
 
   // Get first pipe whose right edge is after the birds' left side (if a bird
   // is under a pipe, that pipe is still "next")
@@ -338,18 +375,18 @@ function simulate () {
 function nextGen () {
   // Sort birds by how far they flew (furthest -> shortest) and generate a new
   // generation based on them
-  generation = generationManager.nextGeneration(birds
-    .sort((a, b) => b.x - a.x).map(bird => bird.brain))
+  birds.sort((a, b) => b.x - a.x)
+  if (birds[0].x > longestTravelled) longestTravelled = birds[0].x
+  generation = generationManager.nextGeneration(birds.map(bird => bird.brain))
   generations++
 }
 
 function resize () {
-  screenWidth = window.innerWidth
-  screenHeight = window.innerHeight
+  ({ width: screenWidth, height: screenHeight } = canvas.getBoundingClientRect())
   const dpr = window.devicePixelRatio
   canvas.width = screenWidth * dpr
   canvas.height = screenHeight * dpr
-  c.scale(dpr, dpr * screenWidth / STAGE_HEIGHT)
+  c.scale(dpr, dpr)
 }
 
 function paint () {
@@ -359,16 +396,17 @@ function paint () {
     idealSimulationTime += elapsed * speed
     while (timeSimulated < idealSimulationTime) {
       simulate()
-      timeSimulated += SIM_TIME
+      timeSimulated += SIM_TIME * 1000
     }
   }
   lastTime = now
 
   // Sky
   c.fillStyle = '#3cbce3'
-  c.fillRect(0, 0, screenWidth, STAGE_HEIGHT)
+  c.fillRect(0, 0, screenWidth, screenHeight)
 
   c.save()
+  c.scale(screenHeight / STAGE_HEIGHT, screenHeight / STAGE_HEIGHT)
   c.translate(-scrollX, 0)
 
   // Pipes
@@ -388,8 +426,23 @@ function paint () {
   }
 
   c.restore()
+
+  c.fillStyle = 'white'
+  c.font = '14px monospace'
+  c.fillText(`Generation ${generations}`, 0, 16)
+  c.fillText(`${aliveBirds.length}/${birds.length} alive`, 0, 32)
+  c.fillText(`Longest travelled: ${aliveBirds[0].x.toFixed(2)}`, 0, 48)
+  c.fillText(`Longest travelled ever: ${longestTravelled.toFixed(2)}`, 0, 64)
+
   window.requestAnimationFrame(paint)
 }
+
+const speedInput = document.getElementById('speed')
+const speedDisplay = document.getElementById('speed-display')
+speedInput.addEventListener('input', e => {
+  speed = 2 ** +speedInput.value
+  speedDisplay.textContent = speed.toFixed(2)
+})
 
 window.addEventListener('resize', resize)
 resize()
