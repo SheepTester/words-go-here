@@ -222,13 +222,13 @@ const STAGE_HEIGHT = 10
 const BIRD_WIDTH = 1
 const BIRD_HEIGHT = 1
 // Width of the pipes
-const PIPE_WIDTH = 1
+const PIPE_WIDTH = 0.7
 // Vertical distance between the upper and lower pipe parts
 const GAP_HEIGHT = 3
-// X position of the first pipe
-const INIT_PIPE_POS = 10
 // Horizontal distance between pipes from their left sides
-const PIPE_DISTANCE = 10
+const PIPE_DISTANCE = 7
+// X position of the first pipe
+const INIT_PIPE_POS = PIPE_DISTANCE
 // Horizontal distance off the screen
 const PIPE_REGION = 10
 // Initial scrollX
@@ -251,7 +251,6 @@ class Bird {
     this.y = STAGE_HEIGHT / 2
     this.xv = FLY_SPEED
     this.yv = 0
-    this.memory = 0
     this.dead = false
     return this
   }
@@ -261,13 +260,11 @@ class Bird {
   }
 
   flapping (nextPipe) {
-    const [flap, newMemory] = this.think([
+    const [flap] = this.think([
       this.y / STAGE_HEIGHT,
       nextPipe.height / STAGE_HEIGHT,
-      nextPipe.pos / PIPE_DISTANCE,
-      this.memory
+      (nextPipe.pos + PIPE_WIDTH - this.x) / PIPE_DISTANCE
     ])
-    this.memory = newMemory
     return flap > 0.5
   }
 
@@ -280,7 +277,7 @@ class Bird {
         this.yv = FLAP_SPEED
       }
       this.yv += GRAVITY * time
-      this.y += (initYV + this.yv) / 2 * time
+      this.y += this.yv * time
 
       if (this.y < 0 || this.y + BIRD_HEIGHT > STAGE_HEIGHT ||
         nextPipe.isTouching(this)) {
@@ -322,8 +319,8 @@ class Pipe {
 const canvas = document.getElementById('canvas')
 const c = canvas.getContext('2d')
 
-const brainType = new BrainType({ inputs: 4, hiddens: [4, 4], outputs: 2 })
-const generationManager = new Generations({ brainType })
+const brainType = new BrainType({ inputs: 3, hiddens: [4], outputs: 1 })
+const generationManager = new Generations({ brainType, randomRate: 0.1 })
 const birds = []
 for (let i = 0; i < generationManager.count; i++) {
   birds.push(new Bird(brainType))
