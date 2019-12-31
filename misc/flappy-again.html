@@ -8,10 +8,22 @@
     <link rel="stylesheet" type="text/css" href="/sheep3.css">
     <script src="/sheep3.js" charset="utf-8"></script>
     <style>
-      /* TEMP */
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-size: 0;
+      }
+      #canvas {
+        width: 100%;
+        height: 100%;
+      }
     </style>
   </head>
   <body>
+    <canvas id="canvas"></canvas>
     <script>
 /**
  * Fancy logistic growth function that outputs a number in (0, 1)
@@ -149,6 +161,241 @@ class Generations {
     throw new Error('Wucky: Not enough children are being born!')
   }
 }
+
+// Horizontal velocity of the birds (and the scrolling camera)
+const FLY_SPEED = 1
+// Acceleration due to gravity
+const GRAVITY = 9.8
+// Vertical velocity of the birds when flapping
+const FLAP_SPEED = 6
+// Height of the screen (birds will die if they hit the floor or ceiling)
+const STAGE_HEIGHT = 100
+// Size of the birds
+const BIRD_WIDTH = 10
+const BIRD_HEIGHT = 10
+// Width of the pipes
+const PIPE_WIDTH = 10
+// Vertical distance between the upper and lower pipe parts
+const GAP_HEIGHT = 30
+// X position of the first pipe
+const INIT_PIPE_POS = 100
+// Horizontal distance between pipes from their left sides
+const PIPE_DISTANCE = 100
+// Horizontal distance off the screen
+const PIPE_REGION = 100
+// Initial scrollX
+const INIT_SCROLL = -50
+// Time to simulate per round
+const SIM_TIME = 0.01
+
+class Bird {
+  constructor (brainType) {
+    this.brainType = brainType
+  }
+
+  loadBrain (brain) {
+    this.brain = brain
+    return this
+  }
+
+  reset () {
+    this.x = 0
+    this.y = STAGE_HEIGHT / 2
+    this.xv = FLY_SPEED
+    this.yv = 0
+    this.memory = 0
+    this.dead = false
+    return this
+  }
+
+  think (inputs) {
+    return this.brainType.ponder(this.brain, inputs)
+  }
+
+  flapping (nextPipe) {
+    const [flap, newMemory] = this.think([
+      this.y / STAGE_HEIGHT,
+      nextPipe.height / STAGE_HEIGHT,
+      nextPipe.pos / PIPE_DISTANCE,
+      this.memory
+    ])
+    this.memory = newMemory
+    return flap > 0.5
+  }
+
+  simulate (time, nextPipe) {
+    if (!this.dead) {
+      this.x += this.xv * time
+
+      const initYV = this.yv
+      if (this.flapping(nextPipe)) {
+        this.yv = FLAP_SPEED
+      }
+      this.yv += GRAVITY * time
+      this.y += (initYV + this.yv) / 2 * time
+
+      if (this.y < 0 || this.y + BIRD_HEIGHT > STAGE_HEIGHT ||
+        nextPipe.isTouching(this)) {
+        this.dead = true
+      }
+    }
+
+    return this
+  }
+
+  draw (ctx) {
+    ctx.fillRect(this.x, this.y, BIRD_WIDTH, BIRD_HEIGHT)
+    return this
+  }
+}
+
+class Pipe {
+  constructor (pos, height = Math.random() * (STAGE_HEIGHT - GAP_HEIGHT)) {
+    this.pos = pos
+    // Height represents the distance from the top of the screen to the bottom
+    // of the top pipe part
+    this.height = height
+  }
+
+  isTouching (bird) {
+    return bird.x < this.pos + PIPE_WIDTH && this.pos < bird.x + BIRD_WIDTH &&
+      (bird.y < this.height && 0 < bird.y + BIRD_HEIGHT ||
+      bird.y < STAGE_HEIGHT && this.height + GAP_HEIGHT < bird.y + BIRD_HEIGHT)
+  }
+
+  draw (ctx) {
+    ctx.fillRect(this.pos, 0, PIPE_WIDTH, this.height)
+    ctx.fillRect(this.pos, this.height + GAP_HEIGHT, PIPE_WIDTH,
+      STAGE_HEIGHT - (this.height + GAP_HEIGHT))
+    return this
+  }
+}
+
+const canvas = document.getElementById('canvas')
+const c = canvas.getContext('2d')
+
+const brainType = new BrainType(4, [4, 4], 2)
+const generationManager = new Generations({ brainType })
+const birds = []
+for (let i = 0; i < generationManager.count; i++) {
+  this.birds.push(new Bird(brainType))
+}
+
+let generation = generationManager.makeGeneration()
+let generations = 1
+let aliveBirds
+let pipes
+
+let screenWidth
+let screenHeight
+let scrollX
+
+let idealSimulationTime = 0
+let timeSimulated = 0
+let speed = 1
+let lastTime = Date.now()
+
+function start () {
+  for (let i = 0; i < generationManager.count; i++) {
+    birds[i].loadBrain(generation[i]).reset()
+  }
+
+  aliveBirds = [...birds]
+  pipes = [new Pipe(INIT_PIPE_POS)]
+  scrollX = INIT_SCROLL
+}
+
+function simulate () {
+  // Spawn/despawn pipes as needed
+  while (pipes[0] && pipes[0].pos < scrollX - PIPE_REGION) {
+    pipes.splice(0, 1)
+  }
+  while (pipes[pipes.length - 1] &&
+    pipes[pipes.length - 1].pos < scrollX + screenWidth + PIPE_REGION) {
+    pipes.push(new Pipe(pipes[pipes.length - 1].pos + PIPE_DISTANCE))
+  }
+
+  scrollX += FLY_SPEED
+
+  // Get first pipe whose right edge is after the birds' left side (if a bird
+  // is under a pipe, that pipe is still "next")
+  // All birds travel horizontally at the same speed, so using any alive bird is ok
+  const nextPipe = pipes.find(pipe => pipe.pos + PIPE_WIDTH > aliveBirds[0].x)
+  for (let i = 0; i < aliveBirds.length; i++) {
+    aliveBirds[i].simulate(SIM_TIME, nextPipe)
+    if (aliveBirds[i].dead) {
+      aliveBirds.splice(i, 1)
+      i--
+    }
+  }
+
+  if (aliveBirds.length === 0) {
+    nextGen()
+    start()
+  }
+}
+
+function nextGen () {
+  // Sort birds by how far they flew (furthest -> shortest) and generate a new
+  // generation based on them
+  generation = generationManager.nextGeneration(birds
+    .sort((a, b) => b.x - a.x).map(bird => bird.brain))
+  generations++
+}
+
+function resize () {
+  screenWidth = window.innerWidth
+  screenHeight = window.innerHeight
+  const dpr = window.devicePixelRatio
+  canvas.width = screenWidth * dpr
+  canvas.height = screenHeight * dpr
+  c.scale(dpr, dpr * screenWidth / STAGE_HEIGHT)
+}
+
+function paint () {
+  const now = Date.now()
+  const elapsed = now - lastTime
+  if (elapsed < 500) {
+    idealSimulationTime += elapsed * speed
+    while (timeSimulated < idealSimulationTime) {
+      simulate()
+      timeSimulated += SIM_TIME
+    }
+  }
+  lastTime = now
+
+  // Sky
+  c.fillStyle = '#3cbce3'
+  c.fillRect(0, 0, screenWidth, STAGE_HEIGHT)
+
+  c.save()
+  c.translate(-scrollX, 0)
+
+  // Pipes
+  c.fillStyle = '#97dc42'
+  for (const pipe of pipes) {
+    pipe.draw(c)
+  }
+
+  // Birds
+  for (const bird of birds) {
+    if (bird.dead) {
+      c.fillStyle = 'rgba(0, 0, 0, 0.5)'
+    } else {
+      c.fillStyle = 'rgba(255, 255, 255, 0.2)'
+    }
+    bird.draw(c)
+  }
+
+  c.restore()
+  window.requestAnimationFrame(paint)
+}
+
+window.addEventListener('resize', resize)
+resize()
+start()
+paint()
+
     </script>
   </body>
 </html>
