@@ -40,6 +40,17 @@
         flex: auto;
         margin: 0 10px;
       }
+      .about {
+        font-size: 14px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        margin: 10px;
+      }
+      a {
+        color: #ccf;
+      }
     </style>
   </head>
   <body>
@@ -49,6 +60,7 @@
       <input type="range" id="speed" value="0" min="0" max="10" step="any">
       (<span id="speed-display">1.00</span>)
     </label>
+    <p class="about">Am help by <a href="https://github.com/xviniette/FlappyLearning/">this FlappyLearning by xviniette</a></p>
     <script>
 /**
  * Fancy logistic growth function that outputs a number in (0, 1)
