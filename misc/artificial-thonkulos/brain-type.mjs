@@ -12,18 +12,19 @@ export class BrainType {
     const {
       inputs = 1,
       hiddens = [],
-      outputs = 1
+      outputs = 1,
+      bias = false
     } = options
+    this.bias = bias
     const layers = [inputs, ...hiddens, outputs]
     this.layers = layers
     this.weights = 0
     for (let i = 0; i < layers.length - 1; i++) {
-      this.weights += layers[i] * layers[i + 1]
+      this.weights += (bias ? layers[i] + 1 : layers[i]) * layers[i + 1]
     }
   }
 
   makeRandom () {
-    const layers = this.layers
     const weights = []
     for (let i = 0; i < this.weights; i++) {
       weights.push(Math.random() * 2 - 1)
@@ -65,7 +66,7 @@ export class BrainType {
   }
 
   ponder (weights, inputs) {
-    const { layers } = this
+    const { layers, bias } = this
     if (inputs.length !== layers[0]) {
       throw new Error('Wucky: Weird number of inputs given')
     }
@@ -77,6 +78,10 @@ export class BrainType {
         let sum = 0
         for (const val of previousLayer) {
           sum += weights[weight] * val
+          weight++
+        }
+        if (bias) {
+          sum += weights[weight]
           weight++
         }
         currentLayer.push(sigmoid(sum))
