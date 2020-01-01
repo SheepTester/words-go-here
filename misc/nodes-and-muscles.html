@@ -151,6 +151,7 @@ class Muscle {
   constructor(constant, length, node1, node2) {
     this.constant = constant
     this.length = length
+    this.damping = 1
     this.node1 = node1
     this.node2 = node2
   }
@@ -162,8 +163,12 @@ class Muscle {
     const displacement = nodeLength - this.length
     const force = this.constant * displacement
     // Apply elastic force in other's direction with magnitude of force
-    this.node1.forces.add(oneToTwo.clone().unit().scale(force))
-    this.node2.forces.add(oneToTwo.clone().unit().scale(-force))
+    this.node1.forces
+      .add(oneToTwo.clone().unit().scale(force))
+      .add(this.node1.vel.clone().scale(-this.damping))
+    this.node2.forces
+      .add(oneToTwo.clone().unit().scale(-force))
+      .add(this.node2.vel.clone().scale(-this.damping))
   }
 }
 
