@@ -21,17 +21,33 @@
   </head>
   <body>
     <p>Click to start a polyline at a point; shift + click to continue from that point. Press Z to remove the last point, and press enter to complete the polygon. Space will clear everything.</p>
-    <p>Middle click to set the anchor position.</p>
+    <p>Middle click (or ctrl/command + click) to set the anchor position.</p>
     <canvas id="canvas" width="480" height="360"></canvas>
+    <h3>Key</h3>
+    <dl>
+      <dt>Grey lines</dt>
+        <dd>The polyline</dd>
+      <dt>Red point</dt>
+        <dd>Anchor/starting point of ray</dd>
+      <dt>Blue line</dt>
+        <dd>Direction of ray</dd>
+      <dt>Cyan point</dt>
+        <dd>First intersection of ray and polyline</dd>
+      <dt>Yellow point</dt>
+        <dd>Mouse position</dd>
+      <dt>Orange point</dt>
+        <dd>Closest point on polyline to the mouse</dd>
+    </dl>
     <script type="module">
 import { Vector2 } from './artificial-thonkulos/vectors.mjs'
-import { rayPolygonIntersection } from './artificial-thonkulos/ray-intersection.mjs'
+import { rayPolylineIntersection, getClosestToPolyline } from './artificial-thonkulos/ray-intersection.mjs'
 
 const canvas = document.getElementById('canvas')
 const c = canvas.getContext('2d')
 
 const anchor = new Vector2(canvas.width / 2, canvas.height / 2)
 const direction = new Vector2(1, 0)
+const mouse = new Vector2(0, 0)
 
 const polygon = [new Vector2(10, 10), new Vector2(400, 30), new Vector2(200, 200), new Vector2(10, 10)]
 
@@ -65,22 +81,31 @@ function draw () {
   c.fillStyle = 'red'
   c.fillRect(anchor.x - 1, anchor.y - 1, 2, 2)
 
-  const intersection = rayPolygonIntersection(anchor, direction, polygon)
+  const closest = getClosestToPolyline(mouse, polygon)
+  if (closest) {
+    c.fillStyle = 'orange'
+    c.fillRect(closest.point.x - 2, closest.point.y - 2, 4, 4)
+  }
+
+  const intersection = rayPolylineIntersection(anchor, direction, polygon)
   if (intersection) {
     c.fillStyle = 'cyan'
     c.fillRect(intersection.x - 2, intersection.y - 2, 4, 4)
   }
+
+  c.fillStyle = 'yellow'
+  c.fillRect(mouse.x - 1, mouse.y - 1, 2, 2)
 }
 
 document.addEventListener('mousemove', e => {
   const { left, top } = canvas.getBoundingClientRect()
-  direction.set({ x: e.clientX - left, y: e.clientY - top })
-    .sub(anchor).unit()
+  mouse.set({ x: e.clientX - left, y: e.clientY - top })
+  direction.set(mouse).sub(anchor).unit()
   draw()
 })
 canvas.addEventListener('mousedown', e => {
   const { left, top } = canvas.getBoundingClientRect()
-  if (e.which === 2) {
+  if (e.which === 2 || e.ctrlKey || e.metaKey) {
     anchor.set({ x: e.clientX - left, y: e.clientY - top })
     draw()
     e.preventDefault()
