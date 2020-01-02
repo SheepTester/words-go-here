@@ -16,6 +16,7 @@
       #canvas {
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 5px;
+        touch-action: none;
       }
     </style>
   </head>
@@ -97,13 +98,13 @@ function draw () {
   c.fillRect(mouse.x - 1, mouse.y - 1, 2, 2)
 }
 
-document.addEventListener('mousemove', e => {
+document.addEventListener('pointermove', e => {
   const { left, top } = canvas.getBoundingClientRect()
   mouse.set({ x: e.clientX - left, y: e.clientY - top })
   direction.set(mouse).sub(anchor).unit()
   draw()
 })
-canvas.addEventListener('mousedown', e => {
+canvas.addEventListener('pointerdown', e => {
   const { left, top } = canvas.getBoundingClientRect()
   if (e.which === 2 || e.ctrlKey || e.metaKey) {
     anchor.set({ x: e.clientX - left, y: e.clientY - top })
