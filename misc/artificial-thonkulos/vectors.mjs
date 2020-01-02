@@ -23,6 +23,12 @@ export class Vector2 {
     return this
   }
 
+  subtract ({ x = 0, y = 0 }) {
+    this.x -= x
+    this.y -= y
+    return this
+  }
+
   scale (factor = 1) {
     this.x *= factor
     this.y *= factor

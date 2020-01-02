@@ -8,12 +8,101 @@
     <link rel="stylesheet" type="text/css" href="/sheep3.css">
     <script src="/sheep3.js" charset="utf-8"></script>
     <style>
-      /* TEMP */
+      body {
+        background-color: black;
+        color: white;
+        font-family: monospace;
+      }
+      #canvas {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+      }
     </style>
   </head>
   <body>
-    <script>
-// TEMP
+    <p>Click to start a polyline at a point; shift + click to continue from that point. Press Z to remove the last point, and press enter to complete the polygon. Space will clear everything.</p>
+    <p>Middle click to set the anchor position.</p>
+    <canvas id="canvas" width="480" height="360"></canvas>
+    <script type="module">
+import { Vector2 } from './artificial-thonkulos/vectors.mjs'
+
+const canvas = document.getElementById('canvas')
+const c = canvas.getContext('2d')
+
+const anchor = new Vector2(canvas.width / 2, canvas.height / 2)
+const direction = new Vector2(1, 0)
+
+const polygon = [new Vector2(10, 10), new Vector2(400, 30), new Vector2(200, 200), new Vector2(10, 10)]
+
+function draw () {
+  c.clearRect(0, 0, canvas.width, canvas.height)
+
+  c.strokeStyle = 'white'
+  c.beginPath()
+  let moveTo = false
+  for (const point of polygon) {
+    if (point === null) {
+      moveTo = true
+    } else {
+      if (moveTo) {
+        c.moveTo(...point.comps)
+        moveTo = false
+      } else {
+        c.lineTo(...point.comps)
+      }
+    }
+  }
+  c.stroke()
+
+  c.strokeStyle = 'blue'
+  c.beginPath()
+  c.moveTo(...anchor.comps)
+  c.lineTo(...direction.clone().scale(100).add(anchor).comps)
+  c.stroke()
+
+  c.fillStyle = 'red'
+  c.fillRect(anchor.x - 1, anchor.y - 1, 2, 2)
+}
+
+document.addEventListener('mousemove', e => {
+  const { left, top } = canvas.getBoundingClientRect()
+  direction.set({ x: e.clientX - left, y: e.clientY - top })
+    .subtract(anchor).unit()
+  draw()
+})
+canvas.addEventListener('mousedown', e => {
+  const { left, top } = canvas.getBoundingClientRect()
+  if (e.which === 2) {
+    anchor.set({ x: e.clientX - left, y: e.clientY - top })
+    draw()
+    e.preventDefault()
+  } else if (e.which === 1) {
+    if (!e.shiftKey && polygon[polygon.length - 1]) {
+      polygon.push(null)
+    }
+    polygon.push(new Vector2(e.clientX - left, e.clientY - top))
+    draw()
+  }
+})
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'z') {
+    polygon.splice(-1, 1)
+    if (polygon[polygon.length - 1] === null) {
+      polygon.splice(-1, 1)
+    }
+    draw()
+  } else if (e.key === 'Enter') {
+    if (polygon[polygon.length - 1]) {
+      const index = polygon.lastIndexOf(null)
+      polygon.push(polygon[index < 0 ? 0 : index + 1].clone())
+      draw()
+    }
+  } else if (e.key === ' ') {
+    polygon.splice(0, polygon.length)
+  }
+})
+
+draw()
     </script>
   </body>
 </html>
