@@ -4,3 +4,7 @@
 export function sigmoid (n) {
   return 1 / (1 + Math.exp(-n))
 }
+
+export function mod (a, b) {
+  return (a % b + b) % b
+}
