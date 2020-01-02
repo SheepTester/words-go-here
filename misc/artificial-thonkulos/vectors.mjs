@@ -23,7 +23,7 @@ export class Vector2 {
     return this
   }
 
-  subtract ({ x = 0, y = 0 }) {
+  sub ({ x = 0, y = 0 }) {
     this.x -= x
     this.y -= y
     return this
