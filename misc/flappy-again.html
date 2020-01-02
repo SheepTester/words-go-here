@@ -45,16 +45,22 @@
         position: fixed;
         top: 0;
         left: 0;
-        right: 0;
+        width: 50%;
         margin: 10px;
       }
       a {
         color: #ccf;
       }
+      #network {
+        position: fixed;
+        top: 0;
+        right: 0;
+      }
     </style>
   </head>
   <body>
     <canvas id="canvas"></canvas>
+    <canvas id="network"></canvas>
     <label class="speed">
       <span>Speed</span>
       <input type="range" id="speed" value="0" min="0" max="10" step="any">
@@ -63,6 +69,7 @@
     <p class="about">Am help by <a href="https://github.com/xviniette/FlappyLearning/">this FlappyLearning by xviniette</a>. basically copied everything they did but with my own code</p>
     <script type="module">
 import { BrainType } from './artificial-thonkulos/brain-type.mjs'
+import { MindReader } from './artificial-thonkulos/mind-reader.mjs'
 
 class Generations {
   constructor (options = {}) {
@@ -237,10 +244,17 @@ class Pipe {
   }
 }
 
-const canvas = document.getElementById('canvas')
-const c = canvas.getContext('2d')
+const params = new URL(window.location).searchParams
 
-const brainType = new BrainType({ inputs: 2, hiddens: [2], outputs: 1 })
+const canvas = document.getElementById('canvas')
+const c = canvas.getContext('2d', { alpha: false })
+
+const networkCanvas = document.getElementById('network')
+const networkCtx = networkCanvas.getContext('2d')
+
+const brainType = params.get('complex')
+  ? new BrainType({ inputs: 2, hiddens: [4, 7, 5], outputs: 1, bias: true })
+  : new BrainType({ inputs: 2, hiddens: [2], outputs: 1 })
 const generationManager = new Generations({ brainType })
 const birds = []
 for (let i = 0; i < generationManager.count; i++) {
@@ -256,6 +270,14 @@ let longestTravelled = 0
 let screenWidth
 let screenHeight
 let scrollX
+
+const PADDING = 10
+const mindReader = new MindReader({ brainType, x: PADDING, y: PADDING })
+const networkSize = mindReader.getExpectedSize()
+networkSize.width += PADDING * 2
+networkSize.height += PADDING * 2
+networkCanvas.style.width = networkSize.width + 'px'
+networkCanvas.style.height = networkSize.height + 'px'
 
 let idealSimulationTime = 0
 let timeSimulated = 0
@@ -313,11 +335,16 @@ function nextGen () {
 }
 
 function resize () {
-  ({ width: screenWidth, height: screenHeight } = canvas.getBoundingClientRect())
+  ;({ width: screenWidth, height: screenHeight } = canvas.getBoundingClientRect())
   const dpr = window.devicePixelRatio
+
   canvas.width = screenWidth * dpr
   canvas.height = screenHeight * dpr
   c.scale(dpr, dpr)
+
+  networkCanvas.width = networkSize.width * dpr
+  networkCanvas.height = networkSize.height * dpr
+  networkCtx.scale(dpr, dpr)
 }
 
 function paint () {
@@ -331,6 +358,12 @@ function paint () {
     }
   }
   lastTime = now
+
+  networkCtx.clearRect(0, 0, networkSize.width, networkSize.height)
+  mindReader.render(networkCtx, aliveBirds[0].brain, [
+    aliveBirds[0].y / STAGE_HEIGHT,
+    pipes.find(pipe => pipe.pos + PIPE_WIDTH > aliveBirds[0].x).height / STAGE_HEIGHT
+  ])
 
   // Sky
   c.fillStyle = '#3cbce3'

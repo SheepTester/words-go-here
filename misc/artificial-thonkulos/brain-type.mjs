@@ -1,9 +1,4 @@
-/**
- * Fancy logistic growth function that outputs a number in (0, 1)
- */
-function sigmoid (n) {
-  return 1 / (1 + Math.exp(-n))
-}
+import { sigmoid } from './utils.mjs'
 
 export class BrainType {
   constructor (options = {}) {
