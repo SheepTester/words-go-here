@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>&kappa;&lambda;&omega;&nu;&alpha;&lambda;&gamma;</title>
+    <meta name="description" content="Flappy bird AI but they drive cars around a race track with five magic laser beam sensors"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-size: 0;
+        margin: 0;
+        background-color: black;
+        font-family: monospace;
+      }
+      #canvas {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script type="module">
+const canvas = document.getElementById('canvas')
+const c = canvas.getContext('2d')
+
+let screenWidth
+let screenHeight
+
+function resize () {
+  const dpr = window.devicePixelRatio
+  screenWidth = window.innerWidth
+  screenHeight = window.innerHeight
+  canvas.width = screenWidth * dpr
+  canvas.height = screenHeight * dpr
+  c.scale(dpr, dpr)
+}
+
+window.addEventListener('resize', resize)
+resize()
+
+// TEMP
+c.fillStyle = 'white'
+c.textAlign = 'center'
+c.textBaseline = 'middle'
+c.font = '100px serif'
+c.fillText(document.title, screenWidth / 2, screenHeight / 2)
+    </script>
+  </body>
+</html>
