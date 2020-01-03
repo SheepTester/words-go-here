@@ -48,6 +48,10 @@ export class Vector2 {
     return this
   }
 
+  equals ({ x = 0, y = 0 }) {
+    return this.x === x && this.y === y
+  }
+
   clone () {
     return new Vector2(this.x, this.y)
   }

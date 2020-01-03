@@ -27,6 +27,12 @@
   <body>
     <canvas id="canvas"></canvas>
     <script type="module">
+import { svgToPolyline } from './map-parser.mjs'
+fetch('./map1.svg').then(r => r.text()).then(svgToPolyline)
+  .then(shtuff => {
+    //
+  })
+
 const canvas = document.getElementById('canvas')
 const c = canvas.getContext('2d')
 

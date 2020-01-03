@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>&kappa;&lambda;&omega;&nu;&alpha;&lambda;&gamma; map maker</title>
+    <meta name="description" content="Draw a race track out of polylines"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+    <script src="../../paper-core.min.js" charset="utf-8"></script>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-size: 0;
+        font-family: monospace;
+        background-image: url('https://raw.githubusercontent.com/ArztSamuel/Applying_EANNs/master/Images/Courses.png');
+        background-size: 1550px;
+        touch-action: none;
+      }
+      #canvas {
+        overflow: visible;
+      }
+      polyline,
+      .current {
+        fill: none;
+        stroke: rgba(0, 0, 0, 0.8);
+        stroke-width: 5;
+      }
+      .current {
+        stroke: rgba(255, 0, 0, 0.8);
+      }
+      .extra {
+        stroke: rgba(255, 200, 0, 0.8);
+      }
+      #export {
+        position: fixed;
+        bottom: -85px;
+        right: 0;
+        height: 100px;
+        width: 200px;
+        transition: bottom .2s;
+      }
+      #export:hover {
+        bottom: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+    <textarea id="export" placeholder="JSON output" readonly></textarea>
+    <script type='module'>
+import { Vector2 } from '../vectors.mjs'
+
+const params = new URL(window.location).searchParams
+const polylines = []
+
+const output = document.getElementById('export')
+const svg = document.getElementById('canvas')
+const NS = 'http://www.w3.org/2000/svg'
+const currentPolyline = document.createElementNS(NS, 'path')
+currentPolyline.classList.add('current')
+
+function toSVGPolyline (lines) {
+  return lines.map(({x, y}) => `${x}, ${y}`).join(' ')
+}
+function toSVG (lines) {
+  const polyline = document.createElementNS(NS, 'polyline')
+  polyline.setAttributeNS(null, 'points', toSVGPolyline(lines))
+  return polyline
+}
+function exportJSON () {
+  output.value = JSON.stringify(polylines.map(({lines}) => lines.map(vec => vec.comps)))
+}
+
+let currentPath = null
+let isContinuation
+let isStraight
+document.addEventListener('pointerdown', e => {
+  if (!currentPath) {
+    const mouse = new Vector2(e.clientX, e.clientY)
+    if ((e.ctrlKey || e.metaKey) && polylines.length) {
+      const lastLine = polylines[polylines.length - 1].lines
+      currentPath = new paper.Path({
+        segments: [lastLine[lastLine.length - 1].comps, mouse.comps]
+      })
+      isContinuation = true
+    } else {
+      currentPath = new paper.Path({
+        segments: [mouse.comps]
+      })
+      isContinuation = false
+    }
+    isStraight = e.shiftKey
+    currentPolyline.setAttributeNS(null, 'd', currentPath.exportSVG().getAttributeNS(null, 'd'))
+    svg.appendChild(currentPolyline)
+  }
+})
+document.addEventListener('pointermove', e => {
+  if (currentPath) {
+    const mouse = new Vector2(e.clientX, e.clientY)
+    currentPath.add(mouse.comps)
+    currentPolyline.setAttributeNS(null, 'd', currentPath.exportSVG().getAttributeNS(null, 'd'))
+  }
+})
+document.addEventListener('pointerup', e => {
+  if (currentPath) {
+    const mouse = new Vector2(e.clientX, e.clientY)
+    currentPath.add(mouse.comps)
+    currentPath.simplify()
+    currentPath.flatten(20)
+    let lines = currentPath.segments.map(segment => new Vector2(segment.point.x, segment.point.y))
+    if (isStraight) {
+      lines = [lines[0], mouse]
+    }
+    if (lines.length > 1) {
+      const elem = toSVG(lines)
+      polylines.push({
+        elem,
+        lines,
+        start: !isContinuation
+      })
+      svg.appendChild(elem)
+      redo.splice(0, redo.length)
+      exportJSON()
+    }
+    currentPath = null
+    currentPolyline.removeAttributeNS(null, 'd')
+    svg.removeChild(currentPolyline)
+  }
+})
+
+const redo = []
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'z') {
+      if (polylines.length) {
+        const removed = polylines.pop()
+        svg.removeChild(removed.elem)
+        redo.push(removed)
+        exportJSON()
+      }
+    } else if (e.key === 'Z' || e.key === 'y') {
+      if (redo.length) {
+        const readded = redo.pop()
+        svg.appendChild(readded.elem)
+        polylines.push(readded)
+        exportJSON()
+      }
+    }
+  } else if (e.key === 'Backspace') {
+    if (polylines.length) {
+      const last = polylines[polylines.length - 1]
+      last.lines.pop()
+      if (last.lines.length > 1) {
+        last.elem.setAttributeNS(null, 'points', toSVGPolyline(last.lines))
+      } else {
+        polylines.pop()
+        svg.removeChild(last.elem)
+      }
+      exportJSON()
+    }
+  } else if (e.key === 'Enter') {
+    let firstPath
+    for (let i = polylines.length; i--;) {
+      if (polylines[i].start) {
+        firstPath = polylines[i]
+        break
+      }
+    }
+    if (firstPath) {
+      const lastLines = polylines[polylines.length - 1].lines
+      const lines = [
+        lastLines[lastLines.length - 1].clone(),
+        firstPath.lines[0].clone()
+      ]
+      const elem = toSVG(lines)
+      svg.appendChild(elem)
+      polylines.push({ lines, elem })
+      exportJSON()
+    }
+  }
+})
+
+if (params.get('load')) {
+  fetch(params.get('load')).then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(json => {
+      for (const vertices of json) {
+        const lines = vertices.map(([x, y]) => new Vector2(x, y))
+        const elem = toSVG(lines)
+        svg.appendChild(elem)
+        polylines.push({ elem, lines, start: true })
+      }
+      exportJSON()
+    })
+}
+if (params.get('extra')) {
+  fetch(params.get('extra')).then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(json => {
+      for (const vertices of json) {
+        const elem = toSVG(vertices.map(([x, y]) => new Vector2(x, y)))
+        elem.classList.add('extra')
+        svg.appendChild(elem)
+      }
+    })
+}
+
+paper.setup()
+    </script>
+  </body>
+</html>
