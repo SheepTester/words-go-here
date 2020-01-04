@@ -204,9 +204,10 @@ function nextGen () {
   generations++
 }
 
-function simulate (simTime) {
-  // TODO: Animate camera to winner, etc.
+let scrollX = 0
+let scrollY = 0
 
+function simulate (simTime) {
   for (let i = 0; i < alive.length; i++) {
     alive[i].simulate(simTime)
     if (alive[i].dead) {
@@ -219,6 +220,10 @@ function simulate (simTime) {
     nextGen()
     startGen()
   }
+
+  const winner = alive.reduce((curr, acc) => curr.progress > acc.progress ? curr : acc)
+  scrollX += (scrollX - winner.position.x) / 5
+  scrollY += (scrollY - winner.position.y) / 5
 }
 
 const canvas = document.getElementById('canvas')
@@ -238,9 +243,6 @@ function resize () {
 
 window.addEventListener('resize', resize)
 resize()
-
-let scrollX = 0
-let scrollY = 0
 
 function render () {
   //
