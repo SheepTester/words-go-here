@@ -69,66 +69,8 @@
     <p class="about">Am help by <a href="https://github.com/xviniette/FlappyLearning/">this FlappyLearning by xviniette</a>. basically copied everything they did but with my own code</p>
     <script type="module">
 import { BrainType } from './artificial-thonkulos/brain-type.mjs'
+import { GenerationManager } from './artificial-thonkulos/generation-manager.mjs'
 import { MindReader } from './artificial-thonkulos/mind-reader.mjs'
-
-class Generations {
-  constructor (options = {}) {
-    this.options = options
-
-    const { count = 100 } = options
-    this.count = count
-  }
-
-  makeGeneration () {
-    const { brainType } = this.options
-    const count = this.count
-
-    const generation = []
-    for (let i = 0; i < count; i++) {
-      generation.push(brainType.makeRandom())
-    }
-    return generation
-  }
-
-  /**
-   * The generation is expected to be sorted best first
-   */
-  nextGeneration (generation) {
-    const { keepRate = 0.2, randomRate = 0.2, children = 1 } = this.options
-    const count = this.count
-
-    if (generation.length !== count) {
-      throw new Error('Wucky: This is not my generation')
-    }
-
-    const newGeneration = []
-
-    const keep = Math.round(keepRate * count)
-    for (let i = 0; i < keep && newGeneration.length < count; i++) {
-      newGeneration.push(generation[i])
-    }
-
-    const randoms = Math.round(randomRate * count)
-    for (let i = 0; i < randoms && newGeneration.length < count; i++) {
-      newGeneration.push(brainType.makeRandom())
-    }
-
-    // For each individual, breed it with each winner before it (until the
-    // required population count is met)
-    // (Children are also given radiation treatment for mutations)
-    for (let i = 0; i < generation.length; i++) {
-      for (let j = 0; j < i; j++) {
-        if (newGeneration.length >= count) {
-          return newGeneration
-        }
-        for (let k = 0; k < children; k++) {
-          newGeneration.push(brainType.radiation(brainType.sex(generation[i], generation[j])))
-        }
-      }
-    }
-    throw new Error('Wucky: Not enough children are being born!')
-  }
-}
 
 // Horizontal velocity of the birds (and the scrolling camera) (un/s)
 const FLY_SPEED = 180
@@ -255,7 +197,7 @@ const networkCtx = networkCanvas.getContext('2d')
 const brainType = params.get('complex')
   ? new BrainType({ inputs: 2, hiddens: [4, 7, 5], outputs: 1, bias: true })
   : new BrainType({ inputs: 2, hiddens: [2], outputs: 1 })
-const generationManager = new Generations({ brainType })
+const generationManager = new GenerationManager({ brainType })
 const birds = []
 for (let i = 0; i < generationManager.count; i++) {
   birds.push(new Bird(brainType))
