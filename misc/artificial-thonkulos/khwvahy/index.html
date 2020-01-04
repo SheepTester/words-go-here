@@ -27,11 +27,117 @@
   <body>
     <canvas id="canvas"></canvas>
     <script type="module">
-import { svgToPolyline } from './map-parser.mjs'
-fetch('./map1.svg').then(r => r.text()).then(svgToPolyline)
-  .then(shtuff => {
-    //
-  })
+import { BrainType } from '../brain-type.mjs'
+import { GenerationManager } from '../generation-manager.mjs'
+
+import { Vector2 } from '../vectors.mjs'
+import { rayPolylineIntersection } from '../ray-intersection.mjs'
+
+const brainType = new BrainType({ inputs: 5, hiddens: [4, 3], outputs: 2, bias: true })
+
+const CAR_WIDTH = 20 // Distance from centre to side
+const CAR_LENGTH = 40 // Distance from centre to front
+
+const MAX_RANGE = 100
+const SENSOR_DISTRIB_ANGLE = Math.PI / 8
+
+const TURN_SPEED = 1
+const ENGINE_ACCEL = 4
+const FRICTION_ACCEL = 1
+class Car {
+  constructor () {
+    this.position = new Vector2()
+  }
+
+  /**
+   * Set the weights of the car's neural network
+   */
+  loadIdeology (ideology) {
+    this.ideology = ideology
+    return this
+  }
+
+  /**
+   * Store a reference to the current course
+   */
+  recognizeReality (reality) {
+    this.reality = reality
+    return this
+  }
+
+  start (position, angle) {
+    this.position.set(position)
+    this.speed = 0
+    this.angle = angle
+    this.dead = false
+    return this
+  }
+
+  sense () {
+    const front = new Vector2(CAR_LENGTH, 0).rotate(this.angle).add(this.position)
+    const intersections = []
+    let angle = -SENSOR_DISTRIB_ANGLE * 2
+    const stop = SENSOR_DISTRIB_ANGLE * 2
+    while (angle <= stop) {
+      intersections.push(rayPolylineIntersection(front,
+        new Vector2(1, 0).rotate(angle), this.reality))
+      angle += SENSOR_DISTRIB_ANGLE
+    }
+    return { front, intersections }
+  }
+
+  getInputs () {
+    const { front, intersections } = this.sense()
+    return intersections.map(point => point
+      ? Math.min(point.sub(front).length, MAX_RANGE) / MAX_RANGE : 1)
+  }
+
+  driveWithFreeWill () {
+    const [turn, engine] = brainType.ponder(this.ideology, this.getInputs())
+    return {
+      turnSpeed: (turn - 0.5) * TURN_SPEED,
+      engineAccel: (engine - 0.5) * ENGINE_ACCEL
+    }
+  }
+
+  /**
+   * Test each corner of the car and see if the velocity will make it collide
+   * with the course
+   */
+  collision (velocity) {
+    return [
+      new Vector(CAR_LENGTH, CAR_WIDTH),
+      new Vector(-CAR_LENGTH, CAR_WIDTH),
+      new Vector(-CAR_LENGTH, -CAR_WIDTH),
+      new Vector(CAR_LENGTH, -CAR_WIDTH)
+    ]
+      .map(vec => vec.rotate(this.angle).add(this.position))
+      .some(anchor => rayPolylineIntersection(anchor, velocity, this.reality))
+  }
+
+  simulate (time) {
+    if (!this.dead) {
+      const { turnSpeed, engineAccel } = this.driveWithFreeWill()
+      this.angle += turnSpeed * time
+      this.speed += engineAccel * time
+      if (this.speed > 0) {
+        this.speed -= FRICTION_ACCEL * time
+        if (this.speed < 0) this.speed = 0
+      } else {
+        this.speed += FRICTION_ACCEL * time
+        if (this.speed > 0) this.speed = 0
+      }
+      const velocity = new Vector(1, 0).rotate(this.angle).scale(this.velocity)
+      if (this.collision(velocity)) {
+        this.dead = true
+      }
+      // Add velocity after since `this.collision` relies on old position
+      this.position.add(velocity)
+    }
+  }
+}
+
+const generationManager = new GenerationManager({ brainType })
 
 const canvas = document.getElementById('canvas')
 const c = canvas.getContext('2d')
