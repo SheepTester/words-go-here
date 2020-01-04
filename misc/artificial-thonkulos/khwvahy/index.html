@@ -33,8 +33,6 @@ import { GenerationManager } from '../generation-manager.mjs'
 import { Vector2 } from '../vectors.mjs'
 import { rayPolylineIntersection } from '../ray-intersection.mjs'
 
-const brainType = new BrainType({ inputs: 5, hiddens: [4, 3], outputs: 2, bias: true })
-
 const CAR_WIDTH = 20 // Distance from centre to side
 const CAR_LENGTH = 40 // Distance from centre to front
 
@@ -45,8 +43,18 @@ const TURN_SPEED = 1
 const ENGINE_ACCEL = 4
 const FRICTION_ACCEL = 1
 class Car {
-  constructor () {
+  constructor (brainType) {
+    this.brainType = brainType
     this.position = new Vector2()
+  }
+
+  get vertices () {
+    return [
+      new Vector(CAR_LENGTH, CAR_WIDTH),
+      new Vector(-CAR_LENGTH, CAR_WIDTH),
+      new Vector(-CAR_LENGTH, -CAR_WIDTH),
+      new Vector(CAR_LENGTH, -CAR_WIDTH)
+    ].map(vec => vec.rotate(this.angle).add(this.position))
   }
 
   /**
@@ -93,7 +101,7 @@ class Car {
   }
 
   driveWithFreeWill () {
-    const [turn, engine] = brainType.ponder(this.ideology, this.getInputs())
+    const [turn, engine] = this.brainType.ponder(this.ideology, this.getInputs())
     return {
       turnSpeed: (turn - 0.5) * TURN_SPEED,
       engineAccel: (engine - 0.5) * ENGINE_ACCEL
@@ -105,13 +113,7 @@ class Car {
    * with the course
    */
   collision (velocity) {
-    return [
-      new Vector(CAR_LENGTH, CAR_WIDTH),
-      new Vector(-CAR_LENGTH, CAR_WIDTH),
-      new Vector(-CAR_LENGTH, -CAR_WIDTH),
-      new Vector(CAR_LENGTH, -CAR_WIDTH)
-    ]
-      .map(vec => vec.rotate(this.angle).add(this.position))
+    return this.vertices.map(vec => vec.rotate(this.angle).add(this.position))
       .some(anchor => rayPolylineIntersection(anchor, velocity, this.reality))
   }
 
@@ -135,9 +137,75 @@ class Car {
       this.position.add(velocity)
     }
   }
+
+  draw (ctx) {
+    ctx.beginPath()
+    const [startPoint, ...lineTos] = this.vertices
+    ctx.moveTo(...startPoint.comps)
+    for (const lineTo of lineTos) {
+      ctx.lineTo(...lineTo.comps)
+    }
+    ctx.closePath()
+    ctx.fill()
+
+    const { intersections } = this.sense()
+    ctx.beginPath()
+    for (const { x, y } of intersections) {
+      ctx.moveTo(x - 2, y - 2)
+      ctx.lineTo(x + 2, y + 2)
+      ctx.moveTo(x + 2, y - 2)
+      ctx.lineTo(x - 2, y + 2)
+    }
+    ctx.stroke()
+  }
 }
 
-const generationManager = new GenerationManager({ brainType })
+const brainType = new BrainType({ inputs: 5, hiddens: [4, 3], outputs: 2, bias: true })
+const generationManager = new GenerationManager({ brainType, count: 50 })
+const cars = []
+for (let i = 0; i < generationManager.count; i++) {
+  cars.push(new Car(brainType).recognizeReality(reality)) // TODO
+}
+
+let generation = generationManager.makeGeneration()
+let generations = 1
+let alive
+let record = 0
+
+function startGen () {
+  for (let i = 0; i < generationManager.count; i++) {
+    cars[i].loadIdeology(generation[i]).start(position, angle) // TODO
+  }
+  alive = [...cars]
+}
+
+function nextGen () {
+  // TODO
+  cars.sort((a, b) => b.progress - a.progress)
+  if (cars[0].progress > record) {
+    record = cars[0].progress
+  }
+
+  generation = generationManager.nextGeneration(cars.map(car => car.ideology))
+  generations++
+}
+
+function simulate (simTime) {
+  // TODO: Animate camera to winner, etc.
+
+  for (let i = 0; i < alive.length; i++) {
+    alive[i].simulate(simTime)
+    if (alive[i].dead) {
+      alive.splice(i, 1)
+      i--
+    }
+  }
+
+  if (alive.length === 0) {
+    nextGen()
+    startGen()
+  }
+}
 
 const canvas = document.getElementById('canvas')
 const c = canvas.getContext('2d')
@@ -157,12 +225,13 @@ function resize () {
 window.addEventListener('resize', resize)
 resize()
 
-// TEMP
-c.fillStyle = 'white'
-c.textAlign = 'center'
-c.textBaseline = 'middle'
-c.font = '100px serif'
-c.fillText(document.title, screenWidth / 2, screenHeight / 2)
+function render () {
+  //
+}
+
+const renderer = new RenderSimulation({ render, simulate })
+
+renderer.start()
     </script>
   </body>
 </html>

@@ -71,6 +71,7 @@
 import { BrainType } from './artificial-thonkulos/brain-type.mjs'
 import { GenerationManager } from './artificial-thonkulos/generation-manager.mjs'
 import { MindReader } from './artificial-thonkulos/mind-reader.mjs'
+import { RenderSimulation } from './artificial-thonkulos/render-simulation.mjs'
 
 // Horizontal velocity of the birds (and the scrolling camera) (un/s)
 const FLY_SPEED = 180
@@ -99,8 +100,6 @@ const INIT_PIPE_POS = 420
 const PIPE_REGION = 10
 // Initial scrollX
 const INIT_SCROLL = -300
-// Time to simulate per round (s)
-const SIM_TIME = 0.01
 
 class Bird {
   constructor (brainType) {
@@ -221,11 +220,6 @@ networkSize.height += PADDING * 2
 networkCanvas.style.width = networkSize.width + 'px'
 networkCanvas.style.height = networkSize.height + 'px'
 
-let idealSimulationTime = 0
-let timeSimulated = 0
-let speed = 1
-let lastTime = Date.now()
-
 function start () {
   for (let i = 0; i < generationManager.count; i++) {
     birds[i].loadBrain(generation[i]).reset()
@@ -236,7 +230,7 @@ function start () {
   scrollX = INIT_SCROLL
 }
 
-function simulate () {
+function simulate (simTime) {
   // Spawn/despawn pipes as needed
   while (pipes[0] && pipes[0].pos < scrollX - PIPE_REGION) {
     pipes.splice(0, 1)
@@ -247,14 +241,14 @@ function simulate () {
     pipes.push(new Pipe(pipes[pipes.length - 1].pos + PIPE_DISTANCE))
   }
 
-  scrollX += FLY_SPEED * SIM_TIME
+  scrollX += FLY_SPEED * simTime
 
   // Get first pipe whose right edge is after the birds' left side (if a bird
   // is under a pipe, that pipe is still "next")
   // All birds travel horizontally at the same speed, so using any alive bird is ok
   const nextPipe = pipes.find(pipe => pipe.pos + PIPE_WIDTH > aliveBirds[0].x)
   for (let i = 0; i < aliveBirds.length; i++) {
-    aliveBirds[i].simulate(SIM_TIME, nextPipe)
+    aliveBirds[i].simulate(simTime, nextPipe)
     if (aliveBirds[i].dead) {
       aliveBirds.splice(i, 1)
       i--
@@ -290,17 +284,6 @@ function resize () {
 }
 
 function paint () {
-  const now = Date.now()
-  const elapsed = now - lastTime
-  if (elapsed < 500) {
-    idealSimulationTime += elapsed * speed
-    while (timeSimulated < idealSimulationTime) {
-      simulate()
-      timeSimulated += SIM_TIME * 1000
-    }
-  }
-  lastTime = now
-
   networkCtx.clearRect(0, 0, networkSize.width, networkSize.height)
   mindReader.render(networkCtx, aliveBirds[0].brain, [
     aliveBirds[0].y / STAGE_HEIGHT,
@@ -339,23 +322,23 @@ function paint () {
   c.fillText(`${aliveBirds.length}/${birds.length} alive`, 0, 32)
   c.fillText(`Longest travelled: ${aliveBirds[0].x.toFixed(2)}`, 0, 48)
   c.fillText(`Longest travelled ever: ${longestTravelled.toFixed(2)}`, 0, 64)
-
-  window.requestAnimationFrame(paint)
 }
+
+const renderer = new RenderSimulation({ render: paint, simulate })
 
 const speedInput = document.getElementById('speed')
 const speedDisplay = document.getElementById('speed-display')
 speedInput.addEventListener('input', e => {
-  speed = 2 ** +speedInput.value
-  speedDisplay.textContent = speed.toFixed(2)
+  renderer.speed = 2 ** +speedInput.value
+  speedDisplay.textContent = renderer.speed.toFixed(2)
 })
 
 window.addEventListener('resize', resize)
 resize()
 start()
-paint()
+renderer.start()
 
-window.setSpeed = newSpeed => (speed = newSpeed)
+window.setSpeed = newSpeed => (renderer.speed = newSpeed)
 window.getAliveBirds = () => aliveBirds
 console.log('Hello epic intellectuals! `setSpeed` and `getAliveBirds` are available globally for you to try in console.')
 console.log('Add ?complex=true to the end of the URL to see the neural network get COMPLEX.')

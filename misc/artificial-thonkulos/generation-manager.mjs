@@ -21,7 +21,7 @@ export class GenerationManager {
    * The generation is expected to be sorted best first
    */
   nextGeneration (generation) {
-    const { keepRate = 0.2, randomRate = 0.2, children = 1 } = this.options
+    const { brainType, keepRate = 0.2, randomRate = 0.2, children = 1 } = this.options
     const count = this.count
 
     if (generation.length !== count) {
