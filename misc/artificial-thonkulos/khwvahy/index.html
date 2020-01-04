@@ -33,6 +33,8 @@ import { GenerationManager } from '../generation-manager.mjs'
 import { Vector2 } from '../vectors.mjs'
 import { rayPolylineIntersection } from '../ray-intersection.mjs'
 
+import { RenderSimulation } from '../render-simulation.mjs'
+
 const CAR_WIDTH = 20 // Distance from centre to side
 const CAR_LENGTH = 40 // Distance from centre to front
 
@@ -88,7 +90,7 @@ class Car {
     const stop = SENSOR_DISTRIB_ANGLE * 2
     while (angle <= stop) {
       intersections.push(rayPolylineIntersection(front,
-        new Vector2(1, 0).rotate(angle), this.reality))
+        new Vector2(1, 0).rotate(angle), this.reality.walls))
       angle += SENSOR_DISTRIB_ANGLE
     }
     return { front, intersections }
@@ -114,7 +116,7 @@ class Car {
    */
   collision (velocity) {
     return this.vertices.map(vec => vec.rotate(this.angle).add(this.position))
-      .some(anchor => rayPolylineIntersection(anchor, velocity, this.reality))
+      .some(anchor => rayPolylineIntersection(anchor, velocity, this.reality.walls))
   }
 
   simulate (time) {
@@ -164,7 +166,7 @@ const brainType = new BrainType({ inputs: 5, hiddens: [4, 3], outputs: 2, bias: 
 const generationManager = new GenerationManager({ brainType, count: 50 })
 const cars = []
 for (let i = 0; i < generationManager.count; i++) {
-  cars.push(new Car(brainType).recognizeReality(reality)) // TODO
+  cars.push(new Car(brainType))
 }
 
 let generation = generationManager.makeGeneration()
@@ -172,15 +174,27 @@ let generations = 1
 let alive
 let record = 0
 
+let route
+
+function loadMap (map) {
+  for (const car of cars) {
+    car.recognizeReality(map)
+  }
+
+  route = map.route
+}
+
 function startGen () {
+  // TODO: Determine starting position along track
+
   for (let i = 0; i < generationManager.count; i++) {
-    cars[i].loadIdeology(generation[i]).start(position, angle) // TODO
+    cars[i].loadIdeology(generation[i]).start(position, angle)
   }
   alive = [...cars]
 }
 
 function nextGen () {
-  // TODO
+  // TODO: Determine progress
   cars.sort((a, b) => b.progress - a.progress)
   if (cars[0].progress > record) {
     record = cars[0].progress
@@ -225,13 +239,24 @@ function resize () {
 window.addEventListener('resize', resize)
 resize()
 
+let scrollX = 0
+let scrollY = 0
+
 function render () {
   //
 }
 
 const renderer = new RenderSimulation({ render, simulate })
 
-renderer.start()
+Promise.all([
+  fetch('./map1.json').then(r => r.ok ? r.json() : Promise.reject(r.status)),
+  fetch('./map1-route.json').then(r => r.ok ? r.json() : Promise.reject(r.status))
+]).then(([walls, route]) => {
+  loadMap({ walls, route })
+
+  startGen()
+  renderer.start()
+})
     </script>
   </body>
 </html>
