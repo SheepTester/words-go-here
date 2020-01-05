@@ -100,7 +100,7 @@ class Car {
     const stop = SENSOR_DISTRIB_ANGLE * 2
     while (angle <= stop) {
       intersections.push(rayPolylineIntersection(front,
-        new Vector2(1, 0).rotate(angle), this.reality.walls))
+        new Vector2(1, 0).rotate(this.angle + angle), this.reality.walls))
       angle += SENSOR_DISTRIB_ANGLE
     }
     return { front, intersections }
