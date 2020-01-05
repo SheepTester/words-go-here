@@ -16,6 +16,7 @@
         font-size: 0;
         margin: 0;
         background-color: black;
+        color: white;
         font-family: monospace;
       }
       #canvas {
@@ -86,11 +87,74 @@
         font-size: 30px;
         color: white;
       }
+
+      .info-pane {
+        position: fixed;
+        top: 0;
+        right: 0;
+        background-color: rgba(50, 50, 50, 0.8);
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      .toggle-pane {
+        font-size: 14px;
+        cursor: pointer;
+        padding: 10px;
+      }
+      #toggle-pane {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+      }
+      .content {
+        display: none;
+        font-size: 14px;
+      }
+      #toggle-pane:checked ~ .content {
+        display: block;
+        padding: 0 20px;
+        max-width: 300px;
+      }
+      a {
+        color: #ccf;
+      }
+      .speed {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        margin-left: 10px;
+      }
+      #speed {
+        margin: 0 10px;
+      }
     </style>
   </head>
   <body>
     <canvas id="canvas"></canvas>
     <canvas id="network"></canvas>
+    <div class="info-pane">
+      <input type="checkbox" id="toggle-pane">
+      <div class="bar">
+        <label class="speed">
+          <span>Speed</span>
+          <input type="range" id="speed" value="0" min="-3" max="5" step="any">
+          (<span id="speed-display">1.00</span>)
+        </label>
+        <label for="toggle-pane" class="toggle-pane">about</label>
+      </div>
+      <div class="content">
+        <p>A lot of things were based on <a href="https://github.com/ArztSamuel/Applying_EANNs/">Applying_EANNs by ArztSamuel</a>. The name <em>&kappa;&lambda;&omega;&nu;&alpha;&lambda;&gamma;</em> is "CLONALG" (named by <a href="https://github.com/andrewcpp">andrewcpp</a>) in Greek lowercase.</p>
+        <p>The two button things at the bottom are for controlling the sand-coloured car. Because the cars are controlled by fine movement, they require two fingers to use. Add ?human-car=false to the URL to hide them.</p>
+        <p>The speed setting changes the speed of the simulation.</p>
+        <p>You can add ?map=2 to the URL for the other map but I haven't tested it much so it's probably not very good.</p>
+      </div>
+    </div>
     <script type="module">
 import { BrainType } from '../brain-type.mjs'
 import { GenerationManager } from '../generation-manager.mjs'
@@ -461,7 +525,7 @@ const MIN_PROG_GRACE = -15 // Initial minimum progress "grace period"
 const MIN_PROG_PER_S = 5 // Movement of the minimum progress per second
 const MIN_PROG_MIN = 60 // If cars are too fast, minimum progress will catch up in case they stop later on
 function startGen () {
-  startingProgress = 850
+  startingProgress = mapID === 1 ? 850 : 0
   const position = getPositionInRoute(startingProgress)
   const angle = getPositionInRoute(startingProgress + 0.1).sub(position).angle
   minProgress = startingProgress + MIN_PROG_GRACE
@@ -589,7 +653,7 @@ function render () {
   for (const car of cars) {
     car.draw(c, car === winner)
   }
-  humanCar.draw(c, humanCar === winner)
+  if (humanCar) humanCar.draw(c, humanCar === winner)
 
   const death = getPositionInRoute(minProgress)
   c.strokeStyle = 'red'
@@ -636,9 +700,10 @@ if (params.get('human-car') !== 'false') {
   humanCar = new HumanCar(brainType).loadIdeology(brainType.makeRandom())
 }
 
+const mapID = params.get('map') || 1
 Promise.all([
-  fetch('./map1.json').then(r => r.ok ? r.json() : Promise.reject(r.status)),
-  fetch('./map1-route.json').then(r => r.ok ? r.json() : Promise.reject(r.status))
+  fetch(`./map${mapID}.json`).then(r => r.ok ? r.json() : Promise.reject(r.status)),
+  fetch(`./map${mapID}-route.json`).then(r => r.ok ? r.json() : Promise.reject(r.status))
 ]).then(([wallVertices, routeVertices]) => {
   const walls = []
   for (const vertices of wallVertices) {
@@ -667,10 +732,20 @@ Promise.all([
   renderer.start()
 })
 
-window.setSpeed = speed => renderer.speed = speed
+const speedInput = document.getElementById('speed')
+const speedDisplay = document.getElementById('speed-display')
+speedInput.addEventListener('input', e => {
+  renderer.speed = 2 ** +speedInput.value
+  speedDisplay.textContent = renderer.speed.toFixed(2)
+})
+
+window.setSpeed = speed => {
+  renderer.speed = speed
+  speedDisplay.textContent = speed.toFixed(2)
+}
 window.alive = () => alive
-window.minProgress = () => minProgress
-window.map = () => map
+window.cars = () => cars
+console.log('`setSpeed`, `alive`, and `cars` methods are available globally');
     </script>
   </body>
 </html>
