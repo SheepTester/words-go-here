@@ -135,26 +135,31 @@ class Car {
     const closest = getClosestToPolyline(this.position, this.reality.route)
     if (closest) {
       // Score for one full lap
-      const lap = this.reality.routePairs.length
-      let { t } = closest
+      const lap = this.reality.lapLength
+      const { t } = closest
+      let progress = 0
+      for (let i = 0; i < Math.floor(t); i++) {
+        progress += this.reality.routePairs[i][2]
+      }
+      progress += this.reality.routePairs[Math.floor(t)][2] * (t % 1)
       // Intelligently allow multiple laps to be extra, and going backwards to
       // be quite bad
-      if (this.progress - t > 0) {
-        while (t < this.progress) {
-          t += lap
+      if (this.progress - progress > 0) {
+        while (progress < this.progress) {
+          progress += lap
         }
-        if (Math.abs(this.progress - (t - lap)) < Math.abs(this.progress - t)) {
-          t -= lap
+        if (Math.abs(this.progress - (progress - lap)) < Math.abs(this.progress - progress)) {
+          progress -= lap
         }
       } else {
-        while (t > this.progress) {
-          t -= lap
+        while (progress > this.progress) {
+          progress -= lap
         }
-        if (Math.abs(this.progress - (t + lap)) < Math.abs(this.progress - t)) {
-          t += lap
+        if (Math.abs(this.progress - (progress + lap)) < Math.abs(this.progress - progress)) {
+          progress += lap
         }
       }
-      return t
+      return progress
     } else {
       throw new Error('Wucky: Shouldn\'t there always be a closest point?')
     }
@@ -222,6 +227,7 @@ for (let i = 0; i < generationManager.count; i++) {
 let generation = generationManager.makeGeneration()
 let generations = 1
 let alive
+let minProgress
 let record = 0
 
 let map
@@ -240,10 +246,13 @@ function getPositionInRoute (t) {
   return b.clone().sub(a).scale(t % 1).add(a)
 }
 
+const START_MIN_PROG = -3 // Initial minimum progress
+const MIN_PROG_PER_S = 1 // Movement of the minimum progress per second
 function startGen () {
   const startT = 0
   const position = getPositionInRoute(startT)
   const angle = getPositionInRoute(startT + 0.1).sub(position).angle
+  minProgress = START_MIN_PROG
 
   for (let i = 0; i < generationManager.count; i++) {
     cars[i].loadIdeology(generation[i]).start(position, angle)
@@ -252,7 +261,6 @@ function startGen () {
 }
 
 function nextGen () {
-  // TODO: Determine progress
   cars.sort((a, b) => b.progress - a.progress)
   if (cars[0].progress > record) {
     record = cars[0].progress
@@ -266,8 +274,13 @@ let scrollX = 0
 let scrollY = 0
 
 function simulate (simTime) {
+  minProgress += MIN_PROG_PER_S * simTime
+
   for (let i = 0; i < alive.length; i++) {
     alive[i].simulate(simTime)
+    if (alive[i].progress < minProgress) {
+      alive[i].dead = true
+    }
     if (alive[i].dead) {
       alive.splice(i, 1)
       i--
@@ -349,6 +362,13 @@ function render () {
 
   c.restore()
 
+  c.fillStyle = 'white'
+  c.font = '14px monospace'
+  c.fillText(`Generation ${generations}`, 0, 16)
+  c.fillText(`${alive.length}/${cars.length} alive`, 0, 32)
+  c.fillText(`Furthest travelled: ${winner.progress.toFixed(2)}`, 0, 48)
+  c.fillText(`Furthest travelled ever: ${record.toFixed(2)}`, 0, 64)
+
   networkCtx.clearRect(0, 0, networkSize.width, networkSize.height)
   mindReader.render(networkCtx, winner.ideology, winner.getInputs())
 }
@@ -370,12 +390,17 @@ Promise.all([
 
   // routePairs is an array of tuples containing the start and end points of each segment
   const routePairs = []
+  let lapLength = 0
   for (const vertices of routeVertices) {
     for (let i = 1; i < vertices.length; i++) {
-      routePairs.push([new Vector2(...vertices[i - 1]), new Vector2(...vertices[i])])
+      const a = new Vector2(...vertices[i - 1])
+      const b = new Vector2(...vertices[i])
+      const length = a.clone().sub(b).length
+      lapLength += length
+      routePairs.push([a, b, length])
     }
   }
-  loadMap({ walls, route, routePairs })
+  loadMap({ walls, route, routePairs, lapLength })
 
   startGen()
   renderer.start()
@@ -383,6 +408,8 @@ Promise.all([
 
 window.setSpeed = speed => renderer.speed = speed
 window.alive = () => alive
+window.minProgress = () => minProgress
+window.map = () => map
     </script>
   </body>
 </html>
