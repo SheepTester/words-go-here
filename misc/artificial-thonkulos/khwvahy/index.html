@@ -27,6 +27,64 @@
         top: 0;
         right: 0;
       }
+
+      .human-control {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        margin: 10px;
+        width: 200px;
+        height: 200px;
+        border-radius: 10px;
+        background-color: rgba(127, 127, 127, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-right-color: rgba(0, 0, 0, 0.2);
+        border-bottom-color: rgba(0, 0, 0, 0.2);
+        touch-action: none;
+        overflow: hidden;
+      }
+      .dead {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+      .active {
+        background-color: rgba(127, 127, 127, 0.5);
+      }
+      .active::after {
+        content: '';
+        position: absolute;
+      }
+      .turn-control {
+        left: 70px;
+      }
+      .turn-control.active::after {
+        left: var(--percent);
+        top: 0;
+        bottom: 0;
+        margin-left: -30px;
+        width: 60px;
+        background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      }
+      .engine-control {
+        right: 70px;
+        flex-direction: column;
+      }
+      .engine-control.active::after {
+        top: var(--percent);
+        left: 0;
+        right: 0;
+        margin-top: -30px;
+        height: 60px;
+        background-image: linear-gradient(transparent, rgba(255, 255, 255, 0.3), transparent);
+      }
+      .human-control span {
+        flex: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        color: white;
+      }
     </style>
   </head>
   <body>
@@ -180,17 +238,24 @@ class Car {
       }
       const velocity = new Vector2(1, 0).rotate(this.angle).scale(this.speed)
       if (this.collision(velocity)) {
-        this.dead = true
+        this.die()
       }
       // Add velocity after since `this.collision` relies on old position
       this.position.add(velocity)
 
       this.progress = this.getProgress()
     }
+    return this
+  }
+
+  die () {
+    this.dead = true
+    return this
   }
 
   draw (ctx, amWinner) {
-    ctx.fillStyle = this.dead ? 'rgba(127, 127, 127, 0.5)'
+    ctx.fillStyle = this.dead ? (this.isPlayer ? 'rgba(255, 200, 100, 0.5)' : 'rgba(127, 127, 127, 0.5)')
+      : this.isPlayer ? 'rgba(255, 200, 100, 0.8)'
       : amWinner ? 'rgba(255, 255, 0, 0.8)' : 'rgba(255, 127, 0, 0.8)'
     ctx.beginPath()
     const [startPoint, ...lineTos] = this.vertices
@@ -203,7 +268,7 @@ class Car {
 
     if (!this.dead) {
       const { intersections } = this.sense()
-      c.strokeStyle = amWinner ? 'rgba(0, 127, 255, 0.8)' : 'rgba(0, 255, 255, 0.2)'
+      c.strokeStyle = amWinner ? 'rgba(0, 255, 255, 0.8)' : 'rgba(0, 127, 255, 0.2)'
       ctx.beginPath()
       for (const vec of intersections) {
         if (vec) {
@@ -216,6 +281,108 @@ class Car {
       }
       ctx.stroke()
     }
+
+    return this
+  }
+}
+
+class HumanCar extends Car {
+  constructor (...args) {
+    super(...args)
+
+    this.turn = 0
+    this.engine = 0
+    this.isPlayer = true
+
+    const turnControl = document.createElement('div')
+    turnControl.className = 'human-control turn-control'
+    turnControl.innerHTML = `<span>&leftarrow;</span><span>&rightarrow;</span>`
+    document.body.appendChild(turnControl)
+    let turnPointerId = null
+    const setTurn = e => {
+      if (turnPointerId === e.pointerId) {
+        const { left, width } = turnControl.getBoundingClientRect()
+        const percent = (e.clientX - left) / width
+        this.turn = percent * 2 - 1
+        turnControl.style.setProperty('--percent', `${percent * 100}%`)
+      }
+    }
+    const stopTurn = e => {
+      if (turnPointerId === e.pointerId) {
+        turnPointerId = null
+        this.turn = 0
+        turnControl.classList.remove('active')
+      }
+    }
+    turnControl.addEventListener('pointerdown', e => {
+      if (turnPointerId === null) {
+        turnPointerId = e.pointerId
+        turnControl.setPointerCapture(turnPointerId)
+        setTurn(e)
+        turnControl.classList.add('active')
+      }
+    })
+    turnControl.addEventListener('pointermove', setTurn)
+    turnControl.addEventListener('pointerup', stopTurn)
+    turnControl.addEventListener('pointercancel', stopTurn)
+    this.turnControl = turnControl
+
+    const engineControl = document.createElement('div')
+    engineControl.className = 'human-control engine-control'
+    engineControl.innerHTML = `<span>&uparrow;</span><span>&downarrow;</span>`
+    document.body.appendChild(engineControl)
+    let enginePointerId = null
+    const setEngine = e => {
+      if (enginePointerId === e.pointerId) {
+        const { top, height } = engineControl.getBoundingClientRect()
+        const percent = (e.clientY - top) / height
+        this.engine = 1 - percent * 2 // Inverted Y axis...
+        engineControl.style.setProperty('--percent', `${percent * 100}%`)
+      }
+    }
+    const stopEngine = e => {
+      if (enginePointerId === e.pointerId) {
+        enginePointerId = null
+        this.engine = 0
+        engineControl.classList.remove('active')
+      }
+    }
+    engineControl.addEventListener('pointerdown', e => {
+      if (enginePointerId === null) {
+        enginePointerId = e.pointerId
+        engineControl.setPointerCapture(enginePointerId)
+        setEngine(e)
+        engineControl.classList.add('active')
+      }
+    })
+    engineControl.addEventListener('pointermove', setEngine)
+    engineControl.addEventListener('pointerup', stopEngine)
+    engineControl.addEventListener('pointercancel', stopEngine)
+    this.engineControl = engineControl
+  }
+
+  start (...args) {
+    super.start(...args)
+    this.turnControl.classList.remove('dead')
+    this.engineControl.classList.remove('dead')
+    return this
+  }
+
+  driveWithFreeWill () {
+    return {
+      turnSpeed: this.turn * TURN_SPEED,
+      engineAccel: this.engine * ENGINE_ACCEL
+    }
+  }
+
+  die () {
+    if (!this.dead) {
+      this.wasDead = true
+      this.turnControl.classList.add('dead')
+      this.engineControl.classList.add('dead')
+    }
+    super.die()
+    return this
   }
 }
 
@@ -225,6 +392,7 @@ const cars = []
 for (let i = 0; i < generationManager.count; i++) {
   cars.push(new Car(brainType))
 }
+let humanCar
 
 let generation = generationManager.makeGeneration()
 let generations = 1
@@ -240,6 +408,8 @@ function loadMap (newMap) {
   for (const car of cars) {
     car.recognizeReality(newMap)
   }
+  // Needed for collisions etc
+  if (humanCar) humanCar.recognizeReality(newMap)
 
   map = newMap
 }
@@ -274,6 +444,7 @@ function startGen () {
     cars[i].loadIdeology(generation[i]).start(position, angle)
   }
   alive = [...cars]
+  if (humanCar) alive.push(humanCar.start(position, angle))
 }
 
 function nextGen () {
@@ -281,6 +452,8 @@ function nextGen () {
   if (cars[0].progress > record) {
     record = cars[0].progress
   }
+  // Give human car best ideology so far because human supremacy
+  if (humanCar) humanCar.loadIdeology(cars[0].ideology)
 
   generation = generationManager.nextGeneration(cars.map(car => car.ideology))
   generations++
@@ -295,7 +468,7 @@ function simulate (simTime) {
   for (let i = 0; i < alive.length; i++) {
     alive[i].simulate(simTime)
     if (alive[i].progress < minProgress) {
-      alive[i].dead = true
+      alive[i].die()
     }
     if (alive[i].dead) {
       alive.splice(i, 1)
@@ -308,12 +481,14 @@ function simulate (simTime) {
     startGen()
   }
 
-  const winner = alive.reduce((curr, acc) => curr.progress > acc.progress ? curr : acc)
-  // Look ahead 50 units
-  const centre = new Vector2(200, 0).rotate(winner.angle).add(winner.position)
+  const target = humanCar || alive.reduce((curr, acc) => curr.progress > acc.progress ? curr : acc)
+  // Move camera to about where it's looking
+  const centre = new Vector2(MAX_RANGE, 0).rotate(target.angle).add(target.position)
   scrollX += (centre.x - screenWidth / 2 - scrollX) / 50
   scrollY += (centre.y - screenHeight / 2 - scrollY) / 50
 }
+
+const params = new URL(window.location).searchParams
 
 const canvas = document.getElementById('canvas')
 const c = canvas.getContext('2d')
@@ -374,6 +549,7 @@ function render () {
   for (const car of cars) {
     car.draw(c, car === winner)
   }
+  humanCar.draw(c, humanCar === winner)
 
   const death = getPositionInRoute(minProgress)
   c.strokeStyle = 'red'
@@ -398,6 +574,10 @@ function render () {
 }
 
 const renderer = new RenderSimulation({ render, simulate })
+
+if (params.get('human-car') !== 'false') {
+  humanCar = new HumanCar(brainType).loadIdeology(brainType.makeRandom())
+}
 
 Promise.all([
   fetch('./map1.json').then(r => r.ok ? r.json() : Promise.reject(r.status)),
