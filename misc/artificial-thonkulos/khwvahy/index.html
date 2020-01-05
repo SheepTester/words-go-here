@@ -174,8 +174,8 @@ class Car {
   driveWithFreeWill () {
     const [turn, engine] = this.brainType.ponder(this.ideology, this.getInputs())
     return {
-      turnSpeed: (turn - 0.5) * 2 * TURN_SPEED,
-      engineAccel: (engine - 0.5) * 2 * ENGINE_ACCEL
+      turnSpeed: turn * TURN_SPEED,
+      engineAccel: engine * ENGINE_ACCEL
     }
   }
 
@@ -387,7 +387,14 @@ class HumanCar extends Car {
   }
 }
 
-const brainType = new BrainType({ inputs: 5, hiddens: [4, 3], outputs: 2, bias: true })
+const brainType = new BrainType({
+  inputs: 5,
+  hiddens: [4, 3],
+  outputs: 2,
+  bias: true,
+  // https://github.com/ArztSamuel/Applying_EANNs/blob/master/UnityProject/Assets/Scripts/General/MathHelper.cs#L47
+  fn: n => n / (1 + Math.abs(n))
+})
 const generationManager = new GenerationManager({ brainType, count: 50 })
 const cars = []
 for (let i = 0; i < generationManager.count; i++) {

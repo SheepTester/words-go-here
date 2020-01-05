@@ -9,6 +9,7 @@ export class MindReader {
     } = options
     this.layers = brainType.layers
     this.bias = brainType.bias
+    this.fn = brainType.fn
     this.maxLayers = Math.max(...brainType.layers)
   }
 
@@ -27,7 +28,7 @@ export class MindReader {
   }
 
   render (ctx, weights, inputs) {
-    const { options, bias, layers, maxLayers } = this
+    const { options, bias, layers, maxLayers, fn } = this
     if (inputs.length !== layers[0]) {
       throw new Error('Wucky: The Brain is picky and wants a specific number of inputs.')
     }
@@ -91,7 +92,7 @@ export class MindReader {
           sum += weights[weight]
           weight++
         }
-        layer.push(sigmoid(sum))
+        layer.push(fn ? fn(sum) : sum)
       }
       layerValues.push(layer)
     }
