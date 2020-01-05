@@ -22,10 +22,16 @@
         width: 100%;
         height: 100%;
       }
+      #network {
+        position: fixed;
+        top: 0;
+        right: 0;
+      }
     </style>
   </head>
   <body>
     <canvas id="canvas"></canvas>
+    <canvas id="network"></canvas>
     <script type="module">
 import { BrainType } from '../brain-type.mjs'
 import { GenerationManager } from '../generation-manager.mjs'
@@ -34,6 +40,7 @@ import { Vector2 } from '../vectors.mjs'
 import { rayPolylineIntersection, getClosestToPolyline } from '../ray-intersection.mjs'
 
 import { RenderSimulation } from '../render-simulation.mjs'
+import { MindReader } from '../mind-reader.mjs'
 
 const CAR_WIDTH = 5 // Distance from centre to side
 const CAR_LENGTH = 10 // Distance from centre to front
@@ -41,9 +48,9 @@ const CAR_LENGTH = 10 // Distance from centre to front
 const MAX_RANGE = 100
 const SENSOR_DISTRIB_ANGLE = Math.PI / 8
 
-const TURN_SPEED = 1
-const ENGINE_ACCEL = 4
-const FRICTION_ACCEL = 0
+const TURN_SPEED = 2
+const ENGINE_ACCEL = 10
+const FRICTION_ACCEL = 1
 class Car {
   constructor (brainType) {
     this.brainType = brainType
@@ -282,6 +289,17 @@ function simulate (simTime) {
 const canvas = document.getElementById('canvas')
 const c = canvas.getContext('2d')
 
+const networkCanvas = document.getElementById('network')
+const networkCtx = networkCanvas.getContext('2d')
+
+const PADDING = 10
+const mindReader = new MindReader({ brainType, x: PADDING, y: PADDING })
+const networkSize = mindReader.getExpectedSize()
+networkSize.width += PADDING * 2
+networkSize.height += PADDING * 2
+networkCanvas.style.width = networkSize.width + 'px'
+networkCanvas.style.height = networkSize.height + 'px'
+
 let screenWidth
 let screenHeight
 
@@ -289,9 +307,14 @@ function resize () {
   const dpr = window.devicePixelRatio
   screenWidth = window.innerWidth
   screenHeight = window.innerHeight
+
   canvas.width = screenWidth * dpr
   canvas.height = screenHeight * dpr
   c.scale(dpr, dpr)
+
+  networkCanvas.width = networkSize.width * dpr
+  networkCanvas.height = networkSize.height * dpr
+  networkCtx.scale(dpr, dpr)
 }
 
 window.addEventListener('resize', resize)
@@ -325,6 +348,9 @@ function render () {
   }
 
   c.restore()
+
+  networkCtx.clearRect(0, 0, networkSize.width, networkSize.height)
+  mindReader.render(networkCtx, winner.ideology, winner.getInputs())
 }
 
 const renderer = new RenderSimulation({ render, simulate })
