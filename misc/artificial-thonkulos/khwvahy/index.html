@@ -117,8 +117,11 @@ class Car {
    * with the course
    */
   collision (velocity) {
-    return this.vertices.map(vec => vec.rotate(this.angle).add(this.position))
-      .some(anchor => rayPolylineIntersection(anchor, velocity, this.reality.walls))
+    const speed = velocity.length
+    return this.vertices.some(anchor => {
+      const intersection = rayPolylineIntersection(anchor, velocity, this.reality.walls)
+      return intersection && intersection.sub(anchor).length < speed
+    })
   }
 
   simulate (time) {
@@ -133,7 +136,7 @@ class Car {
         this.speed += FRICTION_ACCEL * time
         if (this.speed > 0) this.speed = 0
       }
-      const velocity = new Vector2(1, 0).rotate(this.angle).scale(this.velocity)
+      const velocity = new Vector2(1, 0).rotate(this.angle).scale(this.speed)
       if (this.collision(velocity)) {
         this.dead = true
       }
@@ -143,7 +146,7 @@ class Car {
   }
 
   draw (ctx) {
-    ctx.fillStyle = this.dead ? 'rgba(0, 0, 0, 0.5)' : 'orange'
+    ctx.fillStyle = this.dead ? 'rgba(127, 127, 127, 0.5)' : 'rgba(255, 127, 0, 0.8)'
     ctx.beginPath()
     const [startPoint, ...lineTos] = this.vertices
     ctx.moveTo(...startPoint.comps)
@@ -153,18 +156,20 @@ class Car {
     ctx.closePath()
     ctx.fill()
 
-    const { intersections } = this.sense()
-    ctx.beginPath()
-    for (const vec of intersections) {
-      if (vec) {
-        const { x, y } = vec
-        ctx.moveTo(x - 4, y - 4)
-        ctx.lineTo(x + 4, y + 4)
-        ctx.moveTo(x + 4, y - 4)
-        ctx.lineTo(x - 4, y + 4)
+    if (!this.dead) {
+      const { intersections } = this.sense()
+      ctx.beginPath()
+      for (const vec of intersections) {
+        if (vec) {
+          const { x, y } = vec
+          ctx.moveTo(x - 4, y - 4)
+          ctx.lineTo(x + 4, y + 4)
+          ctx.moveTo(x + 4, y - 4)
+          ctx.lineTo(x - 4, y + 4)
+        }
       }
+      ctx.stroke()
     }
-    ctx.stroke()
   }
 }
 
