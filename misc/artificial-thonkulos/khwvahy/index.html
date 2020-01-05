@@ -37,6 +37,7 @@ import { BrainType } from '../brain-type.mjs'
 import { GenerationManager } from '../generation-manager.mjs'
 
 import { Vector2 } from '../vectors.mjs'
+import { mod } from '../utils.mjs'
 import { rayPolylineIntersection, getClosestToPolyline } from '../ray-intersection.mjs'
 
 import { RenderSimulation } from '../render-simulation.mjs'
@@ -48,9 +49,9 @@ const CAR_LENGTH = 10 // Distance from centre to front
 const MAX_RANGE = 100
 const SENSOR_DISTRIB_ANGLE = Math.PI / 8
 
-const TURN_SPEED = 2
-const ENGINE_ACCEL = 10
-const FRICTION_ACCEL = 1
+const TURN_SPEED = 1.74532925
+const ENGINE_ACCEL = 8
+const FRICTION_ACCEL = 2
 class Car {
   constructor (brainType) {
     this.brainType = brainType
@@ -114,8 +115,8 @@ class Car {
   driveWithFreeWill () {
     const [turn, engine] = this.brainType.ponder(this.ideology, this.getInputs())
     return {
-      turnSpeed: (turn - 0.5) * TURN_SPEED,
-      engineAccel: (engine - 0.5) * ENGINE_ACCEL
+      turnSpeed: (turn - 0.5) * 2 * TURN_SPEED,
+      engineAccel: (engine - 0.5) * 2 * ENGINE_ACCEL
     }
   }
 
@@ -202,6 +203,7 @@ class Car {
 
     if (!this.dead) {
       const { intersections } = this.sense()
+      c.strokeStyle = amWinner ? 'rgba(0, 127, 255, 0.8)' : 'rgba(0, 255, 255, 0.2)'
       ctx.beginPath()
       for (const vec of intersections) {
         if (vec) {
@@ -227,6 +229,8 @@ for (let i = 0; i < generationManager.count; i++) {
 let generation = generationManager.makeGeneration()
 let generations = 1
 let alive
+
+let startingProgress
 let minProgress
 let record = 0
 
@@ -240,19 +244,31 @@ function loadMap (newMap) {
   map = newMap
 }
 
-function getPositionInRoute (t) {
-  t = t % map.routePairs.length
-  const [a, b] = map.routePairs[Math.floor(t)]
-  return b.clone().sub(a).scale(t % 1).add(a)
+function getPositionInRoute (progress) {
+  progress = mod(progress, map.lapLength)
+  let containingPair
+  let offset
+  let length = 0
+  for (const pair of map.routePairs) {
+    if (length + pair[2] > progress) {
+      containingPair = pair
+      offset = progress - length
+      break
+    } else {
+      length += pair[2]
+    }
+  }
+  const [a, b, pairLength] = containingPair
+  return b.clone().sub(a).scale(offset / pairLength).add(a)
 }
 
-const START_MIN_PROG = -3 // Initial minimum progress
-const MIN_PROG_PER_S = 1 // Movement of the minimum progress per second
+const MIN_PROG_GRACE = -15 // Initial minimum progress "grace period"
+const MIN_PROG_PER_S = 5 // Movement of the minimum progress per second
 function startGen () {
-  const startT = 0
-  const position = getPositionInRoute(startT)
-  const angle = getPositionInRoute(startT + 0.1).sub(position).angle
-  minProgress = START_MIN_PROG
+  startingProgress = 800
+  const position = getPositionInRoute(startingProgress)
+  const angle = getPositionInRoute(startingProgress + 0.1).sub(position).angle
+  minProgress = startingProgress + MIN_PROG_GRACE
 
   for (let i = 0; i < generationManager.count; i++) {
     cars[i].loadIdeology(generation[i]).start(position, angle)
@@ -355,10 +371,18 @@ function render () {
   c.stroke()
 
   const winner = alive.reduce((curr, acc) => curr.progress > acc.progress ? curr : acc)
-  c.strokeStyle = 'rgba(0, 255, 255, 0.2)'
   for (const car of cars) {
     car.draw(c, car === winner)
   }
+
+  const death = getPositionInRoute(minProgress)
+  c.strokeStyle = 'red'
+  c.beginPath()
+  c.moveTo(death.x - 4, death.y - 4)
+  c.lineTo(death.x + 4, death.y + 4)
+  c.moveTo(death.x + 4, death.y - 4)
+  c.lineTo(death.x - 4, death.y + 4)
+  c.stroke()
 
   c.restore()
 
@@ -366,8 +390,8 @@ function render () {
   c.font = '14px monospace'
   c.fillText(`Generation ${generations}`, 0, 16)
   c.fillText(`${alive.length}/${cars.length} alive`, 0, 32)
-  c.fillText(`Furthest travelled: ${winner.progress.toFixed(2)}`, 0, 48)
-  c.fillText(`Furthest travelled ever: ${record.toFixed(2)}`, 0, 64)
+  c.fillText(`Furthest travelled: ${(winner.progress - startingProgress).toFixed(2)}`, 0, 48)
+  c.fillText(`Furthest travelled ever: ${(record - startingProgress).toFixed(2)}`, 0, 64)
 
   networkCtx.clearRect(0, 0, networkSize.width, networkSize.height)
   mindReader.render(networkCtx, winner.ideology, winner.getInputs())
