@@ -35,15 +35,15 @@ import { rayPolylineIntersection } from '../ray-intersection.mjs'
 
 import { RenderSimulation } from '../render-simulation.mjs'
 
-const CAR_WIDTH = 20 // Distance from centre to side
-const CAR_LENGTH = 40 // Distance from centre to front
+const CAR_WIDTH = 5 // Distance from centre to side
+const CAR_LENGTH = 10 // Distance from centre to front
 
 const MAX_RANGE = 100
 const SENSOR_DISTRIB_ANGLE = Math.PI / 8
 
 const TURN_SPEED = 1
 const ENGINE_ACCEL = 4
-const FRICTION_ACCEL = 1
+const FRICTION_ACCEL = 0
 class Car {
   constructor (brainType) {
     this.brainType = brainType
@@ -52,10 +52,10 @@ class Car {
 
   get vertices () {
     return [
-      new Vector(CAR_LENGTH, CAR_WIDTH),
-      new Vector(-CAR_LENGTH, CAR_WIDTH),
-      new Vector(-CAR_LENGTH, -CAR_WIDTH),
-      new Vector(CAR_LENGTH, -CAR_WIDTH)
+      new Vector2(CAR_LENGTH, CAR_WIDTH),
+      new Vector2(-CAR_LENGTH, CAR_WIDTH),
+      new Vector2(-CAR_LENGTH, -CAR_WIDTH),
+      new Vector2(CAR_LENGTH, -CAR_WIDTH)
     ].map(vec => vec.rotate(this.angle).add(this.position))
   }
 
@@ -79,6 +79,8 @@ class Car {
     this.position.set(position)
     this.speed = 0
     this.angle = angle
+
+    this.progress = 0
     this.dead = false
     return this
   }
@@ -131,7 +133,7 @@ class Car {
         this.speed += FRICTION_ACCEL * time
         if (this.speed > 0) this.speed = 0
       }
-      const velocity = new Vector(1, 0).rotate(this.angle).scale(this.velocity)
+      const velocity = new Vector2(1, 0).rotate(this.angle).scale(this.velocity)
       if (this.collision(velocity)) {
         this.dead = true
       }
@@ -141,6 +143,7 @@ class Car {
   }
 
   draw (ctx) {
+    ctx.fillStyle = this.dead ? 'rgba(0, 0, 0, 0.5)' : 'orange'
     ctx.beginPath()
     const [startPoint, ...lineTos] = this.vertices
     ctx.moveTo(...startPoint.comps)
@@ -152,11 +155,14 @@ class Car {
 
     const { intersections } = this.sense()
     ctx.beginPath()
-    for (const { x, y } of intersections) {
-      ctx.moveTo(x - 2, y - 2)
-      ctx.lineTo(x + 2, y + 2)
-      ctx.moveTo(x + 2, y - 2)
-      ctx.lineTo(x - 2, y + 2)
+    for (const vec of intersections) {
+      if (vec) {
+        const { x, y } = vec
+        ctx.moveTo(x - 4, y - 4)
+        ctx.lineTo(x + 4, y + 4)
+        ctx.moveTo(x + 4, y - 4)
+        ctx.lineTo(x - 4, y + 4)
+      }
     }
     ctx.stroke()
   }
@@ -174,18 +180,26 @@ let generations = 1
 let alive
 let record = 0
 
-let route
+let map
 
-function loadMap (map) {
+function loadMap (newMap) {
   for (const car of cars) {
-    car.recognizeReality(map)
+    car.recognizeReality(newMap)
   }
 
-  route = map.route
+  map = newMap
+}
+
+function getPositionInRoute (t) {
+  t = t % map.route.length
+  const [a, b] = map.route[Math.floor(t)]
+  return b.clone().sub(a).scale(t % 1).add(a)
 }
 
 function startGen () {
-  // TODO: Determine starting position along track
+  const startT = 0
+  const position = getPositionInRoute(startT)
+  const angle = getPositionInRoute(startT + 0.1).sub(position).angle
 
   for (let i = 0; i < generationManager.count; i++) {
     cars[i].loadIdeology(generation[i]).start(position, angle)
@@ -222,8 +236,8 @@ function simulate (simTime) {
   }
 
   const winner = alive.reduce((curr, acc) => curr.progress > acc.progress ? curr : acc)
-  scrollX += (scrollX - winner.position.x) / 5
-  scrollY += (scrollY - winner.position.y) / 5
+  scrollX += (winner.position.x - screenWidth / 2 - scrollX) / 50
+  scrollY += (winner.position.y - screenHeight / 2 - scrollY) / 50
 }
 
 const canvas = document.getElementById('canvas')
@@ -245,7 +259,33 @@ window.addEventListener('resize', resize)
 resize()
 
 function render () {
-  //
+  c.clearRect(0, 0, screenWidth, screenHeight)
+
+  c.save()
+  c.translate(-scrollX, -scrollY)
+
+  c.lineWidth = 2
+  c.lineJoin = 'round'
+  c.lineCap = 'round'
+  c.strokeStyle = 'white'
+  c.beginPath()
+  for (let i = 0; i < map.walls.length; i++) {
+    const a = map.walls[i - 1]
+    const b = map.walls[i]
+    if (a && b) {
+      c.moveTo(...a.comps)
+      c.lineTo(...b.comps)
+    }
+  }
+  c.stroke()
+
+  c.lineWidth = 1
+  c.strokeStyle = 'rgba(0, 255, 255, 0.5)'
+  for (const car of cars) {
+    car.draw(c)
+  }
+
+  c.restore()
 }
 
 const renderer = new RenderSimulation({ render, simulate })
@@ -253,7 +293,19 @@ const renderer = new RenderSimulation({ render, simulate })
 Promise.all([
   fetch('./map1.json').then(r => r.ok ? r.json() : Promise.reject(r.status)),
   fetch('./map1-route.json').then(r => r.ok ? r.json() : Promise.reject(r.status))
-]).then(([walls, route]) => {
+]).then(([wallVertices, routeVertices]) => {
+  const walls = []
+  for (const vertices of wallVertices) {
+    walls.push(null, ...vertices.map(comps => new Vector2(...comps)))
+  }
+
+  // Route is an array of tuples containing the start and end points of each segment
+  const route = []
+  for (const vertices of routeVertices) {
+    for (let i = 1; i < vertices.length; i++) {
+      route.push([new Vector2(...vertices[i - 1]), new Vector2(...vertices[i])])
+    }
+  }
   loadMap({ walls, route })
 
   startGen()

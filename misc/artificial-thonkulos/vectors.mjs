@@ -11,6 +11,10 @@ export class Vector2 {
     return [this.x, this.y]
   }
 
+  get angle () {
+    return Math.atan2(this.y, this.x)
+  }
+
   set ({ x = this.x, y = this.y }) {
     this.x = x
     this.y = y
