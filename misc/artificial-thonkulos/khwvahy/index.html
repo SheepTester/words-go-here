@@ -31,7 +31,7 @@ import { BrainType } from '../brain-type.mjs'
 import { GenerationManager } from '../generation-manager.mjs'
 
 import { Vector2 } from '../vectors.mjs'
-import { rayPolylineIntersection } from '../ray-intersection.mjs'
+import { rayPolylineIntersection, getClosestToPolyline } from '../ray-intersection.mjs'
 
 import { RenderSimulation } from '../render-simulation.mjs'
 
@@ -117,11 +117,40 @@ class Car {
    * with the course
    */
   collision (velocity) {
-    const speed = velocity.length
+    const speed = Math.abs(this.speed)
     return this.vertices.some(anchor => {
       const intersection = rayPolylineIntersection(anchor, velocity, this.reality.walls)
       return intersection && intersection.sub(anchor).length < speed
     })
+  }
+
+  getProgress () {
+    const closest = getClosestToPolyline(this.position, this.reality.route)
+    if (closest) {
+      // Score for one full lap
+      const lap = this.reality.routePairs.length
+      let { t } = closest
+      // Intelligently allow multiple laps to be extra, and going backwards to
+      // be quite bad
+      if (this.progress - t > 0) {
+        while (t < this.progress) {
+          t += lap
+        }
+        if (Math.abs(this.progress - (t - lap)) < Math.abs(this.progress - t)) {
+          t -= lap
+        }
+      } else {
+        while (t > this.progress) {
+          t -= lap
+        }
+        if (Math.abs(this.progress - (t + lap)) < Math.abs(this.progress - t)) {
+          t += lap
+        }
+      }
+      return t
+    } else {
+      throw new Error('Wucky: Shouldn\'t there always be a closest point?')
+    }
   }
 
   simulate (time) {
@@ -142,11 +171,14 @@ class Car {
       }
       // Add velocity after since `this.collision` relies on old position
       this.position.add(velocity)
+
+      this.progress = this.getProgress()
     }
   }
 
-  draw (ctx) {
-    ctx.fillStyle = this.dead ? 'rgba(127, 127, 127, 0.5)' : 'rgba(255, 127, 0, 0.8)'
+  draw (ctx, amWinner) {
+    ctx.fillStyle = this.dead ? 'rgba(127, 127, 127, 0.5)'
+      : amWinner ? 'rgba(255, 255, 0, 0.8)' : 'rgba(255, 127, 0, 0.8)'
     ctx.beginPath()
     const [startPoint, ...lineTos] = this.vertices
     ctx.moveTo(...startPoint.comps)
@@ -196,8 +228,8 @@ function loadMap (newMap) {
 }
 
 function getPositionInRoute (t) {
-  t = t % map.route.length
-  const [a, b] = map.route[Math.floor(t)]
+  t = t % map.routePairs.length
+  const [a, b] = map.routePairs[Math.floor(t)]
   return b.clone().sub(a).scale(t % 1).add(a)
 }
 
@@ -241,8 +273,10 @@ function simulate (simTime) {
   }
 
   const winner = alive.reduce((curr, acc) => curr.progress > acc.progress ? curr : acc)
-  scrollX += (winner.position.x - screenWidth / 2 - scrollX) / 50
-  scrollY += (winner.position.y - screenHeight / 2 - scrollY) / 50
+  // Look ahead 50 units
+  const centre = new Vector2(200, 0).rotate(winner.angle).add(winner.position)
+  scrollX += (centre.x - screenWidth / 2 - scrollX) / 50
+  scrollY += (centre.y - screenHeight / 2 - scrollY) / 50
 }
 
 const canvas = document.getElementById('canvas')
@@ -272,7 +306,7 @@ function render () {
   c.lineWidth = 2
   c.lineJoin = 'round'
   c.lineCap = 'round'
-  c.strokeStyle = 'white'
+  c.strokeStyle = 'rgba(255, 255, 255, 0.3)'
   c.beginPath()
   for (let i = 0; i < map.walls.length; i++) {
     const a = map.walls[i - 1]
@@ -284,10 +318,10 @@ function render () {
   }
   c.stroke()
 
-  c.lineWidth = 1
-  c.strokeStyle = 'rgba(0, 255, 255, 0.5)'
+  const winner = alive.reduce((curr, acc) => curr.progress > acc.progress ? curr : acc)
+  c.strokeStyle = 'rgba(0, 255, 255, 0.2)'
   for (const car of cars) {
-    car.draw(c)
+    car.draw(c, car === winner)
   }
 
   c.restore()
@@ -303,19 +337,26 @@ Promise.all([
   for (const vertices of wallVertices) {
     walls.push(null, ...vertices.map(comps => new Vector2(...comps)))
   }
-
-  // Route is an array of tuples containing the start and end points of each segment
   const route = []
   for (const vertices of routeVertices) {
+    route.push(null, ...vertices.map(comps => new Vector2(...comps)))
+  }
+
+  // routePairs is an array of tuples containing the start and end points of each segment
+  const routePairs = []
+  for (const vertices of routeVertices) {
     for (let i = 1; i < vertices.length; i++) {
-      route.push([new Vector2(...vertices[i - 1]), new Vector2(...vertices[i])])
+      routePairs.push([new Vector2(...vertices[i - 1]), new Vector2(...vertices[i])])
     }
   }
-  loadMap({ walls, route })
+  loadMap({ walls, route, routePairs })
 
   startGen()
   renderer.start()
 })
+
+window.setSpeed = speed => renderer.speed = speed
+window.alive = () => alive
     </script>
   </body>
 </html>
