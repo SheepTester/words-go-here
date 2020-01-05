@@ -42,6 +42,7 @@
         border-bottom-color: rgba(0, 0, 0, 0.2);
         touch-action: none;
         overflow: hidden;
+        user-select: none;
       }
       .dead {
         opacity: 0.5;
@@ -435,7 +436,7 @@ function getPositionInRoute (progress) {
 const MIN_PROG_GRACE = -15 // Initial minimum progress "grace period"
 const MIN_PROG_PER_S = 5 // Movement of the minimum progress per second
 function startGen () {
-  startingProgress = 800
+  startingProgress = 850
   const position = getPositionInRoute(startingProgress)
   const angle = getPositionInRoute(startingProgress + 0.1).sub(position).angle
   minProgress = startingProgress + MIN_PROG_GRACE
