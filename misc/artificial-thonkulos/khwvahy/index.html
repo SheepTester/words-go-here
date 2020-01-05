@@ -442,6 +442,7 @@ function getPositionInRoute (progress) {
 
 const MIN_PROG_GRACE = -15 // Initial minimum progress "grace period"
 const MIN_PROG_PER_S = 5 // Movement of the minimum progress per second
+const MIN_PROG_MIN = 60 // If cars are too fast, minimum progress will catch up in case they stop later on
 function startGen () {
   startingProgress = 850
   const position = getPositionInRoute(startingProgress)
@@ -489,11 +490,18 @@ function simulate (simTime) {
     startGen()
   }
 
-  const target = humanCar || alive.reduce((curr, acc) => curr.progress > acc.progress ? curr : acc)
+  const target = humanCar && !humanCar.dead ? humanCar
+    : alive.reduce((curr, acc) => curr.progress > acc.progress ? curr : acc)
   // Move camera to about where it's looking
   const centre = new Vector2(MAX_RANGE, 0).rotate(target.angle).add(target.position)
   scrollX += (centre.x - screenWidth / 2 - scrollX) / 50
   scrollY += (centre.y - screenHeight / 2 - scrollY) / 50
+
+  // Skip minimum progress ahead if all the cars are ahead to prevent them from stopping later
+  const worst = alive.reduce((curr, acc) => curr.progress < acc.progress ? curr : acc)
+  if (worst.progress - MIN_PROG_MIN > minProgress) {
+    minProgress = worst.progress - MIN_PROG_MIN
+  }
 }
 
 const params = new URL(window.location).searchParams
