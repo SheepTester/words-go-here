@@ -148,6 +148,7 @@ class Car {
     this.angle = angle
 
     this.progress = 0
+    this.notMoving = null
     this.dead = false
     return this
   }
@@ -245,6 +246,20 @@ class Car {
       this.position.add(velocity)
 
       this.progress = this.getProgress()
+
+      if (!this.isPlayer) {
+        if (Math.abs(this.speed) < 0.001 && Math.abs(turnSpeed) < 0.01) {
+          if (this.notMoving === null) {
+            this.notMoving = 0
+          }
+          this.notMoving += time
+          if (this.notMoving > 0.5) {
+            this.die()
+          }
+        } else if (this.notMoving !== null) {
+          this.notMoving = null
+        }
+      }
     }
     return this
   }
@@ -409,6 +424,8 @@ let alive
 let startingProgress
 let minProgress
 let record = 0
+let roundRecord
+const recordsPerGen = []
 
 let map
 
@@ -448,6 +465,7 @@ function startGen () {
   const position = getPositionInRoute(startingProgress)
   const angle = getPositionInRoute(startingProgress + 0.1).sub(position).angle
   minProgress = startingProgress + MIN_PROG_GRACE
+  roundRecord = 0
 
   for (let i = 0; i < generationManager.count; i++) {
     cars[i].loadIdeology(generation[i]).start(position, angle)
@@ -457,10 +475,9 @@ function startGen () {
 }
 
 function nextGen () {
+  recordsPerGen.push(roundRecord)
+
   cars.sort((a, b) => b.progress - a.progress)
-  if (cars[0].progress > record) {
-    record = cars[0].progress
-  }
   // Give human car best ideology so far because human supremacy
   if (humanCar) humanCar.loadIdeology(cars[0].ideology)
 
@@ -490,18 +507,25 @@ function simulate (simTime) {
     startGen()
   }
 
-  const target = humanCar && !humanCar.dead ? humanCar
-    : alive.reduce((curr, acc) => curr.progress > acc.progress ? curr : acc)
-  // Move camera to about where it's looking
-  const centre = new Vector2(MAX_RANGE, 0).rotate(target.angle).add(target.position)
-  scrollX += (centre.x - screenWidth / 2 - scrollX) / 50
-  scrollY += (centre.y - screenHeight / 2 - scrollY) / 50
+  const winner = alive.reduce((curr, acc) => curr.progress > acc.progress ? curr : acc)
+  if (winner.progress - startingProgress > roundRecord) {
+    roundRecord = winner.progress - startingProgress
+    if (roundRecord > record) {
+      record = roundRecord
+    }
+  }
 
   // Skip minimum progress ahead if all the cars are ahead to prevent them from stopping later
   const worst = alive.reduce((curr, acc) => curr.progress < acc.progress ? curr : acc)
   if (worst.progress - MIN_PROG_MIN > minProgress) {
     minProgress = worst.progress - MIN_PROG_MIN
   }
+
+  const target = humanCar && !humanCar.dead ? humanCar : winner
+  // Move camera to about where it's looking
+  const centre = new Vector2(MAX_RANGE, 0).rotate(target.angle).add(target.position)
+  scrollX += (centre.x - screenWidth / 2 - scrollX) / 50
+  scrollY += (centre.y - screenHeight / 2 - scrollY) / 50
 }
 
 const params = new URL(window.location).searchParams
@@ -579,11 +603,28 @@ function render () {
   c.restore()
 
   c.fillStyle = 'white'
+  c.strokeStyle = 'white'
   c.font = '14px monospace'
   c.fillText(`Generation ${generations}`, 0, 16)
   c.fillText(`${alive.length}/${cars.length} alive`, 0, 32)
-  c.fillText(`Furthest travelled: ${(winner.progress - startingProgress).toFixed(2)}`, 0, 48)
-  c.fillText(`Furthest travelled ever: ${(record - startingProgress).toFixed(2)}`, 0, 64)
+  c.fillText(`Furthest travelled: ${roundRecord.toFixed(2)}`, 0, 48)
+  c.fillText(`Furthest travelled ever: ${record.toFixed(2)}`, 0, 64)
+
+  // Record graph
+  c.fillText(`FT`, 5, 130)
+  c.fillText(`Generation`, 90, 200)
+  c.beginPath()
+  c.moveTo(30, 80)
+  c.lineTo(30, 180)
+  c.lineTo(230, 180)
+  c.stroke()
+  const spacing = 200 / recordsPerGen.length
+  c.beginPath()
+  c.moveTo(30, 180)
+  for (let i = 0; i < recordsPerGen.length; i++) {
+    c.lineTo((i + 1) * spacing + 30, 180 - recordsPerGen[i] / record * 100)
+  }
+  c.stroke()
 
   networkCtx.clearRect(0, 0, networkSize.width, networkSize.height)
   mindReader.render(networkCtx, winner.ideology, winner.getInputs())
