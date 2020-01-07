@@ -143,9 +143,10 @@ function downloadAsHTML(projectSrc, {
       ? ''
       : /* no-offline */ fetch(ratio16to9
         ? 'https://sheeptester.github.io/scratch-vm/16-9/vm.min.js'
-        : 'https://sheeptester.github.io/scratch-vm/vm.min.js') /* /no-offline */
-        // offline-vm-src
+        : 'https://sheeptester.github.io/scratch-vm/vm.min.js')
         .then(r => r.text())
+        /* /no-offline */
+        // [offline-vm-src]
         .then(vmCode => {
           log('Scratch engine obtained...');
           // remove dumb </ script>s in comments
@@ -153,7 +154,10 @@ function downloadAsHTML(projectSrc, {
         }),
 
     // fetch template
-    /* no-offline */ fetch('./template.html').then(r => r.text()) /* /no-offline */
+    fetch(
+      /* no-offline */ './template.html' /* /no-offline */
+      // [template]
+    ).then(r => r.text())
   ]).then(([preface, scripts, template]) => {
     scripts = preface
       + `DESIRED_USERNAME = ${JSON.stringify(username)},\n`
