@@ -5,9 +5,13 @@
     <meta charset="UTF-8">
     <meta name="description" content="Converts a Scratch project to HTML/JavaScript"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <!-- no-offline -->
     <link rel="stylesheet" type="text/css" href="../../sheep3.css">
     <script src="../../sheep3.js" charset="utf-8"></script>
+    <script src="./offlineifier.js" charset="utf-8"></script>
+    <!-- /no-offline -->
     <script src="./hacky-file-getter.js" charset="utf-8"></script>
+    <script src="./download.js" charset="utf-8"></script>
     <style media="screen">
       :target {
         animation: flash 3s;
@@ -24,14 +28,17 @@
         font-size: 1.2em;
         cursor: pointer;
       }
+      .offline::after {
+        content: 'Offline edition'
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        font-size: 14px;
+        color: rgba(0, 0, 0, 0.5);
+      }
     </style>
   </head>
   <body>
-    <script src="https://sheeptester.github.io/scratch-vm/vm.min.js"></script>
-
-    <script src="./hacky-file-getter.js" charset="utf-8"></script>
-    <script src="./download.js" charset="utf-8"></script>
-
     <h1>Project HTMLifier</h1>
     <h3><em>Convert a Scratch project to HTML</em></h3>
     <p>This packages your Scratch project into a single HTML file that can run on its own in a web browser. The HTML file will be pretty big because it contains the entire Scratch engine (2.6 MB) and the costume and sound files used in the project. There is no direct translation between a Scratch block and a JavaScript equivalent because the two languages are fundamentally different, so you should not use the code in the generated file for learning HTML or JavaScript after Scratch.</p>
@@ -47,7 +54,9 @@
       <p><label><input type="checkbox" id="use-colour"> Use custom variable/list monitor colour: <input type="color" id="monitor-colour" value="#ff8c1a">? (If unchecked, a translucent black will be used.)</label></p>
       <p><label><input type="checkbox" id="progress" checked> Load progress indicator?</label></p>
       <p><label><input type="checkbox" id="compatibility" checked> Enable compatibility mode?<a id="ref-2" href="#note-2"><sup>2</sup></a></label></p>
+      <!-- no-offline -->
       <p><label><input type="checkbox" id="wider"> Does this project use a <a href="https://sheeptester.github.io/scratch-gui/?width=640&height=360">custom size</a>?</label> <label>Width: <input type="number" value="640" id="width"></label> <label>Height: <input type="number" value="360" id="height"></label></p>
+      <!-- /no-offline -->
       <fieldset>
         <legend>Cloud variable source</legend>
         <p><label><input type="radio" name="cloud-provider" value="localstorage" checked> Save cloud variables locally using localStorage<a id="ref-1" href="#note-1"><sup>1</sup></a></label></p>
@@ -107,6 +116,8 @@
       <li>Project start</li>
     </ul>
     <p>Made by <a href="https://scratch.mit.edu/users/Sheep_maker/">Sheep_maker</a>, who used <a href="https://github.com/LLK/scratch-vm/">scratch-vm</a>, <a href="http://danml.com/download.html">download.js</a>, and their dependencies for this project.</p>
+    <!-- VM relies on document.body existing oof -->
+    <script src="https://sheeptester.github.io/scratch-vm/vm.min.js" charset="utf-8"></script>
     <script type="text/javascript">
 const loadNoMinifyBtn = document.getElementById('load-no-minify');
 const title = document.getElementById('title');
@@ -116,7 +127,9 @@ const file = document.getElementById('file');
 const error = document.getElementById('error');
 const compatibility = document.getElementById('compatibility');
 const turbo = document.getElementById('turbo');
+/* no-offline */
 const wider = document.getElementById('wider');
+/* /no-offline */
 const progressBar = document.getElementById('progress');
 const fullscreen = document.getElementById('fullscreen');
 const useColour = document.getElementById('use-colour');
@@ -147,7 +160,9 @@ function load() {
         error.value += output + '\n';
         error.scrollTop = error.scrollHeight;
       },
+      /* no-offline */
       ratio16to9: wider.checked,
+      /* /no-offline */
       progressBar: progressBar.checked,
       fullscreen: fullscreen.checked,
       monitorColour: useColour.checked ? monitorColour.value : null,
