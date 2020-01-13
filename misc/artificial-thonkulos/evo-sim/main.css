@@ -1,0 +1,104 @@
+:root {
+  /* https://colorhunt.co/palette/166073 */
+  --background: #015668;
+  --layer: #263f44;
+  --accent: #ffd369;
+  --text: #fff1cf;
+}
+
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background-color: var(--background);
+  color: var(--text);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0;
+}
+button {
+  -webkit-appearance: none;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+:focus {
+  outline: none; /* ._. maybe I'll make it intelligent later */
+}
+
+.container {
+  display: flex;
+}
+.view {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+.hidden {
+  display: none;
+}
+.text {
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+}
+.button {
+  background-color: var(--accent);
+  color: rgba(0, 0, 0, 0.8);
+  padding: 5px 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  transition: all .2s;
+}
+.button:active {
+  box-shadow: none;
+}
+
+.start-view {
+  padding: 20px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.title {
+  font-size: 48px;
+}
+.start-btn {
+  font-size: 24px;
+  padding: 5px 20px;
+}
+
+.generations-view {
+  padding: 20px;
+}
+.gen-side,
+.gens-buttons {
+  flex-direction: column;
+}
+.gen-left,
+.line-graph-wrapper,
+.histogram-wrapper {
+  flex: auto;
+}
+.heading {
+  font-size: 36px;
+}
+.area-graph-wrapper {
+  height: 100px;
+  margin-top: 20px;
+}
+.line-graph-wrapper,
+.area-graph-wrapper,
+.histogram-wrapper {
+  background-color: var(--layer);
+}
+.gen-right {
+  margin-left: 20px;
+}
+.gens-buttons .button {
+  margin-bottom: 10px;
+}
