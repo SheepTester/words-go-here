@@ -1,3 +1,5 @@
+// Not a module because web workers don't support modules :/
+
 class Vector2 {
   constructor (x = 0, y = 0) {
     this.set({ x, y })
@@ -16,39 +18,24 @@ class Vector2 {
   }
 
   set ({ x, y }) {
-    if (Number.isNaN(x) || Number.isNaN(y) ||
-      !Number.isFinite(x) || !Number.isFinite(y)) {
-      throw new Error('nan/inf spooted')
-    }
     this.x = x
     this.y = y
     return this
   }
 
   add ({ x, y }) {
-    if (Number.isNaN(x) || Number.isNaN(y) ||
-      !Number.isFinite(x) || !Number.isFinite(y)) {
-      throw new Error('nan/inf spooted')
-    }
     this.x += x
     this.y += y
     return this
   }
 
   sub ({ x, y }) {
-    if (Number.isNaN(x) || Number.isNaN(y) ||
-      !Number.isFinite(x) || !Number.isFinite(y)) {
-      throw new Error('nan/inf spooted')
-    }
     this.x -= x
     this.y -= y
     return this
   }
 
   scale (factor) {
-    if (Number.isNaN(factor) || !Number.isFinite(factor)) {
-      throw new Error('nan/inf spooted')
-    }
     this.x *= factor
     this.y *= factor
     return this
@@ -63,43 +50,49 @@ class Vector2 {
   }
 }
 
-const GRAVITY = 9.8 // acceleration due to gravity (m/s^2)
+const GRAVITY = 9.8 // Acceleration due to gravity (m/s^2)
 const GROUND = 0 // Ground height (m)
-const NODE_RADIUS = 0.1 // radius of a node (m)
 
 class Node {
   // friction is coefficient of friction
-  constructor(friction, mass = 10) {
+  constructor ({ friction, mass = 1, radius = 0.2, initPos: [x, y] }) {
     this.friction = friction
     this.mass = mass
+    this.radius = radius
+    this.initPos = new Vector2(x, y)
     this.pos = new Vector2()
     this.vel = new Vector2()
     this.forces = new Vector2()
   }
 
+  reset () {
+    this.pos.set(this.initPos)
+    this.vel.set({ x: 0, y: 0 })
+    this.resetForces()
+  }
+
   resetForces () {
-    this.forces.set({x: 0, y: 0})
+    this.forces.set({ x: 0, y: 0 })
   }
 
   calcForces () {
     // Weight
-    this.forces.add({x: 0, y: this.mass * GRAVITY})
+    this.forces.add({ x: 0, y: this.mass * GRAVITY })
 
     if (this.touchingGround()) {
       const normal = this.forces.y
-      this.forces.add({x: 0, y: -normal})
+      this.forces.add({ x: 0, y: -normal })
       // Friction
       this.forces.add({
         x: -Math.sign(this.vel.x) * normal * this.friction,
         y: 0
       })
-      // this.forces.add(this.vel.clone().unit().scale(-normal * this.friction))
     }
   }
 
   touchingGround () {
     // If mass and size are correlated, then should adjust radius here
-    return this.pos.y >= GROUND - NODE_RADIUS
+    return this.pos.y >= GROUND - this.radius
   }
 
   move (time) {
@@ -111,8 +104,31 @@ class Node {
     // v_f = v_i + a * t
     this.vel.add(acceleration.scale(time))
 
-    if (this.pos.y > GROUND - NODE_RADIUS) {
-      this.pos.y = GROUND - NODE_RADIUS
+    if (this.pos.y > GROUND - this.radius) {
+      this.pos.y = GROUND - this.radius
+    }
+  }
+
+  mutate (intensity) {
+    this.initPos.add({
+      x: (Math.random() - 0.5) * intensity,
+      y: (Math.random() - 0.5) * intensity
+    })
+    this.friction += (Math.random() * 2 - 1) * 0.1 * intensity
+    if (this.friction > 4) this.friction = 4
+    else if (this.friction < 0) this.friction = 0
+  }
+
+  clone () {
+    return new Node(this.toJSON())
+  }
+
+  toJSON () {
+    return {
+      friction: this.friction,
+      mass: this.mass,
+      radius: this.radius,
+      initPos: this.initPos.comps
     }
   }
 }
@@ -120,19 +136,35 @@ class Node {
 class Muscle {
   // constant is spring constant
   // length is like the normal length
-  constructor(constant, length, node1, node2) {
+  constructor ({
+    constant,
+    damping = 1,
+    compressLength,
+    extendLength,
+    compressTime,
+    extendTime,
+    node1,
+    node2
+  }) {
     this.constant = constant
-    this.length = length
-    this.damping = 1
+    this.compressLength = compressLength
+    this.extendLength = extendLength
+    this.compressTime = compressTime
+    this.extendTime = extendTime
+    this.damping = damping
     this.node1 = node1
     this.node2 = node2
   }
 
-  applyForces () {
+  applyForces (clockTime) {
     // Vector from node 1 to 2's position
+    const length = (this.compressTime > this.extendTime
+      ? clockTime > this.extendTime && clockTime <= this.compressTime
+      : clockTime <= this.compressTime || clockTime > this.extendTime)
+      ? this.extendLength : this.compressLength
     const oneToTwo = this.node2.pos.clone().sub(this.node1.pos)
     const nodeLength = oneToTwo.length
-    const displacement = nodeLength - this.length
+    const displacement = nodeLength - length
     const force = this.constant * displacement
     // Apply elastic force in other's direction with magnitude of force
     this.node1.forces
@@ -142,6 +174,28 @@ class Muscle {
       .add(oneToTwo.clone().unit().scale(-force))
       .add(this.node2.vel.clone().scale(-this.damping))
   }
+
+  mutate (intensity) {
+    this.constant += (Math.random() * 2 - 1) * 0.9 * intensity
+    if (this.constant < 0.01) this.constant = 0.01
+    else if (this.constant > 0.08) this.constant = 0.08
+  }
+
+  clone () {
+    return new Muscle(this.toJSON())
+  }
+
+  toJSON () {
+    return {
+      constant: this.constant,
+      damping: this.damping,
+      compressLength: this.compressLength,
+      extendLength: this.extendLength,
+      compressTime: this.compressTime,
+      extendTime: this.extendTime,
+      // nodes??
+    }
+  }
 }
 
 class Creature {
@@ -150,33 +204,45 @@ class Creature {
     this.muscles = []
   }
 
-  addMuscle (newMuscle) {
-    const { node1, node2 } = newMuscle
-    for (const muscle of this.muscles) {
-      if (muscle === newMuscle) {
-        throw new Error('already have musccle!')
-      }
-      if (muscle.node1 === node1 && muscle.node2 === node2 ||
-        muscle.node1 === node2 && muscle.node1 === mode1) {
-        throw new Error('Nodes already connected by a muscle!')
+  fix () {
+    for (let i = 0; i < this.muscles.length; i++) {
+      const { node1, node2 } = this.muscles[i]
+      for (let j = 0; j < i; j++) {
+        const muscle = this.muscles[j]
+        if (muscle.node1 === node1 && muscle.node2 === node2 ||
+          muscle.node1 === node2 && muscle.node2 === mode1) {
+          this.muscles.splice(i, 1)
+          i--
+          break
+        }
       }
     }
-    if (!this.nodes.includes(node1)) this.nodes.push(node1)
-    if (!this.nodes.includes(node2)) this.nodes.push(node2)
-    this.muscles.push(newMuscle)
-    return this
+    for (let i = 0; i < this.nodes.length; i++) {
+      const node = this.nodes[i]
+      if (!this.muscles.some(({ node1, node2 }) => node1 === node || node2 === node)) {
+        this.nodes.splice(i, 1)
+        i--
+      }
+    }
+  }
+
+  reset () {
+    this.clock = 0
+    for (const node of this.nodes) {
+      node.reset()
+    }
   }
 
   sim (time) {
-    for (const node of this.nodes) {
-      node.resetForces()
-    }
+    this.clock += time
     for (const muscle of this.muscles) {
-      muscle.applyForces()
+      muscle.applyForces(this.clock % 1)
     }
     for (const node of this.nodes) {
       node.calcForces()
       node.move(time)
+      // Reset for next frame
+      node.resetForces()
     }
   }
 
@@ -200,17 +266,5 @@ class Creature {
       c.arc(x, y, NODE_RADIUS, 0, 2 * Math.PI)
       c.fill()
     }
-
-    return
-    c.strokeStyle = 'rgba(255, 255, 255, 0.5)'
-    c.lineWidth = 0.05
-    c.beginPath()
-    for (const node of this.nodes) {
-      c.moveTo(...node.pos.comps)
-      c.lineTo(...node.pos.clone().add(node.vel).comps)
-      c.moveTo(...node.pos.comps)
-      c.lineTo(...node.pos.clone().add(node.forces).comps)
-    }
-    c.stroke()
   }
 }
