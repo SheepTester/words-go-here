@@ -72,6 +72,7 @@ function mutate (random, type, num, intensity) {
   return num > max ? max : num < min ? min : num
 }
 
+const SIM_TIME = 1 / 60
 const GRAVITY = 9.8 // Acceleration due to gravity (m/s^2)
 const GROUND = 0 // Ground height (m)
 
@@ -82,9 +83,10 @@ class Node {
     this.mass = mass
     this.radius = radius
     this.initPos = new Vector2(x, y)
-    this.pos = new Vector2(x, y)
+    this.pos = new Vector2()
     this.vel = new Vector2()
     this.forces = new Vector2()
+    this.isNode = true
   }
 
   reset () {
@@ -134,7 +136,7 @@ class Node {
   mutate (random, intensity) {
     this.initPos.set({
       x: mutate(random, 'x', this.initPos.x, intensity),
-      y: mutate(random, 'y', this.initPos.y intensity)
+      y: mutate(random, 'y', this.initPos.y, intensity)
     })
     this.friction = mutate(random, 'friction', this.friction, intensity)
   }
@@ -181,6 +183,7 @@ class Muscle {
     this.damping = damping
     this.node1 = node1
     this.node2 = node2
+    this.isMuscle = true
   }
 
   extending (clockTime) {
@@ -242,7 +245,7 @@ class Muscle {
     const distance = node1.initPos.clone().sub(node2.initPos).length
     const ratio = random.random(0.01, 0.2)
     return new Muscle({
-      constant: random(0.02, 0.08),
+      constant: random.random(0.02, 0.08),
       contractLength: distance * (1 - ratio),
       extendLength: distance * (1 + ratio),
       contractTime: random.random(),
@@ -255,23 +258,37 @@ class Muscle {
 
 class Creature {
   constructor ({ nodes = [], muscles = [], mutability, heartbeat } = {}) {
-    this.nodes = nodes.map(node => new Node(node))
-    this.muscles = muscles.map(({ node1, node2, ...muscle }) => new Muscle({
-      node1: this.nodes[node1],
-      node2: this.nodes[node2],
-      ...muscle
-    }))
+    this.nodes = nodes.map(node => node.isNode ? node : new Node(node))
+    this.muscles = muscles.map(muscle => {
+      if (muscle.isMuscle) return muscle
+      const { node1, node2, ...muscleData } = muscle
+      return new Muscle({
+        node1: this.nodes[node1],
+        node2: this.nodes[node2],
+        ...muscleData
+      })
+    })
     this.mutability = mutability
     this.heartbeat = heartbeat
+    this.isCreature = true
+  }
+
+  position () {
+    const sum = new Vector2(0, 0)
+    for (const node of this.nodes) {
+      sum.add(node.pos)
+    }
+    return sum.scale(1 / this.nodes.length)
   }
 
   fix () {
+    // Destroy unpleasant nodes and muscles
     for (let i = 0; i < this.muscles.length; i++) {
       const { node1, node2 } = this.muscles[i]
       for (let j = 0; j < i; j++) {
         const muscle = this.muscles[j]
         if (muscle.node1 === node1 && muscle.node2 === node2 ||
-          muscle.node1 === node2 && muscle.node2 === mode1) {
+          muscle.node1 === node2 && muscle.node2 === node1) {
           this.muscles.splice(i, 1)
           i--
           break
@@ -284,6 +301,38 @@ class Creature {
         this.nodes.splice(i, 1)
         i--
       }
+    }
+
+    // Give 3 seconds for creature to wiggle around as it pleases in case
+    // a muscle is bent at a weird position or something
+    // Honestly this is kind of clever (I stole this from carykh), though
+    // it's possibly laggy
+    this.reset()
+    for (let i = 0; i < 180; i++) {
+      for (const muscle of this.muscles) {
+        muscle.applyForces(0)
+      }
+      for (const node of this.nodes) {
+        node.move(SIM_TIME)
+        node.resetForces()
+      }
+    }
+
+    // Reposition creature pleasantly
+    let sumX = 0
+    let lowestY = Infinity // +Y is down
+    for (const node of this.nodes) {
+      // Set initPos to current position from the wiggling
+      node.initPos.set(node.pos)
+
+      sumX += node.initPos.x
+      const bottom = node.initPos.y + node.radius
+      if (bottom > lowestY) lowestY = bottom
+    }
+    const shiftX = -sumX / this.nodes.length
+    const shiftY = GROUND - lowestY
+    for (const node of this.nodes) {
+      node.initPos.add({ x: shiftX, y: shiftY })
     }
   }
 

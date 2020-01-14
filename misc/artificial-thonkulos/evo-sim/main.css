@@ -57,6 +57,21 @@ button {
 .button:active {
   box-shadow: none;
 }
+.button:disabled {
+  cursor: auto;
+  opacity: 0.5;
+  box-shadow: none;
+}
+.canvas-wrapper {
+  position: relative;
+}
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
 
 .start-view {
   padding: 20px;
@@ -70,6 +85,24 @@ button {
 .start-btn {
   font-size: 24px;
   padding: 5px 20px;
+}
+
+.creatures-view {
+  flex-direction: column;
+  padding: 20px;
+}
+.creatures {
+  flex: auto;
+}
+.creature-btns > .container {
+  display: none;
+  align-items: center;
+}
+.creature-btns .button {
+  margin: 0 10px;
+}
+.state-gen0 .gen0 {
+  display: flex;
 }
 
 .generations-view {

@@ -17,7 +17,7 @@ class ElemThing {
 }
 
 class Container extends ElemThing {
-  constructor(className = '', elems = []) {
+  constructor (className = '', elems = []) {
     super('div', className, elems)
     this.elem.classList.add('container')
   }
@@ -62,8 +62,31 @@ class Button extends ElemThing {
     super('button', className)
     this.elem.classList.add('button')
     this.elem.textContent = label
-    this.elem.addEventListener('click', onclick)
+    this.elem.addEventListener('click', e => {
+      onclick(this)
+    })
   }
 }
 
-export { Container, View, Text, Button }
+class Canvas extends ElemThing {
+  constructor (className = '') {
+    super('div', className)
+    this.elem.classList.add('canvas-wrapper')
+    this.canvas = document.createElement('canvas')
+    this.canvas.classList.add('canvas')
+    this.ctx = this.canvas.getContext('2d')
+    this.elem.appendChild(this.canvas)
+  }
+
+  resizeCanvas () {
+    const { width, height } = this.elem.getBoundingClientRect()
+    this.width = width
+    this.height = height
+    const dpr = window.devicePixelRatio
+    this.canvas.width = width * dpr
+    this.canvas.height = height * dpr
+    this.scale(dpr, dpr)
+  }
+}
+
+export { Container, View, Text, Button, Canvas }
