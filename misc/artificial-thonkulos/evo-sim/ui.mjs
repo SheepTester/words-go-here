@@ -1,21 +1,18 @@
-class ElemThing {
+import { EventEmitter } from '../event-emitter.mjs'
+
+class ElemThing extends EventEmitter {
   constructor (tagName = 'div', className = '', children = []) {
+    super()
     this.elem = document.createElement(tagName)
     this.elem.className = className
     for (const child of children) {
-      child.addTo(this.elem)
+      this.elem.append(child.elem)
     }
-  }
-
-  addTo (parent) {
-    parent.append(this.elem)
-  }
-
-  remove () {
-    this.elem.remove()
+    this.descendants = [].concat(children, ...children.map(c => c.descendants))
   }
 }
 
+// Has display flex
 class Container extends ElemThing {
   constructor (className = '', elems = []) {
     super('div', className, elems)
@@ -29,6 +26,11 @@ class View extends Container {
     this.elem.classList.add('view')
     this.elem.classList.add('hidden')
     this.hidden = true
+
+    for (const descendant of this.descendants) {
+      descendant.view = this
+      descendant.emit('view', this)
+    }
   }
 
   show () {
@@ -38,6 +40,7 @@ class View extends Container {
       if (!this.elem.parentNode) {
         this.addTo(document.body)
       }
+      this.emit('show')
     }
   }
 
@@ -45,7 +48,28 @@ class View extends Container {
     if (!this.hidden) {
       this.elem.classList.add('hidden')
       this.hidden = true
+      this.emit('hide')
     }
+  }
+
+  addTo (parent) {
+    parent.append(this.elem)
+  }
+
+  remove () {
+    if (!this.hidden) {
+      this.hide()
+    }
+    this.elem.remove()
+  }
+
+  resize () {
+    let ready
+    const onReady = new Promise(resolve => {
+      ready = resolve
+    })
+    this.emit('resize', onReady)
+    ready()
   }
 }
 
@@ -76,16 +100,22 @@ class Canvas extends ElemThing {
     this.canvas.classList.add('canvas')
     this.ctx = this.canvas.getContext('2d')
     this.elem.appendChild(this.canvas)
+
+    this.on('view', view => {
+      view.on('resize', this.resizeCanvas.bind(this))
+    })
   }
 
-  resizeCanvas () {
+  async resizeCanvas (onReady) {
     const { width, height } = this.elem.getBoundingClientRect()
     this.width = width
     this.height = height
     const dpr = window.devicePixelRatio
+    await onReady
     this.canvas.width = width * dpr
     this.canvas.height = height * dpr
-    this.scale(dpr, dpr)
+    this.ctx.scale(dpr, dpr)
+    this.ctx.fillRect(20, 20, 20, 40)
   }
 }
 

@@ -7,7 +7,7 @@ const views = {
       document.body.classList.add('state-gen0')
       btn.elem.disabled = true
       sendWorker({ type: 'start' }).then(({ creatures }) => {
-        console.log(creatures)
+        console.log(creatures.map(creature => new Creature(creature)))
         showView(views.creatures)
       })
     })
@@ -46,8 +46,14 @@ function showView (view) {
     currentView.hide()
   }
   view.show()
+  view.resize()
   currentView = view
 }
+window.addEventListener('resize', e => {
+  if (currentView) {
+    currentView.resize()
+  }
+})
 
 const worker = new Worker('./worker.js')
 const expectingResponses = []
