@@ -8,14 +8,14 @@ class EventEmitter {
       this._listeners[name] = new Set()
     }
     this._listeners[name].add(fn)
-    return fn
+    return this
   }
 
   off (name, fn) {
     if (this._listeners[name]) {
       this._listeners[name].delete(fn)
     }
-    return fn
+    return this
   }
 
   emit (name, ...args) {
