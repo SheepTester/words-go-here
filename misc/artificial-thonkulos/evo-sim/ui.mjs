@@ -8,6 +8,7 @@ class ElemThing extends EventEmitter {
     this.elem.className = className
     for (const child of children) {
       this.elem.append(child.elem)
+      child.parent = this
     }
     this.descendants = [].concat(children, ...children.map(c => c.descendants))
   }
@@ -15,8 +16,8 @@ class ElemThing extends EventEmitter {
 
 // Has display flex
 class Container extends ElemThing {
-  constructor (className = '', elems = []) {
-    super('div', className, elems)
+  constructor (className = '', elems = [], tagName = 'div') {
+    super(tagName, className, elems)
     this.elem.classList.add('container')
   }
 }
@@ -93,6 +94,13 @@ class Button extends ElemThing {
   }
 }
 
+class Fieldset extends Container {
+  constructor (className, elems) {
+    super(className, elems, 'fieldset')
+    this.elem.classList.add('fieldset')
+  }
+}
+
 class Canvas extends ElemThing {
   constructor (className = '', onView = noop) {
     super('div', className)
@@ -108,6 +116,10 @@ class Canvas extends ElemThing {
         this.resizeCanvas()
       })
     })
+
+    this.sizeReady = new Promise(resolve => {
+      this._sizeIsReady = resolve
+    })
   }
 
   async resizeCanvas (onReady) {
@@ -119,8 +131,12 @@ class Canvas extends ElemThing {
     this.canvas.width = width * dpr
     this.canvas.height = height * dpr
     this.ctx.scale(dpr, dpr)
+    if (this._sizeIsReady) {
+      this._sizeIsReady()
+      this._sizeIsReady = null
+    }
     this.emit('repaint')
   }
 }
 
-export { Container, View, Text, Button, Canvas }
+export { Container, View, Text, Button, Fieldset, Canvas }

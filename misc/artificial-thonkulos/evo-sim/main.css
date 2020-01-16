@@ -62,6 +62,11 @@ button {
   opacity: 0.5;
   box-shadow: none;
 }
+.fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
 .canvas-wrapper {
   position: relative;
 }
@@ -103,7 +108,8 @@ button {
 .creature-btns .button {
   margin: 0 10px;
 }
-.state-gen0 .gen0 {
+.state-gen0 .gen0,
+.state-results .results {
   display: flex;
 }
 
@@ -115,20 +121,20 @@ button {
   flex-direction: column;
 }
 .gen-left,
-.line-graph-wrapper,
-.histogram-wrapper {
+.line-graph,
+.histogram {
   flex: auto;
 }
 .heading {
   font-size: 36px;
 }
-.area-graph-wrapper {
+.area-graph {
   height: 100px;
   margin-top: 20px;
 }
-.line-graph-wrapper,
-.area-graph-wrapper,
-.histogram-wrapper {
+.line-graph,
+.area-graph,
+.histogram {
   background-color: var(--layer);
 }
 .gen-right {
@@ -136,4 +142,9 @@ button {
 }
 .gens-buttons .button {
   margin-bottom: 10px;
+}
+
+.watch {
+  flex: auto;
+  background-color: skyblue;
 }

@@ -50,7 +50,11 @@ self.addEventListener('message', ({ data }) => {
       console.timeEnd(data.type)
       // currentGeneration.sort((a, b) => b.fitness - a.fitness)
       respond(data, {
-        creatures: currentGeneration.map(creature => creature.fitness)
+        creatures: currentGeneration.map(creature => {
+          const json = creature.toJSON()
+          json.fitness = creature.fitness
+          return json
+        })
       })
       break
     default:

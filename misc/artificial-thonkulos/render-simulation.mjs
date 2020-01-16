@@ -1,7 +1,9 @@
+import { noop } from './utils.mjs'
+
 export class RenderSimulation {
   constructor ({
-    render = () => {},
-    simulate = () => {},
+    render = noop,
+    simulate = noop,
     simTime = 0.01, // in seconds
     maxDelay = 0.5, // in seconds
     speed = 1
@@ -10,7 +12,7 @@ export class RenderSimulation {
     this.simulate = simulate
     this.simTime = simTime
     this.maxDelay = maxDelay
-    this.speed = 1
+    this.speed = speed
 
     this._idealSimulationTime = 0
     this._timeSimulated = 0
