@@ -31,6 +31,7 @@ export class RenderSimulation {
   stop () {
     if (this._running) {
       window.cancelAnimationFrame(this._lastRequestID)
+      this._running = false
     }
   }
 
@@ -48,6 +49,9 @@ export class RenderSimulation {
 
     this.render(this._timeSimulated / 1000, elapsed / 1000)
 
-    this._lastRequestID = window.requestAnimationFrame(this._paint.bind(this))
+    // In case it calls `stop` during the simulate or render steps
+    if (this._running) {
+      this._lastRequestID = window.requestAnimationFrame(this._paint.bind(this))
+    }
   }
 }

@@ -10,3 +10,10 @@ export function sigmoid (n) {
 export function mod (a, b) {
   return (a % b + b) % b
 }
+
+export function easeInOutQuart (t) {
+  t *= 2
+  if (t < 1) return t * t * t * t / 2
+  t -= 2
+  return -(t * t * t * t - 2) / 2
+}

@@ -100,6 +100,10 @@ button {
   flex: auto;
   background-color: skyblue;
 }
+.creature-btns {
+  margin-top: 20px;
+  height: 40px;
+}
 .creature-btns > .container {
   display: none;
   align-items: center;
@@ -109,7 +113,9 @@ button {
   margin: 0 10px;
 }
 .state-gen0 .gen0,
-.state-results .results {
+.state-results .results,
+.state-sorting .sorting,
+.state-sorted .sorted {
   display: flex;
 }
 
@@ -147,4 +153,19 @@ button {
 .watch {
   flex: auto;
   background-color: skyblue;
+}
+
+.creature-preview {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: auto;
+  height: auto;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid black;
+}
+.preview {
+  background-color: skyblue;
+  width: 300px;
+  height: 300px;
 }

@@ -48,7 +48,19 @@ self.addEventListener('message', ({ data }) => {
       console.time(data.type)
       simulateGeneration()
       console.timeEnd(data.type)
-      // currentGeneration.sort((a, b) => b.fitness - a.fitness)
+      respond(data, {
+        creatures: currentGeneration.map(creature => {
+          const json = creature.toJSON()
+          json.fitness = creature.fitness
+          return json
+        })
+      })
+      break
+    case 'kill':
+      console.time(data.type)
+      currentGeneration.sort((a, b) => b.fitness - a.fitness)
+      // TODO: Kill.
+      console.timeEnd(data.type)
       respond(data, {
         creatures: currentGeneration.map(creature => {
           const json = creature.toJSON()
