@@ -1,4 +1,5 @@
 import { EventEmitter } from '../event-emitter.mjs'
+import { noop } from '../utils.mjs'
 
 class ElemThing extends EventEmitter {
   constructor (tagName = 'div', className = '', children = []) {
@@ -82,7 +83,7 @@ class Text extends ElemThing {
 }
 
 class Button extends ElemThing {
-  constructor (className = '', label = '', onclick = () => {}) {
+  constructor (className = '', label = '', onclick = noop) {
     super('button', className)
     this.elem.classList.add('button')
     this.elem.textContent = label
@@ -93,7 +94,7 @@ class Button extends ElemThing {
 }
 
 class Canvas extends ElemThing {
-  constructor (className = '') {
+  constructor (className = '', onView = noop) {
     super('div', className)
     this.elem.classList.add('canvas-wrapper')
     this.canvas = document.createElement('canvas')
@@ -102,7 +103,10 @@ class Canvas extends ElemThing {
     this.elem.appendChild(this.canvas)
 
     this.on('view', view => {
-      view.on('resize', this.resizeCanvas.bind(this))
+      onView(this, view)
+      view.on('resize', () => {
+        this.resizeCanvas()
+      })
     })
   }
 
@@ -115,7 +119,7 @@ class Canvas extends ElemThing {
     this.canvas.width = width * dpr
     this.canvas.height = height * dpr
     this.ctx.scale(dpr, dpr)
-    this.ctx.fillRect(20, 20, 20, 40)
+    this.emit('repaint')
   }
 }
 

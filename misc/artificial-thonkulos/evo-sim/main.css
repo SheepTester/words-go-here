@@ -93,10 +93,12 @@ button {
 }
 .creatures {
   flex: auto;
+  background-color: skyblue;
 }
 .creature-btns > .container {
   display: none;
   align-items: center;
+  margin-top: 20px;
 }
 .creature-btns .button {
   margin: 0 10px;

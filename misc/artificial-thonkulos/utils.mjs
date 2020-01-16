@@ -1,3 +1,5 @@
+export const noop = () => {}
+
 /**
  * Fancy logistic growth function that outputs a number in (0, 1)
  */

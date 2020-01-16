@@ -327,7 +327,7 @@ class Creature {
 
       sumX += node.initPos.x
       const bottom = node.initPos.y + node.radius
-      if (bottom > lowestY) lowestY = bottom
+      if (bottom < lowestY) lowestY = bottom
     }
     const shiftX = -sumX / this.nodes.length
     const shiftY = GROUND - lowestY
@@ -353,28 +353,6 @@ class Creature {
       node.move(time)
       // Reset for next frame
       node.resetForces()
-    }
-  }
-
-  render (ctx) {
-    for (const muscle of this.muscles) {
-      const { node1, node2, constant } = muscle
-      const displacement = (node1.pos.clone().sub(node2.pos).length - length)
-      ctx.strokeStyle = `rgb(129, 85, 49, ${0.9 - 0.7 / (constant / 10 + 1)})`
-      ctx.lineWidth = muscle.extending(this.clock / this.heartbeat % 1) ? 0.05 : 0.02
-      ctx.beginPath()
-      ctx.moveTo(...node1.pos.comps)
-      ctx.lineTo(...node2.pos.comps)
-      ctx.stroke()
-    }
-
-    for (const node of this.nodes) {
-      ctx.fillStyle = `hsl(0, 50%, ${100 / (node.friction + 1)}%)`
-      const { x, y } = node.pos
-      ctx.beginPath()
-      ctx.moveTo(x + NODE_RADIUS, y)
-      ctx.arc(x, y, NODE_RADIUS, 0, 2 * Math.PI)
-      ctx.fill()
     }
   }
 
@@ -450,6 +428,28 @@ class Creature {
 
   clone () {
     return new Creature(this.toJSON())
+  }
+
+  render (ctx) {
+    for (const muscle of this.muscles) {
+      const { node1, node2, constant } = muscle
+      const displacement = (node1.pos.clone().sub(node2.pos).length - length)
+      ctx.strokeStyle = `rgb(129, 85, 49, ${0.9 - 0.7 / (constant / 10 + 1)})`
+      ctx.lineWidth = muscle.extending(this.clock / this.heartbeat % 1) ? 0.1 : 0.2
+      ctx.beginPath()
+      ctx.moveTo(...node1.pos.comps)
+      ctx.lineTo(...node2.pos.comps)
+      ctx.stroke()
+    }
+
+    for (const node of this.nodes) {
+      ctx.fillStyle = `hsl(0, 50%, ${100 / (node.friction + 1)}%)`
+      const { x, y } = node.pos
+      ctx.beginPath()
+      ctx.moveTo(x + node.radius, y)
+      ctx.arc(x, y, node.radius, 0, 2 * Math.PI)
+      ctx.fill()
+    }
   }
 
   toJSON () {

@@ -1,5 +1,6 @@
 import { Container, View, Text, Button, Canvas } from './ui.mjs'
 
+let currentGeneration
 const views = {
   start: new View('start-view', [
     new Text('title', 'Epic evolution'),
@@ -7,13 +8,38 @@ const views = {
       document.body.classList.add('state-gen0')
       btn.elem.disabled = true
       sendWorker({ type: 'start' }).then(({ creatures }) => {
-        console.log(creatures.map(creature => new Creature(creature)))
+        currentGeneration = creatures.map(creature => {
+          creature = new Creature(creature)
+          creature.reset()
+          return creature
+        })
         showView(views.creatures)
       })
     })
   ]),
   creatures: new View('creatures-view', [
-    new Canvas('creatures'),
+    new Canvas('creatures', (wrapper, view) => {
+      const { canvas, ctx: c } = wrapper
+      wrapper.on('repaint', () => {
+        c.clearRect(0, 0, wrapper.width, wrapper.height)
+
+        const cols = Math.round(Math.sqrt(currentGeneration.length * wrapper.width / wrapper.height))
+        const rows = Math.ceil(currentGeneration.length / cols)
+        const horizSpacing = wrapper.width / (cols + 1)
+        const vertSpacing = wrapper.height / (rows + 1)
+        for (let i = 0; i < currentGeneration.length; i++) {
+          c.save()
+          c.translate(
+            (i % cols + 1) * horizSpacing,
+            Math.floor(i / cols + 1) * vertSpacing
+          )
+          // Creatures are approximately 1.1 un tall at most
+          c.scale(vertSpacing / 2 / 1.1, vertSpacing / 2 / 1.1)
+          currentGeneration[i].render(c)
+          c.restore()
+        }
+      })
+    }),
     new Container('creature-btns', [
       new Container('gen0', [
         new Text('', 'Here\'s a thousand randomly-generated creatures to start with'),
