@@ -320,14 +320,14 @@ class Creature {
 
     // Reposition creature pleasantly
     let sumX = 0
-    let lowestY = Infinity // +Y is down
+    let lowestY = -Infinity // +Y is down
     for (const node of this.nodes) {
       // Set initPos to current position from the wiggling
       node.initPos.set(node.pos)
 
       sumX += node.initPos.x
       const bottom = node.initPos.y + node.radius
-      if (bottom < lowestY) lowestY = bottom
+      if (bottom > lowestY) lowestY = bottom
     }
     const shiftX = -sumX / this.nodes.length
     const shiftY = GROUND - lowestY

@@ -99,6 +99,7 @@ button {
 .creatures {
   flex: auto;
   background-color: skyblue;
+  touch-action: none;
 }
 .creature-btns {
   margin-top: 20px;
@@ -158,10 +159,12 @@ button {
   position: fixed;
   top: 0;
   left: 0;
+  z-index: 10;
   width: auto;
   height: auto;
   background-color: rgba(255, 255, 255, 0.8);
   border: 1px solid black;
+  pointer-events: none;
 }
 .preview {
   background-color: skyblue;

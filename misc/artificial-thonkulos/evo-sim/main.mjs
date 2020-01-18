@@ -34,15 +34,16 @@ const views = {
   creatures: new View('creatures-view', [
     new Canvas('creatures', (wrapper, view) => {
       const { canvas, ctx: c } = wrapper
+      let cols, rows, horizSpacing, vertSpacing
       wrapper.on('repaint', () => {
         if (animationTime !== null) return
 
         c.clearRect(0, 0, wrapper.width, wrapper.height)
 
-        const cols = Math.round(Math.sqrt(currentGeneration.length * wrapper.width / wrapper.height))
-        const rows = Math.ceil(currentGeneration.length / cols)
-        const horizSpacing = wrapper.width / (cols + 1)
-        const vertSpacing = wrapper.height / (rows + 1)
+        cols = Math.round(Math.sqrt(currentGeneration.length * wrapper.width / wrapper.height))
+        rows = Math.ceil(currentGeneration.length / cols)
+        horizSpacing = wrapper.width / (cols + 1)
+        vertSpacing = wrapper.height / (rows + 1)
         for (let i = 0; i < currentGeneration.length; i++) {
           c.save()
           c.translate(
@@ -56,8 +57,29 @@ const views = {
         }
       })
 
+      let showingPreview = false
+      function setPreview (e) {
+        const rect = wrapper.elem.getBoundingClientRect()
+        const x = Math.floor((e.clientX - rect.left) / horizSpacing - 0.5)
+        const y = Math.floor((e.clientY - rect.top) / vertSpacing)
+        const creature = currentGeneration[x + y * cols]
+        if (creature && x >= 0 && x < cols && y >= 0 && y < rows) {
+          views.creaturePreview.emit('preview', creature)
+          showingPreview = true
+        }
+      }
+      function hidePreview () {
+        if (showingPreview) {
+          views.creaturePreview.hide()
+          showingPreview = false
+        }
+      }
+      wrapper.elem.addEventListener('pointerdown', setPreview)
+      wrapper.elem.addEventListener('pointermove', setPreview)
+      wrapper.elem.addEventListener('pointerleave', hidePreview)
+
       const ANIM_LENGTH = 3
-      let animationTime = null, cols, rows
+      let animationTime = null
       const sortingAnimation = new RenderSimulation({
         render: (_, elapsed) => {
           if (animationTime === null) return
@@ -235,8 +257,8 @@ const views = {
         pointerX = e.clientX
         pointerY = e.clientY
         if (!view.hidden) {
-          view.style.left = (width && pointerX + width > windowWidth ? windowWidth - width : pointerX) + 'px'
-          view.style.top = (height && pointerY + height > windowHeight ? windowHeight - height : pointerY) + 'px'
+          view.elem.style.left = (width && pointerX + width > windowWidth ? pointerX - width : pointerX) + 'px'
+          view.elem.style.top = (height && pointerY + height > windowHeight ? pointerY - height : pointerY) + 'px'
         }
       })
       view.on('resize', onReady => {
@@ -246,8 +268,8 @@ const views = {
         windowWidth = window.innerWidth
         windowHeight = window.innerHeight
         return onReady.then(() => {
-          view.style.left = (pointerX + width > windowWidth ? windowWidth - width : pointerX) + 'px'
-          view.style.top = (pointerY + height > windowHeight ? windowHeight - height : pointerY) + 'px'
+          view.elem.style.left = (pointerX + width > windowWidth ? pointerX - width : pointerX) + 'px'
+          view.elem.style.top = (pointerY + height > windowHeight ? pointerY - height : pointerY) + 'px'
         })
       })
 
@@ -265,24 +287,29 @@ const views = {
           c.textBaseline = 'top'
           c.font = '16px monospace'
           c.fillText(`Time: ${clock.toFixed(2)}s`, 5, 2)
-          c.fillText(`Distance: ${creatures[current].position().x.toFixed(2)}m`, 5, 25)
+          c.fillText(`Distance: ${creature.position().x.toFixed(2)}m`, 5, 25)
 
           c.save()
           c.translate(-scrollX, -scrollY)
           // The ~1.1 un tall creature should take up 60% of the screen height
           c.scale(wrapper.height * 0.1 / 1.1, wrapper.height * 0.1 / 1.1)
-          creatures[current].render(c)
+          creature.render(c)
           c.restore()
         },
         simulate: time => {
-          creatures[current].sim(time)
+          creature.sim(time)
           clock += time
         },
         simTime: SIM_TIME
       })
       view.on('preview', previewCreature => {
-        view.show()
+        if (creature === previewCreature) return
+        if (view.hidden) {
+          view.show()
+          view.resize()
+        }
         creature = previewCreature
+        clock = 0
         sizeReady.then(() => {
           if (!creature) return // In case it is aborted early
           scrollX = -wrapper.width / 2
@@ -310,10 +337,11 @@ window.addEventListener('resize', e => {
   if (currentView) {
     currentView.resize()
   }
-  if (!view.creaturePreview.hidden) {
-    view.creaturePreview.resize()
+  if (!views.creaturePreview.hidden) {
+    views.creaturePreview.resize()
   }
 })
+views.creaturePreview.addTo(document.body)
 
 const worker = new Worker('./worker.js')
 const expectingResponses = []
