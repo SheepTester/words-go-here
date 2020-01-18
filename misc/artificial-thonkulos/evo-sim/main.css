@@ -35,6 +35,15 @@ body {
   background-color: skyblue;
   touch-action: none;
 }
+.preview-marker {
+  position: absolute;
+  display: none;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+.preview-marker.showing {
+  display: block;
+}
 .creature-btns {
   margin-top: 20px;
   height: 40px;
@@ -94,14 +103,18 @@ body {
   top: 0;
   left: 0;
   z-index: 10;
+  padding: 10px;
   width: auto;
   height: auto;
+  pointer-events: none;
+}
+.preview-content {
   background-color: rgba(255, 255, 255, 0.8);
   border: 1px solid black;
-  pointer-events: none;
   flex-direction: column;
   color: black;
   width: 300px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 .creature-info {
   white-space: pre-wrap;
