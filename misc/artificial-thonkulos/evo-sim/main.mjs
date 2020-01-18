@@ -294,6 +294,20 @@ const views = {
           c.fillStyle = 'forestgreen'
           c.fillRect(0, -scrollY, wrapper.width, wrapper.height + scrollY)
 
+          // TODO: I think all this should be done while scaled (as in, scrollX/
+          // scrollY should be in terms of simulation units)
+          const scale = wrapper.height * 0.2 / 1.1
+
+          c.strokeStyle = 'rgba(0, 0, 0, 0.2)'
+          const startTick = Math.floor(scrollX / scale)
+          const stopTick = Math.ceil((scrollX + wrapper.width) / scale)
+          c.beginPath()
+          for (let i = startTick; i < stopTick; i++) {
+            c.moveTo(i * scale - scrollX, -scrollY)
+            c.lineTo(i * scale - scrollX, -scrollY + 10)
+          }
+          c.stroke()
+
           c.fillStyle = 'black'
           c.textBaseline = 'top'
           c.font = '16px monospace'
@@ -302,14 +316,15 @@ const views = {
 
           c.save()
           c.translate(-scrollX, -scrollY)
-          // The ~1.1 un tall creature should take up 60% of the screen height
-          c.scale(wrapper.height * 0.1 / 1.1, wrapper.height * 0.1 / 1.1)
+          // The ~1.1 un tall creature should take up 20% of the screen height
+          c.scale(scale, scale)
           creature.render(c)
           c.restore()
         },
         simulate: time => {
           creature.sim(time)
           clock += time
+          scrollX += (creature.position().x * wrapper.height * 0.2 / 1.1 - wrapper.width / 2 - scrollX) / 10
         },
         simTime: SIM_TIME
       })

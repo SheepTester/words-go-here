@@ -58,7 +58,7 @@ const mutables = {
   x: { baseDiff: 0.5 }, // Node initial position x
   y: { baseDiff: 0.5 }, // Node initial position y
   friction: { baseDiff: 0.1, min: 0, max: 1 }, // Node friction constant
-  spring: { baseDiff: 0.9, min: 0.01, max: 0.08 }, // Muscle spring constant
+  spring: { baseDiff: 100, min: 10, max: 200 }, // Muscle spring constant
   length: { min: 0.4, max: 2 }, // Muscle length
   heartbeat: { baseDiff: 0.25, min: 0.01 }
 }
@@ -119,7 +119,7 @@ class Node {
     return this.pos.y >= GROUND - this.radius
   }
 
-  move (time) {
+  move (time, ignoreGround = false) {
     // a = F/m
     const acceleration = this.forces.clone().scale(1 / this.mass)
     // x_f = x_i + v_i * t + a * t^2 / 2
@@ -128,7 +128,7 @@ class Node {
     // v_f = v_i + a * t
     this.vel.add(acceleration.scale(time))
 
-    if (this.pos.y > GROUND - this.radius) {
+    if (this.pos.y > GROUND - this.radius && !ignoreGround) {
       this.pos.y = GROUND - this.radius
     }
   }
@@ -245,7 +245,7 @@ class Muscle {
     const distance = node1.initPos.clone().sub(node2.initPos).length
     const ratio = random.random(0.01, 0.2)
     return new Muscle({
-      constant: random.random(0.02, 0.08),
+      constant: random.random(20, 160),
       contractLength: distance * (1 - ratio),
       extendLength: distance * (1 + ratio),
       contractTime: random.random(),
@@ -320,7 +320,7 @@ class Creature {
         muscle.applyForces(0)
       }
       for (const node of this.nodes) {
-        node.move(SIM_TIME)
+        node.move(SIM_TIME, true)
         node.resetForces()
       }
     }
