@@ -6,76 +6,10 @@
   --text: #fff1cf;
 }
 
-html,
 body {
-  height: 100%;
-}
-body {
-  margin: 0;
+  font-family: 'Poppins', sans-serif;
   background-color: var(--background);
   color: var(--text);
-  font-family: 'Poppins', sans-serif;
-  font-size: 0;
-}
-button {
-  -webkit-appearance: none;
-  border: none;
-  background: none;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-}
-:focus {
-  outline: none; /* ._. maybe I'll make it intelligent later */
-}
-
-.container {
-  display: flex;
-}
-.view {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-}
-.hidden {
-  display: none;
-}
-.text {
-  font-size: 16px;
-  line-height: 1.5;
-  margin: 0;
-}
-.button {
-  background-color: var(--accent);
-  color: rgba(0, 0, 0, 0.8);
-  padding: 5px 10px;
-  font-size: 16px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-  transition: all .2s;
-}
-.button:active {
-  box-shadow: none;
-}
-.button:disabled {
-  cursor: auto;
-  opacity: 0.5;
-  box-shadow: none;
-}
-.fieldset {
-  border: none;
-  margin: 0;
-  padding: 0;
-}
-.canvas-wrapper {
-  position: relative;
-}
-.canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
 }
 
 .start-view {

@@ -6,10 +6,18 @@ class Vector2 {
   }
 
   get lengthSquared () {
+    if (Number.isNaN(this.x) || Number.isNaN(this.y) ||
+      !Number.isFinite(this.x) || !Number.isFinite(this.y)) {
+      throw new Error('nan/inf spooted')
+    }
     return this.x * this.x + this.y * this.y
   }
 
   get length () {
+    if (Number.isNaN(this.x) || Number.isNaN(this.y) ||
+      !Number.isFinite(this.x) || !Number.isFinite(this.y)) {
+      throw new Error('nan/inf spooted')
+    }
     if (this._length === undefined) {
       this._length = Math.hypot(this.x, this.y)
     }
@@ -18,38 +26,66 @@ class Vector2 {
 
   // components
   get comps () {
+    if (Number.isNaN(this.x) || Number.isNaN(this.y) ||
+      !Number.isFinite(this.x) || !Number.isFinite(this.y)) {
+      throw new Error('nan/inf spooted')
+    }
     return [this.x, this.y]
   }
 
   set ({ x, y }) {
     this.x = x
     this.y = y
+    if (Number.isNaN(this.x) || Number.isNaN(this.y) ||
+      !Number.isFinite(this.x) || !Number.isFinite(this.y)) {
+      throw new Error('nan/inf spooted')
+    }
     return this
   }
 
   add ({ x, y }) {
     this.x += x
     this.y += y
+    if (Number.isNaN(this.x) || Number.isNaN(this.y) ||
+      !Number.isFinite(this.x) || !Number.isFinite(this.y)) {
+      throw new Error('nan/inf spooted')
+    }
     return this
   }
 
   sub ({ x, y }) {
     this.x -= x
     this.y -= y
+    if (Number.isNaN(this.x) || Number.isNaN(this.y) ||
+      !Number.isFinite(this.x) || !Number.isFinite(this.y)) {
+      throw new Error('nan/inf spooted')
+    }
     return this
   }
 
   scale (factor) {
     this.x *= factor
     this.y *= factor
+    if (Number.isNaN(this.x) || Number.isNaN(this.y) ||
+      !Number.isFinite(this.x) || !Number.isFinite(this.y)) {
+      throw new Error('nan/inf spooted')
+    }
     return this
   }
 
   unit () {
+    if (Number.isNaN(this.x) || Number.isNaN(this.y) ||
+      !Number.isFinite(this.x) || !Number.isFinite(this.y)) {
+      throw new Error('nan/inf spooted')
+    }
     return this.scale(1 / this.length)
   }
 
   clone () {
+    if (Number.isNaN(this.x) || Number.isNaN(this.y) ||
+      !Number.isFinite(this.x) || !Number.isFinite(this.y)) {
+      throw new Error('nan/inf spooted')
+    }
     return new Vector2(this.x, this.y)
   }
 }
@@ -73,8 +109,10 @@ function mutate (random, type, num, intensity) {
 }
 
 const SIM_TIME = 1 / 60
-const GRAVITY = 9.8 // Acceleration due to gravity (m/s^2)
-const GROUND = 0 // Ground height (m)
+const options = {
+  gravity: 9.8, // Acceleration due to gravity (m/s^2),
+  ground: 0 // Ground height (m)
+}
 
 class Node {
   // friction is coefficient of friction
@@ -101,7 +139,7 @@ class Node {
 
   calcForces () {
     // Weight
-    this.forces.add({ x: 0, y: this.mass * GRAVITY })
+    this.forces.add({ x: 0, y: this.mass * options.gravity })
 
     if (this.touchingGround()) {
       const normal = this.forces.y
@@ -116,7 +154,7 @@ class Node {
 
   touchingGround () {
     // If mass and size are correlated, then should adjust radius here
-    return this.pos.y >= GROUND - this.radius
+    return this.pos.y >= options.ground - this.radius
   }
 
   move (time, ignoreGround = false) {
@@ -128,8 +166,8 @@ class Node {
     // v_f = v_i + a * t
     this.vel.add(acceleration.scale(time))
 
-    if (this.pos.y > GROUND - this.radius && !ignoreGround) {
-      this.pos.y = GROUND - this.radius
+    if (this.pos.y > options.ground - this.radius && !ignoreGround) {
+      this.pos.y = options.ground - this.radius
     }
   }
 
@@ -196,6 +234,11 @@ class Muscle {
     // Vector from node 1 to 2's position
     const length = this.extending(clockTime) ? this.extendLength : this.contractLength
     const oneToTwo = this.node2.pos.clone().sub(this.node1.pos)
+    if (oneToTwo.lengthSquared === 0) {
+      // I don't know what the best thing to do is when the nodes are in the
+      // same exact position
+      return
+    }
     const nodeLength = oneToTwo.length
     const displacement = nodeLength - length
     const force = this.constant * displacement
@@ -244,8 +287,10 @@ class Muscle {
   static makeRandom (random, node1, node2) {
     const distance = node1.initPos.clone().sub(node2.initPos).length
     const ratio = random.random(0.01, 0.2)
+    const constant = random.random(20, 160)
     return new Muscle({
-      constant: random.random(20, 160),
+      constant,
+      damping: constant / 10,
       contractLength: distance * (1 - ratio),
       extendLength: distance * (1 + ratio),
       contractTime: random.random(),
@@ -337,7 +382,7 @@ class Creature {
       if (bottom > lowestY) lowestY = bottom
     }
     const shiftX = -sumX / this.nodes.length
-    const shiftY = GROUND - lowestY
+    const shiftY = options.ground - lowestY
     for (const node of this.nodes) {
       node.initPos.add({ x: shiftX, y: shiftY })
     }

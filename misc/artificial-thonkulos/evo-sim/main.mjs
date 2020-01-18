@@ -62,6 +62,9 @@ const views = {
         if (creature && x >= 0 && x < cols && y >= 0 && y < rows) {
           views.creaturePreview.emit('preview', creature)
           showingPreview = true
+        } else if (showingPreview) {
+          views.creaturePreview.hide()
+          showingPreview = false
         }
       }
       function hidePreview () {
