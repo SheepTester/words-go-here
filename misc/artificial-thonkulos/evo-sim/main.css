@@ -165,9 +165,14 @@ button {
   background-color: rgba(255, 255, 255, 0.8);
   border: 1px solid black;
   pointer-events: none;
+  flex-direction: column;
+  color: black;
+  width: 300px;
+}
+.creature-info {
+  white-space: pre-wrap;
 }
 .preview {
   background-color: skyblue;
-  width: 300px;
   height: 300px;
 }

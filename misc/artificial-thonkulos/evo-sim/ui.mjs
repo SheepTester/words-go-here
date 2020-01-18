@@ -76,10 +76,13 @@ class View extends Container {
 }
 
 class Text extends ElemThing {
-  constructor (className = '', text = '') {
+  constructor (className = '', text = '', onView = noop) {
     super('p', className)
     this.elem.classList.add('text')
     this.elem.textContent = text
+    this.on('view', view => {
+      onView(this, view)
+    })
   }
 }
 

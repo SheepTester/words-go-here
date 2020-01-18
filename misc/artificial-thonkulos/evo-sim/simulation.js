@@ -257,7 +257,13 @@ class Muscle {
 }
 
 class Creature {
-  constructor ({ nodes = [], muscles = [], mutability, heartbeat } = {}) {
+  constructor ({
+    nodes = [],
+    muscles = [],
+    mutability,
+    heartbeat,
+    data = {}
+  } = {}) {
     this.nodes = nodes.map(node => node.isNode ? node : new Node(node))
     this.muscles = muscles.map(muscle => {
       if (muscle.isMuscle) return muscle
@@ -270,6 +276,7 @@ class Creature {
     })
     this.mutability = mutability
     this.heartbeat = heartbeat
+    this.data = data
     this.isCreature = true
   }
 
@@ -334,6 +341,8 @@ class Creature {
     for (const node of this.nodes) {
       node.initPos.add({ x: shiftX, y: shiftY })
     }
+
+    return this
   }
 
   reset () {
@@ -341,6 +350,7 @@ class Creature {
     for (const node of this.nodes) {
       node.reset()
     }
+    return this
   }
 
   sim (time) {
@@ -354,6 +364,7 @@ class Creature {
       // Reset for next frame
       node.resetForces()
     }
+    return this
   }
 
   addRandomNode (random) {
@@ -379,6 +390,8 @@ class Creature {
     this.nodes.push(newNode)
     this.muscles.push(Muscle.makeRandom(random, baseNode, newNode))
     this.muscles.push(Muscle.makeRandom(random, closestNode, newNode))
+
+    return this
   }
 
   removeRandomNode (random) {
@@ -392,6 +405,7 @@ class Creature {
         i--
       }
     }
+    return this
   }
 
   mutate (random) {
@@ -424,6 +438,8 @@ class Creature {
 
     this.mutability *= random.random(0.8, 1.25)
     if (this.mutability > 2) this.mutability = 2
+
+    return this
   }
 
   clone () {
@@ -450,6 +466,8 @@ class Creature {
       ctx.arc(x, y, node.radius, 0, 2 * Math.PI)
       ctx.fill()
     }
+
+    return this
   }
 
   toJSON () {
@@ -462,7 +480,8 @@ class Creature {
         return obj
       }),
       mutability: this.mutability,
-      heartbeat: this.heartbeat
+      heartbeat: this.heartbeat,
+      data: this.data
     }
   }
 

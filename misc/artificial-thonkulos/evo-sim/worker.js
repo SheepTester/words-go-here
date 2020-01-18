@@ -8,6 +8,9 @@ let currentGeneration
 let random
 
 function simulateGeneration () {
+  for (const creature of currentGeneration) {
+    creature.reset()
+  }
   let time = 0
   while (time < 15) {
     for (const creature of currentGeneration) {
@@ -16,7 +19,7 @@ function simulateGeneration () {
     time += SIM_TIME
   }
   for (const creature of currentGeneration) {
-    creature.fitness = Math.abs(creature.position().x)
+    creature.data.fitness = Math.abs(creature.position().x)
   }
 }
 
@@ -38,6 +41,7 @@ self.addEventListener('message', ({ data }) => {
       currentGeneration = new Array(NUMBER)
       for (let i = 0; i < currentGeneration.length; i++) {
         currentGeneration[i] = Creature.makeRandom(random)
+        currentGeneration[i].data.id = i
       }
       respond(data, {
         creatures: currentGeneration.map(creature => creature.toJSON())
@@ -47,26 +51,14 @@ self.addEventListener('message', ({ data }) => {
     case 'simulate':
       console.time(data.type)
       simulateGeneration()
+      currentGeneration.sort((a, b) => b.data.fitness - a.data.fitness)
+      for (let i = 0; i < currentGeneration.length; i++) {
+        currentGeneration[i].data.rank = i
+      }
+      // TODO: Mark for killing
       console.timeEnd(data.type)
       respond(data, {
-        creatures: currentGeneration.map(creature => {
-          const json = creature.toJSON()
-          json.fitness = creature.fitness
-          return json
-        })
-      })
-      break
-    case 'kill':
-      console.time(data.type)
-      currentGeneration.sort((a, b) => b.fitness - a.fitness)
-      // TODO: Kill.
-      console.timeEnd(data.type)
-      respond(data, {
-        creatures: currentGeneration.map(creature => {
-          const json = creature.toJSON()
-          json.fitness = creature.fitness
-          return json
-        })
+        creatures: currentGeneration.map(creature => creature.toJSON())
       })
       break
     default:
