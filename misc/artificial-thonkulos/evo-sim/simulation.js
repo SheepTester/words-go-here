@@ -137,34 +137,53 @@ class Node {
     this.forces.set({ x: 0, y: 0 })
   }
 
-  calcForces () {
-    // Weight
-    this.forces.add({ x: 0, y: this.mass * options.gravity })
-
-    if (this.touchingGround()) {
-      const normal = this.forces.y
-      this.forces.add({ x: 0, y: -normal })
-      // Friction
-      this.forces.add({
-        x: -Math.sign(this.vel.x) * normal * this.friction,
-        y: 0
-      })
-    }
-  }
-
   touchingGround () {
     // If mass and size are correlated, then should adjust radius here
     return this.pos.y >= options.ground - this.radius
   }
 
   move (time, ignoreGround = false) {
+    // Weight
+    this.forces.add({ x: 0, y: this.mass * options.gravity })
+
+    const friction = new Vector2()
+    if (this.touchingGround() && !ignoreGround) {
+      const normal = this.forces.y
+      this.forces.add({ x: 0, y: -normal })
+      // Friction
+      friction.add({
+        x: -Math.sign(this.vel.x) * normal * this.friction,
+        y: 0
+      })
+    }
+
     // a = F/m
-    const acceleration = this.forces.clone().scale(1 / this.mass)
-    // x_f = x_i + v_i * t + a * t^2 / 2
-    this.pos.add(this.vel.clone().scale(time))
-      .add(acceleration.clone().scale(time * time / 2))
+    this.forces.scale(1 / this.mass)
+    friction.scale(1 / this.mass)
+
+    const initialVel = this.vel.clone()
     // v_f = v_i + a * t
-    this.vel.add(acceleration.scale(time))
+    this.vel.add(this.forces.scale(time))
+
+    // Apply friction separately to prevent it from over-decelerating
+    friction.scale(time)
+    if (friction.x > 0) {
+      this.vel.x += friction.x
+      if (this.vel.x > 0) this.vel.x = 0
+    } else if (friction.x < 0) {
+      this.vel.x += friction.x
+      if (this.vel.x < 0) this.vel.x = 0
+    }
+    if (friction.y > 0) {
+      this.vel.y += friction.y
+      if (this.vel.y > 0) this.vel.y = 0
+    } else if (friction.y < 0) {
+      this.vel.y += friction.y
+      if (this.vel.y < 0) this.vel.y = 0
+    }
+
+    // x_f = x_i + (v_i + v_f) / 2 * t
+    this.pos.add(initialVel.add(this.vel).scale(time / 2))
 
     if (this.pos.y > options.ground - this.radius && !ignoreGround) {
       this.pos.y = options.ground - this.radius
@@ -404,7 +423,6 @@ class Creature {
       muscle.applyForces(this.clock / this.heartbeat % 1)
     }
     for (const node of this.nodes) {
-      node.calcForces()
       node.move(time)
       // Reset for next frame
       node.resetForces()

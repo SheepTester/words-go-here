@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>evo sim</title>
+    <title>evo sim playground</title>
     <meta name="description" content="based on carykh's evolution simulator"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <link rel="stylesheet" type="text/css" href="/sheep3.css">
@@ -25,11 +25,61 @@ const creatureA = new Creature({
   nodes: [
     {
       friction: 0,
-      initPos: [-1, -0.4]
+      initPos: [-1.2, -1.1]
+    },
+    {
+      friction: 0.5,
+      initPos: [-1.4, -0.3]
     },
     {
       friction: 0,
-      initPos: [-1, 0.4]
+      initPos: [-1, -0.3]
+    }
+  ],
+  muscles: [
+    {
+      constant: 50,
+      contractLength: 0.64,
+      extendLength: 0.96,
+      contractTime: 0,
+      extendTime: 0.5,
+      node1: 0,
+      node2: 1,
+      damping: 5
+    },
+    {
+      constant: 10,
+      contractLength: 0.3,
+      extendLength: 0.6,
+      contractTime: 0,
+      extendTime: 0.5,
+      node1: 1,
+      node2: 2,
+      damping: 1
+    },
+    {
+      constant: 50,
+      contractLength: 0.64,
+      extendLength: 0.96,
+      contractTime: 0,
+      extendTime: 0.5,
+      node1: 0,
+      node2: 2,
+      damping: 5
+    }
+  ],
+  heartbeat: 1.5,
+  mutability: 1
+})
+const creatureB = new Creature({
+  nodes: [
+    {
+      friction: 10,
+      initPos: [1.4, -0.3]
+    },
+    {
+      friction: 0,
+      initPos: [1, -0.3]
     }
   ],
   muscles: [
@@ -47,35 +97,6 @@ const creatureA = new Creature({
   heartbeat: 1.5,
   mutability: 1
 })
-const creatureB = new Creature({
-  nodes: [
-    {
-      friction: 0,
-      initPos: [1, -0.4]
-    },
-    {
-      friction: 0,
-      initPos: [1, 0.4]
-    }
-  ],
-  muscles: [
-    {
-      constant: 200,
-      contractLength: 0.64,
-      extendLength: 0.96,
-      contractTime: 0,
-      extendTime: 0.5,
-      node1: 0,
-      node2: 1,
-      damping: 20
-    }
-  ],
-  heartbeat: 1.5,
-  mutability: 1
-})
-
-options.gravity = 0
-options.ground = Infinity // No ground
 
 const mainView = new View('playground-view', [
   new Canvas('playground', (wrapper, view) => {
@@ -84,6 +105,8 @@ const mainView = new View('playground-view', [
     const simulation = new RenderSimulation({
       render: () => {
         c.clearRect(0, 0, wrapper.width, wrapper.height)
+        c.fillStyle = 'forestgreen'
+        c.fillRect(0, wrapper.height / 2, wrapper.width, wrapper.height / 2)
         c.save()
         c.translate(wrapper.width / 2, wrapper.height / 2)
         c.scale(100, 100)
