@@ -286,38 +286,40 @@ const views = {
           text.elem.textContent = `Generation ${generation}`
         })
       }),
-      new Canvas('line-graph'),
-      new Canvas('area-graph', (wrapper, view) => {
-        const { canvas, ctx: c } = wrapper
+      new Container('graphs', [
+        new Canvas('line-graph'),
+        new Canvas('area-graph', (wrapper, view) => {
+          const { canvas, ctx: c } = wrapper
 
-        wrapper.on('repaint', () => {
-          c.clearRect(0, 0, wrapper.width, wrapper.height)
-          if (history.length) {
-            const ys = new Array(history.length).fill(0)
-            for (const [creatureClass, hue] of classes) {
-              c.fillStyle = `hsl(${hue}, 100%, 50%)`
-              c.beginPath()
-              c.moveTo(0, ys[0] * wrapper.height)
-              if (history.length === 1) {
-                c.lineTo(wrapper.width, ys[0] * wrapper.height)
-                ys[0] += history[0].demographics.get(creatureClass) / currentGeneration.length || 0
-                c.lineTo(wrapper.width, ys[0] * wrapper.height)
-                c.lineTo(0, ys[0] * wrapper.height)
-              } else {
-                for (let i = 1; i < history.length; i++) {
-                  c.lineTo(wrapper.width * i / (history.length - 1), ys[i] * wrapper.height)
+          wrapper.on('repaint', () => {
+            c.clearRect(0, 0, wrapper.width, wrapper.height)
+            if (history.length) {
+              const ys = new Array(history.length).fill(0)
+              for (const [creatureClass, hue] of classes) {
+                c.fillStyle = `hsl(${hue}, 100%, 50%)`
+                c.beginPath()
+                c.moveTo(0, ys[0] * wrapper.height)
+                if (history.length === 1) {
+                  c.lineTo(wrapper.width, ys[0] * wrapper.height)
+                  ys[0] += history[0].demographics.get(creatureClass) / currentGeneration.length || 0
+                  c.lineTo(wrapper.width, ys[0] * wrapper.height)
+                  c.lineTo(0, ys[0] * wrapper.height)
+                } else {
+                  for (let i = 1; i < history.length; i++) {
+                    c.lineTo(wrapper.width * i / (history.length - 1), ys[i] * wrapper.height)
+                  }
+                  for (let i = history.length; i--;) {
+                    ys[i] += history[i].demographics.get(creatureClass) / currentGeneration.length || 0
+                    c.lineTo(wrapper.width * i / (history.length - 1), ys[i] * wrapper.height)
+                  }
                 }
-                for (let i = history.length; i--;) {
-                  ys[i] += history[i].demographics.get(creatureClass) / currentGeneration.length || 0
-                  c.lineTo(wrapper.width * i / (history.length - 1), ys[i] * wrapper.height)
-                }
+                c.closePath()
+                c.fill()
               }
-              c.closePath()
-              c.fill()
             }
-          }
+          })
         })
-      })
+      ])
     ]),
     new Container('gen-side gen-right', [
       new Fieldset('gens-buttons', [

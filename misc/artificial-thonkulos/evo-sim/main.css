@@ -69,12 +69,14 @@ body {
   padding: 20px;
 }
 .gen-side,
-.gens-buttons {
+.gens-buttons,
+.graphs {
   flex-direction: column;
 }
 .gen-left,
 .line-graph,
-.histogram {
+.histogram,
+.graphs {
   flex: auto;
 }
 .heading {
