@@ -36,7 +36,7 @@ function simGeneration () {
     }
     const percentiles = {}
     for (let i = 0; i <= 10; i++) {
-      percentiles[10 - i * 10] = currentGeneration[Math.min(
+      percentiles[100 - i * 10] = currentGeneration[Math.min(
         Math.floor(currentGeneration.length * i / 10),
         currentGeneration.length - 1
       )].data.fitness
@@ -55,6 +55,7 @@ function simGeneration () {
       histogram,
       histogramMax,
       demographics,
+      percentiles,
       best: currentGeneration[0],
       median: currentGeneration[Math.floor(currentGeneration.length / 2)],
       worst: currentGeneration[currentGeneration.length - 1]
@@ -260,9 +261,9 @@ const views = {
       new Container('dead', [
         new Text('', 'Faster creatures are more likely to survive to reproduce.'),
         new Button('', 'Reproduce', btn => {
-          btn.disabled = true
+          btn.elem.disabled = true
           nextGeneration().then(() => {
-            btn.disabled = false
+            btn.elem.disabled = false
             document.body.classList.remove('state-dead')
             document.body.classList.add('state-reproduction')
             btn.view.emit('show-new')
@@ -286,8 +287,68 @@ const views = {
           text.elem.textContent = `Generation ${generation}`
         })
       }),
+      new Text('', '', (text, view) => {
+        view.on('show', () => {
+          if (generation > 0) {
+            text.elem.textContent = `Median: ${history[generation - 1].median.data.fitness.toFixed(4)}m`
+          }
+        })
+      }),
       new Container('graphs', [
-        new Canvas('line-graph'),
+        new Canvas('line-graph', (wrapper, view) => {
+          const { canvas, ctx: c } = wrapper
+
+          const PADDING = 10
+          const minorPercentiles = []
+          for (let i = 1; i <= 9; i++) minorPercentiles.push(i)
+          for (let i = 91; i <= 99; i++) minorPercentiles.push(i)
+          const majorPercentiles = []
+          for (let i = 0; i <= 100; i += 10) {
+            if (i !== 50) { // Median is rendered separately
+              majorPercentiles.push(i)
+            }
+          }
+          function renderPercentile (percentile, scale) {
+            c.moveTo(0, wrapper.height - PADDING - history[0].percentiles[percentile] * scale)
+            if (history.length === 1) {
+              c.lineTo(
+                wrapper.width,
+                wrapper.height - PADDING - history[0].percentiles[percentile] * scale
+              )
+            } else {
+              for (let i = 1; i < history.length; i++) {
+                c.lineTo(
+                  i / (history.length - 1) * wrapper.width,
+                  wrapper.height - PADDING - history[i].percentiles[percentile] * scale
+                )
+              }
+            }
+          }
+          wrapper.on('repaint', () => {
+            c.clearRect(0, 0, wrapper.width, wrapper.height)
+            if (history.length) {
+              const scale = (wrapper.height - PADDING * 2) / maxScore
+              c.strokeStyle = 'rgba(255, 255, 255, 0.3)'
+              c.lineWidth = 1
+              c.beginPath()
+              for (const percentile of minorPercentiles) {
+                renderPercentile(percentile, scale)
+              }
+              c.stroke()
+              c.strokeStyle = 'rgba(255, 255, 255, 0.6)'
+              c.lineWidth = 2
+              c.beginPath()
+              for (const percentile of majorPercentiles) {
+                renderPercentile(percentile, scale)
+              }
+              c.stroke()
+              c.strokeStyle = '#f66'
+              c.beginPath()
+              renderPercentile(50, scale)
+              c.stroke()
+            }
+          })
+        }),
         new Canvas('area-graph', (wrapper, view) => {
           const { canvas, ctx: c } = wrapper
 
@@ -391,7 +452,7 @@ const views = {
               const count = histogram.get(i)
               if (count) {
                 const barHeight = count / histogramMax * (wrapper.height - 2 * PADDING)
-                c.fillStyle = i === medianBar ? '#ffd369' : 'grey'
+                c.fillStyle = i === medianBar ? '#f66' : 'rgba(255, 255, 255, 0.5)'
                 c.fillRect(
                   PADDING + i * barWidth,
                   wrapper.height - PADDING - barHeight,
@@ -410,6 +471,8 @@ const views = {
       const { canvas, ctx: c, sizeReady } = wrapper
       let current, scrollX, scrollY, clock, stop, creatures, simGenerationReady
 
+      view.speed = 1
+
       const renderer = new RenderSimulation({
         render: () => {
           if (stop) return
@@ -425,6 +488,7 @@ const views = {
           c.fillText(`Creature ${current + 1} of ${creatures.length}`, 5, 5)
           c.fillText(`Time: ${clock.toFixed(2)}s`, 5, 25)
           c.fillText(`Distance: ${creatures[current].position().x.toFixed(2)}m`, 5, 45)
+          c.fillText(`Speed: ${renderer.speed}x`, 5, 65)
 
           c.save()
           c.translate(-scrollX, -scrollY)
@@ -458,6 +522,9 @@ const views = {
         },
         simTime: SIM_TIME
       })
+      view.on('speed', speed => {
+        renderer.speed = speed
+      })
       view.on('show', () => {
         creatures = currentGeneration
         simGenerationReady = simGeneration()
@@ -465,14 +532,26 @@ const views = {
           stop = false
           current = null
           scrollX = -wrapper.width / 2
-          scrollY = -wrapper.height + 50
+          scrollY = -wrapper.height + 100
           renderer.start()
         })
       })
       view.on('hide', () => {
         renderer.stop()
       })
-    })
+    }),
+    new Container('controls', [
+      new Button('', 'Slower', btn => {
+        btn.view.speed /= 2
+        if (btn.view.speed < 1/8) btn.view.speed = 1/8
+        btn.view.emit('speed', btn.view.speed)
+      }),
+      new Button('', 'Faster', btn => {
+        btn.view.speed *= 2
+        if (btn.view.speed > 8192) btn.view.speed = 8192
+        btn.view.emit('speed', btn.view.speed)
+      })
+    ])
   ]),
   creaturePreview: new View('creature-preview', [
     new Container('preview-content', [

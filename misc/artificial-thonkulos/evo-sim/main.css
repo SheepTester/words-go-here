@@ -108,11 +108,21 @@ body {
 }
 .gens-buttons .button {
   margin-bottom: 10px;
+  width: 100%;
+  text-align: left;
 }
 
 .watch {
   flex: auto;
   background-color: skyblue;
+}
+.controls {
+  position: fixed;
+  top: 0;
+  right: 0;
+}
+.controls .button {
+  margin: 10px;
 }
 
 .creature-preview {
