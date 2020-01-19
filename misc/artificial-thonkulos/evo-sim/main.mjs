@@ -794,7 +794,6 @@ window.addEventListener('resize', e => {
     views.creaturePreview.resize()
   }
 })
-views.creaturePreview.addTo(document.body)
 
 const worker = new Worker('./worker.js')
 const expectingResponses = []
@@ -821,6 +820,15 @@ worker.addEventListener('message', ({ data }) => {
       break
   }
 })
-sendWorker({ type: 'init', key: 'epic' }).then(() => {
+
+const params = new URL(window.location).searchParams
+sendWorker({
+  type: 'init',
+  key: params.get('seed') || 'epic',
+  count: +params.get('count') || 1000,
+  logTime: !!params.get('log-time')
+}).then(() => {
   showView(views.start)
 })
+
+views.creaturePreview.addTo(document.body)

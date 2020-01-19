@@ -3,12 +3,12 @@
 importScripts('./random.js')
 importScripts('./simulation.js')
 
-const NUMBER = 100
 let currentGeneration
+let count
 let random
 
 function createGeneration (random) {
-  const generation = new Array(NUMBER)
+  const generation = new Array(count)
   for (let i = 0; i < generation.length; i++) {
     generation[i] = Creature.makeRandom(random)
     generation[i].data.id = i
@@ -40,9 +40,9 @@ function rankGeneration (generation) {
 }
 
 function purgeOnGradient (generation, random) {
-  const half = Math.floor(NUMBER / 2)
+  const half = Math.floor(count / 2)
   for (let i = 0; i < half; i++) {
-    if (random.random() < (i / NUMBER) ** 1.5) {
+    if (random.random() < (i / count) ** 1.5) {
       generation[i].data.willDie = true
     } else {
       generation[generation.length - 1 - i].data.willDie = true
@@ -52,7 +52,7 @@ function purgeOnGradient (generation, random) {
 
 function nextGeneration (oldGeneration, random) {
   const survivors = oldGeneration.filter(creature => !creature.data.willDie)
-  const generation = new Array(NUMBER)
+  const generation = new Array(count)
   for (let i = 0; i < generation.length; i++) {
     if (oldGeneration[i].data.willDie) {
       generation[i] = survivors.pop().clone().mutate(random)
@@ -71,11 +71,14 @@ function respond (originalData, responseData = {}) {
     ...responseData
   })
 }
+let logTime
 self.addEventListener('message', ({ data }) => {
-  // console.time(data.type)
+  if (logTime) console.time(data.type)
   switch (data.type) {
     case 'init':
       random = new SeededRandom(data.key)
+      count = data.count
+      logTime = data.logTime
       respond(data)
       break
     case 'start':
@@ -100,5 +103,5 @@ self.addEventListener('message', ({ data }) => {
     default:
       respond(data)
   }
-  // console.timeEnd(data.type)
+  if (logTime) console.timeEnd(data.type)
 })
