@@ -84,6 +84,7 @@ body {
 }
 .graphs {
   position: relative;
+  margin-top: 20px;
 }
 .current-gen {
   position: absolute;
@@ -105,6 +106,27 @@ body {
 }
 .gen-right {
   margin-left: 20px;
+}
+.winners {
+  margin-bottom: 20px;
+}
+.generation-zero .winners {
+  display: none;
+}
+.winner {
+  flex-direction: column;
+  margin-right: 20px;
+}
+.winner:last-child {
+  margin-right: 0;
+}
+.winner-photo {
+  background-color: skyblue;
+  width: 150px;
+  height: 150px;
+}
+.winner-photo:hover {
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.3);
 }
 .gens-buttons .button {
   margin-bottom: 10px;

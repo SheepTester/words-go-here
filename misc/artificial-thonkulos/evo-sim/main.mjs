@@ -3,6 +3,7 @@ import { RenderSimulation } from '../render-simulation.mjs'
 import { easeInOutQuart } from '../utils.mjs'
 
 const HISTOGRAM_INTERVAL = 0.2
+const CREATURE_SIZE = 3
 const history = []
 const classes = new Map()
 let maxScore = 0
@@ -75,6 +76,39 @@ function nextGeneration () {
   })
 }
 
+function winnerPhoto (winner) {
+  return (wrapper, view) => {
+    const { canvas, ctx: c } = wrapper
+
+    wrapper.on('repaint', () => {
+      c.clearRect(0, 0, wrapper.width, wrapper.height)
+      if (history[generation - 1]) {
+        const creature = history[generation - 1][winner]
+        c.save()
+        c.translate(wrapper.width / 2, wrapper.height - 10)
+        c.scale((wrapper.height - 20) / CREATURE_SIZE, (wrapper.height - 20) / CREATURE_SIZE)
+        creature.render(c)
+        c.restore()
+      }
+    })
+
+    let hasPreview = false
+    wrapper.elem.addEventListener('pointerenter', e => {
+      if (history[generation - 1]) {
+        const creature = history[generation - 1][winner]
+        views.creaturePreview.emit('preview', creature)
+        hasPreview = true
+      }
+    })
+    wrapper.elem.addEventListener('pointerleave', e => {
+      if (hasPreview) {
+        views.creaturePreview.hide()
+        hasPreview = false
+      }
+    })
+  }
+}
+
 const views = {
   start: new View('start-view', [
     new Text('title', 'Epic evolution'),
@@ -127,8 +161,8 @@ const views = {
               (index % cols + 1) * horizSpacing,
               (Math.floor(index / cols) + 1.5) * vertSpacing
             )
-            // Creatures are approximately 1.5 un tall at most
-            c.scale(vertSpacing / 2 / 1.5, vertSpacing / 2 / 1.5)
+            // Creatures are approximately CREATURE_SIZE un tall at most
+            c.scale(vertSpacing / CREATURE_SIZE, vertSpacing / CREATURE_SIZE)
             creature.render(c)
             c.restore()
           }
@@ -199,7 +233,7 @@ const views = {
               (position * (creature.destX - creature.initX) + creature.initX) * horizSpacing,
               (position * (creature.destY - creature.initY) + creature.initY) * vertSpacing
             )
-            c.scale(vertSpacing / 2 / 1.5, vertSpacing / 2 / 1.5)
+            c.scale(vertSpacing / CREATURE_SIZE, vertSpacing / CREATURE_SIZE)
             creature.render(c)
             c.restore()
           }
@@ -235,6 +269,7 @@ const views = {
         new Text('', 'Here\'s a thousand randomly-generated creatures to start with'),
         new Button('', 'Okay', () => {
           document.body.classList.remove('state-gen0')
+          document.body.classList.add('generation-zero')
           generation = 0
           showView(views.generations)
         })
@@ -265,6 +300,7 @@ const views = {
           nextGeneration().then(() => {
             btn.elem.disabled = false
             document.body.classList.remove('state-dead')
+            document.body.classList.remove('generation-zero')
             document.body.classList.add('state-reproduction')
             btn.view.emit('show-new')
           })
@@ -427,6 +463,7 @@ const views = {
                 .then(() => {
                   generation = history.length
                   if (btn.playing) nextGen()
+                  document.body.classList.remove('generation-zero')
                   showView(views.generations)
                 })
             }
@@ -434,7 +471,20 @@ const views = {
           }
         })
       ]),
-      new Container('winners'),
+      new Container('winners', [
+        new Container('winner', [
+          new Text('winner-label', 'Worst'),
+          new Canvas('winner-photo', winnerPhoto('worst'))
+        ]),
+        new Container('winner', [
+          new Text('winner-label', 'Median'),
+          new Canvas('winner-photo', winnerPhoto('median'))
+        ]),
+        new Container('winner', [
+          new Text('winner-label', 'Best'),
+          new Canvas('winner-photo', winnerPhoto('best'))
+        ])
+      ]),
       new Canvas('histogram', (wrapper, view) => {
         const { canvas, ctx: c } = wrapper
 
@@ -615,7 +665,7 @@ const views = {
 
             // TODO: I think all this should be done while scaled (as in, scrollX/
             // scrollY should be in terms of simulation units)
-            const scale = wrapper.height * 0.2 / 1.1
+            const scale = wrapper.height * 0.5 / CREATURE_SIZE
 
             c.strokeStyle = 'rgba(0, 0, 0, 0.2)'
             const startTick = Math.floor(scrollX / scale)
