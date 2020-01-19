@@ -2,9 +2,10 @@ import { Container, View, Text, Button, Fieldset, Canvas } from './ui.mjs'
 import { RenderSimulation } from '../render-simulation.mjs'
 import { easeInOutQuart } from '../utils.mjs'
 
+const HISTOGRAM_INTERVAL = 0.2
 const history = []
 const classes = new Map()
-let maxScore
+let maxScore = 0
 let generation
 let currentGeneration
 function simGeneration () {
@@ -13,11 +14,11 @@ function simGeneration () {
     const histogram = new Map()
     const demographics = new Map()
     for (const creature of currentGeneration) {
-      const interval = Math.floor(creature.data.fitness * 5) / 5
-      if (histogram.has(creature.data.fitness)) {
-        histogram.set(creature.data.fitness, histogram.get(creature.data.fitness) + 1)
+      const interval = Math.floor(creature.data.fitness / HISTOGRAM_INTERVAL)
+      if (histogram.has(interval)) {
+        histogram.set(interval, histogram.get(interval) + 1)
       } else {
-        histogram.set(creature.data.fitness, 1)
+        histogram.set(interval, 1)
       }
       const creatureClass = `n${creature.nodes.length}m${creature.muscles.length}`
       if (demographics.has(creatureClass)) {
@@ -364,9 +365,30 @@ const views = {
       new Canvas('histogram', (wrapper, view) => {
         const { canvas, ctx: c } = wrapper
 
-        view.on('repaint', () => {
+        const PADDING = 10
+        wrapper.on('repaint', () => {
           c.clearRect(0, 0, wrapper.width, wrapper.height)
-          //
+
+          if (history[generation - 1]) {
+            const { histogram, histogramMax, median } = history[generation - 1]
+            const medianBar = Math.floor(median.data.fitness / HISTOGRAM_INTERVAL)
+            const max = Math.floor(maxScore / HISTOGRAM_INTERVAL)
+            const bars = max + 1
+            const barWidth = (wrapper.width - 2 * PADDING) / bars
+            for (let i = 0; i <= max; i++) {
+              const count = histogram.get(i)
+              if (count) {
+                const barHeight = count / histogramMax * (wrapper.height - 2 * PADDING)
+                c.fillStyle = i === medianBar ? '#ffd369' : 'grey'
+                c.fillRect(
+                  PADDING + i * barWidth,
+                  wrapper.height - PADDING - barHeight,
+                  barWidth,
+                  barHeight
+                )
+              }
+            }
+          }
         })
       })
     ])
