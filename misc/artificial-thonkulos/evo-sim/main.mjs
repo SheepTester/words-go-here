@@ -136,7 +136,7 @@ const views = {
 
       const previewMarker = document.createElement('div')
       previewMarker.classList.add('preview-marker')
-      wrapper.elem.appendChild(previewMarker)
+      wrapper.elem.append(previewMarker)
       let showingPreview = false
       function setPreview (e) {
         const rect = wrapper.elem.getBoundingClientRect()
@@ -316,6 +316,16 @@ const views = {
                 c.closePath()
                 c.fill()
               }
+            }
+          })
+
+          // Not really a job specifically for the area graph, oh well
+          const currentGenMarker = document.createElement('div')
+          currentGenMarker.classList.add('current-gen')
+          wrapper.parent.elem.append(currentGenMarker)
+          view.on('show', () => {
+            if (generation > 0) {
+              currentGenMarker.style.left = ((generation - 1) / (history.length - 1) || 1) * 100 + '%'
             }
           })
         })

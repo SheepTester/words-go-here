@@ -111,7 +111,7 @@ class Canvas extends ElemThing {
     this.canvas = document.createElement('canvas')
     this.canvas.classList.add('canvas')
     this.ctx = this.canvas.getContext('2d')
-    this.elem.appendChild(this.canvas)
+    this.elem.append(this.canvas)
 
     this.on('view', view => {
       onView(this, view)

@@ -82,6 +82,18 @@ body {
 .heading {
   font-size: 36px;
 }
+.graphs {
+  position: relative;
+}
+.current-gen {
+  position: absolute;
+  background-color: var(--accent);
+  margin-left: -1px;
+  width: 2px;
+  left: -100%;
+  top: 0;
+  bottom: 0;
+}
 .area-graph {
   height: 150px;
   margin-top: 20px;
