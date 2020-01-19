@@ -40,6 +40,7 @@ body {
   display: none;
   border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
 }
 .preview-marker.showing {
   display: block;
@@ -58,7 +59,9 @@ body {
 .state-gen0 .gen0,
 .state-results .results,
 .state-sorting .sorting,
-.state-sorted .sorted {
+.state-sorted .sorted,
+.state-dead .dead,
+.state-reproduction .reproduction {
   display: flex;
 }
 

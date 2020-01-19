@@ -458,7 +458,7 @@ class Creature {
   }
 
   removeRandomNode (random) {
-    const index = random.random(0, this.nodes.length)
+    const index = Math.floor(random.random(0, this.nodes.length))
     const node = this.nodes[index]
     this.nodes.splice(index, 1)
     for (let i = 0; i < this.muscles.length; i++) {

@@ -2,10 +2,55 @@ import { Container, View, Text, Button, Fieldset, Canvas } from './ui.mjs'
 import { RenderSimulation } from '../render-simulation.mjs'
 import { easeInOutQuart } from '../utils.mjs'
 
-let generation = 0
+const history = []
+let generation
 let currentGeneration
-function nextGeneration () {
+function simGeneration () {
   return sendWorker({ type: 'simulate' }).then(({ creatures }) => {
+    currentGeneration = creatures.map(data => new Creature(data).reset())
+    const histogram = new Map()
+    const demographics = new Map()
+    for (const creature of currentGeneration) {
+      if (histogram.has(creature.data.fitness)) {
+        histogram.set(creature.data.fitness, histogram.get(creature.data.fitness) + 1)
+      } else {
+        histogram.set(creature.data.fitness, 1)
+      }
+      const creatureClass = `n${creature.nodes.length}m${creature.muscles.length}`
+      if (demographics.has(creatureClass)) {
+        demographics.set(creatureClass, demographics.get(creatureClass) + 1)
+      } else {
+        demographics.set(creatureClass, 1)
+      }
+    }
+    const percentiles = {}
+    for (let i = 0; i <= 10; i++) {
+      percentiles[10 - i * 10] = creatures[Math.min(
+        Math.floor(creatures.length * i / 10),
+        creatures.length - 1
+      )].data.fitness
+    }
+    for (let i = 1; i < 10; i++) {
+      percentiles[100 - i] = creatures[Math.min(
+        Math.floor(creatures.length * i / 100),
+        creatures.length - 1
+      )].data.fitness
+      percentiles[i] = creatures[Math.min(
+        Math.floor(creatures.length * (1 - i / 100)),
+        creatures.length - 1
+      )].data.fitness
+    }
+    history.push({
+      histogram,
+      demographics,
+      best: creatures[0],
+      median: creatures[Math.floor(creatures.length / 2)],
+      worst: creatures[creatures.length - 1]
+    })
+  })
+}
+function nextGeneration () {
+  return sendWorker({ type: 'reproduce' }).then(({ creatures }) => {
     currentGeneration = creatures.map(data => new Creature(data).reset())
   })
 }
@@ -27,6 +72,7 @@ const views = {
       const { canvas, ctx: c } = wrapper
       let cols, rows, horizSpacing, vertSpacing
 
+      let showDead = false
       wrapper.on('repaint', () => {
         if (animationTime !== null) return
 
@@ -39,16 +85,26 @@ const views = {
         const prop = currentGeneration[0].data.rank === undefined ||
           currentGeneration.notSorted ? 'id' : 'rank'
         for (const creature of currentGeneration) {
-          c.save()
           const index = creature.data[prop]
-          c.translate(
-            (index % cols + 1) * horizSpacing,
-            Math.floor(index / cols + 1) * vertSpacing
-          )
-          // Creatures are approximately 1.1 un tall at most
-          c.scale(vertSpacing / 2 / 1.1, vertSpacing / 2 / 1.1)
-          creature.render(c)
-          c.restore()
+          if (showDead && creature.data.willDie) {
+            c.fillStyle = 'black'
+            c.fillRect(
+              (index % cols + 0.5) * horizSpacing,
+              (Math.floor(index / cols) + 0.5) * vertSpacing,
+              horizSpacing,
+              vertSpacing
+            )
+          } else {
+            c.save()
+            c.translate(
+              (index % cols + 1) * horizSpacing,
+              (Math.floor(index / cols) + 1.5) * vertSpacing
+            )
+            // Creatures are approximately 1.5 un tall at most
+            c.scale(vertSpacing / 2 / 1.5, vertSpacing / 2 / 1.5)
+            creature.render(c)
+            c.restore()
+          }
         }
       })
 
@@ -59,7 +115,7 @@ const views = {
       function setPreview (e) {
         const rect = wrapper.elem.getBoundingClientRect()
         const x = Math.floor((e.clientX - rect.left) / horizSpacing - 0.5)
-        const y = Math.floor((e.clientY - rect.top) / vertSpacing)
+        const y = Math.floor((e.clientY - rect.top) / vertSpacing - 0.5)
         const index = x + y * cols
         const prop = currentGeneration[0].data.rank === undefined ||
           currentGeneration.notSorted ? 'id' : 'rank'
@@ -68,7 +124,7 @@ const views = {
           showingPreview = true
           views.creaturePreview.emit('preview', creature)
           previewMarker.style.left = (x + 0.5) * horizSpacing + 'px'
-          previewMarker.style.top = y * vertSpacing + 'px'
+          previewMarker.style.top = (y + 0.5) * vertSpacing + 'px'
           previewMarker.style.width = horizSpacing + 'px'
           previewMarker.style.height = vertSpacing + 'px'
           previewMarker.classList.add('showing')
@@ -116,7 +172,7 @@ const views = {
               (position * (creature.destX - creature.initX) + creature.initX) * horizSpacing,
               (position * (creature.destY - creature.initY) + creature.initY) * vertSpacing
             )
-            c.scale(vertSpacing / 2 / 1.1, vertSpacing / 2 / 1.1)
+            c.scale(vertSpacing / 2 / 1.5, vertSpacing / 2 / 1.5)
             creature.render(c)
             c.restore()
           }
@@ -129,14 +185,22 @@ const views = {
         rows = Math.ceil(currentGeneration.length / cols)
         for (const creature of currentGeneration) {
           creature.initX = (creature.data.id % cols + 1)
-          creature.initY = Math.floor(creature.data.id / cols + 1)
+          creature.initY = Math.floor(creature.data.id / cols) + 1.5
           creature.destX = (creature.data.rank % cols + 1)
-          creature.destY = Math.floor(creature.data.rank / cols + 1)
+          creature.destY = Math.floor(creature.data.rank / cols) + 1.5
         }
         currentGeneration.notSorted = false
 
         animationTime = 0
         sortingAnimation.start()
+      })
+      view.on('show-dead', () => {
+        showDead = true
+        wrapper.emit('repaint')
+      })
+      view.on('show-new', () => {
+        showDead = false
+        wrapper.emit('repaint')
       })
     }),
     new Container('creature-btns', [
@@ -144,6 +208,7 @@ const views = {
         new Text('', 'Here\'s a thousand randomly-generated creatures to start with'),
         new Button('', 'Okay', () => {
           document.body.classList.remove('state-gen0')
+          generation = 0
           showView(views.generations)
         })
       ]),
@@ -160,15 +225,41 @@ const views = {
       ]),
       new Container('sorted', [
         new Text('', 'From the top to bottom are the fastest to slowest.'),
-        new Button('', 'Semigenocide', () => {
+        new Button('', 'Semigenocide', btn => {
           document.body.classList.remove('state-sorted')
+          document.body.classList.add('state-dead')
+          btn.view.emit('show-dead')
+        })
+      ]),
+      new Container('dead', [
+        new Text('', 'Faster creatures are more likely to survive to reproduce.'),
+        new Button('', 'Reproduce', btn => {
+          btn.disabled = true
+          nextGeneration().then(() => {
+            btn.disabled = false
+            document.body.classList.remove('state-dead')
+            document.body.classList.add('state-reproduction')
+            btn.view.emit('show-new')
+          })
+        })
+      ]),
+      new Container('reproduction', [
+        new Text('', 'Here are the contenders of the next generation.'),
+        new Button('', 'Nice', btn => {
+          document.body.classList.remove('state-reproduction')
+          generation = history.length
+          showView(views.generations)
         })
       ])
     ])
   ]),
   generations: new View('generations-view', [
     new Container('gen-side gen-left', [
-      new Text('heading', 'Generation 0'),
+      new Text('heading', '', (text, view) => {
+        view.on('show', () => {
+          text.elem.textContent = `Generation ${generation}`
+        })
+      }),
       new Canvas('line-graph'),
       new Canvas('area-graph')
     ]),
@@ -179,14 +270,40 @@ const views = {
         }),
         new Button('', 'Generate immediately', btn => {
           btn.parent.elem.disabled = true
-          nextGeneration().then(() => {
+          simGeneration().then(() => {
             btn.parent.elem.disabled = false
             currentGeneration.notSorted = true
             document.body.classList.add('state-results')
             showView(views.creatures)
           })
         }),
-        new Button('', 'Generate automatically')
+        new Button('', 'Generate automatically', btn => {
+          if (btn.playing) {
+            btn.elem.textContent = 'Generate automatically'
+            btn.elem.disabled = true
+            btn.playing = false
+            btn.nextGen.then(() => {
+              btn.parent.descendants[0].elem.disabled = false
+              btn.parent.descendants[1].elem.disabled = false
+              btn.elem.disabled = false
+            })
+          } else {
+            btn.elem.textContent = 'Stop generating'
+            btn.parent.descendants[0].elem.disabled = true
+            btn.parent.descendants[1].elem.disabled = true
+            btn.playing = true
+            function nextGen () {
+              btn.nextGen = simGeneration()
+                .then(nextGeneration)
+                .then(() => {
+                  generation = history.length
+                  showView(views.generations)
+                  if (btn.playing) nextGen()
+                })
+            }
+            nextGen()
+          }
+        })
       ]),
       new Container('winners'),
       new Canvas('histogram')
@@ -195,7 +312,7 @@ const views = {
   watch: new View('watch-view', [
     new Canvas('watch', (wrapper, view) => {
       const { canvas, ctx: c, sizeReady } = wrapper
-      let current, scrollX, scrollY, clock, stop, creatures, nextGenerationReady
+      let current, scrollX, scrollY, clock, stop, creatures, simGenerationReady
 
       const renderer = new RenderSimulation({
         render: () => {
@@ -231,7 +348,7 @@ const views = {
               current++
               if (current >= creatures.length) {
                 stop = true
-                nextGenerationReady.then(() => {
+                simGenerationReady.then(() => {
                   document.body.classList.add('state-results')
                   showView(views.creatures)
                 })
@@ -247,7 +364,7 @@ const views = {
       })
       view.on('show', () => {
         creatures = currentGeneration
-        nextGenerationReady = nextGeneration()
+        simGenerationReady = simGeneration()
         sizeReady.then(() => {
           stop = false
           current = null
