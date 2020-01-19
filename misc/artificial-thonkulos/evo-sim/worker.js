@@ -3,7 +3,7 @@
 importScripts('./random.js')
 importScripts('./simulation.js')
 
-const NUMBER = 1000
+const NUMBER = 100
 let currentGeneration
 let random
 
@@ -72,7 +72,7 @@ function respond (originalData, responseData = {}) {
   })
 }
 self.addEventListener('message', ({ data }) => {
-  console.time(data.type)
+  // console.time(data.type)
   switch (data.type) {
     case 'init':
       random = new SeededRandom(data.key)
@@ -100,5 +100,5 @@ self.addEventListener('message', ({ data }) => {
     default:
       respond(data)
   }
-  console.timeEnd(data.type)
+  // console.timeEnd(data.type)
 })

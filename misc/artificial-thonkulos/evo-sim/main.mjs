@@ -485,6 +485,61 @@ const views = {
           new Canvas('winner-photo', winnerPhoto('best'))
         ])
       ]),
+      new Canvas('generation-slider', (wrapper, view) => {
+        const { canvas, ctx: c } = wrapper
+        const KNOB = 40
+        function renderKnob (genProg) {
+          c.clearRect(0, 0, wrapper.width, wrapper.height)
+          c.fillStyle = '#ffd369'
+          c.fillRect(
+            genProg * (wrapper.width - KNOB),
+            0,
+            KNOB,
+            wrapper.height
+          )
+          c.fillStyle = 'rgba(0, 0, 0, 0.8)'
+          c.font = '24px "Poppins", sans-serif'
+          c.textAlign = 'center'
+          c.textBaseline = 'middle'
+          c.fillText(generation, genProg * (wrapper.width - KNOB) + KNOB / 2,
+            wrapper.height / 2)
+        }
+        wrapper.on('repaint', () => {
+          if (generation > 0) {
+            renderKnob(pointerId === null
+              ? history.length === 1 ? 0.5 : (generation - 1) / (history.length - 1)
+              : genProg)
+          }
+        })
+
+        let pointerId = null
+        let genProg
+        let possibleGeneration
+        function drag (e) {
+          if (e.pointerId === pointerId) {
+            const { left, width } = wrapper.elem.getBoundingClientRect()
+            genProg = Math.max(Math.min((e.clientX - left - KNOB / 2) / (width - KNOB), 1), 0)
+            generation = Math.round(genProg * (history.length - 1)) + 1
+            renderKnob(genProg) // Might be redundant, but might also be smoother
+            showView(views.generations)
+          }
+        }
+        function stopDrag (e) {
+          if (e.pointerId === pointerId) {
+            pointerId = null
+          }
+        }
+        wrapper.elem.addEventListener('pointerdown', e => {
+          if (pointerId === null) {
+            pointerId = e.pointerId
+            drag(e)
+            wrapper.elem.setPointerCapture(pointerId)
+          }
+        })
+        wrapper.elem.addEventListener('pointermove', drag)
+        wrapper.elem.addEventListener('pointerup', stopDrag)
+        wrapper.elem.addEventListener('pointercancel', stopDrag)
+      }),
       new Canvas('histogram', (wrapper, view) => {
         const { canvas, ctx: c } = wrapper
 

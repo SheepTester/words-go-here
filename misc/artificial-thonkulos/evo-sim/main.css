@@ -110,7 +110,8 @@ body {
 .winners {
   margin-bottom: 20px;
 }
-.generation-zero .winners {
+.generation-zero .winners,
+.generation-zero .generation-slider {
   display: none;
 }
 .winner {
@@ -124,9 +125,16 @@ body {
   background-color: skyblue;
   width: 150px;
   height: 150px;
+  touch-action: none;
 }
 .winner-photo:hover {
   box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.3);
+}
+.generation-slider {
+  height: 40px;
+  touch-action: none;
+  background-color: var(--layer);
+  margin-bottom: 20px;
 }
 .gens-buttons .button {
   margin-bottom: 10px;
