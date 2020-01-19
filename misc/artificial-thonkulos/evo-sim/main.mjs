@@ -3,6 +3,8 @@ import { RenderSimulation } from '../render-simulation.mjs'
 import { easeInOutQuart } from '../utils.mjs'
 
 const history = []
+const classes = new Map()
+let maxScore
 let generation
 let currentGeneration
 function simGeneration () {
@@ -11,6 +13,7 @@ function simGeneration () {
     const histogram = new Map()
     const demographics = new Map()
     for (const creature of currentGeneration) {
+      const interval = Math.floor(creature.data.fitness * 5) / 5
       if (histogram.has(creature.data.fitness)) {
         histogram.set(creature.data.fitness, histogram.get(creature.data.fitness) + 1)
       } else {
@@ -23,35 +26,50 @@ function simGeneration () {
         demographics.set(creatureClass, 1)
       }
     }
+    let histogramMax = 0
+    for (const [_, count] of histogram) {
+      if (count > histogramMax) histogramMax = count
+    }
+    if (currentGeneration[0].data.fitness > maxScore) {
+      maxScore = currentGeneration[0].data.fitness
+    }
     const percentiles = {}
     for (let i = 0; i <= 10; i++) {
-      percentiles[10 - i * 10] = creatures[Math.min(
-        Math.floor(creatures.length * i / 10),
-        creatures.length - 1
+      percentiles[10 - i * 10] = currentGeneration[Math.min(
+        Math.floor(currentGeneration.length * i / 10),
+        currentGeneration.length - 1
       )].data.fitness
     }
     for (let i = 1; i < 10; i++) {
-      percentiles[100 - i] = creatures[Math.min(
-        Math.floor(creatures.length * i / 100),
-        creatures.length - 1
+      percentiles[100 - i] = currentGeneration[Math.min(
+        Math.floor(currentGeneration.length * i / 100),
+        currentGeneration.length - 1
       )].data.fitness
-      percentiles[i] = creatures[Math.min(
-        Math.floor(creatures.length * (1 - i / 100)),
-        creatures.length - 1
+      percentiles[i] = currentGeneration[Math.min(
+        Math.floor(currentGeneration.length * (1 - i / 100)),
+        currentGeneration.length - 1
       )].data.fitness
     }
     history.push({
       histogram,
+      histogramMax,
       demographics,
-      best: creatures[0],
-      median: creatures[Math.floor(creatures.length / 2)],
-      worst: creatures[creatures.length - 1]
+      best: currentGeneration[0],
+      median: currentGeneration[Math.floor(currentGeneration.length / 2)],
+      worst: currentGeneration[currentGeneration.length - 1]
     })
   })
 }
 function nextGeneration () {
   return sendWorker({ type: 'reproduce' }).then(({ creatures }) => {
     currentGeneration = creatures.map(data => new Creature(data).reset())
+    for (const creature of currentGeneration) {
+      const creatureClass = `n${creature.nodes.length}m${creature.muscles.length}`
+      if (!classes.has(creatureClass)) {
+        // Random enough, no?
+        classes.set(creatureClass, (creature.nodes.length * 234 + creature.muscles.length * 98) % 360)
+      }
+    }
   })
 }
 
@@ -63,6 +81,13 @@ const views = {
       btn.elem.disabled = true
       sendWorker({ type: 'start' }).then(({ creatures }) => {
         currentGeneration = creatures.map(creature => new Creature(creature).reset())
+        for (const creature of currentGeneration) {
+          const creatureClass = `n${creature.nodes.length}m${creature.muscles.length}`
+          if (!classes.has(creatureClass)) {
+            // Random enough, no?
+            classes.set(creatureClass, (creature.nodes.length * 234 + creature.muscles.length * 98) % 360)
+          }
+        }
         showView(views.creatures)
       })
     })
@@ -261,7 +286,37 @@ const views = {
         })
       }),
       new Canvas('line-graph'),
-      new Canvas('area-graph')
+      new Canvas('area-graph', (wrapper, view) => {
+        const { canvas, ctx: c } = wrapper
+
+        wrapper.on('repaint', () => {
+          c.clearRect(0, 0, wrapper.width, wrapper.height)
+          if (history.length) {
+            const ys = new Array(history.length).fill(0)
+            for (const [creatureClass, hue] of classes) {
+              c.fillStyle = `hsl(${hue}, 100%, 50%)`
+              c.beginPath()
+              c.moveTo(0, ys[0] * wrapper.height)
+              if (history.length === 1) {
+                c.lineTo(wrapper.width, ys[0] * wrapper.height)
+                ys[0] += history[0].demographics.get(creatureClass) / currentGeneration.length || 0
+                c.lineTo(wrapper.width, ys[0] * wrapper.height)
+                c.lineTo(0, ys[0] * wrapper.height)
+              } else {
+                for (let i = 1; i < history.length; i++) {
+                  c.lineTo(wrapper.width * i / (history.length - 1), ys[i] * wrapper.height)
+                }
+                for (let i = history.length; i--;) {
+                  ys[i] += history[i].demographics.get(creatureClass) / currentGeneration.length || 0
+                  c.lineTo(wrapper.width * i / (history.length - 1), ys[i] * wrapper.height)
+                }
+              }
+              c.closePath()
+              c.fill()
+            }
+          }
+        })
+      })
     ]),
     new Container('gen-side gen-right', [
       new Fieldset('gens-buttons', [
@@ -297,8 +352,8 @@ const views = {
                 .then(nextGeneration)
                 .then(() => {
                   generation = history.length
-                  showView(views.generations)
                   if (btn.playing) nextGen()
+                  showView(views.generations)
                 })
             }
             nextGen()
@@ -306,7 +361,14 @@ const views = {
         })
       ]),
       new Container('winners'),
-      new Canvas('histogram')
+      new Canvas('histogram', (wrapper, view) => {
+        const { canvas, ctx: c } = wrapper
+
+        view.on('repaint', () => {
+          c.clearRect(0, 0, wrapper.width, wrapper.height)
+          //
+        })
+      })
     ])
   ]),
   watch: new View('watch-view', [
@@ -383,8 +445,7 @@ const views = {
       new Text('creature-info', '', (text, view) => {
         view.on('info', creature => {
           const lines = [
-            `Creature ${creature.data.id}`,
-            `Class n${creature.nodes.length}m${creature.muscles.length}`
+            `Creature ${creature.data.id}`
           ]
           if (creature.data.rank !== undefined) {
             lines.push(`Ranked #${creature.data.rank + 1}`)
@@ -393,6 +454,13 @@ const views = {
             lines.push(`Fitness: ${creature.data.fitness.toFixed(4)}`)
           }
           text.elem.textContent = lines.join('\n')
+        })
+      }),
+      new Text('creature-info', '', (text, view) => {
+        view.on('info', creature => {
+          const creatureClass = `n${creature.nodes.length}m${creature.muscles.length}`
+          text.elem.style.color = `hsl(${classes.get(creatureClass)}, 100%, 30%)`
+          text.elem.textContent = `Class ${creatureClass}`
         })
       }),
       new Canvas('preview', (wrapper, view) => {
