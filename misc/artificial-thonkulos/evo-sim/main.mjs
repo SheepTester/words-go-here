@@ -144,6 +144,23 @@ function renderSim (c, wrapper, creature, scrollX, scrollY) {
   c.restore()
 }
 
+const IDEAL_SPACING = 100 // px ("visual coordinates")
+const spacingCoefficients = [1, 2, 5] // In "data coordinates" ish
+// Returns spacing in "data coordinates"
+function getSpacing (dataRange, visualRange) {
+  // Transform into "data coordinates"
+  const idealDataSpacing = dataRange * IDEAL_SPACING / visualRange
+  const magnitude = 10 ** Math.floor(Math.log10(idealDataSpacing))
+  const coefficient = idealDataSpacing / magnitude
+  let closestCoefficient = spacingCoefficients[0]
+  for (let i = 1; i < spacingCoefficients.length; i++) {
+    if (Math.abs(spacingCoefficients[i] - coefficient) < Math.abs(closestCoefficient - coefficient)) {
+      closestCoefficient = spacingCoefficients[i]
+    }
+  }
+  return magnitude * closestCoefficient
+}
+
 const views = {
   start: new View('start-view', [
     new Text('title', 'Epic evolution'),
@@ -373,7 +390,7 @@ const views = {
         new Canvas('line-graph', (wrapper, view) => {
           const { canvas, ctx: c } = wrapper
 
-          const PADDING = 10
+          const PADDING = 20
           const minorPercentiles = []
           for (let i = 1; i <= 9; i++) minorPercentiles.push(i)
           for (let i = 91; i <= 99; i++) minorPercentiles.push(i)
@@ -420,6 +437,24 @@ const views = {
               c.strokeStyle = '#f66'
               c.beginPath()
               renderPercentile(50, scale)
+              c.stroke()
+
+              const spacing = getSpacing(maxScore, wrapper.height - 2 * PADDING)
+              c.strokeStyle = 'rgba(255, 255, 255, 0.2)'
+              c.lineWidth = 1
+              c.fillStyle = 'rgba(255, 255, 255, 0.5)'
+              c.font = '10px "Poppins", sans-serif'
+              c.textAlign = 'left'
+              c.textBaseline = 'bottom'
+              c.beginPath()
+              const lines = Math.floor(maxScore / spacing)
+              for (let i = 0; i <= lines; i++) {
+                const score = i * spacing
+                const visualY = wrapper.height - PADDING - score * scale
+                c.moveTo(0, visualY)
+                c.lineTo(wrapper.width, visualY)
+                c.fillText(+score.toPrecision(12) + 'm', 0, visualY - 5)
+              }
               c.stroke()
             }
           })
@@ -617,7 +652,7 @@ const views = {
       new Canvas('histogram', (wrapper, view) => {
         const { canvas, ctx: c } = wrapper
 
-        const PADDING = 10
+        const PADDING = 40
         wrapper.on('repaint', () => {
           c.clearRect(0, 0, wrapper.width, wrapper.height)
 
@@ -640,6 +675,45 @@ const views = {
                 )
               }
             }
+
+            const xSpacing = getSpacing(maxScore, wrapper.width - 2 * PADDING)
+            const ySpacing = getSpacing(histogramMax, wrapper.height - 2 * PADDING)
+            c.strokeStyle = 'rgba(255, 255, 255, 0.2)'
+            c.lineWidth = 1
+            c.fillStyle = 'rgba(255, 255, 255, 0.5)'
+            c.font = '10px "Poppins", sans-serif'
+            c.beginPath()
+            c.textAlign = 'center'
+            c.textBaseline = 'top'
+            const xLines = Math.floor(bars * HISTOGRAM_INTERVAL / xSpacing)
+            for (let i = 0; i <= xLines; i++) {
+              const x = i * xSpacing
+              const visualX = PADDING + x / HISTOGRAM_INTERVAL * barWidth
+              c.moveTo(visualX, PADDING)
+              c.lineTo(visualX, wrapper.height - PADDING)
+              c.fillText(+x.toPrecision(12), visualX, wrapper.height - PADDING + 5)
+            }
+            c.textAlign = 'right'
+            c.textBaseline = 'middle'
+            const yLines = Math.floor(histogramMax / ySpacing)
+            for (let i = 0; i <= yLines; i++) {
+              const y = i * ySpacing
+              const visualY = wrapper.height - PADDING - y / histogramMax * (wrapper.height - 2 * PADDING)
+              c.moveTo(PADDING, visualY)
+              c.lineTo(wrapper.width - PADDING, visualY)
+              c.fillText(+y.toPrecision(12), PADDING - 5, visualY)
+            }
+            c.stroke()
+            // Always label your axes!
+            c.font = '12px "Poppins", sans-serif'
+            c.textAlign = 'center'
+            c.textBaseline = 'bottom'
+            c.fillText('Fitness (m)', wrapper.width / 2, wrapper.height - 7)
+            c.save()
+            c.rotate(-Math.PI / 2)
+            c.textBaseline = 'top'
+            c.fillText('Number of creatures', -wrapper.height / 2, 7)
+            c.restore()
           }
         })
         view.on('gen-change', () => {
