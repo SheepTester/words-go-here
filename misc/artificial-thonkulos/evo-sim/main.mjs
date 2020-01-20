@@ -91,6 +91,9 @@ function winnerPhoto (winner) {
         c.restore()
       }
     })
+    view.on('gen-change', () => {
+      wrapper.emit('repaint')
+    })
 
     let hasPreview = false
     wrapper.elem.addEventListener('pointerenter', e => {
@@ -351,16 +354,20 @@ const views = {
   generations: new View('generations-view', [
     new Container('gen-side gen-left', [
       new Text('heading', '', (text, view) => {
-        view.on('show', () => {
+        function update () {
           text.elem.textContent = `Generation ${generation}`
-        })
+        }
+        view.on('show', update)
+        view.on('gen-change', update)
       }),
       new Text('', '', (text, view) => {
-        view.on('show', () => {
+        function update () {
           if (generation > 0) {
             text.elem.textContent = `Median: ${history[generation - 1].median.data.fitness.toFixed(4)}m`
           }
-        })
+        }
+        view.on('show', update)
+        view.on('gen-change', update)
       }),
       new Container('graphs', [
         new Canvas('line-graph', (wrapper, view) => {
@@ -452,11 +459,13 @@ const views = {
           const currentGenMarker = document.createElement('div')
           currentGenMarker.classList.add('current-gen')
           wrapper.parent.elem.append(currentGenMarker)
-          view.on('show', () => {
+          function update () {
             if (generation > 0) {
               currentGenMarker.style.left = (history.length === 1 ? 1 : (generation - 1) / (history.length - 1)) * 100 + '%'
             }
-          })
+          }
+          view.on('show', update)
+          view.on('gen-change', update)
         })
       ])
     ]),
@@ -553,7 +562,7 @@ const views = {
             genProg = Math.max(Math.min((e.clientX - left - KNOB / 2) / (width - KNOB), 1), 0)
             generation = Math.round(genProg * (history.length - 1)) + 1
             renderKnob(genProg) // Might be redundant, but might also be smoother
-            showView(views.generations)
+            view.emit('gen-change')
           }
         }
         function stopDrag (e) {
@@ -599,6 +608,9 @@ const views = {
               }
             }
           }
+        })
+        view.on('gen-change', () => {
+          wrapper.emit('repaint')
         })
       })
     ])
