@@ -70,7 +70,7 @@ function nextGeneration () {
       const creatureClass = `n${creature.nodes.length}m${creature.muscles.length}`
       if (!classes.has(creatureClass)) {
         // Random enough, no?
-        classes.set(creatureClass, (creature.nodes.length * 234 + creature.muscles.length * 98) % 360)
+        classes.set(creatureClass, (creature.nodes.length * 147 + creature.muscles.length * 50) % 360)
       }
     }
   })
@@ -156,7 +156,7 @@ const views = {
           const creatureClass = `n${creature.nodes.length}m${creature.muscles.length}`
           if (!classes.has(creatureClass)) {
             // Random enough, no?
-            classes.set(creatureClass, (creature.nodes.length * 234 + creature.muscles.length * 98) % 360)
+            classes.set(creatureClass, (creature.nodes.length * 147 + creature.muscles.length * 50) % 360)
           }
         }
         showView(views.creatures)
