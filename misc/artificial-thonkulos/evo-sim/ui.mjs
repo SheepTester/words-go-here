@@ -31,7 +31,7 @@ class View extends Container {
 
     for (const descendant of this.descendants) {
       descendant.view = this
-      descendant.emit('view', this)
+      descendant.emit('view', this, descendant)
     }
   }
 
@@ -76,13 +76,10 @@ class View extends Container {
 }
 
 class Text extends ElemThing {
-  constructor (className = '', text = '', onView = noop) {
+  constructor (className = '', text = '') {
     super('p', className)
     this.elem.classList.add('text')
     this.elem.textContent = text
-    this.on('view', view => {
-      onView(this, view)
-    })
   }
 }
 

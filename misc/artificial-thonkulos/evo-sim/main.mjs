@@ -353,14 +353,14 @@ const views = {
   ]),
   generations: new View('generations-view', [
     new Container('gen-side gen-left', [
-      new Text('heading', '', (text, view) => {
+      new Text('heading').on('view', (view, text) => {
         function update () {
           text.elem.textContent = `Generation ${generation}`
         }
         view.on('show', update)
         view.on('gen-change', update)
       }),
-      new Text('', '', (text, view) => {
+      new Text().on('view', (view, text) => {
         function update () {
           if (generation > 0) {
             text.elem.textContent = `Median: ${history[generation - 1].median.data.fitness.toFixed(4)}m`
@@ -454,14 +454,47 @@ const views = {
               }
             }
           })
+        }),
+        new Container('current-gen', [
+          new Canvas('area-graph-labels', (wrapper, view) => {
+            const { canvas, ctx: c } = wrapper
 
-          // Not really a job specifically for the area graph, oh well
-          const currentGenMarker = document.createElement('div')
-          currentGenMarker.classList.add('current-gen')
-          wrapper.parent.elem.append(currentGenMarker)
+            wrapper.on('repaint', () => {
+              c.clearRect(0, 0, wrapper.width, wrapper.height)
+
+              if (history[generation - 1]) {
+                c.textBaseline = 'middle'
+                c.font = '10px "Poppins", sans-serif'
+                const BOX_HEIGHT = 16
+                const { demographics } = history[generation - 1]
+                let y = 0
+                for (const [creatureClass, hue] of classes) {
+                  const count = demographics.get(creatureClass) || 0
+                  const percentage = count / currentGeneration.length
+                  if (percentage > 0.05) {
+                    let visualY = wrapper.height * (y + percentage / 2)
+                    if (visualY + BOX_HEIGHT / 2 > wrapper.height) {
+                      visualY = wrapper.height - BOX_HEIGHT / 2
+                    } else if (visualY - BOX_HEIGHT / 2 < 0) {
+                      visualY = BOX_HEIGHT / 2
+                    }
+                    c.fillStyle = 'rgba(255, 255, 255, 0.8)'
+                    c.fillRect(0, visualY - BOX_HEIGHT / 2, wrapper.width, BOX_HEIGHT)
+                    c.fillStyle = `hsl(${hue}, 100%, 30%)`
+                    c.fillText(`${creatureClass}: ${count}`, 0, visualY)
+                  }
+                  y += percentage
+                }
+              }
+            })
+            view.on('gen-change', () => {
+              wrapper.emit('repaint')
+            })
+          })
+        ]).on('view', (view, { elem }) => {
           function update () {
             if (generation > 0) {
-              currentGenMarker.style.left = (history.length === 1 ? 1 : (generation - 1) / (history.length - 1)) * 100 + '%'
+              elem.style.left = (history.length === 1 ? 1 : (generation - 1) / (history.length - 1)) * 100 + '%'
             }
           }
           view.on('show', update)
@@ -708,7 +741,7 @@ const views = {
   ]),
   creaturePreview: new View('creature-preview', [
     new Container('preview-content', [
-      new Text('creature-info', '', (text, view) => {
+      new Text('creature-info').on('view', (view, text) => {
         view.on('info', creature => {
           const lines = [
             `Creature ${creature.data.id}`
@@ -722,7 +755,7 @@ const views = {
           text.elem.textContent = lines.join('\n')
         })
       }),
-      new Text('creature-info', '', (text, view) => {
+      new Text('creature-info').on('view', (view, text) => {
         view.on('info', creature => {
           const creatureClass = `n${creature.nodes.length}m${creature.muscles.length}`
           text.elem.style.color = `hsl(${classes.get(creatureClass)}, 100%, 30%)`
