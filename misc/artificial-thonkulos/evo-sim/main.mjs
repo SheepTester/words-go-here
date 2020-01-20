@@ -109,6 +109,38 @@ function winnerPhoto (winner) {
   }
 }
 
+function renderSim (c, wrapper, creature, scrollX, scrollY) {
+  // The ~CREATURE_SIZE un tall creature should take up 50% of the screen height
+  const scale = wrapper.height * 0.5 / CREATURE_SIZE
+  c.save()
+  c.translate(wrapper.width / 2, wrapper.height / 2)
+  c.scale(scale, scale)
+  c.translate(-scrollX, -scrollY)
+
+  const start = scrollX - wrapper.width / 2 / scale
+  const stop = scrollX + wrapper.width / 2 / scale
+  c.fillStyle = 'forestgreen'
+  c.fillRect(start, 0, stop - start, wrapper.height / 2 / scale + scrollY)
+  c.font = '0.3px monospace'
+  c.textAlign = 'center'
+  c.fillStyle = 'rgba(0, 0, 0, 0.5)'
+  c.strokeStyle = 'rgba(0, 0, 0, 0.2)'
+  c.lineWidth = 0.05
+  const startTick = Math.floor(start)
+  const stopTick = Math.ceil(stop)
+  c.beginPath()
+  for (let i = startTick; i < stopTick; i++) {
+    c.moveTo(i, 0)
+    c.lineTo(i, 0.2)
+    c.fillText(i, i, 0.3)
+  }
+  c.stroke()
+
+  creature.render(c)
+
+  c.restore()
+}
+
 const views = {
   start: new View('start-view', [
     new Text('title', 'Epic evolution'),
@@ -422,7 +454,7 @@ const views = {
           wrapper.parent.elem.append(currentGenMarker)
           view.on('show', () => {
             if (generation > 0) {
-              currentGenMarker.style.left = ((generation - 1) / (history.length - 1) || 1) * 100 + '%'
+              currentGenMarker.style.left = (history.length === 1 ? 1 : (generation - 1) / (history.length - 1)) * 100 + '%'
             }
           })
         })
@@ -581,15 +613,11 @@ const views = {
       let creatures
       let simGenerationReady
 
-      view.speed = 1
-
       const renderer = new RenderSimulation({
         render: () => {
           if (stop) return
 
           c.clearRect(0, 0, wrapper.width, wrapper.height)
-          c.fillStyle = 'forestgreen'
-          c.fillRect(0, -scrollY, wrapper.width, wrapper.height + scrollY)
 
           if (current === null) return
           c.fillStyle = 'black'
@@ -600,12 +628,7 @@ const views = {
           c.fillText(`Distance: ${currentCreature.position().x.toFixed(2)}m`, 5, 45)
           c.fillText(`Speed: ${renderer.speed}x`, 5, 65)
 
-          c.save()
-          c.translate(-scrollX, -scrollY)
-          // The ~1.1 un tall creature should take up 60% of the screen height
-          c.scale(wrapper.height * 0.1 / 1.1, wrapper.height * 0.1 / 1.1)
-          currentCreature.render(c)
-          c.restore()
+          renderSim(c, wrapper, currentCreature, scrollX, scrollY)
         },
         simulate: time => {
           if (stop) return
@@ -619,6 +642,7 @@ const views = {
               if (current >= creatures.length) {
                 stop = true
                 simGenerationReady.then(() => {
+                  currentGeneration.notSorted = true
                   document.body.classList.add('state-results')
                   showView(views.creatures)
                 })
@@ -630,6 +654,10 @@ const views = {
 
           currentCreature.sim(time)
           clock += time
+
+          const { x, y } = currentCreature.position()
+          scrollX += (x - scrollX) / 10
+          scrollY += (y - scrollY) / 10
         },
         simTime: SIM_TIME
       })
@@ -642,8 +670,10 @@ const views = {
         sizeReady.then(() => {
           stop = false
           current = null
-          scrollX = -wrapper.width / 2
-          scrollY = -wrapper.height + 100
+          scrollX = 0
+          scrollY = 0
+          view.speed = 1
+          renderer.speed = 1
           renderer.start()
         })
       })
@@ -723,40 +753,20 @@ const views = {
             c.fillStyle = clock > 15 ? '#6095a9' : 'skyblue'
             c.fillRect(0, 0, wrapper.width, wrapper.height)
 
-            c.fillStyle = 'forestgreen'
-            c.fillRect(0, -scrollY, wrapper.width, wrapper.height + scrollY)
-
-            // TODO: I think all this should be done while scaled (as in, scrollX/
-            // scrollY should be in terms of simulation units)
-            // The ~CREATURE_SIZE un tall creature should take up 50% of the screen height
-            const scale = wrapper.height * 0.5 / CREATURE_SIZE
-
-            c.strokeStyle = 'rgba(0, 0, 0, 0.2)'
-            const startTick = Math.floor(scrollX / scale)
-            const stopTick = Math.ceil((scrollX + wrapper.width) / scale)
-            c.beginPath()
-            for (let i = startTick; i < stopTick; i++) {
-              c.moveTo(i * scale - scrollX, -scrollY)
-              c.lineTo(i * scale - scrollX, -scrollY + 10)
-            }
-            c.stroke()
-
             c.fillStyle = 'black'
             c.textBaseline = 'top'
             c.font = '16px monospace'
             c.fillText(`Time: ${clock.toFixed(2)}s`, 5, 2)
             c.fillText(`Distance: ${simCreature.position().x.toFixed(4)}m`, 5, 25)
 
-            c.save()
-            c.translate(-scrollX, -scrollY)
-            c.scale(scale, scale)
-            simCreature.render(c)
-            c.restore()
+            renderSim(c, wrapper, simCreature, scrollX, scrollY)
           },
           simulate: time => {
             simCreature.sim(time)
             clock += time
-            scrollX += (simCreature.position().x * wrapper.height * 0.2 / 1.1 - wrapper.width / 2 - scrollX) / 10
+            const { x, y } = simCreature.position()
+            scrollX += (x - scrollX) / 10
+            scrollY += (y - scrollY) / 10
           },
           simTime: SIM_TIME
         })
@@ -772,8 +782,8 @@ const views = {
           simCreature = creature.clone().reset()
           sizeReady.then(() => {
             if (!creature) return // In case it is aborted early
-            scrollX = -wrapper.width / 2
-            scrollY = -wrapper.height + 50
+            scrollX = 0
+            scrollY = 0
             renderer.start()
           })
         })
