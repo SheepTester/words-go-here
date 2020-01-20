@@ -574,7 +574,12 @@ const views = {
   watch: new View('watch-view', [
     new Canvas('watch', (wrapper, view) => {
       const { canvas, ctx: c, sizeReady } = wrapper
-      let current, scrollX, scrollY, clock, stop, creatures, simGenerationReady
+      let current, currentCreature
+      let scrollX, scrollY
+      let clock
+      let stop
+      let creatures
+      let simGenerationReady
 
       view.speed = 1
 
@@ -592,14 +597,14 @@ const views = {
           c.font = '16px monospace'
           c.fillText(`Creature ${current + 1} of ${creatures.length}`, 5, 5)
           c.fillText(`Time: ${clock.toFixed(2)}s`, 5, 25)
-          c.fillText(`Distance: ${creatures[current].position().x.toFixed(2)}m`, 5, 45)
+          c.fillText(`Distance: ${currentCreature.position().x.toFixed(2)}m`, 5, 45)
           c.fillText(`Speed: ${renderer.speed}x`, 5, 65)
 
           c.save()
           c.translate(-scrollX, -scrollY)
           // The ~1.1 un tall creature should take up 60% of the screen height
           c.scale(wrapper.height * 0.1 / 1.1, wrapper.height * 0.1 / 1.1)
-          creatures[current].render(c)
+          currentCreature.render(c)
           c.restore()
         },
         simulate: time => {
@@ -620,9 +625,10 @@ const views = {
                 return
               }
             }
+            currentCreature = creatures[current].clone().reset()
           }
 
-          creatures[current].sim(time)
+          currentCreature.sim(time)
           clock += time
         },
         simTime: SIM_TIME
@@ -708,7 +714,9 @@ const views = {
 
         // Sad code repetition. Maybe one day I'll derepetitivify it
         const { canvas, ctx: c, sizeReady } = wrapper
-        let creature, scrollX, scrollY, clock
+        let creature, simCreature
+        let scrollX, scrollY
+        let clock
 
         const renderer = new RenderSimulation({
           render: () => {
@@ -720,6 +728,7 @@ const views = {
 
             // TODO: I think all this should be done while scaled (as in, scrollX/
             // scrollY should be in terms of simulation units)
+            // The ~CREATURE_SIZE un tall creature should take up 50% of the screen height
             const scale = wrapper.height * 0.5 / CREATURE_SIZE
 
             c.strokeStyle = 'rgba(0, 0, 0, 0.2)'
@@ -736,19 +745,18 @@ const views = {
             c.textBaseline = 'top'
             c.font = '16px monospace'
             c.fillText(`Time: ${clock.toFixed(2)}s`, 5, 2)
-            c.fillText(`Distance: ${creature.position().x.toFixed(4)}m`, 5, 25)
+            c.fillText(`Distance: ${simCreature.position().x.toFixed(4)}m`, 5, 25)
 
             c.save()
             c.translate(-scrollX, -scrollY)
-            // The ~1.1 un tall creature should take up 20% of the screen height
             c.scale(scale, scale)
-            creature.render(c)
+            simCreature.render(c)
             c.restore()
           },
           simulate: time => {
-            creature.sim(time)
+            simCreature.sim(time)
             clock += time
-            scrollX += (creature.position().x * wrapper.height * 0.2 / 1.1 - wrapper.width / 2 - scrollX) / 10
+            scrollX += (simCreature.position().x * wrapper.height * 0.2 / 1.1 - wrapper.width / 2 - scrollX) / 10
           },
           simTime: SIM_TIME
         })
@@ -761,7 +769,7 @@ const views = {
           creature = previewCreature
           view.emit('info', creature)
           clock = 0
-          creature.reset()
+          simCreature = creature.clone().reset()
           sizeReady.then(() => {
             if (!creature) return // In case it is aborted early
             scrollX = -wrapper.width / 2
