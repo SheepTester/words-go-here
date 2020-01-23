@@ -9,70 +9,79 @@ const classes = new Map()
 let maxScore = 0
 let generation
 let currentGeneration
+function creatureify (creatures) {
+  return creatures.map(data => new Creature(data).reset())
+}
+function recordGeneration () {
+  const histogram = new Map()
+  const demographics = new Map()
+  for (const creature of currentGeneration) {
+    const interval = Math.floor(creature.data.fitness / HISTOGRAM_INTERVAL)
+    if (histogram.has(interval)) {
+      histogram.set(interval, histogram.get(interval) + 1)
+    } else {
+      histogram.set(interval, 1)
+    }
+    const creatureClass = `n${creature.nodes.length}m${creature.muscles.length}`
+    if (demographics.has(creatureClass)) {
+      demographics.set(creatureClass, demographics.get(creatureClass) + 1)
+    } else {
+      demographics.set(creatureClass, 1)
+    }
+  }
+  let histogramMax = 0
+  for (const [_, count] of histogram) {
+    if (count > histogramMax) histogramMax = count
+  }
+  if (currentGeneration[0].data.fitness > maxScore) {
+    maxScore = currentGeneration[0].data.fitness
+  }
+  const percentiles = {}
+  for (let i = 0; i <= 10; i++) {
+    percentiles[100 - i * 10] = currentGeneration[Math.min(
+      Math.floor(currentGeneration.length * i / 10),
+      currentGeneration.length - 1
+    )].data.fitness
+  }
+  for (let i = 1; i < 10; i++) {
+    percentiles[100 - i] = currentGeneration[Math.min(
+      Math.floor(currentGeneration.length * i / 100),
+      currentGeneration.length - 1
+    )].data.fitness
+    percentiles[i] = currentGeneration[Math.min(
+      Math.floor(currentGeneration.length * (1 - i / 100)),
+      currentGeneration.length - 1
+    )].data.fitness
+  }
+  history.push({
+    histogram,
+    histogramMax,
+    demographics,
+    percentiles,
+    best: currentGeneration[0],
+    median: currentGeneration[Math.floor(currentGeneration.length / 2)],
+    worst: currentGeneration[currentGeneration.length - 1]
+  })
+}
+function addNewClasses () {
+  for (const creature of currentGeneration) {
+    const creatureClass = `n${creature.nodes.length}m${creature.muscles.length}`
+    if (!classes.has(creatureClass)) {
+      // Random enough, no?
+      classes.set(creatureClass, (creature.nodes.length * 147 + creature.muscles.length * 50) % 360)
+    }
+  }
+}
 function simGeneration () {
   return sendWorker({ type: 'simulate' }).then(({ creatures }) => {
-    currentGeneration = creatures.map(data => new Creature(data).reset())
-    const histogram = new Map()
-    const demographics = new Map()
-    for (const creature of currentGeneration) {
-      const interval = Math.floor(creature.data.fitness / HISTOGRAM_INTERVAL)
-      if (histogram.has(interval)) {
-        histogram.set(interval, histogram.get(interval) + 1)
-      } else {
-        histogram.set(interval, 1)
-      }
-      const creatureClass = `n${creature.nodes.length}m${creature.muscles.length}`
-      if (demographics.has(creatureClass)) {
-        demographics.set(creatureClass, demographics.get(creatureClass) + 1)
-      } else {
-        demographics.set(creatureClass, 1)
-      }
-    }
-    let histogramMax = 0
-    for (const [_, count] of histogram) {
-      if (count > histogramMax) histogramMax = count
-    }
-    if (currentGeneration[0].data.fitness > maxScore) {
-      maxScore = currentGeneration[0].data.fitness
-    }
-    const percentiles = {}
-    for (let i = 0; i <= 10; i++) {
-      percentiles[100 - i * 10] = currentGeneration[Math.min(
-        Math.floor(currentGeneration.length * i / 10),
-        currentGeneration.length - 1
-      )].data.fitness
-    }
-    for (let i = 1; i < 10; i++) {
-      percentiles[100 - i] = currentGeneration[Math.min(
-        Math.floor(currentGeneration.length * i / 100),
-        currentGeneration.length - 1
-      )].data.fitness
-      percentiles[i] = currentGeneration[Math.min(
-        Math.floor(currentGeneration.length * (1 - i / 100)),
-        currentGeneration.length - 1
-      )].data.fitness
-    }
-    history.push({
-      histogram,
-      histogramMax,
-      demographics,
-      percentiles,
-      best: currentGeneration[0],
-      median: currentGeneration[Math.floor(currentGeneration.length / 2)],
-      worst: currentGeneration[currentGeneration.length - 1]
-    })
+    currentGeneration = creatureify(creatures)
+    recordGeneration()
   })
 }
 function nextGeneration () {
   return sendWorker({ type: 'reproduce' }).then(({ creatures }) => {
-    currentGeneration = creatures.map(data => new Creature(data).reset())
-    for (const creature of currentGeneration) {
-      const creatureClass = `n${creature.nodes.length}m${creature.muscles.length}`
-      if (!classes.has(creatureClass)) {
-        // Random enough, no?
-        classes.set(creatureClass, (creature.nodes.length * 147 + creature.muscles.length * 50) % 360)
-      }
-    }
+    currentGeneration = creatureify(creatures)
+    addNewClasses()
   })
 }
 
@@ -556,7 +565,7 @@ const views = {
             btn.elem.textContent = 'Generate automatically'
             btn.elem.disabled = true
             btn.playing = false
-            btn.nextGen.then(() => {
+            sendWorker({ type: 'stop-auto' }).then(() => {
               btn.parent.descendants[0].elem.disabled = false
               btn.parent.descendants[1].elem.disabled = false
               btn.elem.disabled = false
@@ -566,17 +575,7 @@ const views = {
             btn.parent.descendants[0].elem.disabled = true
             btn.parent.descendants[1].elem.disabled = true
             btn.playing = true
-            function nextGen () {
-              btn.nextGen = simGeneration()
-                .then(nextGeneration)
-                .then(() => {
-                  generation = history.length
-                  if (btn.playing) nextGen()
-                  document.body.classList.remove('generation-zero')
-                  showView(views.generations)
-                })
-            }
-            nextGen()
+            sendWorker({ type: 'start-auto' })
           }
         })
       ]),
@@ -954,6 +953,15 @@ worker.addEventListener('message', ({ data }) => {
           i--
         }
       }
+      break
+    case 'full-generation':
+      currentGeneration = creatureify(data.fitnessCreatures)
+      recordGeneration()
+      currentGeneration = creatureify(data.newCreatures)
+      addNewClasses()
+      generation = history.length
+      document.body.classList.remove('generation-zero')
+      showView(views.generations)
       break
   }
 })

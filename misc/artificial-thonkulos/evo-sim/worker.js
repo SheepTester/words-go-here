@@ -64,6 +64,18 @@ function nextGeneration (oldGeneration, random) {
   return generation
 }
 
+function start () {
+  currentGeneration = createGeneration(random)
+}
+function simulate () {
+  simulateGeneration(currentGeneration)
+  rankGeneration(currentGeneration)
+  purgeOnGradient(currentGeneration, random)
+}
+function reproduce () {
+  currentGeneration = nextGeneration(currentGeneration, random)
+}
+
 function respond (originalData, responseData = {}) {
   self.postMessage({
     type: 'response',
@@ -71,6 +83,7 @@ function respond (originalData, responseData = {}) {
     ...responseData
   })
 }
+let auto = null
 let logTime
 self.addEventListener('message', ({ data }) => {
   if (logTime) console.time(data.type)
@@ -82,24 +95,46 @@ self.addEventListener('message', ({ data }) => {
       respond(data)
       break
     case 'start':
-      currentGeneration = createGeneration(random)
+      start()
       respond(data, {
         creatures: currentGeneration.map(creature => creature.toJSON())
       })
       break
     case 'simulate':
-      simulateGeneration(currentGeneration)
-      rankGeneration(currentGeneration)
-      purgeOnGradient(currentGeneration, random)
+      simulate()
       respond(data, {
         creatures: currentGeneration.map(creature => creature.toJSON())
       })
       break
     case 'reproduce':
-      currentGeneration = nextGeneration(currentGeneration, random)
+      reproduce()
       respond(data, {
         creatures: currentGeneration.map(creature => creature.toJSON())
       })
+      break
+    case 'start-auto':
+      if (auto === null) {
+        function simulateFullGeneration () {
+          simulate()
+          const fitnessCreatures = currentGeneration.map(creature => creature.toJSON())
+          reproduce()
+          self.postMessage({
+            type: 'full-generation',
+            fitnessCreatures,
+            newCreatures: currentGeneration.map(creature => creature.toJSON())
+          })
+          auto = setTimeout(simulateFullGeneration, 0)
+        }
+        simulateFullGeneration()
+      }
+      break
+    case 'stop-auto':
+      if (auto !== null) {
+        clearTimeout(auto)
+        auto = null
+      }
+      respond(data)
+      break
     default:
       respond(data)
   }
