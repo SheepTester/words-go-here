@@ -94,7 +94,7 @@ const mutables = {
   x: { baseDiff: 0.5 }, // Node initial position x
   y: { baseDiff: 0.5 }, // Node initial position y
   friction: { baseDiff: 0.1, min: 0, max: 1 }, // Node friction constant
-  spring: { baseDiff: 100, min: 10, max: 200 }, // Muscle spring constant
+  spring: { baseDiff: 0.9, min: 0.01, max: 0.08 }, // Muscle spring constant
   length: { min: 0.4, max: 2 }, // Muscle length
   heartbeat: { baseDiff: 0.25, min: 0.01 }
 }
@@ -110,83 +110,51 @@ function mutate (random, type, num, intensity) {
 
 const SIM_TIME = 1 / 60
 const options = {
-  gravity: 9.8, // Acceleration due to gravity (m/s^2),
-  ground: 0 // Ground height (m)
+  gravity: 0.005,
+  ground: 0, // Ground height (m)
+  airResist: 0.95,
+  baseFriction: 4
 }
 
 class Node {
   // friction is coefficient of friction
-  constructor ({ friction, mass = 1, radius = 0.2, initPos: [x, y] }) {
+  constructor ({ friction, mass = 0.4, radius = 0.2, initPos: [x, y] }) {
     this.friction = friction
     this.mass = mass
     this.radius = radius
     this.initPos = new Vector2(x, y)
     this.pos = new Vector2()
     this.vel = new Vector2()
-    this.forces = new Vector2()
     this.isNode = true
   }
 
   reset () {
     this.pos.set(this.initPos)
     this.vel.set({ x: 0, y: 0 })
-    this.resetForces()
-  }
-
-  resetForces () {
-    this.forces.set({ x: 0, y: 0 })
-  }
-
-  touchingGround () {
-    // If mass and size are correlated, then should adjust radius here
-    return this.pos.y >= options.ground - this.radius
   }
 
   move (time, ignoreGround = false) {
-    // Weight
-    this.forces.add({ x: 0, y: this.mass * options.gravity })
+    this.vel.scale(options.airResist)
+    this.pos.add(this.vel)
 
-    const friction = new Vector2()
-    if (this.touchingGround() && !ignoreGround) {
-      const normal = this.forces.y
-      this.forces.add({ x: 0, y: -normal })
-      // Friction
-      friction.add({
-        x: -Math.sign(this.vel.x) * normal * this.friction,
-        y: 0
-      })
-    }
-
-    // a = F/m
-    this.forces.scale(1 / this.mass)
-    friction.scale(1 / this.mass)
-
-    const initialVel = this.vel.clone()
-    // v_f = v_i + a * t
-    this.vel.add(this.forces.scale(time))
-
-    // Apply friction separately to prevent it from over-decelerating
-    friction.scale(time)
-    if (friction.x > 0) {
-      this.vel.x += friction.x
-      if (this.vel.x > 0) this.vel.x = 0
-    } else if (friction.x < 0) {
-      this.vel.x += friction.x
-      if (this.vel.x < 0) this.vel.x = 0
-    }
-    if (friction.y > 0) {
-      this.vel.y += friction.y
-      if (this.vel.y > 0) this.vel.y = 0
-    } else if (friction.y < 0) {
-      this.vel.y += friction.y
-      if (this.vel.y < 0) this.vel.y = 0
-    }
-
-    // x_f = x_i + (v_i + v_f) / 2 * t
-    this.pos.add(initialVel.add(this.vel).scale(time / 2))
+    this.vel.y += options.gravity
 
     if (this.pos.y > options.ground - this.radius && !ignoreGround) {
+      const normal = this.pos.y + this.radius - options.ground
       this.pos.y = options.ground - this.radius
+      this.vel.y = 0
+      this.pos.x += -this.vel.x * this.friction
+      if (this.vel.x > 0) {
+        this.vel.x -= this.friction * normal * options.baseFriction
+        if (this.vel.x < 0) {
+          this.vel.x = 0
+        }
+      } else {
+        this.vel.x += this.friction * normal * options.baseFriction
+        if (this.vel.x > 0) {
+          this.vel.x = 0
+        }
+      }
     }
   }
 
@@ -224,7 +192,6 @@ class Muscle {
   // length is like the normal length
   constructor ({
     constant,
-    damping = 1,
     contractLength,
     extendLength,
     contractTime,
@@ -237,7 +204,6 @@ class Muscle {
     this.extendLength = extendLength
     this.contractTime = contractTime
     this.extendTime = extendTime
-    this.damping = damping
     this.node1 = node1
     this.node2 = node2
     this.isMuscle = true
@@ -259,15 +225,10 @@ class Muscle {
       return
     }
     const nodeLength = oneToTwo.length
-    const displacement = nodeLength - length
-    const force = this.constant * displacement
+    const force = this.constant * Math.max(Math.min(1 - nodeLength / length, 0.4), -0.4)
     // Apply elastic force in other's direction with magnitude of force
-    this.node1.forces
-      .add(oneToTwo.clone().unit().scale(force))
-      .add(this.node1.vel.clone().scale(-this.damping))
-    this.node2.forces
-      .add(oneToTwo.clone().unit().scale(-force))
-      .add(this.node2.vel.clone().scale(-this.damping))
+    this.node1.vel.add(oneToTwo.clone().unit().scale(-force / this.node1.mass))
+    this.node2.vel.add(oneToTwo.clone().unit().scale(force / this.node2.mass))
   }
 
   mutate (random, intensity) {
@@ -306,7 +267,7 @@ class Muscle {
   static makeRandom (random, node1, node2) {
     const distance = node1.initPos.clone().sub(node2.initPos).length
     const ratio = random.random(0.01, 0.2)
-    const constant = random.random(20, 160)
+    const constant = random.random(0.02, 0.08)
     return new Muscle({
       constant,
       damping: constant / 10,
@@ -385,7 +346,6 @@ class Creature {
       }
       for (const node of this.nodes) {
         node.move(SIM_TIME, true)
-        node.resetForces()
       }
     }
 
@@ -424,8 +384,6 @@ class Creature {
     }
     for (const node of this.nodes) {
       node.move(time)
-      // Reset for next frame
-      node.resetForces()
     }
     return this
   }

@@ -38,7 +38,7 @@ const creatureA = new Creature({
   ],
   muscles: [
     {
-      constant: 50,
+      constant: 0.05,
       contractLength: 0.64,
       extendLength: 0.96,
       contractTime: 0,
@@ -48,7 +48,7 @@ const creatureA = new Creature({
       damping: 5
     },
     {
-      constant: 10,
+      constant: 0.01,
       contractLength: 0.3,
       extendLength: 0.6,
       contractTime: 0,
@@ -58,7 +58,7 @@ const creatureA = new Creature({
       damping: 1
     },
     {
-      constant: 50,
+      constant: 0.05,
       contractLength: 0.64,
       extendLength: 0.96,
       contractTime: 0,
@@ -74,7 +74,7 @@ const creatureA = new Creature({
 const creatureB = new Creature({
   nodes: [
     {
-      friction: 10,
+      friction: 1,
       initPos: [1.4, -0.3]
     },
     {
@@ -84,7 +84,7 @@ const creatureB = new Creature({
   ],
   muscles: [
     {
-      constant: 10,
+      constant: 0.01,
       contractLength: 0.64,
       extendLength: 0.96,
       contractTime: 0,
