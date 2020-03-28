@@ -458,11 +458,11 @@ const runBenchmark = function () {
   if (SRC === 'file') {
     fetch(FILE)
       .then(r => r.arrayBuffer())
-      .then(b => Scratch.vm.loadProject(b));
+      .then(b => vm.loadProject(b));
   } else {
-    Scratch.vm.downloadProjectId('');
+    vm.downloadProjectId('');
   }
-  vm.on('workspaceUpdate', () => {
+  vm.runtime.on(vm.runtime.PROJECT_LOADED, () => {
     % loading-progress %
     if (progress.parentNode) {
       progress.parentNode.removeChild(progress);
