@@ -61,14 +61,18 @@
       <p><label><input type="checkbox" id="use-colour"> Use custom variable/list monitor colour: <input type="color" id="monitor-colour" value="#ff8c1a">? (If unchecked, a translucent black will be used.)</label></p>
       <p><label><input type="checkbox" id="progress" checked> Load progress indicator?</label></p>
       <p><label><input type="checkbox" id="compatibility" checked> Enable compatibility mode?<a id="ref-2" href="#note-2"><sup>2</sup></a></label></p>
-      <!-- no-offline -->
-      <p><label><input type="checkbox" id="wider"> Does this project use a <a href="https://sheeptester.github.io/scratch-gui/?width=640&height=360">custom size</a>?</label> <label>Width: <input type="number" value="640" id="width"></label> <label>Height: <input type="number" value="360" id="height"></label></p>
-      <!-- /no-offline -->
       <fieldset>
         <legend>Cloud variable source</legend>
         <p><label><input type="radio" name="cloud-provider" value="localstorage" checked> Save cloud variables locally using localStorage<a id="ref-1" href="#note-1"><sup>1</sup></a></label></p>
         <p><label><input type="radio" name="cloud-provider" value="ws"> Use a <a href="https://github.com/SheepTester/primitive-cloud-server">custom server</a>: <input type="url" id="cloud-ws" placeholder="ws://localhost:3000/"></label></p>
       </fieldset>
+      <!-- no-offline -->
+      <fieldset>
+        <legend><a href="https://sheeptester.github.io/scratch-gui/">E羊icques</a> (modded) options</legend>
+        <p><label><input type="checkbox" id="wider"> Does this project use a <a href="https://sheeptester.github.io/scratch-gui/?width=640&height=360">custom size</a>?</label> <label>Width: <input type="number" value="640" id="width"></label> <label>Height: <input type="number" value="360" id="height"></label></p>
+        <p><label>Load <a href="https://github.com/LLK/scratch-vm/blob/develop/docs/extensions.md#types-of-extensions">unofficial extension</a> from URL: <input type="url" id="extension-url"></label></p>
+      </fieldset>
+      <!-- /no-offline -->
     </fieldset>
     <p>
       <button id="load-no-minify">HTMLify</button>
@@ -149,6 +153,7 @@ const cloudServer = document.getElementById('cloud-ws');
 /* no-offline */
 const width = document.getElementById('width');
 const height = document.getElementById('height');
+const extensionURL = document.getElementById('extension-url');
 /* /no-offline */
 function log(output) {
   error.value += output + '\n';
@@ -185,7 +190,8 @@ function load() {
       projectId: id.value,
       /* no-offline */
       width: wider.checked ? width.value : 480,
-      height: wider.checked ? height.value : 360
+      height: wider.checked ? height.value : 360,
+      extension: extensionURL.value || null
       /* /no-offline */
     }))
     .then(html => {

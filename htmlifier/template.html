@@ -196,12 +196,12 @@ body {
 </div>
 </div>
 % no-vm %
-% 4-3 %
+% vanilla %
 <script src="https://sheeptester.github.io/scratch-vm/vm.min.js"></script>
-% /4-3 %
-% 16-9 %
+% /vanilla %
+% modded %
 <script src="https://sheeptester.github.io/scratch-vm/16-9/vm.min.js"></script>
-% /16-9 %
+% /modded %
 % /no-vm %
 % loading-progress %
 <span id="loading-progress">...</span>
@@ -430,7 +430,7 @@ class VideoProvider {
 const Scratch = window.Scratch = window.Scratch || {};
 
 const runBenchmark = function () {
-  const vm = new window.NotVirtualMachine(% 16-9 % WIDTH, HEIGHT % /16-9 %);
+  const vm = new window.NotVirtualMachine(% custom-ratio % WIDTH, HEIGHT % /custom-ratio %);
   Scratch.vm = vm;
 
   const storage = new ScratchStorage();
@@ -573,14 +573,14 @@ const runBenchmark = function () {
   }
   const monitorWrapper = document.getElementById('monitors');
   const canvas = document.getElementById('stage');
-  const renderer = new window.ScratchRender(canvas % 16-9 % , -WIDTH / 2, WIDTH / 2, -HEIGHT / 2, HEIGHT / 2 % /16-9 %);
+  const renderer = new window.ScratchRender(canvas % custom-ratio % , -WIDTH / 2, WIDTH / 2, -HEIGHT / 2, HEIGHT / 2 % /custom-ratio %);
   resize();
   Scratch.renderer = renderer;
   vm.attachRenderer(renderer);
   const audioEngine = new window.AudioEngine();
   vm.attachAudioEngine(audioEngine);
   vm.attachV2SVGAdapter(new ScratchSVGRenderer.SVGRenderer());
-  vm.attachV2BitmapAdapter(new ScratchSVGRenderer.BitmapAdapter(% 16-9 % WIDTH, HEIGHT % /16-9 %));
+  vm.attachV2BitmapAdapter(new ScratchSVGRenderer.BitmapAdapter(% custom-ratio % WIDTH, HEIGHT % /custom-ratio %));
 
   const askBoxWrapper = document.getElementById('asking-box');
   const question = document.getElementById('question');
@@ -651,7 +651,7 @@ const runBenchmark = function () {
         force: true
       });
     }
-    Scratch.vm.postIOData('mouse', {
+    vm.postIOData('mouse', {
       x: mousePosition[0],
       y: mousePosition[1],
       canvasWidth: rect.width,
@@ -665,7 +665,7 @@ const runBenchmark = function () {
     mouseDown = true;
     mouseDownPosition = mousePosition;
     mouseDownTimeoutId = setTimeout(onStartDrag, 400);
-    Scratch.vm.postIOData('mouse', {
+    vm.postIOData('mouse', {
       isDown: true,
       x: mousePosition[0],
       y: mousePosition[1],
@@ -689,7 +689,7 @@ const runBenchmark = function () {
       dragOffset = null;
       dragId = null;
     }
-    Scratch.vm.postIOData('mouse', {
+    vm.postIOData('mouse', {
       isDown: false,
       x: x - rect.left,
       y: y - rect.top,
@@ -704,7 +704,7 @@ const runBenchmark = function () {
   canvas.addEventListener('touchstart', mousedown, {passive: false});
   document.addEventListener('touchend', mouseup, {passive: false});
   canvas.addEventListener('wheel', e => {
-    Scratch.vm.postIOData('mouseWheel', {
+    vm.postIOData('mouseWheel', {
       deltaX: e.deltaX,
       deltaY: e.deltaY
     });
@@ -716,7 +716,7 @@ const runBenchmark = function () {
   document.addEventListener('keydown', e => {
     if (e.target !== document && e.target !== document.body) return;
     const key = !e.key || e.key === 'Dead' ? e.keyCode : e.key;
-    Scratch.vm.postIOData('keyboard', {
+    vm.postIOData('keyboard', {
       key: key,
       isDown: true
     });
@@ -726,7 +726,7 @@ const runBenchmark = function () {
   });
   document.addEventListener('keyup', e => {
     const key = !e.key || e.key === 'Dead' ? e.keyCode : e.key;
-    Scratch.vm.postIOData('keyboard', {
+    vm.postIOData('keyboard', {
       key: key,
       isDown: false
     });
@@ -735,7 +735,7 @@ const runBenchmark = function () {
     }
   });
 
-  Scratch.vm.runtime.addListener('QUESTION', questionData => {
+  vm.runtime.addListener('QUESTION', questionData => {
     /* null means the asking was interrupted by stop script block */
     if (questionData === null) {
       document.body.classList.remove('asking');
@@ -750,19 +750,19 @@ const runBenchmark = function () {
     if (e.keyCode === 13) {
       document.body.classList.remove('asking');
       /* submit answer after because it starts the next question synchronously */
-      Scratch.vm.runtime.emit('ANSWER', askBox.value);
+      vm.runtime.emit('ANSWER', askBox.value);
     }
   });
 
   const getVariable = (targetId, variableId) => {
       const target = targetId ?
-          Scratch.vm.runtime.getTargetById(targetId) :
-          Scratch.vm.runtime.getTargetForStage();
+          vm.runtime.getTargetById(targetId) :
+          vm.runtime.getTargetForStage();
       return target.variables[variableId];
   };
   const monitorStates = {};
   let once = false;
-  Scratch.vm.runtime.addListener('MONITORS_UPDATE', monitors => {
+  vm.runtime.addListener('MONITORS_UPDATE', monitors => {
     monitors.forEach((record, id) => {
       if (!monitorStates[id]) {
         const monitor = document.createElement('div');
@@ -826,7 +826,13 @@ const runBenchmark = function () {
     });
   });
 
-  Scratch.vm.postIOData('userData', {username: DESIRED_USERNAME});
+  vm.postIOData('userData', {username: DESIRED_USERNAME});
+
+  % extension-url %
+  // https://stackoverflow.com/a/19201292
+  const blobURL = URL.createObjectURL(new Blob([EXTENSION], {type: 'application/javascript'}));
+  vm.extensionManager.loadExtensionURL(blobURL);
+  % /extension-url %
 
   vm.start();
 };

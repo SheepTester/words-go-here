@@ -108,7 +108,7 @@ function getDataURL(url) {
 function downloadAsHTML(projectSrc, {
   title = 'Project',
   username = 'griffpatch',
-  ratio16to9 = false,
+  customRatio = false,
   progressBar = true,
   fullscreen = true,
   log = console.log,
@@ -117,8 +117,10 @@ function downloadAsHTML(projectSrc, {
   projectId = null,
   noVM = false,
   width = 480,
-  height = 360
+  height = 360,
+  extension = null
 } = {}) {
+  const modded = customRatio || extension
   log('Getting assets...');
   return Promise.all([
     // make preface variables
@@ -141,7 +143,7 @@ function downloadAsHTML(projectSrc, {
     // fetch scripts
     noVM
       ? ''
-      : /* no-offline */ fetch(ratio16to9
+      : /* no-offline */ fetch(modded
         ? 'https://sheeptester.github.io/scratch-vm/16-9/vm.min.js'
         : 'https://sheeptester.github.io/scratch-vm/vm.min.js')
         .then(r => r.text())
@@ -157,20 +159,30 @@ function downloadAsHTML(projectSrc, {
     fetch(
       /* no-offline */ './template.html' /* /no-offline */
       // [template]
-    ).then(r => r.text())
-  ]).then(([preface, scripts, template]) => {
+    ).then(r => r.text()),
+
+    // fetch extension
+    extension
+      ? fetch(extension)
+        .then(r => r.text())
+      : ''
+  ]).then(([preface, scripts, template, extensionScript]) => {
     scripts = preface
       + `DESIRED_USERNAME = ${JSON.stringify(username)},\n`
       + `COMPAT = ${compatibility.checked},\nTURBO = ${turbo.checked},\n`
       + `PROJECT_ID = ${JSON.stringify(projectId)},\n`
-      + `WIDTH = ${width},\nHEIGHT = ${height};\n`
+      + `WIDTH = ${width},\nHEIGHT = ${height},\n`
+      + `EXTENSION = ${JSON.stringify(extensionScript)};\n`
       + scripts;
     log('Done!');
     if (!noVM) {
       template = removePercentSection(template, 'no-vm');
     }
-    if (ratio16to9) template = removePercentSection(template, '4-3');
-    else template = removePercentSection(template, '16-9');
+    if (modded) template = removePercentSection(template, 'vanilla');
+    else template = removePercentSection(template, 'modded');
+    if (customRatio) template = removePercentSection(template, 'default-ratio');
+    else template = removePercentSection(template, 'custom-ratio');
+    if (!extension) template = removePercentSection(template, 'extension-url');
     if (!progressBar) template = removePercentSection(template, 'loading-progress');
     if (!fullscreen) template = removePercentSection(template, 'fullscreen');
     if (monitorColour) template = template.replace(/\{COLOUR\}/g, () => monitorColour);
