@@ -48,6 +48,13 @@ body {
   font-size: 16px;
 }
 % /loading-progress %
+% loading-image %
+#loading-image {
+  position: fixed;
+  max-width: 100%;
+  max-height: 100%;
+}
+% /loading-image %
 % fullscreen %
 #fullscreen-btn {
   -webkit-appearance: none;
@@ -206,6 +213,9 @@ body {
 % loading-progress %
 <span id="loading-progress">...</span>
 % /loading-progress %
+% loading-image %
+<img src="{LOADING_IMAGE}" id="loading-image">
+% /loading-image %
 % fullscreen %
 <button id="fullscreen-btn"></button>
 % /fullscreen %
@@ -454,6 +464,9 @@ const runBenchmark = function () {
     return result;
   };
   % /loading-progress %
+  % loading-image %
+  const loadingImage = document.getElementById('loading-image');
+  % /loading-image %
 
   if (SRC === 'file') {
     fetch(FILE)
@@ -462,12 +475,20 @@ const runBenchmark = function () {
   } else {
     vm.downloadProjectId('');
   }
-  vm.runtime.on(vm.runtime.PROJECT_LOADED, () => {
+  let initialized = false;
+  vm.on('workspaceUpdate', () => {
+    if (initialized) return;
+
     % loading-progress %
     if (progress.parentNode) {
       progress.parentNode.removeChild(progress);
     }
     % /loading-progress %
+    % loading-image %
+    if (loadingImage.parentNode) {
+      loadingImage.parentNode.removeChild(loadingImage);
+    }
+    % /loading-image %
 
     const noop = () => null;
     vm.setVideoProvider(new VideoProvider());
@@ -564,6 +585,8 @@ const runBenchmark = function () {
     vm.setCompatibilityMode(COMPAT);
     vm.setTurboMode(TURBO);
     vm.greenFlag();
+
+    initialized = true;
   });
 
   function resize() {

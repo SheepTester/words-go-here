@@ -98,12 +98,15 @@ function removePercentSection(str, key) {
   }
   return str;
 }
-function getDataURL(url) {
-  return fetch(url).then(r => r.blob()).then(blob => new Promise(res => {
+function getDataURLFromURL(url) {
+  return fetch(url).then(r => r.blob()).then(getDataURL);
+}
+function getDataURL(blob) {
+  return new Promise(res => {
     const reader = new FileReader();
     reader.onload = e => res(e.target.result);
     reader.readAsDataURL(blob);
-  }));
+  });
 }
 function downloadAsHTML(projectSrc, {
   title = 'Project',
@@ -118,7 +121,8 @@ function downloadAsHTML(projectSrc, {
   noVM = false,
   width = 480,
   height = 360,
-  extension = null
+  extension = null,
+  loadingImage = null
 } = {}) {
   const modded = customRatio || extension
   log('Getting assets...');
@@ -131,8 +135,8 @@ function downloadAsHTML(projectSrc, {
         .then(({assets, projectJSON}) => {
           log('Assembling assets...');
           return Promise.all([
-            getDataURL(projectJSON).then(data => projectJSON = data),
-            ...Object.keys(assets).map(assetId => getDataURL(assets[assetId]).then(data => assets[assetId] = data))
+            getDataURLFromURL(projectJSON).then(data => projectJSON = data),
+            ...Object.keys(assets).map(assetId => getDataURLFromURL(assets[assetId]).then(data => assets[assetId] = data))
           ]).then(() => {
             return `var SRC = "id",\nPROJECT_JSON = "${projectJSON}",\n`
               + `ASSETS = ${JSON.stringify(assets)},\n`;
@@ -165,8 +169,13 @@ function downloadAsHTML(projectSrc, {
     extension
       ? fetch(extension)
         .then(r => r.text())
+      : '',
+
+    // fetch image data for loading gif
+    loadingImage
+      ? getDataURL(loadingImage)
       : ''
-  ]).then(([preface, scripts, template, extensionScript]) => {
+  ]).then(([preface, scripts, template, extensionScript, loadingImageURL]) => {
     scripts = preface
       + `DESIRED_USERNAME = ${JSON.stringify(username)},\n`
       + `COMPAT = ${compatibility.checked},\nTURBO = ${turbo.checked},\n`
@@ -184,6 +193,7 @@ function downloadAsHTML(projectSrc, {
     else template = removePercentSection(template, 'custom-ratio');
     if (!extension) template = removePercentSection(template, 'extension-url');
     if (!progressBar) template = removePercentSection(template, 'loading-progress');
+    if (!loadingImage) template = removePercentSection(template, 'loading-image');
     if (!fullscreen) template = removePercentSection(template, 'fullscreen');
     if (monitorColour) template = template.replace(/\{COLOUR\}/g, () => monitorColour);
     else template = removePercentSection(template, 'monitor-colour');
@@ -197,10 +207,11 @@ function downloadAsHTML(projectSrc, {
       .replace(/% \/?[a-z0-9-]+ %/g, '')
       // .replace(/\s*\r?\n\s*/g, '')
       .replace(/\{TITLE\}/g, () => title)
-      .replace(/\{SCRIPTS\}/g, () => scripts)
       .replace(/\{HEIGHT\/WIDTH%\}/g, () => 100 * height / width)
       .replace(/\{WIDTH\/HEIGHT%\}/g, () => 100 * width / height)
-      .replace(/\{PROJECT_RATIO\}/g, () => `${width}/${height}`);
+      .replace(/\{PROJECT_RATIO\}/g, () => `${width}/${height}`)
+      .replace(/\{LOADING_IMAGE\}/g, () => loadingImageURL.replace(/&/g, '&amp;').replace(/"/g, '&quot;'))
+      .replace(/\{SCRIPTS\}/g, () => scripts);
   });
 }
 

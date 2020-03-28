@@ -60,6 +60,7 @@
       <p><label><input type="checkbox" id="turbo"> Enable <a href="https://en.scratch-wiki.info/wiki/Turbo_Mode">turbo mode</a>?</label></p>
       <p><label><input type="checkbox" id="use-colour"> Use custom variable/list monitor colour: <input type="color" id="monitor-colour" value="#ff8c1a">? (If unchecked, a translucent black will be used.)</label></p>
       <p><label><input type="checkbox" id="progress" checked> Load progress indicator?</label></p>
+      <p><label><input type="checkbox" id="loading-image"> Loading gif: <input type="file" id="loading-image-file" accept="image/*"></label></p>
       <p><label><input type="checkbox" id="compatibility" checked> Enable compatibility mode?<a id="ref-2" href="#note-2"><sup>2</sup></a></label></p>
       <fieldset>
         <legend>Cloud variable source</legend>
@@ -151,6 +152,8 @@ const fullscreen = document.getElementById('fullscreen');
 const useColour = document.getElementById('use-colour');
 const monitorColour = document.getElementById('monitor-colour');
 const cloudServer = document.getElementById('cloud-ws');
+const useLoadingImage = document.getElementById('loading-image');
+const loadingImage = document.getElementById('loading-image-file');
 /* no-offline */
 const width = document.getElementById('width');
 const height = document.getElementById('height');
@@ -189,6 +192,7 @@ function load() {
       cloudServer: document.querySelector('input[name="cloud-provider"]:checked').value === 'ws'
         ? cloudServer.value : null,
       projectId: id.value,
+      loadingImage: useLoadingImage ? loadingImage.files[0] : null,
       /* no-offline */
       width: wider.checked ? width.value : 480,
       height: wider.checked ? height.value : 360,
@@ -220,6 +224,9 @@ height.addEventListener('change', e => {
 /* /no-offline */
 monitorColour.addEventListener('change', e => {
   useColour.checked = true;
+});
+loadingImage.addEventListener('change', e => {
+  useLoadingImage.checked = true;
 });
 /* no-offline */
 const offlineifyBtn = document.getElementById('offlineify');
