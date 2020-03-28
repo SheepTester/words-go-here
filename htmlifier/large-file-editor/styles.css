@@ -1,0 +1,75 @@
+html,
+body {
+  height: 100%;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 0;
+  margin: 0;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.CodeMirror {
+  flex: auto;
+  font-size: 14px;
+  width: 100%;
+}
+.readonly {
+  opacity: 0.5;
+}
+.long-line-badge {
+  display: inline-block;
+  font-size: 0;
+  padding: 2px 5px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0 10px;
+}
+.long-line-badge::after {
+  content: '(very long line)';
+  font-size: 10px;
+}
+
+.no-file-input .file-input-centre {
+  display: none;
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  background-color: #212121;
+  color: white;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+}
+.return-link {
+  font-size: 14px;
+  text-decoration: none;
+  color: inherit;
+}
+.return-link:hover {
+  text-decoration: underline;
+}
+.flex {
+  flex: auto;
+}
+.save-btn {
+  -webkit-appearance: none;
+  border: none;
+  background: none;
+  border-radius: 2px;
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 16px;
+  color: inherit;
+  background-color: #ff5722;
+  cursor: pointer;
+}
+
+.title {
+  font-size: 16px;
+}
