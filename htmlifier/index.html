@@ -84,6 +84,10 @@
     <p id="note-1"><a href="#ref-1"><sup>1</sup></a>You may have to deal with privacy laws around cookies outside of Scratch.</p>
     <p id="note-2"><a href="#ref-2"><sup>2</sup></a>Compatibility mode forces projects to run at 30 FPS, like in Scratch 2.0. Turning this off allows the project to run at a higher framerate (usually 60 FPS, depending on the computer screen's refresh rate).</p>
     <h2>Update history</h2>
+    <h3>2020-03-29</h3>
+    <ul>
+      <li>Fixed custom stage sizes</li>
+    </ul>
     <h3>2020-03-27</h3>
     <ul>
       <li>Show an image such as a gif while loading</li>
@@ -189,9 +193,6 @@ function load() {
       title: title.value,
       username: username.value,
       log,
-      /* no-offline */
-      ratio16to9: wider.checked,
-      /* /no-offline */
       progressBar: progressBar.checked,
       fullscreen: fullscreen.checked,
       monitorColour: useColour.checked ? monitorColour.value : null,
@@ -200,6 +201,7 @@ function load() {
       projectId: id.value,
       loadingImage: useLoadingImage ? loadingImage.files[0] : null,
       /* no-offline */
+      customRatio: wider.checked,
       width: wider.checked ? width.value : 480,
       height: wider.checked ? height.value : 360,
       // extension: extensionURL.value || null
