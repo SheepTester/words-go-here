@@ -31,8 +31,9 @@ function offlineify ({
       }),
     fetch('./hacky-file-getter.js').then(toText).then(removeScriptTag),
     fetch('./download.js').then(toText).then(removeScriptTag),
-    fetch('./template.html').then(toDataURI)
-  ]).then(([html, [vm, extensionWorker], hackyFileGetter, downloader, template]) => {
+    fetch('./template.html').then(toDataURI),
+    fetch('./main.css').then(toText)
+  ]).then(([html, [vm, extensionWorker], hackyFileGetter, downloader, template, css]) => {
     html = html
       .replace('<body>', '<body class="offline">')
       // Using functions to avoid $ substitution
@@ -44,6 +45,7 @@ function offlineify ({
       .replace(/\/\* no-offline \*\/[^]*?\/\* \/no-offline \*\//g, '')
       .replace('// [offline-vm-src]', `Promise.resolve(document.getElementById('vm-src').innerHTML)`)
       .replace('// [offline-extension-worker-src]', `const workerCode = document.getElementById('worker-src').innerHTML`)
+      .replace('<link rel="stylesheet" href="./main.css">', () => `<style>${css}</style>`)
       .replace('// [template]', () => JSON.stringify(template))
       // Do this last because it phat
       // javascript/worker: https://www.html5rocks.com/en/tutorials/workers/basics/
