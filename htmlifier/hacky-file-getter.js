@@ -179,7 +179,7 @@ function downloadAsHTML(projectSrc, {
                 .catch(problemFetching('the custom extension'))
                 .then(r => {
                   if (r.ok) {
-                    r.text()
+                    return r.text()
                   } else {
                     log(`Fetching the custom extension gave a ${r.status} error`, 'error')
                     throw new Error('error logged')
