@@ -92,6 +92,11 @@
       <p id="note-2"><a href="#ref-2"><sup>2</sup></a>Compatibility mode forces projects to run at 30 FPS, like in Scratch 2.0. Turning this off allows the project to run at a higher framerate (usually 60 FPS, depending on the computer screen's refresh rate).</p>
       <h2>Update history</h2>
       <p>See the code and previous versions on <a href="https://github.com/SheepTester/words-go-here/tree/master/htmlifier">Github</a>.</p>
+      <h3>2020-05-01</h3>
+      <ul>
+        <li>Support for custom extensions from a URL</li>
+        <li>CSS by <a href="https://scratch.mit.edu/users/mrcringekidyt/">Mr. Cringe Kid</a></li>
+      </ul>
       <h3>2020-03-29</h3>
       <ul>
         <li>Fixed custom stage sizes</li>
@@ -176,12 +181,13 @@ const loadingImage = document.getElementById('loading-image-file');
 const width = document.getElementById('width');
 const height = document.getElementById('height');
 const extensionURL = document.getElementById('extension-url');
+let scroll = false
 function log(text, style) {
   const entry = document.createElement('div')
   entry.className = `log-entry log-${style}`
   entry.textContent = text
   logOutput.appendChild(entry)
-  logOutput.scrollTop = logOutput.scrollHeight
+  if (scroll) logOutput.scrollTop = logOutput.scrollHeight
 }
 function getProject() {
   if (document.querySelector('input[name="upload-mode"]:checked').value === 'file') {
@@ -199,6 +205,7 @@ function load() {
   loadNoMinifyBtn.disabled = true;
   otherHtmlifyBtn.disabled = true;
   logOutput.innerHTML = '';
+  scroll = true;
   getProject()
     .then(src => downloadAsHTML(src, {
       title: title.value,
@@ -217,7 +224,9 @@ function load() {
       extension: extensionURL.value || null
     }))
     .then(html => {
+      log('Attempting to download HTML file...', 'status')
       download(html, title.value + '.html', 'text/html');
+      log('Done!', 'done');
       loadNoMinifyBtn.disabled = false;
       otherHtmlifyBtn.disabled = false;
     }).catch(err => {
@@ -227,6 +236,7 @@ function load() {
       }
       loadNoMinifyBtn.disabled = false;
       otherHtmlifyBtn.disabled = false;
+      scroll = false;
     });
 }
 loadNoMinifyBtn.addEventListener('click', load);
@@ -251,16 +261,20 @@ loadingImage.addEventListener('change', e => {
 /* no-offline */
 const offlineifyBtn = document.getElementById('offlineify');
 offlineifyBtn.addEventListener('click', e => {
-  error.value = '';
+  logOutput.innerHTML = '';
   offlineifyBtn.disabled = true;
+  scroll = true;
   offlineify({log})
     .then(() => {
       offlineifyBtn.disabled = false;
     })
     .catch(err => {
-      console.log(err);
-      error.value += err.message;
+      console.error(err);
+      if (err.message !== 'error logged') {
+        log('Unexpected error:\n' + err.stack, 'error');
+      }
       offlineifyBtn.disabled = false;
+      scroll = false;
     });
 })
 /* /no-offline */

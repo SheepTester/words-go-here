@@ -10,29 +10,44 @@ function offlineify ({
       reader.readAsDataURL(blob)
     }))
   }
-  function toText (response) {
-    return response.ok ? response.text() : Promise.reject(new Error(response.status))
+  function toText (file) {
+    return response => {
+      if (response.ok) {
+        return response.text()
+      } else {
+        log(`Fetching ${file} gave a ${response.status} error`, 'error')
+        throw new Error('error logged')
+      }
+    }
+  }
+  function problemFetching (file) {
+    return () => {
+      log(`There was a problem fetching ${file} from the internet`, 'error')
+      throw new Error('error logged')
+    }
   }
   function removeScriptTag (js) {
     return js.replace(/<\/script>/g, '')
   }
-  log('Getting all required files')
+  log('Getting all required files...', 'status')
   return Promise.all([
-    fetch('./index.html').then(toText),
+    fetch('./index.html').catch(problemFetching('this web page')).then(toText('this web page')),
     fetch('https://sheeptester.github.io/scratch-vm/16-9/vm.min.js')
-      .then(toText)
+      .catch(problemFetching('the Scratch engine'))
+      .then(toText('the Scratch engine'))
       .then(async vmCode => {
         let extensionWorker
         const extensionWorkerMatch = vmCode.match(extensionWorkerGet)
-        if (!extensionWorkerMatch) return Promise.reject(new Error('Cannot find extension-worker.js'))
+        if (!extensionWorkerMatch) throw new Error('Cannot find extension-worker.js')
         const workerCode = await fetch('https://sheeptester.github.io/scratch-vm/16-9/' + extensionWorkerMatch[1])
-          .then(r => r.text())
+          .catch(problemFetching('the extension worker'))
+          .then(toText('the extension worker'))
         return [vmCode, workerCode].map(removeScriptTag)
       }),
-    fetch('./hacky-file-getter.js').then(toText).then(removeScriptTag),
-    fetch('./download.js').then(toText).then(removeScriptTag),
-    fetch('./template.html').then(toDataURI),
-    fetch('./main.css').then(toText)
+    fetch('./hacky-file-getter.js').catch(problemFetching('the HTMLifying script')).then(toText('the HTMLifying script')).then(removeScriptTag),
+    fetch('./download.js').catch(problemFetching('the downloader')).then(toText('the downloader')).then(removeScriptTag),
+    fetch('./template.html').catch(problemFetching('the HTML template')).then(toDataURI),
+    fetch('./main.css').catch(problemFetching('the CSS')).then(toText('the CSS'))
   ]).then(([html, [vm, extensionWorker], hackyFileGetter, downloader, template, css]) => {
     html = html
       .replace('<body>', '<body class="offline">')
@@ -50,8 +65,8 @@ function offlineify ({
       // Do this last because it phat
       // javascript/worker: https://www.html5rocks.com/en/tutorials/workers/basics/
       .replace('<script src="https://sheeptester.github.io/scratch-vm/16-9/vm.min.js" charset="utf-8"></script>', () => `<script id="vm-src">${vm}</script><script id="worker-src" type="javascript/worker">${extensionWorker}</script>`)
-    log('Attempting to download...')
+    log('Attempting to download HTML file...', 'status')
     download(html, 'htmlifier-offline.html', 'text/html')
-    log('All good!')
+    log('All good!', 'done')
   })
 }

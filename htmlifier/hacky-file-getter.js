@@ -129,7 +129,7 @@ function downloadAsHTML(projectSrc, {
   const modded = true
   function problemFetching (file) {
     return () => {
-      log(`There was a problem fetching ${file} from the web`, 'error')
+      log(`There was a problem fetching ${file} from the internet`, 'error')
       throw new Error('error logged')
     }
   }
@@ -170,11 +170,21 @@ function downloadAsHTML(projectSrc, {
               log('Getting extension worker', status)
               /* no-offline */
               const workerCode = await fetch('https://sheeptester.github.io/scratch-vm/16-9/' + extensionWorkerMatch[1])
+                .catch(problemFetching('the extension worker'))
                 .then(r => r.text())
               /* /no-offline */
               // [offline-extension-worker-src]
-              log('Getting extension', status)
-              const extensionScript = await fetch(extension).then(r => r.text())
+              log('Getting custom extension script', status)
+              const extensionScript = await fetch(extension)
+                .catch(problemFetching('the custom extension'))
+                .then(r => {
+                  if (r.ok) {
+                    r.text()
+                  } else {
+                    log(`Fetching the custom extension gave a ${r.status} error`, 'error')
+                    throw new Error('error logged')
+                  }
+                })
               // https://stackoverflow.com/a/10372280
               const workerMaker = `new Worker(URL.createObjectURL(new Blob([${
                 JSON.stringify(workerCode.replace(/importScripts\(\w+\)/, () => {
@@ -198,7 +208,7 @@ function downloadAsHTML(projectSrc, {
     fetch(
       /* no-offline */ './template.html' /* /no-offline */
       // [template]
-    ).catch(problemFetching('the template')).then(r => r.text()),
+    ).catch(problemFetching('the HTML template')).then(r => r.text()),
 
     // fetch image data for loading gif
     loadingImage
@@ -212,7 +222,6 @@ function downloadAsHTML(projectSrc, {
       + `WIDTH = ${width},\nHEIGHT = ${height},\n`
       + `EXTENSION_URL = ${JSON.stringify(extension)};\n`
       + scripts;
-    log('Done!', 'done');
     if (!noVM) {
       template = removePercentSection(template, 'no-vm');
     }
