@@ -246,6 +246,9 @@ file.addEventListener('change', e => {
     document.querySelector('input[name="upload-mode"][value="file"]').checked = true;
   }
 });
+cloudServer.addEventListener('change', e => {
+  document.querySelector('input[name="cloud-provider"][value="ws"]').checked = true;
+})
 width.addEventListener('change', e => {
   wider.checked = true;
 });
