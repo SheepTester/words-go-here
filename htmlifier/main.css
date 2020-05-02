@@ -47,6 +47,12 @@ textarea {
   padding: 25px;
   border-radius: 8px;
 }
+@media (max-width: 600px) {
+  .mainarea {
+    margin: 0;
+    border-radius: 0;
+  }
+}
 .htmlify {
   position: relative;
   top: -83px;
