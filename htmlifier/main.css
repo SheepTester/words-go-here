@@ -1,62 +1,69 @@
+/**
+ * CSS by Mr. Cringe Kid (https://scratch.mit.edu/users/mrcringekidyt/).
+ *
+ * See changes made to their CSS on Github:
+ * https://github.com/SheepTester/words-go-here/commits/master/htmlifier/main.css
+ */
+
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Exo:wght@500&display=swap');
 
-body{
-	font-family:Roboto;
-	background-color:rgb(55,55,60);
-	color:white;
-	margin:0px;
-	padding:0px;
+body {
+  font-family: 'Roboto';
+  background-color: #37373c;
+  color: white;
+  margin: 0px;
+  padding: 0px;
 }
-a{
-	text-decoration: none;
-	color:rgb(0,215,85);
-}
-
-textarea{
-	color:rgb(185,55,0);
-	background-color:rgb(240,240,180);
-	position:relative;
-	font-family:Exo;
-	margin-left:auto;
-	z-index:5;
-	horizontal-align: middle;
+a {
+  text-decoration: none;
+  color: #00d755;
 }
 
-.header{
-	font-size:10px;
-	position:sticky;
-	background-color:white;
-	top:0px;
-	color:rgb(15,15,20);
-	margin:0px;
-	padding:10px;
-	padding-left:15px;
-	z-index:100;
-	box-shadow:black 5px 5px 10px;
+textarea {
+  color: #b93700;
+  background-color: #f0f0b4;
+  position: relative;
+  font-family: 'Exo';
+  margin-left: auto;
+  z-index: 5;
+  horizontal-align: middle;
 }
 
-.mainarea{
-	margin:50px;
-	background-color:rgb(25,25,30);
-	color:rgb(240,240,240);
-	padding:25px;
-	border-radius:8px;
+.header {
+  font-size: 10px;
+  position: sticky;
+  background-color: white;
+  top: 0px;
+  color: #0f0f14;
+  margin: 0px;
+  padding: 10px;
+  padding-left: 15px;
+  z-index: 100;
+  box-shadow: black 5px 5px 10px;
 }
-.htmlify{
-	position:relative;
-	top:-83px;
-	padding:15px;
-	float:right;
-	background-color:rgb(120,255,195);
-	border:0px;
-	border-radius:5px;
-	font-family:Roboto;
-	height:90px;
-	transition:background-color 0.25s, border-radius 0.25s;
+
+.mainarea {
+  margin: 50px;
+  background-color: #19191e;
+  color: #f0f0f0;
+  padding: 25px;
+  border-radius: 8px;
 }
-.htmlify:hover{
-	background-color:rgb(120,195,255);
-	border-radius:0px;
-	transition:background-color 0.25s, border-radius 0.25s;
+.htmlify {
+  position: relative;
+  top: -83px;
+  padding: 15px;
+  float: right;
+  background-color: #78ffc3;
+  border: 0px;
+  border-radius: 5px;
+  font-family: 'Roboto';
+  height: 90px;
+  transition: background-color 0.25s, border-radius 0.25s;
+}
+.htmlify:hover {
+  background-color: #78c3ff;
+  border-radius: 0px;
+  transition: background-color 0.25s, border-radius 0.25s;
 }
