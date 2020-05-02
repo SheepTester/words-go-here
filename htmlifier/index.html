@@ -67,20 +67,18 @@
         <p><label><input type="radio" name="cloud-provider" value="localstorage" checked> Save cloud variables locally using localStorage<a id="ref-1" href="#note-1"><sup>1</sup></a></label></p>
         <p><label><input type="radio" name="cloud-provider" value="ws"> Use a <a href="https://github.com/SheepTester/primitive-cloud-server">custom server</a>: <input type="url" id="cloud-ws" placeholder="ws://localhost:3000/"></label></p>
       </fieldset>
-      <!-- no-offline -->
       <fieldset>
         <legend><a href="https://sheeptester.github.io/scratch-gui/">E羊icques</a> (modded) options</legend>
         <p><label><input type="checkbox" id="wider"> Does this project use a <a href="https://sheeptester.github.io/scratch-gui/?width=640&height=360">custom size</a>?</label> <label>Width: <input type="number" value="640" id="width"></label> <label>Height: <input type="number" value="360" id="height"></label></p>
         <!-- Currently broken! -->
         <!-- <p><label>Load <a href="https://github.com/LLK/scratch-vm/blob/develop/docs/extensions.md#types-of-extensions">unofficial extension</a> from URL: <input type="url" id="extension-url"></label></p> -->
       </fieldset>
-      <!-- /no-offline -->
     </fieldset>
     <p>
       <button id="load-no-minify">HTMLify</button>
     </p>
     <textarea id="error" rows="8" cols="40" placeholder="Log" readonly></textarea>
-    <p>If you want to view or edit the HTML file, you can use the specialized <a href="./large-file-editor/">Large File Editor</a> to hide the long lines that may hang or crash normal text editors.</p>
+    <p>If you want to view or edit the HTML file, you can use the specialized <a href="https://sheeptester.github.io/large-file-editor/">Large File Editor</a> to hide the long lines that may hang or crash normal text editors.</p>
     <p id="note-1"><a href="#ref-1"><sup>1</sup></a>You may have to deal with privacy laws around cookies outside of Scratch.</p>
     <p id="note-2"><a href="#ref-2"><sup>2</sup></a>Compatibility mode forces projects to run at 30 FPS, like in Scratch 2.0. Turning this off allows the project to run at a higher framerate (usually 60 FPS, depending on the computer screen's refresh rate).</p>
     <h2>Update history</h2>
@@ -144,7 +142,7 @@
     </ul>
     <p>Made by <a href="https://scratch.mit.edu/users/Sheep_maker/">Sheep_maker</a>, who used <a href="https://github.com/LLK/scratch-vm/">scratch-vm</a>, <a href="http://danml.com/download.html">download.js</a>, and their dependencies for this project.</p>
     <!-- VM relies on document.body existing oof -->
-    <script src="https://sheeptester.github.io/scratch-vm/vm.min.js" charset="utf-8"></script>
+    <script src="https://sheeptester.github.io/scratch-vm/16-9/vm.min.js" charset="utf-8"></script>
     <script type="text/javascript">
 const loadNoMinifyBtn = document.getElementById('load-no-minify');
 const title = document.getElementById('title');
@@ -154,9 +152,7 @@ const file = document.getElementById('file');
 const error = document.getElementById('error');
 const compatibility = document.getElementById('compatibility');
 const turbo = document.getElementById('turbo');
-/* no-offline */
 const wider = document.getElementById('wider');
-/* /no-offline */
 const progressBar = document.getElementById('progress');
 const fullscreen = document.getElementById('fullscreen');
 const useColour = document.getElementById('use-colour');
@@ -164,11 +160,9 @@ const monitorColour = document.getElementById('monitor-colour');
 const cloudServer = document.getElementById('cloud-ws');
 const useLoadingImage = document.getElementById('loading-image');
 const loadingImage = document.getElementById('loading-image-file');
-/* no-offline */
 const width = document.getElementById('width');
 const height = document.getElementById('height');
 const extensionURL = document.getElementById('extension-url');
-/* /no-offline */
 function log(output) {
   error.value += output + '\n';
   error.scrollTop = error.scrollHeight;
@@ -200,12 +194,10 @@ function load() {
         ? cloudServer.value : null,
       projectId: id.value,
       loadingImage: useLoadingImage ? loadingImage.files[0] : null,
-      /* no-offline */
       customRatio: wider.checked,
       width: wider.checked ? width.value : 480,
       height: wider.checked ? height.value : 360,
       // extension: extensionURL.value || null
-      /* /no-offline */
     }))
     .then(html => {
       download(html, title.value + '.html', 'text/html');
@@ -222,14 +214,12 @@ file.addEventListener('change', e => {
     document.querySelector('input[name="upload-mode"][value="file"]').checked = true;
   }
 });
-/* no-offline */
 width.addEventListener('change', e => {
   wider.checked = true;
 });
 height.addEventListener('change', e => {
   wider.checked = true;
 });
-/* /no-offline */
 monitorColour.addEventListener('change', e => {
   useColour.checked = true;
 });

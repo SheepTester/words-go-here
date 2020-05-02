@@ -16,7 +16,7 @@ function offlineify ({
   log('Getting all required files')
   return Promise.all([
     fetch('./index.html').then(toText),
-    fetch('https://sheeptester.github.io/scratch-vm/vm.min.js').then(toText),
+    fetch('https://sheeptester.github.io/scratch-vm/16-9/vm.min.js').then(toText),
     fetch('./hacky-file-getter.js').then(toText),
     fetch('./download.js').then(toText),
     fetch('./template.html').then(toDataURI)
@@ -33,7 +33,7 @@ function offlineify ({
       .replace('// [offline-vm-src]', `Promise.resolve(document.getElementById('vm-src').innerHTML)`)
       .replace('// [template]', () => JSON.stringify(template))
       // Do this last because it phat
-      .replace('<script src="https://sheeptester.github.io/scratch-vm/vm.min.js" charset="utf-8"></script>', () => `<script id="vm-src">${vm.replace(/<\/script>/g, '')}</script>`)
+      .replace('<script src="https://sheeptester.github.io/scratch-vm/16-9/vm.min.js" charset="utf-8"></script>', () => `<script id="vm-src">${vm.replace(/<\/script>/g, '')}</script>`)
     log('Attempting to download...')
     download(html, 'htmlifier-offline.html', 'text/html')
     log('All good!')

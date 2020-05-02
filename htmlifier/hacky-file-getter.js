@@ -124,7 +124,7 @@ function downloadAsHTML(projectSrc, {
   extension = null,
   loadingImage = null
 } = {}) {
-  const modded = customRatio || extension
+  const modded = true
   log('Getting assets...');
   return Promise.all([
     // make preface variables
