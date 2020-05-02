@@ -86,7 +86,7 @@
       <p>
         <button id="load-no-minify">HTMLify</button>
       </p>
-      <textarea id="error" rows="8" cols="40" placeholder="Log" readonly></textarea>
+      <ul class="log" id="log"></ul>
       <p>If you want to view or edit the HTML file, you can use the specialized <a href="https://sheeptester.github.io/words-go-here/htmlifier/large-file-editor/">Large File Editor</a> to hide the long lines that may hang or crash normal text editors.</p>
       <p id="note-1"><a href="#ref-1"><sup>1</sup></a>You may have to deal with privacy laws around cookies outside of Scratch.</p>
       <p id="note-2"><a href="#ref-2"><sup>2</sup></a>Compatibility mode forces projects to run at 30 FPS, like in Scratch 2.0. Turning this off allows the project to run at a higher framerate (usually 60 FPS, depending on the computer screen's refresh rate).</p>
@@ -162,7 +162,7 @@ const title = document.getElementById('title');
 const id = document.getElementById('id');
 const username = document.getElementById('username');
 const file = document.getElementById('file');
-const error = document.getElementById('error');
+const logOutput = document.getElementById('log');
 const compatibility = document.getElementById('compatibility');
 const turbo = document.getElementById('turbo');
 const wider = document.getElementById('wider');
@@ -176,9 +176,12 @@ const loadingImage = document.getElementById('loading-image-file');
 const width = document.getElementById('width');
 const height = document.getElementById('height');
 const extensionURL = document.getElementById('extension-url');
-function log(output) {
-  error.value += output + '\n';
-  error.scrollTop = error.scrollHeight;
+function log(text, style) {
+  const entry = document.createElement('div')
+  entry.className = `log-entry log-${style}`
+  entry.textContent = text
+  logOutput.appendChild(entry)
+  logOutput.scrollTop = logOutput.scrollHeight
 }
 function getProject() {
   if (document.querySelector('input[name="upload-mode"]:checked').value === 'file') {
@@ -195,7 +198,7 @@ function getProject() {
 function load() {
   loadNoMinifyBtn.disabled = true;
   otherHtmlifyBtn.disabled = true;
-  error.value = '';
+  logOutput.innerHTML = '';
   getProject()
     .then(src => downloadAsHTML(src, {
       title: title.value,
@@ -218,8 +221,10 @@ function load() {
       loadNoMinifyBtn.disabled = false;
       otherHtmlifyBtn.disabled = false;
     }).catch(err => {
-      console.log(err);
-      error.value += err.message;
+      console.error(err);
+      if (err.message !== 'error logged') {
+        log('Unexpected error:\n' + err.stack, 'error');
+      }
       loadNoMinifyBtn.disabled = false;
       otherHtmlifyBtn.disabled = false;
     });

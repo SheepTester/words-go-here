@@ -127,19 +127,26 @@ function downloadAsHTML(projectSrc, {
   loadingImage = null
 } = {}) {
   const modded = true
-  log('Getting assets...');
+  function problemFetching (file) {
+    return () => {
+      log(`There was a problem fetching ${file} from the web`, 'error')
+      throw new Error('error logged')
+    }
+  }
+  log('Getting assets...', 'status');
   return Promise.all([
     // make preface variables
     projectSrc.id
       ? runBenchmark(projectSrc.id, ({complete, total}, file) => {
-        log(complete + '/' + total + (file ? ` (+ ${file.data.length / 1000} kB ${file.dataFormat})` : ''))
+        log(complete + '/' + total + (file ? ` (+ ${file.data.length / 1000} kB ${file.dataFormat})` : ''), 'progress')
       })
         .then(({assets, projectJSON}) => {
-          log('Assembling assets...');
+          log('Assembling assets...', 'status');
           return Promise.all([
             getDataURLFromURL(projectJSON).then(data => projectJSON = data),
             ...Object.keys(assets).map(assetId => getDataURLFromURL(assets[assetId]).then(data => assets[assetId] = data))
           ]).then(() => {
+            log('Assets ready.', 'status');
             return `var SRC = "id",\nPROJECT_JSON = "${projectJSON}",\n`
               + `ASSETS = ${JSON.stringify(assets)},\n`;
           });
@@ -152,20 +159,21 @@ function downloadAsHTML(projectSrc, {
       : /* no-offline */ fetch(modded
         ? 'https://sheeptester.github.io/scratch-vm/16-9/vm.min.js'
         : 'https://sheeptester.github.io/scratch-vm/vm.min.js')
+        .catch(problemFetching('the Scratch engine'))
         .then(r => r.text())
         /* /no-offline */
         // [offline-vm-src]
         .then(async vmCode => {
-          log('Scratch engine obtained...');
           if (extension) {
             const extensionWorkerMatch = vmCode.match(extensionWorkerGet)
             if (extensionWorkerMatch) {
+              log('Getting extension worker', status)
               /* no-offline */
               const workerCode = await fetch('https://sheeptester.github.io/scratch-vm/16-9/' + extensionWorkerMatch[1])
                 .then(r => r.text())
               /* /no-offline */
               // [offline-extension-worker-src]
-              log('Extension worker obtained')
+              log('Getting extension', status)
               const extensionScript = await fetch(extension).then(r => r.text())
               // https://stackoverflow.com/a/10372280
               const workerMaker = `new Worker(URL.createObjectURL(new Blob([${
@@ -181,6 +189,7 @@ function downloadAsHTML(projectSrc, {
                 vmCode.slice(extensionWorkerMatch.index + extensionWorkerMatch[0].length)
             }
           }
+          log('Scratch engine ready.', 'status');
           // remove dumb </ script>s in comments
           return vmCode.replace('</scr' + 'ipt>', '');
         }),
@@ -189,13 +198,7 @@ function downloadAsHTML(projectSrc, {
     fetch(
       /* no-offline */ './template.html' /* /no-offline */
       // [template]
-    ).then(r => r.text()),
-
-    // fetch extension
-    extension
-      ? fetch(extension)
-        .then(r => r.text())
-      : '',
+    ).catch(problemFetching('the template')).then(r => r.text()),
 
     // fetch image data for loading gif
     loadingImage
@@ -209,7 +212,7 @@ function downloadAsHTML(projectSrc, {
       + `WIDTH = ${width},\nHEIGHT = ${height},\n`
       + `EXTENSION_URL = ${JSON.stringify(extension)};\n`
       + scripts;
-    log('Done!');
+    log('Done!', 'done');
     if (!noVM) {
       template = removePercentSection(template, 'no-vm');
     }

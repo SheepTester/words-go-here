@@ -20,14 +20,29 @@ a:hover {
   text-decoration: underline;
 }
 
-textarea {
+.log {
   color: #b93700;
   background-color: #f0f0b4;
-  position: relative;
+  padding: 10px 0;
   font-family: 'Exo', sans-serif;
-  margin-left: auto;
-  z-index: 5;
-  horizontal-align: middle;
+  height: 100px;
+  resize: vertical;
+  overflow: auto;
+}
+.log-entry {
+  padding: 0 10px;
+  white-space: pre-wrap;
+}
+.log-error {
+  background-color: red;
+  color: white;
+}
+.log-done {
+  background-color: green;
+  color: white;
+}
+.log-progress {
+  opacity: 0.5;
 }
 
 .header {
