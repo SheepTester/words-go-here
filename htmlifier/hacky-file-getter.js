@@ -1,3 +1,5 @@
+const extensionWorkerGet = /new\s+Worker\([^")]*"[^"]*(extension-worker(?:\.min)?\.js)"\)/
+
 window.downloadAsHTML = (() => {
 const collecteyData = {assets: {}};
 
@@ -153,8 +155,32 @@ function downloadAsHTML(projectSrc, {
         .then(r => r.text())
         /* /no-offline */
         // [offline-vm-src]
-        .then(vmCode => {
+        .then(async vmCode => {
           log('Scratch engine obtained...');
+          if (extension) {
+            const extensionWorkerMatch = vmCode.match(extensionWorkerGet)
+            if (extensionWorkerMatch) {
+              /* no-offline */
+              const workerCode = await fetch('https://sheeptester.github.io/scratch-vm/16-9/' + extensionWorkerMatch[1])
+                .then(r => r.text())
+              /* /no-offline */
+              // [offline-extension-worker-src]
+              log('Extension worker obtained')
+              const extensionScript = await fetch(extension).then(r => r.text())
+              // https://stackoverflow.com/a/10372280
+              const workerMaker = `new Worker(URL.createObjectURL(new Blob([${
+                JSON.stringify(workerCode.replace(/importScripts\(\w+\)/, () => {
+                  // So apparently object URLs created in the main thread can't be
+                  // accessed by a web worker oof
+                  return `importScripts(URL.createObjectURL(new Blob([${
+                    JSON.stringify(extensionScript)
+                  }], {type: 'application/javascript'})))`
+                }))
+              }], {type: 'application/javascript'})))`
+              vmCode = vmCode.slice(0, extensionWorkerMatch.index) + workerMaker +
+                vmCode.slice(extensionWorkerMatch.index + extensionWorkerMatch[0].length)
+            }
+          }
           // remove dumb </ script>s in comments
           return vmCode.replace('</scr' + 'ipt>', '');
         }),
@@ -175,13 +201,13 @@ function downloadAsHTML(projectSrc, {
     loadingImage
       ? getDataURL(loadingImage)
       : ''
-  ]).then(([preface, scripts, template, extensionScript, loadingImageURL]) => {
+  ]).then(([preface, scripts, template, loadingImageURL]) => {
     scripts = preface
       + `DESIRED_USERNAME = ${JSON.stringify(username)},\n`
       + `COMPAT = ${compatibility.checked},\nTURBO = ${turbo.checked},\n`
       + `PROJECT_ID = ${JSON.stringify(projectId)},\n`
       + `WIDTH = ${width},\nHEIGHT = ${height},\n`
-      + `EXTENSION = ${JSON.stringify(extensionScript)};\n`
+      + `EXTENSION_URL = ${JSON.stringify(extension)};\n`
       + scripts;
     log('Done!');
     if (!noVM) {

@@ -70,15 +70,14 @@
       <fieldset>
         <legend><a href="https://sheeptester.github.io/scratch-gui/">E羊icques</a> (modded) options</legend>
         <p><label><input type="checkbox" id="wider"> Does this project use a <a href="https://sheeptester.github.io/scratch-gui/?width=640&height=360">custom size</a>?</label> <label>Width: <input type="number" value="640" id="width"></label> <label>Height: <input type="number" value="360" id="height"></label></p>
-        <!-- Currently broken! -->
-        <!-- <p><label>Load <a href="https://github.com/LLK/scratch-vm/blob/develop/docs/extensions.md#types-of-extensions">unofficial extension</a> from URL: <input type="url" id="extension-url"></label></p> -->
+        <p><label>Load <a href="https://github.com/LLK/scratch-vm/blob/develop/docs/extensions.md#types-of-extensions">unofficial extension</a> from URL: <input type="url" id="extension-url"></label></p>
       </fieldset>
     </fieldset>
     <p>
       <button id="load-no-minify">HTMLify</button>
     </p>
     <textarea id="error" rows="8" cols="40" placeholder="Log" readonly></textarea>
-    <p>If you want to view or edit the HTML file, you can use the specialized <a href="https://sheeptester.github.io/large-file-editor/">Large File Editor</a> to hide the long lines that may hang or crash normal text editors.</p>
+    <p>If you want to view or edit the HTML file, you can use the specialized <a href="https://sheeptester.github.io/words-go-here/htmlifier/large-file-editor/">Large File Editor</a> to hide the long lines that may hang or crash normal text editors.</p>
     <p id="note-1"><a href="#ref-1"><sup>1</sup></a>You may have to deal with privacy laws around cookies outside of Scratch.</p>
     <p id="note-2"><a href="#ref-2"><sup>2</sup></a>Compatibility mode forces projects to run at 30 FPS, like in Scratch 2.0. Turning this off allows the project to run at a higher framerate (usually 60 FPS, depending on the computer screen's refresh rate).</p>
     <h2>Update history</h2>
@@ -197,7 +196,7 @@ function load() {
       customRatio: wider.checked,
       width: wider.checked ? width.value : 480,
       height: wider.checked ? height.value : 360,
-      // extension: extensionURL.value || null
+      extension: extensionURL.value || null
     }))
     .then(html => {
       download(html, title.value + '.html', 'text/html');

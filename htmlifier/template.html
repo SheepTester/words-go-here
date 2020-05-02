@@ -630,6 +630,7 @@ const runBenchmark = function () {
     }
     mouseDownTimeoutId = null;
   }
+  // https://github.com/LLK/scratch-gui/blob/develop/src/containers/stage.jsx#L337-L366
   function onStartDrag() {
     if (dragId) return;
     const drawableId = renderer.pick(...mouseDownPosition);
@@ -852,9 +853,7 @@ const runBenchmark = function () {
   vm.postIOData('userData', {username: DESIRED_USERNAME});
 
   % extension-url %
-  // https://stackoverflow.com/a/19201292
-  const blobURL = URL.createObjectURL(new Blob([EXTENSION], {type: 'application/javascript'}));
-  vm.extensionManager.loadExtensionURL(blobURL);
+  vm.extensionManager.loadExtensionURL(EXTENSION_URL);
   % /extension-url %
 
   vm.start();
