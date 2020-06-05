@@ -10,6 +10,24 @@
       a {
         display: table;
       }
+      .grify {
+        display: block;
+        max-height: 0;
+        overflow: hidden;
+        color: green;
+        transition: max-height .2s;
+      }
+      a:hover + .grify,
+      a:focus + .grify,
+      .grify:hover,
+      .grify:focus,
+      .grify:target {
+        max-height: 1.5em;
+      }
+      .grify:target {
+        text-decoration: none;
+        font-weight: bold;
+      }
     </style>
   </head>
   <body>
@@ -69,6 +87,10 @@
     <script>
 var s=document.querySelectorAll('a');
 for (var i=0;i<s.length;i++) s[i].textContent=s[i].getAttribute('href');
+document.body.insertBefore(
+  Object.assign(document.createElement('a'), { href: '#sbaze', textContent: 'grify', id: 'sbaze', className: 'grify' }),
+  s[Math.random() * s.length | 0].nextElementSibling
+)
     </script>
   </body>
   <!-- MADE BY SEAN -->
