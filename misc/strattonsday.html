@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+    <title>6-day week</title>
+    <meta name="description" content="Slightly more convenient to use during quarantine for me, as a Religion: Noner."/>
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <!-- https://fonts.google.com/specimen/Montserrat?selection.family=Montserrat:wght@400;700 -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        overflow: hidden;
+        font-family: 'Montserrat', sans-serif;
+        word-break: break-word;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .wrapper {
+        flex: auto;
+        display: flex;
+      }
+      .hide-epoch .epoch,
+      .hide-calendar .calendar {
+        display: none;
+      }
+
+      .epoch {
+        align-items: center;
+        justify-content: center;
+      }
+
+      .calendar {
+        flex-direction: column;
+      }
+      .header {
+        flex: none;
+        box-shadow: 0 5px 0 rgba(0, 0, 0, 0.1);
+        position: relative;
+        z-index: 5;
+      }
+      .weeks {
+        flex: auto;
+      }
+
+      .week {
+        display: flex;
+      }
+      .day {
+        flex: 1 0 0;
+      }
+
+      .day-header {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 10px 0;
+      }
+      .day-symbol {
+        font-weight: bold;
+        font-size: 30px;
+      }
+      .day-name {
+        font-size: 12px;
+      }
+      @media (max-width: 640px) {
+        .day-name {
+          font-size: 10px;
+        }
+      }
+      @media (max-width: 540px) {
+        .day-name {
+          font-size: 8px;
+        }
+      }
+      @media (max-width: 420px) {
+        .day-name {
+          display: none;
+        }
+      }
+
+      .weeks {
+        position: relative;
+        overflow: hidden;
+      }
+      .cal-week {
+        width: 100%;
+        position: absolute;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="wrapper epoch" method="get">
+      <label>Give a date that is on Strattonsday (the "epoch"): <input type="date" value="2020-06-28" name="epoch" autofocus></label>
+      <input type="submit" value="👌" class="ok">
+    </form>
+    <div class="wrapper calendar">
+      <div class="week header">
+        <div class="day day-header">
+          <span class="day-symbol">S</span>
+          <span class="day-name">Strattonsday</span>
+        </div>
+        <div class="day day-header">
+          <span class="day-symbol">W</span>
+          <span class="day-name">Wensday</span>
+        </div>
+        <div class="day day-header">
+          <span class="day-symbol">Fe</span>
+          <span class="day-name">Friday (-eɪ)</span>
+        </div>
+        <div class="day day-header">
+          <span class="day-symbol">sS</span>
+          <span class="day-name">Sub-Strattonsday</span>
+        </div>
+        <div class="day day-header">
+          <span class="day-symbol">V</span>
+          <span class="day-name">Vernesty</span>
+        </div>
+        <div class="day day-header">
+          <span class="day-symbol">Fi</span>
+          <span class="day-name">Friday (-i)</span>
+        </div>
+      </div>
+      <div class="weeks" id="weeks"></div>
+    </div>
+    <script>
+const params = new URL(window.location).searchParams
+const epochStr = params.get('epoch')
+if (!epochStr) {
+  document.body.classList.add('hide-calendar')
+  throw new Error('no epoch given')
+} else {
+  document.body.classList.add('hide-epoch')
+}
+const epoch = new Date(epochStr)
+
+const DAYS = 6
+const HEIGHT = 200
+
+const weeksContainer = document.getElementById('weeks')
+
+class Week {
+  constructor () {
+    this._initElems()
+  }
+
+  _initElems () {
+    this.wrapper = document.createElement('div')
+    this.wrapper.className = 'week cal-week'
+    this.wrapper.style.height = HEIGHT + 'px'
+
+    this._days = []
+    for (let i = 0; i < DAYS; i++) {
+      const day = document.createElement('button')
+      day.className = 'day'
+      this._days.push(day)
+    }
+    this.wrapper.append(...this._days)
+  }
+
+  setWeek (start, weekNum) {
+    let temp = new Date(start)
+    for (const day of this._days) {
+      day.dataset.date = temp.toISOString().slice(0, 10)
+      day.textContent = temp.toISOString().slice(0, 10)
+      temp.setUTCDate(temp.getUTCDate() + 1)
+    }
+    this.wrapper.dataset.week = weekNum > 0 ? `+${weekNum}` : weekNum
+    return this
+  }
+
+  setPosition (y) {
+    this.wrapper.style.top = y + 'px'
+    return this
+  }
+}
+
+function createWeekCache () {
+  const rect = weeksContainer.getBoundingClientRect()
+  const weekCount = Math.ceil(rect.height / HEIGHT) + 1
+  const weeks = new Map() // key is week # or Symbol() (unused)
+  for (let i = 0; i < weekCount; i++) {
+    weeks.set(Symbol(), new Week())
+  }
+  return {
+    height: rect.height,
+    weeks
+  }
+}
+
+let { height, weeks } = createWeekCache()
+window.addEventListener('resize', e => {
+  for (const week of weeks) week.wrapper.remove()
+  ;({ height, weeks } = createWeekCache())
+})
+
+let showing = -0.5
+
+// https://github.com/Nichodon/tech_guy/blob/master/cocnept-designs/v2/directory.js
+function render () {
+  const weekStart = Math.floor(showing - height / HEIGHT / 2)
+  const weekStop = Math.ceil(showing + height / HEIGHT / 2)
+  const offset = (showing % 1 + 1) % 1
+
+  const reusables = [...weeks.entries()]
+    .filter(([weekNum, week]) => {
+      if (typeof weekNum === 'number' && weekNum >= weekStart && weekNum < weekStop) {
+        return false
+      }
+      weeks.delete(weekNum)
+      return true
+    })
+    .map(([_, week]) => week)
+
+  const tempDate = new Date(epoch)
+  tempDate.setUTCDate(tempDate.getUTCDate() + weekStart * DAYS)
+  for (let weekNum = weekStart; weekNum < weekStop; weekNum++) {
+    let week = weeks.get(weekNum)
+    if (!week) {
+      week = reusables.pop()
+      weeks.set(weekNum, week)
+      if (weekNum === weekStart) {
+        weeksContainer.prepend(week.wrapper)
+      } else {
+        weeks.get(weekNum - 1).wrapper.after(week.wrapper)
+      }
+    }
+    week.setWeek(tempDate, weekNum)
+    week.setPosition((weekNum - showing) * HEIGHT + height / 2)
+    tempDate.setUTCDate(tempDate.getUTCDate() + DAYS)
+  }
+
+  // reusable remains unused
+  for (const reusableWeek of reusables) {
+    weeks.set(Symbol(), reusableWeek)
+    reusableWeek.wrapper.remove()
+  }
+}
+
+weeksContainer.addEventListener('wheel', e => {
+  showing += (e.deltaX + e.deltaY) / HEIGHT
+  render()
+})
+
+render()
+    </script>
+  </body>
+</html>
