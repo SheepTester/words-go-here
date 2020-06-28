@@ -102,6 +102,41 @@
         width: 100%;
         position: absolute;
       }
+      .cal-week::before {
+        content: attr(data-week);
+        position: absolute;
+        top: 0;
+        left: 0;
+        margin: 10px;
+        font-size: 12px;
+        font-weight: bold;
+        pointer-events: none;
+      }
+      .cal-day {
+        -webkit-appearance: none;
+        background: none;
+        border: none;
+        border-radius: 0;
+        box-sizing: border-box;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        border-right: 1px solid rgba(0, 0, 0, 0.1);
+        display: flex;
+        text-align: left;
+        padding: 0 10px;
+        padding-top: 30px;
+      }
+      .cal-day:last-child {
+        border-right: none;
+      }
+      .today {
+        box-shadow: inset 0 -5px 0 #3f51b5;
+      }
+      .first-day {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+      .sub-day {
+        background-color: rgba(0, 0, 0, 0.025);
+      }
     </style>
   </head>
   <body>
@@ -150,9 +185,16 @@ if (!epochStr) {
 const epoch = new Date(epochStr)
 
 const DAYS = 6
-const HEIGHT = 200
+const HEIGHT = 120
 
 const weeksContainer = document.getElementById('weeks')
+
+let today
+
+function setToday () {
+  today = new Date()
+  today = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+}
 
 class Week {
   constructor () {
@@ -167,7 +209,12 @@ class Week {
     this._days = []
     for (let i = 0; i < DAYS; i++) {
       const day = document.createElement('button')
-      day.className = 'day'
+      day.className = 'day cal-day'
+      if (i === 0) {
+        day.classList.add('first-day')
+      } else if (i === DAYS / 2) {
+        day.classList.add('sub-day')
+      }
       this._days.push(day)
     }
     this.wrapper.append(...this._days)
@@ -176,8 +223,14 @@ class Week {
   setWeek (start, weekNum) {
     let temp = new Date(start)
     for (const day of this._days) {
-      day.dataset.date = temp.toISOString().slice(0, 10)
-      day.textContent = temp.toISOString().slice(0, 10)
+      const date = temp.toISOString().slice(0, 10)
+      day.dataset.date = date
+      if (temp.getTime() === today) {
+        day.classList.add('today')
+      } else {
+        day.classList.remove('today')
+      }
+      day.textContent = params.get(date) || ''
       temp.setUTCDate(temp.getUTCDate() + 1)
     }
     this.wrapper.dataset.week = weekNum > 0 ? `+${weekNum}` : weekNum
@@ -209,10 +262,12 @@ window.addEventListener('resize', e => {
   ;({ height, weeks } = createWeekCache())
 })
 
-let showing = -0.5
+let showing = 0.5
 
 // https://github.com/Nichodon/tech_guy/blob/master/cocnept-designs/v2/directory.js
 function render () {
+  setToday()
+
   const weekStart = Math.floor(showing - height / HEIGHT / 2)
   const weekStop = Math.ceil(showing + height / HEIGHT / 2)
   const offset = (showing % 1 + 1) % 1
@@ -253,11 +308,23 @@ function render () {
 }
 
 weeksContainer.addEventListener('wheel', e => {
-  showing += (e.deltaX + e.deltaY) / HEIGHT
+  showing += (e.deltaY || e.deltaY) / HEIGHT
   render()
 })
 
 render()
+
+weeksContainer.addEventListener('click', e => {
+  const day = e.target.closest('.day')
+  if (day) {
+    const eventText = prompt('Set event', params.get(day.dataset.date) || '')
+    if (eventText !== null) {
+      params.set(day.dataset.date, eventText)
+      window.history.replaceState({}, '', `?${params}`)
+      render()
+    }
+  }
+})
     </script>
   </body>
 </html>
