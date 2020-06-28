@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
     <title>6-day week</title>
-    <meta name="description" content="Slightly more convenient to use during quarantine for me, as a Religion: Noner."/>
+    <meta name="description" content="Featuring Strattonsday from Gunn's proposed 8-day week schedule and Friday from the undecimalized 7-day week."/>
 
     <link rel="stylesheet" type="text/css" href="/sheep3.css">
     <script src="/sheep3.js" charset="utf-8"></script>
@@ -228,7 +228,7 @@ if (!epochStr) {
 const epoch = new Date(epochStr)
 
 const DAYS = 6
-const HEIGHT = 120
+const HEIGHT = params.get('height') || 120
 
 const weeksContainer = document.getElementById('weeks')
 
@@ -301,8 +301,9 @@ function createWeekCache () {
 
 let { height, weeks } = createWeekCache()
 window.addEventListener('resize', e => {
-  for (const week of weeks) week.wrapper.remove()
+  for (const week of weeks.values()) week.wrapper.remove()
   ;({ height, weeks } = createWeekCache())
+  render()
 })
 
 let showing = 0.5
