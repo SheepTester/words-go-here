@@ -1,0 +1,320 @@
+# Left side, facing input, of stackable storage
+/setblock -2473 51 -206 minecraft:stone
+/setblock -2473 51 -207 minecraft:stone_bricks
+/setblock -2473 51 -208 minecraft:granite
+/setblock -2473 51 -209 minecraft:andesite
+/setblock -2473 51 -210 minecraft:dirt
+/setblock -2473 51 -211 minecraft:diorite
+/setblock -2473 51 -212 minecraft:polished_diorite
+/setblock -2473 51 -213 minecraft:polished_andesite
+/setblock -2473 51 -214 minecraft:polished_granite
+/setblock -2473 51 -215 minecraft:gravel
+/setblock -2473 51 -216 minecraft:cobblestone
+/setblock -2473 51 -217 minecraft:coal_ore
+/setblock -2473 51 -218 minecraft:iron_ore
+/setblock -2473 51 -219 minecraft:gold_ore
+/setblock -2473 51 -220 minecraft:redstone_ore[lit=false]
+/setblock -2473 51 -221 minecraft:diamond_ore
+/setblock -2473 51 -222 minecraft:lapis_ore
+/setblock -2473 51 -223 minecraft:iron_block
+iron_ingot
+/setblock -2473 51 -225 minecraft:redstone_block
+redstone
+diamond
+/setblock -2473 51 -228 minecraft:gold_block
+gold_ingot
+lapis_lazuli
+coal
+/setblock -2473 51 -232 minecraft:netherrack
+/setblock -2473 51 -233 minecraft:soul_sand
+/setblock -2473 51 -234 minecraft:soul_soil
+/setblock -2473 51 -235 minecraft:nether_bricks
+nether_brick
+/setblock -2473 51 -237 minecraft:glowstone
+glowstone_dust
+/setblock -2473 51 -239 minecraft:quartz_block
+quartz
+/setblock -2473 51 -241 minecraft:crimson_nylium
+/setblock -2473 51 -242 minecraft:crimson_stem[axis=y]
+/setblock -2473 51 -243 minecraft:nether_wart_block
+/setblock -2473 51 -244 minecraft:shroomlight
+/setblock -2473 51 -245 minecraft:obsidian
+blaze_rod
+blaze_powder
+gold_nugget
+/setblock -2473 51 -249 minecraft:warped_stem[axis=y]
+/setblock -2473 51 -250 minecraft:basalt[axis=y]
+/setblock -2473 51 -251 minecraft:blackstone
+/setblock -2473 51 -252 minecraft:warped_nylium
+/setblock -2473 51 -253 minecraft:crying_obsidian
+/setblock -2473 51 -254 minecraft:magma_block
+/setblock -2473 51 -255 minecraft:nether_quartz_ore
+/setblock -2473 51 -256 minecraft:nether_gold_ore
+/setblock -2473 51 -257 minecraft:spruce_leaves[distance=7,persistent=true]
+warped_roots
+crimson_roots
+nether_wart
+bucket
+/setblock -2473 51 -262 minecraft:snow_block
+snowball
+/setblock -2473 51 -264 minecraft:hopper[enabled=true,facing=down]
+/setblock -2473 51 -265 minecraft:comparator[facing=west,mode=compare,powered=false]
+/setblock -2473 51 -266 minecraft:repeater[delay=1,facing=west,locked=false,powered=false]
+/setblock -2473 51 -267 minecraft:redstone_torch[lit=true]
+/setblock -2473 51 -268 minecraft:powered_rail[powered=true,shape=east_west]
+/setblock -2473 51 -269 minecraft:activator_rail[powered=false,shape=east_west]
+/setblock -2473 51 -270 minecraft:rail[shape=east_west]
+/setblock -2473 51 -271 minecraft:piston[extended=false,facing=up]
+/setblock -2473 51 -272 minecraft:sticky_piston[extended=false,facing=up]
+tnt
+/setblock -2473 51 -274 minecraft:observer[facing=east,powered=false]
+/setblock -2473 51 -275 minecraft:dropper[facing=west,triggered=false]
+/setblock -2473 51 -276 minecraft:chest[facing=west,type=single,waterlogged=false]
+/setblock -2473 51 -277 minecraft:dispenser[facing=west,triggered=false]
+/setblock -2473 51 -278 minecraft:detector_rail[powered=false,shape=east_west]
+/setblock -2473 51 -279 minecraft:lever[face=floor,facing=east,powered=false]
+/setblock -2473 51 -280 minecraft:note_block[instrument=basedrum,note=14,powered=false]
+/setblock -2473 51 -281 minecraft:slime_block
+slime_ball
+/setblock -2473 51 -283 minecraft:sandstone
+/setblock -2473 51 -284 minecraft:sand
+/setblock -2473 51 -285 minecraft:terracotta
+/setblock -2473 51 -286 minecraft:cyan_terracotta
+/setblock -2473 51 -287 minecraft:orange_terracotta
+/setblock -2473 51 -288 minecraft:light_gray_terracotta
+/setblock -2473 51 -289 minecraft:red_terracotta
+/setblock -2473 51 -290 minecraft:coarse_dirt
+/setblock -2473 51 -291 minecraft:grass_block[snowy=false]
+[some space]
+/setblock -2473 51 -301 minecraft:dried_kelp_block
+lead
+/setblock -2473 51 -303 minecraft:mossy_stone_bricks
+
+# Right side, facing input, of stackable storage
+[1 space]
+/setblock -2485 51 -207 minecraft:emerald_block
+emerald
+/setblock -2485 51 -209 minecraft:spruce_log[axis=y]
+/setblock -2485 51 -210 minecraft:spruce_wood[axis=y]
+/setblock -2485 51 -211 minecraft:spruce_fence[east=false,north=true,south=true,waterlogged=false,west=false]
+/setblock -2485 51 -212 minecraft:spruce_fence_gate[facing=west,in_wall=false,open=false,powered=false]
+/setblock -2485 51 -213 minecraft:spruce_trapdoor[facing=east,half=bottom,open=false,powered=false,waterlogged=false]
+/setblock -2485 51 -214 minecraft:spruce_stairs[facing=west,half=bottom,shape=straight,waterlogged=false]
+/setblock -2485 51 -215 minecraft:spruce_slab[type=bottom,waterlogged=false]
+/setblock -2485 51 -216 minecraft:spruce_sign[rotation=12,waterlogged=false]
+/setblock -2485 51 -217 minecraft:spruce_sapling[stage=1]
+/setblock -2485 51 -218 minecraft:stripped_spruce_log[axis=y]
+/setblock -2485 51 -219 minecraft:spruce_planks
+/setblock -2485 51 -220 minecraft:dark_oak_log[axis=y]
+/setblock -2485 51 -221 minecraft:dark_oak_wood[axis=y]
+/setblock -2485 51 -222 minecraft:dark_oak_fence[east=false,north=true,south=true,waterlogged=false,west=false]
+/setblock -2485 51 -223 minecraft:dark_oak_fence_gate[facing=west,in_wall=false,open=false,powered=false]
+/setblock -2485 51 -224 minecraft:dark_oak_trapdoor[facing=east,half=bottom,open=false,powered=false,waterlogged=false]
+/setblock -2485 51 -225 minecraft:dark_oak_stairs[facing=west,half=bottom,shape=straight,waterlogged=false]
+/setblock -2485 51 -226 minecraft:dark_oak_slab[type=bottom,waterlogged=false]
+/setblock -2485 51 -227 minecraft:dark_oak_sign[rotation=12,waterlogged=false]
+/setblock -2485 51 -228 minecraft:dark_oak_sapling[stage=1]
+/setblock -2485 51 -229 minecraft:stripped_dark_oak_log[axis=y]
+/setblock -2485 51 -230 minecraft:dark_oak_planks
+/setblock -2485 51 -231 minecraft:birch_log[axis=y]
+/setblock -2485 51 -232 minecraft:birch_wood[axis=y]
+/setblock -2485 51 -233 minecraft:birch_fence[east=false,north=true,south=true,waterlogged=false,west=false]
+/setblock -2485 51 -234 minecraft:birch_fence_gate[facing=west,in_wall=false,open=false,powered=false]
+/setblock -2485 51 -235 minecraft:birch_trapdoor[facing=east,half=bottom,open=false,powered=false,waterlogged=false]
+/setblock -2485 51 -236 minecraft:birch_stairs[facing=west,half=bottom,shape=straight,waterlogged=false]
+/setblock -2485 51 -237 minecraft:birch_slab[type=bottom,waterlogged=false]
+/setblock -2485 51 -238 minecraft:birch_sign[rotation=12,waterlogged=false]
+/setblock -2485 51 -239 minecraft:birch_sapling[stage=1]
+/setblock -2485 51 -240 minecraft:stripped_birch_log[axis=y]
+/setblock -2485 51 -241 minecraft:birch_planks
+/setblock -2485 51 -242 minecraft:acacia_log[axis=y]
+/setblock -2485 51 -243 minecraft:acacia_wood[axis=y]
+/setblock -2485 51 -244 minecraft:acacia_fence[east=false,north=true,south=true,waterlogged=false,west=false]
+/setblock -2485 51 -245 minecraft:acacia_fence_gate[facing=west,in_wall=false,open=false,powered=false]
+/setblock -2485 51 -246 minecraft:acacia_trapdoor[facing=east,half=bottom,open=false,powered=false,waterlogged=false]
+/setblock -2485 51 -247 minecraft:acacia_stairs[facing=west,half=bottom,shape=straight,waterlogged=false]
+/setblock -2485 51 -248 minecraft:acacia_slab[type=bottom,waterlogged=false]
+/setblock -2485 51 -249 minecraft:acacia_sign[rotation=12,waterlogged=false]
+/setblock -2485 51 -250 minecraft:acacia_sapling[stage=1]
+/setblock -2485 51 -251 minecraft:stripped_acacia_log[axis=y]
+/setblock -2485 51 -252 minecraft:acacia_planks
+/setblock -2485 51 -253 minecraft:oak_log[axis=y]
+/setblock -2485 51 -254 minecraft:oak_wood[axis=y]
+/setblock -2485 51 -255 minecraft:oak_fence[east=false,north=true,south=true,waterlogged=false,west=false]
+/setblock -2485 51 -256 minecraft:oak_fence_gate[facing=west,in_wall=false,open=false,powered=false]
+/setblock -2485 51 -257 minecraft:oak_trapdoor[facing=east,half=bottom,open=false,powered=false,waterlogged=false]
+/setblock -2485 51 -258 minecraft:oak_stairs[facing=west,half=bottom,shape=straight,waterlogged=false]
+/setblock -2485 51 -259 minecraft:oak_slab[type=bottom,waterlogged=false]
+/setblock -2485 51 -260 minecraft:oak_sign[rotation=12,waterlogged=false]
+/setblock -2485 51 -261 minecraft:oak_sapling[stage=1]
+/setblock -2485 51 -262 minecraft:stripped_oak_log[axis=y]
+/setblock -2485 51 -263 minecraft:oak_planks
+stick
+ladder
+/setblock -2485 51 -266 minecraft:glass
+/setblock -2485 51 -267 minecraft:scaffolding[bottom=false,distance=0,waterlogged=false]
+[1 space]
+apple
+/setblock -2485 51 -270 minecraft:mossy_stone_bricks
+ice
+/setblock -2485 51 -272 minecraft:packed_ice
+/setblock -2485 51 -273 minecraft:blue_ice
+/setblock -2485 51 -274 minecraft:smooth_stone
+[1 space]
+/setblock -2485 51 -276 minecraft:white_wool
+/setblock -2485 51 -277 minecraft:yellow_wool
+/setblock -2485 51 -278 minecraft:magenta_wool
+/setblock -2485 51 -279 minecraft:purple_wool
+/setblock -2485 51 -280 minecraft:red_wool
+/setblock -2485 51 -281 minecraft:light_blue_wool
+/setblock -2485 51 -282 minecraft:pink_wool
+/setblock -2485 51 -283 minecraft:blue_wool
+/setblock -2485 51 -284 minecraft:orange_wool
+[some space]
+/setblock -2485 51 -291 minecraft:stone_brick_stairs[facing=west,half=bottom,shape=straight,waterlogged=false]
+/setblock -2485 51 -292 minecraft:cobblestone_stairs[facing=west,half=bottom,shape=straight,waterlogged=false]
+/setblock -2485 51 -293 minecraft:stone_stairs[facing=west,half=bottom,shape=straight,waterlogged=false]
+/setblock -2485 51 -294 minecraft:stone_brick_slab[type=bottom,waterlogged=false]
+/setblock -2485 51 -295 minecraft:ender_chest[facing=east,waterlogged=false]
+/setblock -2485 51 -296 minecraft:furnace[facing=east,lit=false]
+/setblock -2485 51 -297 minecraft:cobblestone_slab[type=bottom,waterlogged=false]
+/setblock -2485 51 -298 minecraft:cracked_stone_bricks
+/setblock -2485 51 -299 minecraft:stone_slab[type=bottom,waterlogged=false]
+[1 space]
+/setblock -2485 51 -301 minecraft:daylight_detector[inverted=false,power=0]
+/setblock -2485 51 -302 minecraft:iron_door[facing=west,half=lower,hinge=right,open=false,powered=false]
+/setblock -2485 51 -303 minecraft:red_sand
+
+# Left side, second floor, facing input
+kelp
+egg
+flint
+wheat_seeds
+/setblock -2473 55 -210 minecraft:pumpkin
+potato
+baked_potato
+dragon_breath
+paper
+chorus_fruit
+popped_chorus_fruit
+/setblock -2473 55 -217 minecraft:purpur_block
+/setblock -2473 55 -218 minecraft:poppy
+book
+/setblock -2473 55 -220 minecraft:sea_pickle[pickles=1,waterlogged=false]
+magma_cream
+/setblock -2473 55 -222 minecraft:melon
+melon_slice
+melon_seeds
+pumpkin_seeds
+beetroot_seeds
+beetroot
+sugar_cane
+sugar
+bamboo
+carrot
+cooked_cod
+cooked_porkchop
+cooked_beef
+cooked_salmon
+cooked_rabbit
+cooked_chicken
+charcoal
+wheat
+bread
+pumpkin_pie
+golden_carrot
+pufferfish
+sweet_berries
+poisonous_potato
+seagrass
+/setblock -2473 55 -247 minecraft:lantern[hanging=false]
+/setblock -2473 55 -248 minecraft:soul_lantern[hanging=false]
+/setblock -2473 55 -249 minecraft:chain[waterlogged=false]
+/setblock -2473 55 -250 minecraft:torch
+/setblock -2473 55 -251 minecraft:soul_torch
+/setblock -2473 55 -252 minecraft:campfire[facing=east,lit=true,signal_fire=false,waterlogged=false]
+/setblock -2473 55 -253 minecraft:soul_campfire[facing=east,lit=true,signal_fire=false,waterlogged=false]
+/setblock -2473 55 -254 minecraft:white_concrete
+/setblock -2473 55 -255 minecraft:black_concrete
+/setblock -2473 55 -256 minecraft:red_concrete
+/setblock -2473 55 -257 minecraft:hay_block[axis=y]
+/setblock -2473 55 -258 minecraft:anvil[facing=south]
+[some space]
+/setblock -2473 55 -269 minecraft:oak_leaves[distance=7,persistent=true]
+/setblock -2473 55 -270 minecraft:birch_leaves[distance=7,persistent=true]
+fire_charge
+/setblock -2473 55 -272 minecraft:gilded_blackstone
+/setblock -2473 55 -273 minecraft:polished_blackstone_bricks
+[some space]
+
+# Right side, facing input, second floor
+arrow
+bone
+bonemeal
+/setblock -2485 55 -209 minecraft:bone_block[axis=y]
+gunpowder
+rotten_flesh
+string
+spider_eye
+ender_pearl
+phantom_membrane
+leather
+porkchop
+chicken
+beef
+mutton
+rabbit
+rabbits_foot
+cod
+salmon
+tropical_fish
+feather
+leather
+honeycomb
+[some space]
+ink_sac
+firework
+white_dye
+red_dye
+black_dye
+green_dye
+orange_dye
+[some space]
+/setblock -2485 55 -253 minecraft:glass_pane[east=false,north=true,south=false,waterlogged=false,west=false]
+/setblock -2485 55 -254 minecraft:red_stained_glass_pane[east=false,north=true,south=true,waterlogged=false,west=false]
+/setblock -2485 55 -255 minecraft:red_stained_glass
+/setblock -2485 55 -256 minecraft:crafting_table
+[some space]
+shulker_shell
+/setblock -2485 55 -295 minecraft:chorus_flower[age=0]
+/setblock -2485 55 -296 minecraft:end_stone_brick_slab[type=bottom,waterlogged=false]
+/setblock -2485 55 -297 minecraft:end_stone_brick_stairs[facing=west,half=bottom,shape=straight,waterlogged=false]
+/setblock -2485 55 -298 minecraft:end_stone_bricks
+[2 spaces]
+/setblock -2485 55 -301 minecraft:purpur_pillar[axis=y]
+/setblock -2485 55 -302 minecraft:purpur_block
+/setblock -2485 55 -303 minecraft:end_stone
+
+# Unstackables
+Shields: shield
+Bows, rods, and crossbows: bow, fishing_rod, crossbow
+Potions: potion, splash_potion, lingering_potion
+Empty shulker boxes: shulker_box, *_shulker_box
+Cake: cake
+Totems of Death Cancelation: totems_of_undying
+Solely soul speed soles: iron_boots
+More potions: potion, splash_potion, lingering_potion
+Extra discs: disc
+Lava: lava_bucket
+Water: water_bucket
+Milk: milk_bucket
+
+Other diamond tools: diamond_hoe, diamond_sword
+Stew: suspicious_stew, rabbit_stew, mushroom_stew
+Diamond pickaxe: diamond_pickaxe
+
+
+
+
+
+
