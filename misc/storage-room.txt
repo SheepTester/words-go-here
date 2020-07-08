@@ -278,9 +278,9 @@ tropical_fish
 feather
 leather
 honeycomb
-[some space]
+[some space to /setblock -2485 55 -236 minecraft:spruce_sign[rotation=12,waterlogged=false]]
 ink_sac
-firework
+firework_rocket
 white_dye
 red_dye
 black_dye
@@ -304,22 +304,28 @@ shulker_shell
 @/
 
 Stackable entrance at /setblock -2479 51 -260 minecraft:ladder[facing=south,waterlogged=false]
+C = chest; b = block label; | = pillar; L = ladder; . = centre; [space] = space
+CCb  |L  .  L|  bCC
+ladders are every 6 blocks:
+     L     L ...
+(Starts with no space)
 
 # Unstackables
+!unstackables
 A Shields: shield
 B Bows, rods, and crossbows: bow, fishing_rod, crossbow
 C Potions: potion, splash_potion, lingering_potion
 D Empty shulker boxes: shulker_box, *_shulker_box
 E Cake: cake
-F Totems of Death Cancelation: totems_of_undying
+F Totems of Death Cancelation: totem_of_undying
 G Solely soul speed soles: iron_boots
 H More potions: potion, splash_potion, lingering_potion
-I Extra discs: disc
+I Extra discs: music_disc_*
 J Lava: lava_bucket
 K Water: water_bucket
 L Milk: milk_bucket
-
-M Other diamond tools: diamond_hoe, diamond_sword
+#
+M Other diamond tools: diamond_hoe, diamond_sword, diamond_horse_armor
 N Stew: suspicious_stew, rabbit_stew, mushroom_stew
 O Diamond pickaxe: diamond_pickaxe
 P Diamond shovel: diamond_shovel
@@ -328,13 +334,14 @@ R Diamond chestplate: diamond_chestplate
 S Diamond leggings: diamond_leggings
 T Diamond boots: diamond_boots
 U Only unenchanted iron axes: iron_axe
-V Gold and inferior armour and tools: leather_{*ARMOUR}, gold_{*TOOLS}, gold_{*ARMOUR}, wooden_{*TOOLS}, stone_{*TOOLS}, golden_horse_armor, leather_horse_armor
-W Iron armour: iron_{*ARMOUR}
+V Gold and inferior armour and tools: leather_{*ARMOUR}, golden_{*TOOLS}, golden_{*ARMOUR}, wooden_{*TOOLS}, stone_{*TOOLS}, golden_horse_armor, leather_horse_armor
+W Iron armour: iron_{*ARMOUR}, iron_horse_armor
 X Iron tools: iron_{*TOOLS}
 Y Saddles: saddle
 Z Transportation: *_boat, minecart
 0 Flint and steel: flint_and_steel
 1 Shears: shears
+!/
 
 IJKL       SQOM
 IJKL       SQOM

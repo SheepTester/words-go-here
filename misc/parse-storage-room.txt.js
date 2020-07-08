@@ -7,18 +7,23 @@ function fetchStuff () {
   ])
 }
 
-function findBlockBy (textures, value, prop = 'id') {
+function findItemBy (textures, value, prop = 'id') {
   return textures.find(entry => entry[prop] === value)
 }
 
 // Note: Z goes upwards
 const setblockRegex = /^\/setblock -\d+ \d+ -(\d+) minecraft:(\w+)/
-const spaceRegex = /^\[(some|\d+) spaces?(?: to z=(\d+))?\]/
+const spaceRegex = /^\[(some|\d+) spaces?(?: to \/setblock -?\d+ \d+ -?(\d+)[^\]]*)?\]/
+const unstackableRegex = /^([A-Z]) ([^:]+): (.+)$/
+
+const armour = 'helmet chestplate leggings boots'.split(' ')
+const tools = 'sword shovel pickaxe hoe axe'.split(' ')
 
 export async function prepare () {
   const [text, { items: textures }] = await fetchStuff()
 
   const stackables = {}
+  const unstackables = {}
   let mode = null
   let submode = null
   function noZIsNowKnown (z) {
@@ -40,7 +45,7 @@ export async function prepare () {
       if (line === '@/') {
         mode = null
         for (const [, blockId] of submode.pairs) {
-          if (!findBlockBy(textures, blockId)) {
+          if (!findItemBy(textures, blockId)) {
             console.warn(`${blockId} is not a valid item tag.`)
           }
         }
@@ -49,6 +54,12 @@ export async function prepare () {
       } else {
         mode = 'stackables'
         submode = { name: line.slice(1), z: null, noZ: [], pairs: [] }
+      }
+    } else if (line[0] === '!') {
+      if (line === '!/') {
+        mode = null
+      } else {
+        mode = 'unstackables'
       }
     } else if (mode === 'stackables') {
       const match = line.match(setblockRegex)
@@ -95,11 +106,47 @@ export async function prepare () {
           submode.pairs.push([submode.z, `minecraft:${line}`])
         }
       }
+    } else if (mode === 'unstackables') {
+      const match = line.match(unstackableRegex)
+      if (match) {
+        const [, id, name, tags] = match
+        const itemIds = []
+        for (const tag of tags.split(', ')) {
+          if (tag.includes('{*ARMOUR}')) {
+            for (const armourPiece of armour) {
+              itemIds.push('minecraft:' + tag.replace('{*ARMOUR}', armourPiece))
+            }
+          } else if (tag.includes('{*TOOLS}')) {
+            for (const tool of tools) {
+              itemIds.push('minecraft:' + tag.replace('{*TOOLS}', tool))
+            }
+          } else if (tag.includes('*')) {
+            const start = 'minecraft:' + tag.slice(0, tag.indexOf('*'))
+            const end = tag.slice(tag.indexOf('*') + 1)
+            for (const { id } of textures) {
+              if (id.startsWith(start) && id.endsWith(end)) {
+                itemIds.push(id)
+              }
+            }
+          } else {
+            itemIds.push('minecraft:' + tag)
+          }
+        }
+        unstackables[id] = { name, items: itemIds }
+      }
+    }
+  }
+  for (const { items } of Object.values(unstackables)) {
+    for (const item of items) {
+      if (!findItemBy(textures, item)) {
+        console.warn(`${item} is not a valid item tag.`)
+      }
     }
   }
 
   return {
     textures,
     stackables,
+    unstackables
   }
 }
