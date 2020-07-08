@@ -295,26 +295,45 @@ shulker_shell
 /setblock -2485 55 -302 minecraft:purpur_block
 /setblock -2485 55 -303 minecraft:end_stone
 
+Stackable entrance at /setblock -2479 51 -260 minecraft:ladder[facing=south,waterlogged=false]
+
 # Unstackables
-Shields: shield
-Bows, rods, and crossbows: bow, fishing_rod, crossbow
-Potions: potion, splash_potion, lingering_potion
-Empty shulker boxes: shulker_box, *_shulker_box
-Cake: cake
-Totems of Death Cancelation: totems_of_undying
-Solely soul speed soles: iron_boots
-More potions: potion, splash_potion, lingering_potion
-Extra discs: disc
-Lava: lava_bucket
-Water: water_bucket
-Milk: milk_bucket
+A Shields: shield
+B Bows, rods, and crossbows: bow, fishing_rod, crossbow
+C Potions: potion, splash_potion, lingering_potion
+D Empty shulker boxes: shulker_box, *_shulker_box
+E Cake: cake
+F Totems of Death Cancelation: totems_of_undying
+G Solely soul speed soles: iron_boots
+H More potions: potion, splash_potion, lingering_potion
+I Extra discs: disc
+J Lava: lava_bucket
+K Water: water_bucket
+L Milk: milk_bucket
 
-Other diamond tools: diamond_hoe, diamond_sword
-Stew: suspicious_stew, rabbit_stew, mushroom_stew
-Diamond pickaxe: diamond_pickaxe
+M Other diamond tools: diamond_hoe, diamond_sword
+N Stew: suspicious_stew, rabbit_stew, mushroom_stew
+O Diamond pickaxe: diamond_pickaxe
+P Diamond shovel: diamond_shovel
+Q Diamond helmet: diamond_helmet
+R Diamond chestplate: diamond_chestplate
+S Diamond leggings: diamond_leggings
+T Diamond boots: diamond_boots
+U Only unenchanted iron axes: iron_axe
+V Gold and inferior armour and tools: leather_{*ARMOUR}, gold_{*TOOLS}, gold_{*ARMOUR}, wooden_{*TOOLS}, stone_{*TOOLS}, golden_horse_armor, leather_horse_armor 
+W Iron armour: iron_{*ARMOUR}
+X Iron tools: iron_{*TOOLS}
+Y Saddles: saddle
+Z Transportation: *_boat, minecart
+0 Flint and steel: flint_and_steel
+1 Shears: shears
 
+IJKL       SQOM
+IJKL       SQOM
+EFGH       TRPN
+EFGH       TRPN
 
-
-
-
+           XWVU
+ABCD       XWVU
+ABCD   *   10ZY
 
