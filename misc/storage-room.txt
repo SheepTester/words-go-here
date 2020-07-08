@@ -1,4 +1,5 @@
 # Left side, facing input, of stackable storage
+@floor1Left
 /setblock -2473 51 -206 minecraft:stone
 /setblock -2473 51 -207 minecraft:stone_bricks
 /setblock -2473 51 -208 minecraft:granite
@@ -89,8 +90,10 @@ slime_ball
 /setblock -2473 51 -301 minecraft:dried_kelp_block
 lead
 /setblock -2473 51 -303 minecraft:mossy_stone_bricks
+@/
 
 # Right side, facing input, of stackable storage
+@floor1Right
 [1 space]
 /setblock -2485 51 -207 minecraft:emerald_block
 emerald
@@ -184,8 +187,10 @@ ice
 /setblock -2485 51 -301 minecraft:daylight_detector[inverted=false,power=0]
 /setblock -2485 51 -302 minecraft:iron_door[facing=west,half=lower,hinge=right,open=false,powered=false]
 /setblock -2485 51 -303 minecraft:red_sand
+@/
 
 # Left side, second floor, facing input
+@floor2Left
 kelp
 egg
 flint
@@ -246,11 +251,13 @@ fire_charge
 /setblock -2473 55 -272 minecraft:gilded_blackstone
 /setblock -2473 55 -273 minecraft:polished_blackstone_bricks
 [some space]
+@/
 
 # Right side, facing input, second floor
+@floor2Right
 arrow
 bone
-bonemeal
+bone_meal
 /setblock -2485 55 -209 minecraft:bone_block[axis=y]
 gunpowder
 rotten_flesh
@@ -264,7 +271,7 @@ chicken
 beef
 mutton
 rabbit
-rabbits_foot
+rabbit_foot
 cod
 salmon
 tropical_fish
@@ -294,6 +301,7 @@ shulker_shell
 /setblock -2485 55 -301 minecraft:purpur_pillar[axis=y]
 /setblock -2485 55 -302 minecraft:purpur_block
 /setblock -2485 55 -303 minecraft:end_stone
+@/
 
 Stackable entrance at /setblock -2479 51 -260 minecraft:ladder[facing=south,waterlogged=false]
 
@@ -320,7 +328,7 @@ R Diamond chestplate: diamond_chestplate
 S Diamond leggings: diamond_leggings
 T Diamond boots: diamond_boots
 U Only unenchanted iron axes: iron_axe
-V Gold and inferior armour and tools: leather_{*ARMOUR}, gold_{*TOOLS}, gold_{*ARMOUR}, wooden_{*TOOLS}, stone_{*TOOLS}, golden_horse_armor, leather_horse_armor 
+V Gold and inferior armour and tools: leather_{*ARMOUR}, gold_{*TOOLS}, gold_{*ARMOUR}, wooden_{*TOOLS}, stone_{*TOOLS}, golden_horse_armor, leather_horse_armor
 W Iron armour: iron_{*ARMOUR}
 X Iron tools: iron_{*TOOLS}
 Y Saddles: saddle
@@ -336,4 +344,3 @@ EFGH       TRPN
            XWVU
 ABCD       XWVU
 ABCD   *   10ZY
-
