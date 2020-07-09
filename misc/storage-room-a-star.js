@@ -4,14 +4,15 @@ export class Board {
     this.height = height
     this._board = new Array(width * height).fill(defaultValue)
     this.tag = Math.random().toString(36).slice(2)
+    this.distances = new Map()
   }
 
   get (x, y) {
-    return this._board[y * this.height + x]
+    return this._board[y * this.width + x]
   }
 
   set (x, y, value) {
-    this._board[y * this.height + x] = value
+    this._board[y * this.width + x] = value
   }
 
   isValid (x, y) {
@@ -40,6 +41,12 @@ export class Board {
 
   setTag (tag) {
     this.tag = tag
+    return this
+  }
+
+  setDistanceTo (board, dist) {
+    this.distances.set(board, dist)
+    board.distances.set(this, dist)
     return this
   }
 }
@@ -74,6 +81,8 @@ export class ElemBoard extends Board {
   }
 
   moveTo (x, y) {
+    this.x = x
+    this.y = y
     this._wrapper.style.setProperty('--x', x)
     this._wrapper.style.setProperty('--y', y)
     return this
@@ -91,27 +100,45 @@ export class ElemBoard extends Board {
   }
 }
 
+function getDefault (map, key, makeDefault) {
+  let value = map.get(key)
+  if (!value) {
+    value = makeDefault()
+    map.set(key, value)
+  }
+  return value
+}
+
 function aStar (start, guessDist, isGoal) {
   if (!start.board.isValid(start.x, start.y)) return null
 
   // Queue will be maintained such that it is in order of ascending f score
-  const queue = []
-  const cameFrom = new Map([start.board, start.board.sameSize()])
+  const guessedStartDist = guessDist(start)
+  const queue = [{ pos: start, probWorth: guessedStartDist }]
+  const cameFrom = new Map([[start.board, start.board.sameSize()]])
   // g score
-  const bestScores = new Map([start.board, start.board.sameSize(Infinity)])
+  const bestScores = new Map([[start.board, start.board.sameSize(Infinity)]])
   bestScores.get(start.board).set(start.x, start.y, 0)
   // f score
-  const probWorthIfUsed = new Map([start.board, start.board.sameSize(Infinity)])
-  bestScores.get(start.board).set(start.x, start.y, guessDist(start))
+  const probWorthIfUsed =
+    new Map([[start.board, start.board.sameSize(Infinity)]])
+  bestScores.get(start.board).set(start.x, start.y, guessedStartDist)
 
   function processNeighbour (from, scoreToNeighbour, next) {
-    if (!next.board.isValid(next.x, next.y)) return
-    const currentBestScore = bestScores.get(next.board).get(next.x, next.y)
+    if (!next.board.isValid(next.x, next.y)) {
+      return
+    }
+    const nextBoardBestScores =
+      getDefault(bestScores, next.board, () => next.board.sameSize(Infinity))
+    const currentBestScore = nextBoardBestScores.get(next.x, next.y)
     if (scoreToNeighbour < currentBestScore) {
-      cameFrom.get(next.board).set(next.x, next.y, from)
-      bestScores.get(next.board).set(next.x, next.y, scoreToNeighbour)
+      getDefault(cameFrom, next.board, () => next.board.sameSize())
+        .set(next.x, next.y, from)
+      nextBoardBestScores.set(next.x, next.y, scoreToNeighbour)
       const probWorth = scoreToNeighbour + guessDist(next)
-      probWorthIfUsed.get(next.board).set(next.x, next.y, probWorth)
+      getDefault(probWorthIfUsed, next.board, () =>
+        next.board.sameSize(Infinity))
+        .set(next.x, next.y, probWorth)
       // Insert in proper position in queue per f score
       const index = queue.findIndex(({ pos }) => pos === next)
       if (index !== -1) {
@@ -126,13 +153,13 @@ function aStar (start, guessDist, isGoal) {
   }
 
   while (queue.length) {
-    const next = queue.shift()
+    const { pos: next } = queue.shift()
     if (isGoal(next)) {
       const path = []
       let temp = next
       do {
         path.unshift(temp)
-        temp = cameFrom.get(next.board).get(next.x, next.y)
+        temp = cameFrom.get(temp.board).get(temp.x, temp.y)
       } while (temp)
       // Presumably start's cameFrom should be empty?
       return { goal: next, path }
@@ -156,18 +183,27 @@ function posToString ({ board, x, y }) {
   return `${board.tag}(${x}, ${y})`
 }
 
-function pathFind (start, goals) {
+export function pathFind (start, goals) {
   const path = []
+  const strGoals = new Map(Array.from(goals, goal => [posToString(goal), goal]))
   function guessDistToClosestGoal (pos) {
-    // TODO
+    return Math.min(...Array.from(strGoals.values(), goal => {
+      if (goal.board === pos.board) {
+        // Manhattan distance
+        return Math.abs(goal.x - pos.x) + Math.abs(goal.y - pos.y)
+      } else {
+        // 7 is a magic number!
+        return (pos.board.distances.get(goal.board) || 1) * 7
+      }
+    }))
   }
-  const strGoals = new Set(goals.map(posToString))
   function isGoal (pos) {
     return strGoals.has(posToString(pos))
   }
-  while (goals.size) {
-    const { goal, next: subPath } = aStar(start, guessDistToClosestGoal, isGoal)
-    if (!subPath) return null
+  while (strGoals.size) {
+    const result = aStar(start, guessDistToClosestGoal, isGoal)
+    if (!result) return null
+    const { goal, path: subPath } = result
     strGoals.delete(posToString(goal))
     path.push(...subPath)
     start = path[path.length - 1]

@@ -41,6 +41,7 @@
         position: absolute;
         top: 0;
         left: 0;
+        z-index: 2;
         width: var(--cell-size);
         height: var(--cell-size);
         image-rendering: crisp-edges;
@@ -80,7 +81,7 @@
         top: 0;
         right: 0;
         background-color: rgba(0, 0, 0, 0.8);
-        z-index: 1;
+        z-index: 3;
         width: 300px;
       }
       .search-box {
@@ -122,9 +123,44 @@
         margin: 0;
         padding: 10px;
       }
+      .path {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        overflow: visible;
+        z-index: 1;
+        pointer-events: none;
+      }
+      .ladders,
+      .main {
+        fill: none;
+        stroke-width: 0.1;
+        transform: scale(20);
+        animation: stroke-loop .5s linear infinite;
+      }
+      .ladders {
+        stroke: rgba(175, 69, 210, 0.5);
+        stroke-dasharray: 0.35;
+      }
+      .main {
+        stroke: white;
+        stroke-dasharray: 0.69 0.1;
+      }
+      @keyframes stroke-loop {
+        from {
+          stroke-dashoffset: 0;
+        }
+        to {
+          stroke-dashoffset: -0.7;
+        }
+      }
     </style>
   </head>
   <body>
+    <svg xmlns="http://www.w3.org/2000/svg" class="path">
+      <path class="ladders" id="ladders-path"/>
+      <path class="main" id="main-path"/>
+    </svg>
     <div class="search-area">
       <input
         type="search"
@@ -143,8 +179,12 @@
     </div>
     <script type="module">
       import { prepare, findItemBy } from './parse-storage-room.txt.js'
-      import { Board, ElemBoard } from './storage-room-a-star.js'
+      import { Board, ElemBoard, pathFind } from './storage-room-a-star.js'
       import { Directory } from './storage-room-search-results.js'
+
+      function random (min, max) {
+        return Math.random() * (max - min) + min
+      }
 
       async function main () {
         const { textures, stackables, data } = await prepare()
@@ -207,6 +247,15 @@
           unstackables: new Board(9, data.unstackablesLeft.length + 1)
             .setTag('unstackables')
         }
+        boards.stackables
+          .setDistanceTo(boards.elevatedLeft, 1)
+          .setDistanceTo(boards.elevatedRight, 1)
+          .setDistanceTo(boards.unstackables, 1)
+        boards.elevatedLeft
+          .setDistanceTo(boards.elevatedRight, 2)
+          .setDistanceTo(boards.unstackables, 2)
+        boards.elevatedRight
+          .setDistanceTo(boards.unstackables, 2)
         addStackablesTo(boards.stackables, stackables.floor1Left, 0)
         addStackablesTo(
           boards.stackables,
@@ -375,20 +424,55 @@
           updateFilter(searchBox.value)
         })
 
+        const laddersPath = document.getElementById('ladders-path')
+        const mainPath = document.getElementById('main-path')
         let wasHighlighted = []
         let selectedIds = new Set()
+        const start = {
+          board: boards.unstackables,
+          x: Math.floor(boards.unstackables.width / 2),
+          y: boards.unstackables.height - 1
+        }
         results.onSelect = targetItems => {
           selectedIds = new Set(Array.from(targetItems, ({ id }) => id))
           for (const elem of wasHighlighted) {
             elem.classList.remove('highlighted')
           }
-          wasHighlighted = chests
-            .filter(({ items }) => items.some(item => selectedIds.has(item)))
+          const highlighted = new Map(
+            chests
+              .filter(({ items }) => items.some(item => selectedIds.has(item)))
+              .map(({ board, x, y }) => {
+                const elem = elemBoards.get(board).get(x, y)
+                elem.classList.add('highlighted')
+                return [elem, { board, x, y }]
+              })
+          )
+          wasHighlighted = highlighted.keys()
+          const path = (pathFind(start, highlighted.values()) || [])
             .map(({ board, x, y }) => {
-              const elem = elemBoards.get(board).get(x, y)
-              elem.classList.add('highlighted')
-              return elem
+              const elem = elemBoards.get(board)
+              return { board, x: x + elem.x, y: y + elem.y }
             })
+          let laddersPathD = ''
+          let mainPathD = ''
+          for (let i = 0; i < path.length; i++) {
+            const { board, x, y } = path[i]
+            if (i > 0 && path[i - 1].board !== board) {
+              const { x: oldX, y: oldY } = path[i - 1]
+              laddersPathD += `M ${oldX} ${oldY} Q ${
+                (oldX + x) / 2 + Math.random() * 10 - 5
+              } ${
+                (oldY + y) / 2 + Math.random() * 10 - 5
+              }, ${x} ${y}`
+              mainPathD += `M ${x} ${y}`
+            } else if (i === 0) {
+              mainPathD += `M ${x} ${y}`
+            } else {
+              mainPathD += `L ${x} ${y}`
+            }
+          }
+          laddersPath.setAttributeNS(null, 'd', laddersPathD)
+          mainPath.setAttributeNS(null, 'd', mainPathD)
         }
 
         window.addEventListener('resize', results.resize)

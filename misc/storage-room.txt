@@ -304,7 +304,7 @@ shulker_shell
 @/
 
 Stackable entrance at /setblock -2479 51 -260 minecraft:ladder[facing=south,waterlogged=false]
-$#stackableEntrance 260
+$#stackableEntrance;260
 C = chest; b = block label; | = pillar; L = ladder; . = centre; [space] = space
 CCb  |L  .  L|  bCC
  12345678901234567
