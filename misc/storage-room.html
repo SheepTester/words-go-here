@@ -72,6 +72,9 @@
       .chest-items {
         color: rgba(255, 255, 255, 0.5);
       }
+      .highlight-id {
+        background-color: #40ae40;
+      }
       .search-area {
         position: fixed;
         top: 0;
@@ -114,6 +117,11 @@
       .selected {
         background-color: #6b87b1;
       }
+      .credits {
+        font-size: 10px;
+        margin: 0;
+        padding: 10px;
+      }
     </style>
   </head>
   <body>
@@ -125,6 +133,13 @@
         placeholder="Search for items"
         autofocus>
       <ul class="results" id="results"></ul>
+      <p class="credits minecraft-white">
+        Thanks to
+        <a href="https://github.com/destruc7i0n/minecraft-textures" class="minecraft-blue">destruc7i0n</a>
+        for the item textures and
+        <a href="https://github.com/South-Paw/typeface-minecraft" class="minecraft-blue">typeface-minecraft</a>
+        for the Minecraft font and text colours.
+      </p>
     </div>
     <script type="module">
       import { prepare, findItemBy } from './parse-storage-room.txt.js'
@@ -300,7 +315,11 @@
                     '\n',
                     Object.assign(document.createElement('span'), {
                       className: 'chest-items minecraft-gray',
-                      textContent: items.join(', ')
+                      innerHTML: items
+                        .map(id => selectedIds.has(id)
+                          ? `<span class="highlight-id">${id}</span>`
+                          : id)
+                        .join(', ')
                     }),
                     '\n',
                   )
@@ -361,13 +380,14 @@
         })
 
         let wasHighlighted = []
+        let selectedIds = new Set()
         results.onSelect = targetItems => {
-          const ids = new Set(Array.from(targetItems, ({ id }) => id))
+          selectedIds = new Set(Array.from(targetItems, ({ id }) => id))
           for (const elem of wasHighlighted) {
             elem.classList.remove('highlighted')
           }
           wasHighlighted = chests
-            .filter(({ items }) => items.some(item => ids.has(item)))
+            .filter(({ items }) => items.some(item => selectedIds.has(item)))
             .map(({ board, x, y }) => {
               const elem = elemBoards.get(board).get(x, y)
               elem.classList.add('highlighted')
