@@ -124,10 +124,15 @@ function aStar (start, guessDist, isGoal) {
     new Map([[start.board, start.board.sameSize(Infinity)]])
   bestScores.get(start.board).set(start.x, start.y, guessedStartDist)
 
-  function processNeighbour (from, scoreToNeighbour, next) {
+  function processNeighbour (from, scoreToNeighbour, next, fromChest) {
     if (!next.board.isValid(next.x, next.y)) {
       return
     }
+    const cell = next.board.get(next.x, next.y)
+    if (cell && !cell.ladder && !isGoal(next)) {
+      return
+    }
+
     const nextBoardBestScores =
       getDefault(bestScores, next.board, () => next.board.sameSize(Infinity))
     const currentBestScore = nextBoardBestScores.get(next.x, next.y)
