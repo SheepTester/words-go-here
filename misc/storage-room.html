@@ -11,23 +11,79 @@
     <script src="/sheep3.js" charset="utf-8"></script>
 
     <style>
-      /* TEMP */
+      @font-face {
+        font-family: 'Minecraftia';
+        font-style: normal;
+        font-weight: 400;
+        src: url('https://sheeptester.github.io/img/Minecraftia-Regular.ttf');
+      }
+      :root {
+        --cell-size: 20px;
+      }
+      body {
+        font-family: 'Minecraftia';
+        font-size: 12px;
+      }
+      .board {
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform: translate(calc(var(--x) * var(--cell-size)), calc(var(--y) * var(--cell-size)));
+        width: calc(var(--width) * var(--cell-size));
+        height: calc(var(--height) * var(--cell-size));
+        font-size: 0;
+        background-size: calc(2 * var(--cell-size));
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 2 2'%3E%3Cpath fill='%23eee' d='M0 0h1v2h1V1H0z'/%3E%3C/svg%3E");
+      }
+      .cell {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: var(--cell-size);
+        height: var(--cell-size);
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+        background-size: contain;
+        transform: translate(calc(var(--x) * var(--cell-size)), calc(var(--y) * var(--cell-size)));
+      }
+      .mouseover {
+        position: fixed;
+        z-index: 5;
+        background-color: rgba(0, 0, 0, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 5px;
+        color: white;
+        pointer-events: none;
+        white-space: pre-wrap;
+        max-width: 300px;
+      }
+      .chest-name,
+      .chest-items {
+        display: inline-block;
+      }
+      .chest-name:not(:first-child) {
+        margin-top: 10px;
+      }
+      .chest-items {
+        color: rgba(255, 255, 255, 0.5);
+      }
     </style>
   </head>
   <body>
     <script type="module">
       import { prepare, findItemBy } from './parse-storage-room.txt.js'
-      import { Board } from './storage-room-a-star.js'
+      import { Board, ElemBoard } from './storage-room-a-star.js'
 
       async function main () {
         const { textures, stackables, data } = await prepare()
+        const zStart = stackables.floor1Left[0][0]
 
         const chests = []
-        const chestTexture = findItemBy(textures, 'minecraft:chest')
+        const chestTexture = findItemBy(textures, 'minecraft:chest').texture
         function addStackablesTo (board, stackables, x) {
           for (const [z, item] of stackables) {
             const entry = findItemBy(textures, item)
-            board.setSafely(x, z, {
+            board.setSafely(x, z - zStart, {
               texture: entry.texture,
               entries: [
                 {
@@ -36,7 +92,7 @@
                 }
               ]
             })
-            chests.push({ items: [item], board, x, y: z })
+            chests.push({ items: [item], board, x, y: z - zStart })
           }
         }
         function addUnstackablesTo (board, unstackables, x) {
@@ -57,26 +113,26 @@
           }
         }
 
-        const ladderTexture = findItemBy(textures, 'minecraft:ladder')
+        const ladderTexture = findItemBy(textures, 'minecraft:ladder').texture
         function addLadderPair (board1, x1, y1, board2, x2, y2) {
           board1.setSafely(x1, y1, {
             texture: ladderTexture,
-            ladder: board2
+            ladder: { board: board2, x: x2, y: y2 }
           })
           board2.setSafely(x2, y2, {
             texture: ladderTexture,
-            ladder: board1
+            ladder: { board: board1, x: x1, y: y1 }
           })
         }
 
         const rows = stackables.floor1Left[stackables.floor1Left.length - 1][0]
-          - stackables.floor1Left[0][0] + 1
+          - zStart + 1
         // Magic numbers yes please!
         const boards = {
           stackables: new Board(17, rows),
           elevatedLeft: new Board(5, rows),
           elevatedRight: new Board(5, rows),
-          unstackables: new Board(9, data.unstackablesLeft.length),
+          unstackables: new Board(9, data.unstackablesLeft.length)
         }
         addStackablesTo(boards.stackables, stackables.floor1Left, 0)
         addStackablesTo(boards.stackables, stackables.floor1Right, boards.stackables.width - 1)
@@ -87,7 +143,7 @@
         addLadderPair(
           boards.stackables,
           Math.floor(boards.stackables.width / 2),
-          data.stackableEntrance - stackables.floor1Left[0][0],
+          data.stackableEntrance - zStart,
           boards.unstackables,
           Math.floor(boards.unstackables.width / 2),
           boards.unstackables.height - 1
@@ -110,6 +166,75 @@
             y
           )
         }
+
+        const elemBoards = {
+          elevatedLeft: new ElemBoard(boards.elevatedLeft)
+            .addTo(document.body)
+            .setTag('elevatedLeft'),
+          stackables: new ElemBoard(boards.stackables)
+            .moveTo(boards.elevatedLeft.width + 1, 0)
+            .addTo(document.body)
+            .setTag('stackables'),
+          elevatedRight: new ElemBoard(boards.elevatedRight)
+            .moveTo(boards.elevatedLeft.width + boards.stackables.width + 2, 0)
+            .addTo(document.body)
+            .setTag('elevatedRight'),
+          unstackables: new ElemBoard(boards.unstackables)
+            .moveTo(
+              boards.elevatedLeft.width + 1 + Math.floor(
+                (boards.stackables.width - boards.unstackables.width) / 2
+              ),
+              boards.stackables.height + 1
+            )
+            .addTo(document.body)
+            .setTag('unstackables')
+        }
+        const mouseover = document.createElement('div')
+        mouseover.className = 'mouseover'
+        document.body.appendChild(mouseover)
+        let lastHover = null
+        let rect
+        document.addEventListener('pointermove', e => {
+          const board = e.target.closest('.board')
+          let found = false
+          if (board && e.target.classList.contains('cell')) {
+            const { entries } = boards[board.dataset.tag].getSafely(
+              +e.target.dataset.x,
+              +e.target.dataset.y
+            ) || {}
+            if (entries) {
+              const width = window.innerWidth
+              const height = window.innerHeight
+              if (lastHover !== entries) {
+                mouseover.innerHTML = ''
+                for (const { name, items } of entries) {
+                  mouseover.append(
+                    Object.assign(document.createElement('span'), {
+                      className: 'chest-name',
+                      textContent: name
+                    }),
+                    '\n',
+                    Object.assign(document.createElement('span'), {
+                      className: 'chest-items',
+                      textContent: items.join(', ')
+                    }),
+                    '\n',
+                  )
+                }
+                mouseover.style.display = null
+                lastHover = entries
+                rect = mouseover.getBoundingClientRect()
+              }
+              found = true
+              mouseover.style.left = Math.min(e.clientX, width - rect.width) + 'px'
+              mouseover.style.top = Math.min(e.clientY, height - rect.height) + 'px'
+            }
+          }
+          if (!found && lastHover !== null) {
+            mouseover.style.display = 'none'
+            lastHover = null
+          }
+        })
       }
       main()
     </script>
