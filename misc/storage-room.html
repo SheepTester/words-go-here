@@ -84,6 +84,8 @@
         list-style: none;
         margin: 0;
         padding: 0;
+        max-height: 50vh;
+        overflow: auto;
       }
       .result {
         padding: 10px;
@@ -267,6 +269,43 @@
             mouseover.style.display = 'none'
             lastHover = null
           }
+        })
+
+        const searchBox = document.getElementById('search')
+        const results = document.getElementById('results')
+        function updateFilter (filter) {
+          results.innerHTML = ''
+          if (filter) {
+            const regex = new RegExp(filter, 'ig')
+            const filtered = textures
+              .map(item => ({
+                item,
+                score: (item.readable.match(regex) || []).length +
+                  (item.id.slice('minecraft:'.length + 1).match(regex) || []).length
+              }))
+              .filter(({ score }) => score)
+              .sort((a, b) => b.score - a.score)
+            for (const { item: { readable, id, texture } } of filtered) {
+              const result = document.createElement('li')
+              result.className = 'result'
+              result.style.backgroundImage = `url("${texture}")`
+              result.append(
+                Object.assign(document.createElement('span'), {
+                  className: 'chest-name minecraft-white',
+                  innerHTML: readable.replace(regex, '<span class="matched minecraft-green">$&</span>')
+                }),
+                '\n',
+                Object.assign(document.createElement('span'), {
+                  className: 'chest-items minecraft-gray',
+                  innerHTML: id.replace(regex, '<span class="matched minecraft-green">$&</span>')
+                })
+              )
+              results.appendChild(result)
+            }
+          }
+        }
+        searchBox.addEventListener('input', e => {
+          updateFilter(searchBox.value)
         })
       }
       main()
