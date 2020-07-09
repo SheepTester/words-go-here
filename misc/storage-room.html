@@ -84,10 +84,12 @@
         list-style: none;
         margin: 0;
         padding: 0;
-        max-height: 50vh;
+        height: 50vh;
         overflow: auto;
+        position: relative;
       }
       .result {
+        position: absolute;
         padding: 10px;
         padding-left: 40px;
         background-size: 30px;
@@ -108,6 +110,7 @@
     <script type="module">
       import { prepare, findItemBy } from './parse-storage-room.txt.js'
       import { Board, ElemBoard } from './storage-room-a-star.js'
+      import { Directory } from './storage-room-search-results.js'
 
       async function main () {
         const { textures, stackables, data } = await prepare()
@@ -272,9 +275,8 @@
         })
 
         const searchBox = document.getElementById('search')
-        const results = document.getElementById('results')
+        const results = new Directory(document.getElementById('results'))
         function updateFilter (filter) {
-          results.innerHTML = ''
           if (filter) {
             const regex = new RegExp(filter, 'ig')
             const filtered = textures
@@ -285,28 +287,23 @@
               }))
               .filter(({ score }) => score)
               .sort((a, b) => b.score - a.score)
-            for (const { item: { readable, id, texture } } of filtered) {
-              const result = document.createElement('li')
-              result.className = 'result'
-              result.style.backgroundImage = `url("${texture}")`
-              result.append(
-                Object.assign(document.createElement('span'), {
-                  className: 'chest-name minecraft-white',
-                  innerHTML: readable.replace(regex, '<span class="matched minecraft-green">$&</span>')
-                }),
-                '\n',
-                Object.assign(document.createElement('span'), {
-                  className: 'chest-items minecraft-gray',
-                  innerHTML: id.replace(regex, '<span class="matched minecraft-green">$&</span>')
-                })
-              )
-              results.appendChild(result)
-            }
+            results.students = filtered
+            results.filter = regex
+            results.updateData()
+            results.updateScroll()
+          } else {
+            results.students = []
+            results.filter = new RegExp()
+            results.updateData()
+            results.updateScroll()
           }
         }
         searchBox.addEventListener('input', e => {
           updateFilter(searchBox.value)
         })
+
+        window.addEventListener('resize', results.resize)
+        await results.resize()
       }
       main()
     </script>
