@@ -201,10 +201,11 @@
           - zStart + 1
         // Magic numbers yes please!
         const boards = {
-          stackables: new Board(17, rows),
-          elevatedLeft: new Board(5, rows),
-          elevatedRight: new Board(5, rows),
+          stackables: new Board(17, rows).setTag('stackables'),
+          elevatedLeft: new Board(5, rows).setTag('elevatedLeft'),
+          elevatedRight: new Board(5, rows).setTag('elevatedRight'),
           unstackables: new Board(9, data.unstackablesLeft.length + 1)
+            .setTag('unstackables')
         }
         addStackablesTo(boards.stackables, stackables.floor1Left, 0)
         addStackablesTo(
@@ -254,16 +255,13 @@
         const elemBoards = new Map([
           [
             boards.elevatedLeft,
-            new ElemBoard(boards.elevatedLeft)
-              .addTo(document.body)
-              .setTag('elevatedLeft')
+            new ElemBoard(boards.elevatedLeft).addTo(document.body)
           ],
           [
             boards.stackables,
             new ElemBoard(boards.stackables)
               .moveTo(boards.elevatedLeft.width + 1, 0)
               .addTo(document.body)
-              .setTag('stackables')
           ],
           [
             boards.elevatedRight,
@@ -273,7 +271,6 @@
                 0
               )
               .addTo(document.body)
-              .setTag('elevatedRight')
           ],
           [
             boards.unstackables,
@@ -285,7 +282,6 @@
                 boards.stackables.height + 1
               )
               .addTo(document.body)
-              .setTag('unstackables')
           ]
         ])
         const mouseover = document.createElement('div')

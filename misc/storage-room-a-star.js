@@ -3,6 +3,7 @@ export class Board {
     this.width = width
     this.height = height
     this._board = new Array(width * height).fill(defaultValue)
+    this.tag = Math.random().toString(36).slice(2)
   }
 
   get (x, y) {
@@ -25,6 +26,7 @@ export class Board {
     if (this.isValid(x, y)) {
       this.set(x, y, value)
     }
+    return this
   }
 
   getLocation (value) {
@@ -34,6 +36,11 @@ export class Board {
 
   sameSize (defaultValue) {
     return new Board(this.width, this.height, defaultValue)
+  }
+
+  setTag (tag) {
+    this.tag = tag
+    return this
   }
 }
 
@@ -46,6 +53,7 @@ export class ElemBoard extends Board {
     wrapper.style.setProperty('--width', this.width)
     wrapper.style.setProperty('--height', this.height)
     this._wrapper = wrapper
+    this.setTag(sourceBoard.tag)
 
     for (let x = 0; x < this.width; x++) {
       for (let y = 0; y < this.height; y++) {
@@ -77,6 +85,7 @@ export class ElemBoard extends Board {
   }
 
   setTag (tag) {
+    super.setTag(tag)
     this._wrapper.dataset.tag = tag
     return this
   }
@@ -96,7 +105,7 @@ function aStar (start, guessDist, isGoal) {
   bestScores.get(start.board).set(start.x, start.y, guessDist(start))
 
   function processNeighbour (from, scoreToNeighbour, next) {
-    if (!next) return
+    if (!next.board.isValid(next.x, next.y)) return
     const currentBestScore = bestScores.get(next.board).get(next.x, next.y)
     if (scoreToNeighbour < currentBestScore) {
       cameFrom.get(next.board).set(next.x, next.y, from)
@@ -118,12 +127,22 @@ function aStar (start, guessDist, isGoal) {
 
   while (queue.length) {
     const next = queue.shift()
-    if (isGoal(next)) return { next, sources }
+    if (isGoal(next)) {
+      const path = []
+      let temp = next
+      do {
+        path.unshift(temp)
+        temp = cameFrom.get(next.board).get(next.x, next.y)
+      } while (temp)
+      // Presumably start's cameFrom should be empty?
+      return { goal: next, path }
+    }
     const bestScore = bestScores.get(next.board).get(next.x, next.y)
-    processNeighbour(next, bestScore + 1, next.board.getSafely(next.x - 1, next.y))
-    processNeighbour(next, bestScore + 1, next.board.getSafely(next.x + 1, next.y))
-    processNeighbour(next, bestScore + 1, next.board.getSafely(next.x, next.y - 1))
-    processNeighbour(next, bestScore + 1, next.board.getSafely(next.x, next.y + 1))
+    const { board } = next
+    processNeighbour(next, bestScore + 1, { board, x: next.x - 1, y: next.y })
+    processNeighbour(next, bestScore + 1, { board, x: next.x + 1, y: next.y })
+    processNeighbour(next, bestScore + 1, { board, x: next.x, y: next.y - 1 })
+    processNeighbour(next, bestScore + 1, { board, x: next.x, y: next.y + 1 })
     const cell = next.board.get(next.x, next.y)
     if (cell && cell.ladder) {
       processNeighbour(next, bestScore + (cell.length || 1), cell.ladder)
@@ -131,4 +150,27 @@ function aStar (start, guessDist, isGoal) {
   }
 
   return null
+}
+
+function posToString ({ board, x, y }) {
+  return `${board.tag}(${x}, ${y})`
+}
+
+function pathFind (start, goals) {
+  const path = []
+  function guessDistToClosestGoal (pos) {
+    // TODO
+  }
+  const strGoals = new Set(goals.map(posToString))
+  function isGoal (pos) {
+    return strGoals.has(posToString(pos))
+  }
+  while (goals.size) {
+    const { goal, next: subPath } = aStar(start, guessDistToClosestGoal, isGoal)
+    if (!subPath) return null
+    strGoals.delete(posToString(goal))
+    path.push(...subPath)
+    start = path[path.length - 1]
+  }
+  return path
 }
