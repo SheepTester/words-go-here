@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
+    <!--
+    Thanks to
+    https://github.com/destruc7i0n/minecraft-textures
+    https://github.com/South-Paw/typeface-minecraft
+    -->
+
     <title>Storage room</title>
     <meta name="description" content="Autosorter too BIG, must FIND"/>
 
@@ -11,18 +17,14 @@
     <script src="/sheep3.js" charset="utf-8"></script>
 
     <style>
-      @font-face {
-        font-family: 'Minecraftia';
-        font-style: normal;
-        font-weight: 400;
-        src: url('https://sheeptester.github.io/img/Minecraftia-Regular.ttf');
-      }
+      @import url('https://unpkg.com/@south-paw/typeface-minecraft@1.0.0/index.css');
       :root {
         --cell-size: 20px;
       }
       body {
-        font-family: 'Minecraftia';
+        font-family: 'Minecraft';
         font-size: 12px;
+        background-color: #222;
       }
       .board {
         position: absolute;
@@ -33,7 +35,7 @@
         height: calc(var(--height) * var(--cell-size));
         font-size: 0;
         background-size: calc(2 * var(--cell-size));
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 2 2'%3E%3Cpath fill='%23eee' d='M0 0h1v2h1V1H0z'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 2 2'%3E%3Cpath fill='%23333' d='M0 0h1v2h1V1H0z'/%3E%3C/svg%3E");
       }
       .cell {
         position: absolute;
@@ -49,13 +51,12 @@
       .mouseover {
         position: fixed;
         z-index: 5;
-        background-color: rgba(0, 0, 0, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 5px;
-        color: white;
+        background-color: rgba(15, 0, 15, 0.8);
+        border: 1px solid #270658;
+        padding: 10px;
         pointer-events: none;
         white-space: pre-wrap;
-        max-width: 300px;
+        max-width: 500px;
       }
       .chest-name,
       .chest-items {
@@ -67,9 +68,41 @@
       .chest-items {
         color: rgba(255, 255, 255, 0.5);
       }
+      .search-area {
+        position: fixed;
+        top: 0;
+        right: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 1;
+        width: 300px;
+      }
+      .search-box {
+        padding: 10px;
+        width: 100%;
+      }
+      .results {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .result {
+        padding: 10px;
+        padding-left: 40px;
+        background-size: 30px;
+        background-position: 5px 50%;
+        background-repeat: no-repeat;
+        white-space: pre-wrap;
+      }
+      .selected {
+        background-color: #6b87b1;
+      }
     </style>
   </head>
   <body>
+    <div class="search-area">
+      <input type="search" class="search-box" id="search" placeholder="Search for items" autofocus>
+      <ul class="results" id="results"></ul>
+    </div>
     <script type="module">
       import { prepare, findItemBy } from './parse-storage-room.txt.js'
       import { Board, ElemBoard } from './storage-room-a-star.js'
@@ -132,7 +165,7 @@
           stackables: new Board(17, rows),
           elevatedLeft: new Board(5, rows),
           elevatedRight: new Board(5, rows),
-          unstackables: new Board(9, data.unstackablesLeft.length)
+          unstackables: new Board(9, data.unstackablesLeft.length + 1)
         }
         addStackablesTo(boards.stackables, stackables.floor1Left, 0)
         addStackablesTo(boards.stackables, stackables.floor1Right, boards.stackables.width - 1)
@@ -146,7 +179,7 @@
           data.stackableEntrance - zStart,
           boards.unstackables,
           Math.floor(boards.unstackables.width / 2),
-          boards.unstackables.height - 1
+          data.unstackablesLeft.length - 1
         )
         for (let y = 5; y < rows; y += 6) {
           addLadderPair(
@@ -210,12 +243,12 @@
                 for (const { name, items } of entries) {
                   mouseover.append(
                     Object.assign(document.createElement('span'), {
-                      className: 'chest-name',
+                      className: 'chest-name minecraft-white',
                       textContent: name
                     }),
                     '\n',
                     Object.assign(document.createElement('span'), {
-                      className: 'chest-items',
+                      className: 'chest-items minecraft-gray',
                       textContent: items.join(', ')
                     }),
                     '\n',
