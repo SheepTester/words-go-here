@@ -49,8 +49,13 @@ class DirectoryItem {
          let {wrapper: result,name, id: idElem} = this._elems;
          if (this.student !== item) {
              this.student = item;
-             const { readable, id, texture } = item
+             const { readable, id, texture, available } = item
 
+             if (available) {
+               result.classList.remove('unavailable')
+             } else {
+               result.classList.add('unavailable')
+             }
              result.style.backgroundImage = `url("${texture}")`
              name.innerHTML = readable.replace(regex, '<span class="matched minecraft-green">$&</span>')
              idElem.innerHTML = id.replace(regex, '<span class="matched minecraft-green">$&</span>')

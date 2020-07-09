@@ -110,10 +110,15 @@
         box-sizing: border-box;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      .result:not(.unavailable) {
         cursor: pointer;
       }
       .result:not(.selected):hover {
         background-color: rgba(255, 255, 255, 0.1);
+      }
+      .unavailable {
+        opacity: 0.3;
       }
       .selected {
         background-color: #6b87b1;
@@ -390,11 +395,19 @@
 
         const searchBox = document.getElementById('search')
         const results = new Directory(document.getElementById('results'))
+        const available = new Set(
+          [].concat(...chests.map(chest => chest.items))
+        )
+        const itemList = textures
+          .map(item => ({
+            available: available.has(item.id),
+            ...item
+          }))
         function updateFilter (filter) {
           if (filter) {
             const regex = new RegExp(filter.replace(/\s+/g, '|'), 'ig')
             const lowercaseFilter = filter.toLowerCase()
-            const filtered = textures
+            const filtered = itemList
               .map(item => {
                 const id = item.id.slice('minecraft:'.length)
                 return {
@@ -403,10 +416,11 @@
                   score: (item.readable.toLowerCase() === lowercaseFilter) * 2 +
                     (id.toLowerCase() === lowercaseFilter) * 2 +
                     (item.readable.match(regex) || []).length +
-                    (id.match(regex) || []).length
+                    (id.match(regex) || []).length +
+                    (item.available ? 0 : -0.5)
                 }
               })
-              .filter(({ item, score }) => score || results.selected.has(item))
+              .filter(({ item, score }) => score > 0 || results.selected.has(item))
               .sort((a, b) => b.score - a.score)
               .map(({ item }) => item)
             results.students = filtered
