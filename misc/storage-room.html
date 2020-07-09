@@ -16,10 +16,100 @@
   </head>
   <body>
     <script type="module">
-      import { prepare } from './parse-storage-room.txt.js'
+      import { prepare, findItemBy } from './parse-storage-room.txt.js'
+      import { Board } from './storage-room-a-star.js'
 
       async function main () {
-        console.log(await prepare());
+        const { textures, stackables, data } = await prepare()
+
+        const chests = []
+        const chestTexture = findItemBy(textures, 'minecraft:chest')
+        function addStackablesTo (board, stackables, x) {
+          for (const [z, item] of stackables) {
+            const entry = findItemBy(textures, item)
+            board.setSafely(x, z, {
+              texture: entry.texture,
+              entries: [
+                {
+                  name: entry.readable,
+                  items: [item]
+                }
+              ]
+            })
+            chests.push({ items: [item], board, x, y: z })
+          }
+        }
+        function addUnstackablesTo (board, unstackables, x) {
+          for (let y = 0; y < unstackables.length; y++) {
+            const chestStack = unstackables[y]
+            if (chestStack.length) {
+              board.setSafely(x, y, {
+                texture: chestTexture,
+                entries: chestStack
+              })
+              chests.push({
+                items: [].concat(...chestStack.map(chest => chest.items)),
+                board,
+                x,
+                y
+              })
+            }
+          }
+        }
+
+        const ladderTexture = findItemBy(textures, 'minecraft:ladder')
+        function addLadderPair (board1, x1, y1, board2, x2, y2) {
+          board1.setSafely(x1, y1, {
+            texture: ladderTexture,
+            ladder: board2
+          })
+          board2.setSafely(x2, y2, {
+            texture: ladderTexture,
+            ladder: board1
+          })
+        }
+
+        const rows = stackables.floor1Left[stackables.floor1Left.length - 1][0]
+          - stackables.floor1Left[0][0] + 1
+        // Magic numbers yes please!
+        const boards = {
+          stackables: new Board(17, rows),
+          elevatedLeft: new Board(5, rows),
+          elevatedRight: new Board(5, rows),
+          unstackables: new Board(9, data.unstackablesLeft.length),
+        }
+        addStackablesTo(boards.stackables, stackables.floor1Left, 0)
+        addStackablesTo(boards.stackables, stackables.floor1Right, boards.stackables.width - 1)
+        addStackablesTo(boards.elevatedLeft, stackables.floor2Left, 0)
+        addStackablesTo(boards.elevatedRight, stackables.floor2Right, boards.elevatedRight.width - 1)
+        addUnstackablesTo(boards.unstackables, data.unstackablesLeft, 0)
+        addUnstackablesTo(boards.unstackables, data.unstackablesRight, boards.unstackables.width - 1)
+        addLadderPair(
+          boards.stackables,
+          Math.floor(boards.stackables.width / 2),
+          data.stackableEntrance - stackables.floor1Left[0][0],
+          boards.unstackables,
+          Math.floor(boards.unstackables.width / 2),
+          boards.unstackables.height - 1
+        )
+        for (let y = 5; y < rows; y += 6) {
+          addLadderPair(
+            boards.stackables,
+            5,
+            y,
+            boards.elevatedLeft,
+            boards.elevatedLeft.width - 1,
+            y
+          )
+          addLadderPair(
+            boards.stackables,
+            11,
+            y,
+            boards.elevatedRight,
+            0,
+            y
+          )
+        }
       }
       main()
     </script>

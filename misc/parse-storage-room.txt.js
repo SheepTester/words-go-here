@@ -7,14 +7,14 @@ function fetchStuff () {
   ])
 }
 
-function findItemBy (textures, value, prop = 'id') {
+export function findItemBy (textures, value, prop = 'id') {
   return textures.find(entry => entry[prop] === value)
 }
 
 // Note: Z goes upwards
 const setblockRegex = /^\/setblock -\d+ \d+ -(\d+) minecraft:(\w+)/
 const spaceRegex = /^\[(some|\d+) spaces?(?: to \/setblock -?\d+ \d+ -?(\d+)[^\]]*)?\]/
-const unstackableRegex = /^([A-Z]) ([^:]+): (.+)$/
+const unstackableRegex = /^([A-Z0-9]) ([^:]+): (.+)$/
 
 const armour = 'helmet chestplate leggings boots'.split(' ')
 const tools = 'sword shovel pickaxe hoe axe'.split(' ')
@@ -24,6 +24,7 @@ export async function prepare () {
 
   const stackables = {}
   const unstackables = {}
+  const data = {}
   let mode = null
   let submode = null
   function noZIsNowKnown (z) {
@@ -60,6 +61,20 @@ export async function prepare () {
         mode = null
       } else {
         mode = 'unstackables'
+      }
+    } else if (line[0] === '$') {
+      if (line[1] === '!') {
+        const [name, ...groups] = line.slice(2).split(';')
+        data[name] = []
+        for (const group of groups) {
+          data[name].push(Array.from(group, char => unstackables[char]))
+        }
+      } else if (line[1] === '#') {
+        const [name, value] = line.slice(2).split(';')
+        data[name] = +value
+      } else {
+        const [name, value] = line.slice(1).split(';')
+        data[name] = value
       }
     } else if (mode === 'stackables') {
       const match = line.match(setblockRegex)
@@ -147,6 +162,6 @@ export async function prepare () {
   return {
     textures,
     stackables,
-    unstackables
+    data
   }
 }

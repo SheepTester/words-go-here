@@ -304,8 +304,11 @@ shulker_shell
 @/
 
 Stackable entrance at /setblock -2479 51 -260 minecraft:ladder[facing=south,waterlogged=false]
+$#stackableEntrance 260
 C = chest; b = block label; | = pillar; L = ladder; . = centre; [space] = space
 CCb  |L  .  L|  bCC
+ 12345678901234567
+CCb  L
 ladders are every 6 blocks:
      L     L ...
 (Starts with no space)
@@ -343,11 +346,15 @@ Z Transportation: *_boat, minecart
 1 Shears: shears
 !/
 
-IJKL       SQOM
-IJKL       SQOM
-EFGH       TRPN
-EFGH       TRPN
+   123456789
+IJKL       SQOM 1
+IJKL       SQOM 2
+EFGH       TRPN 3
+EFGH       TRPN 4
+                5
+           XWVU 6
+ABCD       XWVU 7
+ABCD   *   10ZY 8
 
-           XWVU
-ABCD       XWVU
-ABCD   *   10ZY
+$!unstackablesLeft;IJKL;IJKL;EFGH;EFGH;;;ABCD;ABCD
+$!unstackablesRight;SQOM;SQOM;TRPN;TRPN;;XWVU;XWVU;10ZY
