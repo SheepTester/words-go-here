@@ -95,7 +95,13 @@
         background-size: 30px;
         background-position: 5px 50%;
         background-repeat: no-repeat;
-        white-space: pre-wrap;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+        white-space: pre;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .selected {
         background-color: #6b87b1;
@@ -285,14 +291,15 @@
                 score: (item.readable.match(regex) || []).length +
                   (item.id.slice('minecraft:'.length + 1).match(regex) || []).length
               }))
-              .filter(({ score }) => score)
+              .filter(({ item, score }) => score || results.selected.has(item))
               .sort((a, b) => b.score - a.score)
+              .map(({ item }) => item)
             results.students = filtered
             results.filter = regex
             results.updateData()
             results.updateScroll()
           } else {
-            results.students = []
+            results.students = [...results.selected]
             results.filter = new RegExp()
             results.updateData()
             results.updateScroll()
@@ -301,6 +308,10 @@
         searchBox.addEventListener('input', e => {
           updateFilter(searchBox.value)
         })
+
+        results.onSelect = targetItems => {
+          console.log(targetItems)
+        }
 
         window.addEventListener('resize', results.resize)
         await results.resize()

@@ -18,6 +18,7 @@ class DirectoryItem {
      _makeElements() {
           let result = document.createElement('li');
           result.className = 'result'
+          result.addEventListener('click', this._onClick)
 
           let name = document.createElement('span')
           name.className = 'chest-name minecraft-white'
@@ -44,7 +45,7 @@ class DirectoryItem {
           }
      }
 
-     setStudent(regex, {item}, selected=false) {
+     setStudent(regex, item, selected=false) {
          let {wrapper: result,name, id: idElem} = this._elems;
          if (this.student !== item) {
              this.student = item;
@@ -110,7 +111,7 @@ class Directory {
           this.students = [];
 
           // The student object of the selected item (NOT a DirectoryItem)
-          this.selected = null;
+          this.selected = new Set();
           // Maps y values/a unique Symbol (if not shown) to a DirectoryItem
           this._items = new Map();
 
@@ -123,20 +124,13 @@ class Directory {
      }
 
      _onItemClicked(item) {
-          if (this.selected === item.student) {
+          if (this.selected.has(item.student)) {
                item.setSelected(false);
-               this.selected = null;
+               this.selected.delete(item.student);
           } else {
-               // Mark previously selected item as unselected (if visible)
-               if (this.selected) {
-                    let selectedItem = this._items.get(this.students.indexOf(this.selected));
-                    if (selectedItem) {
-                         selectedItem.setSelected(false);
-                    }
-               }
 
                item.setSelected(true);
-               this.selected = item.student;
+               this.selected.add(item.student);
           }
           if (this.onSelect) {
                this.onSelect(this.selected);
@@ -197,7 +191,7 @@ class Directory {
                // Move a recycleable to the unclaimed position
                let recycleable = recycleables.pop();
                recycleable
-                    .setStudent(this.filter, this.students[y], this.students[y] === this.selected)
+                    .setStudent(this.filter, this.students[y], this.selected.has(this.students[y]))
                     .addTo(this.wrapper)
                     .wrapper.style.top = y * ITEM_HEIGHT + 'px';
                this._items.set(y, recycleable);
