@@ -84,6 +84,8 @@ class DirectoryItem {
 
      remove() {
           this.addTo(null);
+          // Force update the element so it regenerates based on new filter
+          this.student = null
           return this;
      }
 }

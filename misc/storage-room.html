@@ -48,6 +48,10 @@
         background-size: contain;
         transform: translate(calc(var(--x) * var(--cell-size)), calc(var(--y) * var(--cell-size)));
       }
+      .highlighted {
+        background-color: rgba(57, 155, 57, 0.5);
+        box-shadow: 0 0 10px white;
+      }
       .mouseover {
         position: fixed;
         z-index: 5;
@@ -102,6 +106,10 @@
         box-sizing: border-box;
         overflow: hidden;
         text-overflow: ellipsis;
+        cursor: pointer;
+      }
+      .result:not(.selected):hover {
+        background-color: rgba(255, 255, 255, 0.1);
       }
       .selected {
         background-color: #6b87b1;
@@ -110,7 +118,12 @@
   </head>
   <body>
     <div class="search-area">
-      <input type="search" class="search-box" id="search" placeholder="Search for items" autofocus>
+      <input
+        type="search"
+        class="search-box"
+        id="search"
+        placeholder="Search for items"
+        autofocus>
       <ul class="results" id="results"></ul>
     </div>
     <script type="module">
@@ -179,11 +192,23 @@
           unstackables: new Board(9, data.unstackablesLeft.length + 1)
         }
         addStackablesTo(boards.stackables, stackables.floor1Left, 0)
-        addStackablesTo(boards.stackables, stackables.floor1Right, boards.stackables.width - 1)
+        addStackablesTo(
+          boards.stackables,
+          stackables.floor1Right,
+          boards.stackables.width - 1
+        )
         addStackablesTo(boards.elevatedLeft, stackables.floor2Left, 0)
-        addStackablesTo(boards.elevatedRight, stackables.floor2Right, boards.elevatedRight.width - 1)
+        addStackablesTo(
+          boards.elevatedRight,
+          stackables.floor2Right,
+          boards.elevatedRight.width - 1
+        )
         addUnstackablesTo(boards.unstackables, data.unstackablesLeft, 0)
-        addUnstackablesTo(boards.unstackables, data.unstackablesRight, boards.unstackables.width - 1)
+        addUnstackablesTo(
+          boards.unstackables,
+          data.unstackablesRight,
+          boards.unstackables.width - 1
+        )
         addLadderPair(
           boards.stackables,
           Math.floor(boards.stackables.width / 2),
@@ -211,34 +236,49 @@
           )
         }
 
-        const elemBoards = {
-          elevatedLeft: new ElemBoard(boards.elevatedLeft)
-            .addTo(document.body)
-            .setTag('elevatedLeft'),
-          stackables: new ElemBoard(boards.stackables)
-            .moveTo(boards.elevatedLeft.width + 1, 0)
-            .addTo(document.body)
-            .setTag('stackables'),
-          elevatedRight: new ElemBoard(boards.elevatedRight)
-            .moveTo(boards.elevatedLeft.width + boards.stackables.width + 2, 0)
-            .addTo(document.body)
-            .setTag('elevatedRight'),
-          unstackables: new ElemBoard(boards.unstackables)
-            .moveTo(
-              boards.elevatedLeft.width + 1 + Math.floor(
-                (boards.stackables.width - boards.unstackables.width) / 2
-              ),
-              boards.stackables.height + 1
-            )
-            .addTo(document.body)
-            .setTag('unstackables')
-        }
+        const elemBoards = new Map([
+          [
+            boards.elevatedLeft,
+            new ElemBoard(boards.elevatedLeft)
+              .addTo(document.body)
+              .setTag('elevatedLeft')
+          ],
+          [
+            boards.stackables,
+            new ElemBoard(boards.stackables)
+              .moveTo(boards.elevatedLeft.width + 1, 0)
+              .addTo(document.body)
+              .setTag('stackables')
+          ],
+          [
+            boards.elevatedRight,
+            new ElemBoard(boards.elevatedRight)
+              .moveTo(
+                boards.elevatedLeft.width + boards.stackables.width + 2,
+                0
+              )
+              .addTo(document.body)
+              .setTag('elevatedRight')
+          ],
+          [
+            boards.unstackables,
+            new ElemBoard(boards.unstackables)
+              .moveTo(
+                boards.elevatedLeft.width + 1 + Math.floor(
+                  (boards.stackables.width - boards.unstackables.width) / 2
+                ),
+                boards.stackables.height + 1
+              )
+              .addTo(document.body)
+              .setTag('unstackables')
+          ]
+        ])
         const mouseover = document.createElement('div')
         mouseover.className = 'mouseover'
         document.body.appendChild(mouseover)
         let lastHover = null
         let rect
-        document.addEventListener('pointermove', e => {
+        function updateMouseover (e) {
           const board = e.target.closest('.board')
           let found = false
           if (board && e.target.classList.contains('cell')) {
@@ -270,27 +310,38 @@
                 rect = mouseover.getBoundingClientRect()
               }
               found = true
-              mouseover.style.left = Math.min(e.clientX, width - rect.width) + 'px'
-              mouseover.style.top = Math.min(e.clientY, height - rect.height) + 'px'
+              mouseover.style.left =
+                Math.min(e.clientX, width - rect.width) + 'px'
+              mouseover.style.top =
+                Math.min(e.clientY, height - rect.height) + 'px'
             }
           }
           if (!found && lastHover !== null) {
             mouseover.style.display = 'none'
             lastHover = null
           }
-        })
+        }
+        document.addEventListener('pointerdown', updateMouseover)
+        document.addEventListener('pointermove', updateMouseover)
 
         const searchBox = document.getElementById('search')
         const results = new Directory(document.getElementById('results'))
         function updateFilter (filter) {
           if (filter) {
             const regex = new RegExp(filter, 'ig')
+            const lowercaseFilter = filter.toLowerCase()
             const filtered = textures
-              .map(item => ({
-                item,
-                score: (item.readable.match(regex) || []).length +
-                  (item.id.slice('minecraft:'.length + 1).match(regex) || []).length
-              }))
+              .map(item => {
+                const id = item.id.slice('minecraft:'.length)
+                return {
+                  item,
+                  // Adding booleans omg
+                  score: (item.readable.toLowerCase() === lowercaseFilter) * 2 +
+                    (id.toLowerCase() === lowercaseFilter) * 2 +
+                    (item.readable.match(regex) || []).length +
+                    (id.match(regex) || []).length
+                }
+              })
               .filter(({ item, score }) => score || results.selected.has(item))
               .sort((a, b) => b.score - a.score)
               .map(({ item }) => item)
@@ -309,8 +360,19 @@
           updateFilter(searchBox.value)
         })
 
+        let wasHighlighted = []
         results.onSelect = targetItems => {
-          console.log(targetItems)
+          const ids = new Set(Array.from(targetItems, ({ id }) => id))
+          for (const elem of wasHighlighted) {
+            elem.classList.remove('highlighted')
+          }
+          wasHighlighted = chests
+            .filter(({ items }) => items.some(item => ids.has(item)))
+            .map(({ board, x, y }) => {
+              const elem = elemBoards.get(board).get(x, y)
+              elem.classList.add('highlighted')
+              return elem
+            })
         }
 
         window.addEventListener('resize', results.resize)
