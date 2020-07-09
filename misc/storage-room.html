@@ -392,7 +392,7 @@
         const results = new Directory(document.getElementById('results'))
         function updateFilter (filter) {
           if (filter) {
-            const regex = new RegExp(filter, 'ig')
+            const regex = new RegExp(filter.replace(/\s+/g, '|'), 'ig')
             const lowercaseFilter = filter.toLowerCase()
             const filtered = textures
               .map(item => {

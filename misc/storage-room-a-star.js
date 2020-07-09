@@ -78,6 +78,9 @@ export class ElemBoard extends Board {
         }
       }
     }
+
+    this.x = 0
+    this.y = 0
   }
 
   moveTo (x, y) {
