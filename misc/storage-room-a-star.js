@@ -191,6 +191,18 @@ function posToString ({ board, x, y }) {
   return `${board.tag}(${x}, ${y})`
 }
 
+// This uses A* to pathfind to multiple goals. I think my approach is naïve---it
+// heads to the closest goal, then heads to the next closest one, and so on. The
+// algorithm can be fooled by leading it away with a trail of breadcrumbs from a
+// chest that is somewhat close to the starting point but not the closest,
+// requiring it to circle back to the start after getting to the end of the
+// trail.
+// * = chest; @ = start
+//  * * * * * * * * * * * * <-- it'll first go along this line of chests...
+// @
+//
+//  * <-- ...before circling all the way back here;
+//        a shorter path would be to visit this chest near the beginning
 export function pathFind (start, goals) {
   const path = []
   const strGoals = new Map(Array.from(goals, goal => [posToString(goal), goal]))

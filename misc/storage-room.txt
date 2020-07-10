@@ -1,3 +1,29 @@
+# CONTRIBUTING
+# Lines starting with `#` will always be ignored.
+#
+# For stackable storage, items are entered in order from the autosorter input
+# end towards the back. If the label block is the same as the item ID, use f3 +
+# i to copy the ID to the clipboard. You can also give the item ID; omit the
+# "minecraft:" namespace when doing so.
+# Rows of items are grouped into four sections: floor1Left, floor1Right,
+# floor2Left, floor2Right. This should be self explanatory; left/right can be
+# determined by facing towards the input chest.
+# When adding new items, look for neighbouring items in the text file and insert
+# the new ones accordingly.
+#
+# For unstackable storage, jump to the line with `!unstackables`. Each chest is
+# given a name and IDs of the items the chest contains.
+# Format: [chest ID] [name]: [ids...]
+# Example: F Saddles: saddle
+# Wildcards are also allowed: *, {*TOOLS}, {*ARMOUR}
+# If any new chests are added, you can add them to the map. The 2D map in this
+# file is only as a guide; you'll need to change the values of
+# `$!unstackablesLeft` or `$!unstackablesRight` to include the new chests.
+#
+# This text file does not determine everything about the map. Many values are
+# hard-coded in storage-room.html. This is just a quick hacky project and not
+# meant for adaptability.
+
 # Left side, facing input, of stackable storage
 @floor1Left
 /setblock -2473 51 -206 minecraft:stone
