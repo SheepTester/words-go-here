@@ -73,6 +73,15 @@ class DirectoryItem {
           return this;
      }
 
+     setFocused(focused) {
+          if (focused) {
+               this._elems.wrapper.classList.add('focused');
+          } else {
+               this._elems.wrapper.classList.remove('focused');
+          }
+          return this;
+     }
+
      // Note: Pass null to remove.
      addTo(parent=null) {
           if (parent !== this._parent) {
@@ -117,6 +126,7 @@ class Directory {
           this.filter = ''
           this.students = [];
 
+          this.focusIndex = null
           // The student object of the selected item (NOT a DirectoryItem)
           this.selected = new Set();
           // Maps y values/a unique Symbol (if not shown) to a DirectoryItem
@@ -142,6 +152,45 @@ class Directory {
           if (this.onSelect) {
                this.onSelect(this.selected);
           }
+     }
+
+     changeFocus (newFocusIndex) {
+       if (this.focusIndex === newFocusIndex) return
+       if (this.focusIndex !== null) {
+          let selectedItem = this._items.get(this.focusIndex);
+          if (selectedItem) {
+            // What you're witnessing here is a 5 + 2 + 3 + 4 space indent
+              selectedItem.setFocused(false);
+          }
+      }
+      if (newFocusIndex !== null) {
+        let newSelectedItem = this._items.get(newFocusIndex);
+        if (newSelectedItem) {
+            newSelectedItem.setFocused(true);
+        }
+      }
+       this.focusIndex = newFocusIndex
+       return this
+     }
+
+     selectFocus () {
+       if (this.focusIndex !== null) {
+         const selectedItem = this._items.get(this.focusIndex);
+         if (selectedItem) {
+           this._onItemClicked(selectedItem)
+         } else {
+           const item = this.students[this.focusIndex]
+           if (this.selected.has(item)) {
+                this.selected.delete(item);
+           } else {
+                this.selected.add(item);
+           }
+           if (this.onSelect) {
+                this.onSelect(this.selected);
+           }
+         }
+       }
+       return this
      }
 
      // Deletes all DirectoryItems
@@ -199,6 +248,7 @@ class Directory {
                let recycleable = recycleables.pop();
                recycleable
                     .setStudent(this.filter, this.students[y], this.selected.has(this.students[y]))
+                    .setFocused(this.focusIndex === y)
                     .addTo(this.wrapper)
                     .wrapper.style.top = y * ITEM_HEIGHT + 'px';
                this._items.set(y, recycleable);
@@ -208,6 +258,7 @@ class Directory {
                recycleable.remove();
                this._items.set(Symbol(), recycleable);
           }
+          this.scrollY = scrollY
           return this;
      }
 
@@ -224,9 +275,11 @@ class Directory {
      updateData() {
           this._heightSetter.style.height = this.students.length * ITEM_HEIGHT + 'px';
           this._hideItems();
+          this.changeFocus(null)
      }
 }
 
 export {
+  ITEM_HEIGHT,
      Directory
 };

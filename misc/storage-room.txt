@@ -316,9 +316,9 @@ ladders are every 6 blocks:
 # Unstackables
 !unstackables
 A Shields: shield
-B Bows, rods, and crossbows: bow, fishing_rod, crossbow
+B Bows, rods, and crossbows: bow, fishing_rod, crossbow, carrot_on_a_stick, warped_fungus_on_a_stick
 C Potions: potion, splash_potion, lingering_potion
-D Empty shulker boxes: shulker_box, *_shulker_box
+D Empty shulker boxes: shulker_box, *_shulker_box, dragon_egg
 E Cake: cake
 F Totems of Death Cancelation: totem_of_undying
 G Solely soul speed soles: iron_boots
@@ -328,7 +328,7 @@ J Lava: lava_bucket
 K Water: water_bucket
 L Milk: milk_bucket
 #
-M Other diamond tools: diamond_hoe, diamond_sword, diamond_horse_armor
+M Other diamond tools: diamond_hoe, diamond_sword, diamond_horse_armor, diamond_axe
 N Stew: suspicious_stew, rabbit_stew, mushroom_stew
 O Diamond pickaxe: diamond_pickaxe
 P Diamond shovel: diamond_shovel
