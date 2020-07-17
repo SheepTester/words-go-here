@@ -132,7 +132,7 @@ function aStar (start, guessDist, isGoal) {
       return
     }
     const cell = next.board.get(next.x, next.y)
-    if (cell && !cell.ladder && !isGoal(next)) {
+    if (cell && !cell.ladders && !isGoal(next)) {
       return
     }
 
@@ -179,8 +179,10 @@ function aStar (start, guessDist, isGoal) {
     processNeighbour(next, bestScore + 1, { board, x: next.x, y: next.y - 1 })
     processNeighbour(next, bestScore + 1, { board, x: next.x, y: next.y + 1 })
     const cell = next.board.get(next.x, next.y)
-    if (cell && cell.ladder) {
-      processNeighbour(next, bestScore + (cell.length || 1), cell.ladder)
+    if (cell && cell.ladders) {
+      for (const ladder of cell.ladders) {
+        processNeighbour(next, bestScore + (ladder.length || 1), ladder)
+      }
     }
   }
 

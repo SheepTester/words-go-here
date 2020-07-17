@@ -101,7 +101,9 @@ export async function prepare () {
               }
               submode.z = z
             } else if (submode.z === null) {
-              console.warn(`Do not know the number of spaces by line ${lineNum}; discarding blocks before.`)
+              if (submode.noZ.length > 0) {
+                console.warn(`Do not know the number of spaces by line ${lineNum}; discarding blocks before.`)
+              }
               submode.noZ = []
             } else {
               submode.z = null

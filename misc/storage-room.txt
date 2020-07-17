@@ -112,6 +112,8 @@ slime_ball
 /setblock -2473 51 -289 minecraft:red_terracotta
 /setblock -2473 51 -290 minecraft:coarse_dirt
 /setblock -2473 51 -291 minecraft:grass_block[snowy=false]
+/setblock -2473 51 -292 minecraft:honey_block
+honey_bottle
 [some space]
 /setblock -2473 51 -301 minecraft:dried_kelp_block
 lead
@@ -276,6 +278,9 @@ seagrass
 fire_charge
 /setblock -2473 55 -272 minecraft:gilded_blackstone
 /setblock -2473 55 -273 minecraft:polished_blackstone_bricks
+golden_apple
+ghast_tear
+lily_pad
 [some space]
 @/
 
@@ -302,7 +307,7 @@ cod
 salmon
 tropical_fish
 feather
-leather
+[1 space]
 honeycomb
 [some space to /setblock -2485 55 -236 minecraft:spruce_sign[rotation=12,waterlogged=false]]
 ink_sac
@@ -367,9 +372,11 @@ V Gold and inferior armour and tools: leather_{*ARMOUR}, golden_{*TOOLS}, golden
 W Iron armour: iron_{*ARMOUR}, iron_horse_armor
 X Iron tools: iron_{*TOOLS}
 Y Saddles: saddle
-Z Transportation: *_boat, minecart
+Z Transportation: *_boat, minecart, elytra
 0 Flint and steel: flint_and_steel
 1 Shears: shears
+2 More gold and inferior armour and tools: leather_{*ARMOUR}, golden_{*TOOLS}, golden_{*ARMOUR}, wooden_{*TOOLS}, stone_{*TOOLS}, golden_horse_armor, leather_horse_armor
+3 More iron armour: iron_{*ARMOUR}, iron_horse_armor
 !/
 
    123456789
@@ -381,6 +388,36 @@ EFGH       TRPN 4
            XWVU 6
 ABCD       XWVU 7
 ABCD   *   10ZY 8
+            32Y
 
 $!unstackablesLeft;IJKL;IJKL;EFGH;EFGH;;;ABCD;ABCD
-$!unstackablesRight;SQOM;SQOM;TRPN;TRPN;;XWVU;XWVU;10ZY
+$!unstackablesRight;SQOM;SQOM;TRPN;TRPN;;XWVU;XWVU;10ZY;32Y
+
+Another drop down 15 blocks to bulk storage
+
+# Bulk storage left, facing input
+@bulkLeft
+[some space]
+string
+/setblock -2473 36 -257 minecraft:sea_pickle[pickles=1,waterlogged=false]
+bone
+arrow
+rotten_flesh
+@/
+
+# Bulk storage right, facing input
+@bulkRight
+/setblock -2485 35 -249 minecraft:pumpkin
+/setblock -2485 35 -250 minecraft:pumpkin
+/setblock -2485 35 -251 minecraft:melon
+/setblock -2485 35 -252 minecraft:melon
+/setblock -2485 35 -253 minecraft:melon
+[1 space]
+/setblock -2485 35 -255 minecraft:cobblestone
+/setblock -2485 35 -256 minecraft:sand
+/setblock -2485 35 -257 minecraft:sand
+/setblock -2485 35 -258 minecraft:iron_block
+iron_ingot
+/setblock -2485 35 -260 minecraft:stone
+@/
+

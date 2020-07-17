@@ -198,10 +198,11 @@
       async function main () {
         const { textures, stackables, data } = await prepare()
         const zStart = stackables.floor1Left[0][0]
+        const bulkStart = stackables.bulkRight[0][0]
 
         const chests = []
         const chestTexture = findItemBy(textures, 'minecraft:chest').texture
-        function addStackablesTo (board, stackables, x) {
+        function addStackablesTo (board, stackables, x, zStart) {
           for (const [z, item] of stackables) {
             const entry = findItemBy(textures, item)
             board.setSafely(x, z - zStart, {
@@ -235,14 +236,28 @@
         }
 
         const ladderTexture = findItemBy(textures, 'minecraft:ladder').texture
-        function addLadderPair (board1, x1, y1, board2, x2, y2) {
+        function addLadderPair (
+          board1,
+          x1,
+          y1,
+          board2,
+          x2,
+          y2,
+          length = 1
+        ) {
           board1.setSafely(x1, y1, {
             texture: ladderTexture,
-            ladder: { board: board2, x: x2, y: y2 }
+            ladders: [
+              ...((board1.getSafely(x1, y1) || {}).ladders || []),
+              { board: board2, x: x2, y: y2, length }
+            ]
           })
           board2.setSafely(x2, y2, {
             texture: ladderTexture,
-            ladder: { board: board1, x: x1, y: y1 }
+            ladders: [
+              ...((board2.getSafely(x2, y2) || {}).ladders || []),
+              { board: board1, x: x1, y: y1, length }
+            ]
           })
         }
 
@@ -250,12 +265,20 @@
           - zStart + 1
         // Magic numbers yes please!
         const boards = {
+          bulk: new Board(15, 12).setTag('bulk'),
           stackables: new Board(17, rows).setTag('stackables'),
           elevatedLeft: new Board(5, rows).setTag('elevatedLeft'),
           elevatedRight: new Board(5, rows).setTag('elevatedRight'),
           unstackables: new Board(9, data.unstackablesLeft.length + 1)
             .setTag('unstackables')
         }
+
+        // Board distances
+        boards.bulk
+          .setDistanceTo(boards.stackables, 1)
+          .setDistanceTo(boards.elevatedLeft, 2)
+          .setDistanceTo(boards.elevatedRight, 2)
+          .setDistanceTo(boards.unstackables, 3)
         boards.stackables
           .setDistanceTo(boards.elevatedLeft, 1)
           .setDistanceTo(boards.elevatedRight, 1)
@@ -265,23 +288,64 @@
           .setDistanceTo(boards.unstackables, 2)
         boards.elevatedRight
           .setDistanceTo(boards.unstackables, 2)
-        addStackablesTo(boards.stackables, stackables.floor1Left, 0)
+
+        // Bulk storage
+        addStackablesTo(
+          boards.bulk,
+          stackables.bulkLeft,
+          0,
+          bulkStart
+        )
+        addStackablesTo(
+          boards.bulk,
+          stackables.bulkRight,
+          boards.bulk.width - 1,
+          bulkStart
+        )
+
+        // Stackable storage
+        addStackablesTo(
+          boards.stackables,
+          stackables.floor1Left,
+          0,
+          zStart
+        )
         addStackablesTo(
           boards.stackables,
           stackables.floor1Right,
-          boards.stackables.width - 1
+          boards.stackables.width - 1,
+          zStart
         )
-        addStackablesTo(boards.elevatedLeft, stackables.floor2Left, 0)
+        addStackablesTo(
+          boards.elevatedLeft,
+          stackables.floor2Left,
+          0,
+          zStart
+        )
         addStackablesTo(
           boards.elevatedRight,
           stackables.floor2Right,
-          boards.elevatedRight.width - 1
+          boards.elevatedRight.width - 1,
+          zStart
         )
+
+        // Unstackable storage
         addUnstackablesTo(boards.unstackables, data.unstackablesLeft, 0)
         addUnstackablesTo(
           boards.unstackables,
           data.unstackablesRight,
           boards.unstackables.width - 1
+        )
+
+        // Ladders
+        addLadderPair(
+          boards.stackables,
+          Math.floor(boards.stackables.width / 2),
+          data.stackableEntrance - zStart,
+          boards.bulk,
+          Math.floor(boards.bulk.width / 2),
+          boards.bulk.height - 1,
+          15 // NOTE: it's a water elevator now, but meh
         )
         addLadderPair(
           boards.stackables,
@@ -289,7 +353,8 @@
           data.stackableEntrance - zStart,
           boards.unstackables,
           Math.floor(boards.unstackables.width / 2),
-          data.unstackablesLeft.length - 1
+          data.unstackablesLeft.length - 1,
+          12 // Water elevator
         )
         for (let y = 5; y < rows; y += 6) {
           addLadderPair(
@@ -298,7 +363,8 @@
             y,
             boards.elevatedLeft,
             boards.elevatedLeft.width - 1,
-            y
+            y,
+            5
           )
           addLadderPair(
             boards.stackables,
@@ -306,30 +372,12 @@
             y,
             boards.elevatedRight,
             0,
-            y
+            y,
+            5
           )
         }
 
         const elemBoards = new Map([
-          [
-            boards.elevatedLeft,
-            new ElemBoard(boards.elevatedLeft).addTo(document.body)
-          ],
-          [
-            boards.stackables,
-            new ElemBoard(boards.stackables)
-              .moveTo(boards.elevatedLeft.width + 1, 0)
-              .addTo(document.body)
-          ],
-          [
-            boards.elevatedRight,
-            new ElemBoard(boards.elevatedRight)
-              .moveTo(
-                boards.elevatedLeft.width + boards.stackables.width + 2,
-                0
-              )
-              .addTo(document.body)
-          ],
           [
             boards.unstackables,
             new ElemBoard(boards.unstackables)
@@ -337,7 +385,45 @@
                 boards.elevatedLeft.width + 1 + Math.floor(
                   (boards.stackables.width - boards.unstackables.width) / 2
                 ),
-                boards.stackables.height + 1
+                0
+              )
+              .addTo(document.body)
+          ],
+          [
+            boards.elevatedLeft,
+            new ElemBoard(boards.elevatedLeft)
+              .moveTo(
+                0,
+                boards.unstackables.height + 1
+              )
+              .addTo(document.body)
+          ],
+          [
+            boards.stackables,
+            new ElemBoard(boards.stackables)
+              .moveTo(
+                boards.elevatedLeft.width + 1,
+                boards.unstackables.height + 1
+              )
+              .addTo(document.body)
+          ],
+          [
+            boards.elevatedRight,
+            new ElemBoard(boards.elevatedRight)
+              .moveTo(
+                boards.elevatedLeft.width + boards.stackables.width + 2,
+                boards.unstackables.height + 1
+              )
+              .addTo(document.body)
+          ],
+          [
+            boards.bulk,
+            new ElemBoard(boards.bulk)
+              .moveTo(
+                boards.elevatedLeft.width + 1 + Math.floor(
+                  (boards.stackables.width - boards.bulk.width) / 2
+                ),
+                boards.unstackables.height + boards.stackables.height + 2
               )
               .addTo(document.body)
           ]
