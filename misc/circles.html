@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>circles</title>
+    <meta name="description" content="streets be like" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      #circle {
+        position: absolute;
+        left: 0;
+        top: 0;
+        --radius: 50px;
+        box-sizing: border-box;
+        border-radius: 50%;
+        margin: calc(0px - var(--radius));
+        width: calc(2 * var(--radius));
+        height: calc(2 * var(--radius));
+        border: 1px solid rgba(93, 22, 22, 0.5);
+        background-color: rgba(93, 22, 22, 0.5);
+      }
+      #circle::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(93, 22, 22, 0.5);
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        z-index: 10;
+      }
+      .angle {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        height: 2px;
+        width: 50%;
+        background-color: #2cb3b3;
+        transform: translateY(-50%) rotate(var(--angle));
+        transform-origin: left;
+      }
+      .angle:focus {
+        outline: none;
+        box-shadow: 0 0 5px cyan;
+        background-color: white;
+      }
+      .angle::before {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translate(50%, -50%);
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: inherit;
+        box-shadow: inherit;
+        opacity: 0.5;
+      }
+      .angle::after {
+        content: attr(data-angle);
+        position: absolute;
+        top: 100%;
+        left: 10px;
+        color: white;
+        text-shadow: 0 0 3px black;
+        font-size: 16px;
+        z-index: 5;
+        font-size: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>paste image</p>
+    <p>arrow keys to move circle centre around</p>
+    <p>G to shrink, H to grow radius</p>
+    <p>space to add a radius, tab/shift + tab to shift focus on a radius</p>
+    <p>
+      when focused on a radius, A/D to rotate radius ccw/cw. backspace/delete to
+      remove radius
+    </p>
+    <p>+ ctrl/cmd for by 100, + shift by 10, + alt by 0.1</p>
+    <img id="image" />
+    <div id="circle"></div>
+    <textarea name="name" rows="8" cols="80" id="output" readonly></textarea>
+    <script type="text/javascript">
+      function mod (a, b) {
+        return ((a % b) + b) % b
+      }
+
+      function getStep (e) {
+        let step = 1
+        if (e.ctrlKey || e.metaKey) step *= 100
+        if (e.shiftKey) step *= 10
+        if (e.altKey) step = 0.1 / step
+        return step
+      }
+
+      async function main () {
+        const data = window.location.hash
+          ? JSON.parse(decodeURIComponent(window.location.hash.slice(1)))
+          : {
+              cx: 0,
+              cy: 0,
+              radius: 50,
+              angles: []
+            }
+        const circle = document.getElementById('circle')
+        const angles = []
+        const output = document.getElementById('output')
+        function update (focusAngle) {
+          window.history.replaceState(
+            '',
+            {},
+            '#' + encodeURIComponent(JSON.stringify(data))
+          )
+          circle.style.left = data.cx + 'px'
+          circle.style.top = data.cy + 'px'
+          circle.style.setProperty('--radius', data.radius + 'px')
+          data.angles.forEach((angle, i) => {
+            angles[i].style.setProperty('--angle', angle + 'deg')
+          })
+          const sorted = data.angles
+            .map((angle, i) => [mod(angle, 360), i])
+            .sort((a, b) => a[0] - b[0])
+          sorted.forEach(([angle, i], j) => {
+            const diff =
+              j === sorted.length - 1
+                ? sorted[0][0] + 360 - angle
+                : sorted[j + 1][0] - angle
+            angles[i].dataset.angle = diff.toFixed(2) + '°'
+          })
+        }
+        document.addEventListener('keydown', e => {
+          switch (e.key.toLowerCase()) {
+            case 'arrowup':
+              data.cy -= getStep(e)
+              break
+            case 'arrowleft':
+              data.cx -= getStep(e)
+              break
+            case 'arrowdown':
+              data.cy += getStep(e)
+              break
+            case 'arrowright':
+              data.cx += getStep(e)
+              break
+            case 'g':
+              data.radius -= getStep(e)
+              break
+            case 'h':
+              data.radius += getStep(e)
+              break
+            case ' ':
+              addAngle().focus()
+              break
+            default:
+              return
+          }
+          update()
+          e.preventDefault()
+        })
+        function addAngle (index = angles.length) {
+          if (data.angles[index] === undefined) {
+            data.angles[index] = Math.floor(Math.random() * 36) * 10
+          }
+          const thing = document.createElement('div')
+          thing.className = 'angle'
+          thing.tabIndex = 0
+          thing.dataset.index = index
+          thing.addEventListener('keydown', e => {
+            const angleStep = (getStep(e) / (2 * Math.PI * data.radius)) * 360
+            switch (e.key.toLowerCase()) {
+              case 'a':
+                data.angles[thing.dataset.index] -= angleStep
+                break
+              case 'd':
+                data.angles[thing.dataset.index] += angleStep
+                break
+              case 'backspace':
+              case 'delete':
+                removeIndex(thing.dataset.index)
+                break
+              default:
+                return
+            }
+            update()
+            e.preventDefault()
+          })
+          circle.append(thing)
+          angles[index] = thing
+          return thing
+        }
+        function removeIndex (index) {
+          data.angles.splice(index, 1)
+          angles[index].remove()
+          angles.splice(index, 1)
+          for (let i = index; i < angles.length; i++) {
+            angles[i].dataset.index = i
+          }
+        }
+        data.angles.forEach((_, i) => {
+          addAngle(i)
+        })
+        update()
+
+        const cache = await caches.open('wgh/misc')
+        const img = document.getElementById('image')
+        let image = await cache.match('./circles-image')
+        if (image) {
+          img.src = URL.createObjectURL(await image.blob())
+        }
+        document.addEventListener('paste', async e => {
+          const file = e.clipboardData.files[0]
+          if (file) {
+            await cache.put('./circles-image', new Response(file))
+            URL.revokeObjectURL(img.src)
+            img.src = URL.createObjectURL(file)
+          }
+        })
+      }
+      main()
+    </script>
+  </body>
+</html>
