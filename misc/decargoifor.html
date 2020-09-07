@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>DECARGOIFER</title>
+    <meta name="description" content="LI OBTEN LDECARGOS" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      body {
+        display: flex;
+        font-family: monospace;
+      }
+      .vertical {
+        flex: auto;
+        letter-spacing: -0.4em;
+      }
+      .vertical,
+      .vertical input {
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        text-transform: uppercase;
+      }
+      .dos-puntos {
+        text-orientation: mixed;
+      }
+      .escondido {
+        display: none;
+      }
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: var(--progreso);
+        transition: all .2s;
+        z-index: -1;
+      }
+      .cargando::before {
+        background-color: #03a9f4;
+      }
+      .éxito::before {
+        background-color: #4caf50;
+      }
+      .error {
+        color: white;
+      }
+      .error::before {
+        background-color: #e91e63;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript class="vertical">
+      <p>Tu nec lJavaScript pa us le aplicac</p>
+    </noscript>
+    <form class="vertical escondido" id="introducción" method="GET">
+      <h2>Cre un conex a un decargo</h2>
+      <p><label>Identificac darchivo<span class="dos-puntos">:</span> <input type="text" name="id"></label></p>
+      <input type="submit" value="Bon">
+      <p>Si tu desir lcreac dsprop decargo obten Tampermonkey et <a href="https://github.com/SheepTester/hello-world/raw/master/userscripts/skracxteamgxenanto.user.js">le program</a></p>
+    </form>
+    <script>
+      const SERVIDOR = 'https://assets.scratch.mit.edu/'
+
+      async function descargar (condensados, progreso) {
+        const partes = []
+        let i = 0
+        for (const condensado of condensados) {
+          if (progreso) progreso(i, condensados.length)
+          const respuesta = await fetch(SERVIDOR + `internalapi/asset/${condensado}.wav/get/`)
+          if (!respuesta.ok) {
+            throw new Error(await respuesta.text())
+          }
+          // https://javascript.info/fetch-progress ¡Gracias!
+          const tamañoTotal = +respuesta.headers.get('Content-Length')
+          const lector = respuesta.body.getReader()
+          let cargado = 0
+          while (true) {
+            const { done: terminado, value: parte } = await lector.read()
+            if (terminado) break
+            // `parte` es un Uint8Array
+            partes.push(parte)
+            if (progreso) {
+              cargado += parte.length
+              progreso(i + cargado / tamañoTotal, condensados.length)
+            }
+          }
+          i++
+        }
+        if (progreso) progreso(condensados.length, condensados.length)
+        return new Blob(partes)
+      }
+
+      const parámetros = new URL(window.location).searchParams
+      const identificación = parámetros.get('id')
+      if (identificación) {
+        document.body.classList.add('cargando')
+        const condensados = identificación.split(/-|\./)
+        const extensión = condensados.pop()
+        descargar(condensados, (cargado, total) => {
+          document.body.style.setProperty('--progreso', cargado / total * 100 + '%')
+        }).then(archivo => {
+          document.body.classList.replace('cargando', 'éxito')
+          const lru = URL.createObjectURL(archivo)
+          const enlace = Object.assign(document.createElement('a'), {
+            href: lru,
+            download: condensados.join('-') + (extensión ? '.' + extensión : '')
+          })
+          document.body.append(enlace)
+          enlace.click()
+          enlace.remove()
+          URL.revokeObjectURL(lru)
+        }).catch(err => {
+          document.body.classList.replace('cargando', 'error')
+          document.body.append(err + '')
+        })
+      } else {
+        document.getElementById('introducción').classList.remove('escondido')
+      }
+    </script>
+  </body>
+</html>
