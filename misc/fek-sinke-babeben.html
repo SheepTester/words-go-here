@@ -7,7 +7,7 @@
     <title>Aræn sinke Fek sinke babeben</title>
     <meta name="description" content="" />
 
-    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
 
     <style>
@@ -29,12 +29,12 @@
         left: 0;
         height: 5vh;
         width: var(--progress);
-        transition: width .2s, opacity .5s;
+        transition: width 0.2s, opacity 0.5s;
         opacity: 0;
       }
       .loading::after {
         opacity: 1;
-        transition: width .2s;
+        transition: width 0.2s;
       }
       textarea {
         -webkit-appearance: none;
@@ -54,12 +54,17 @@
     <textarea id="input" placeholder="Arebabeben" autofocus></textarea>
     <script>
       const SERVIDOR = 'https://assets.scratch.mit.edu/'
-      async function descargar (condensados, { progreso = null, tipo = '' } = {}) {
+      async function descargar (
+        condensados,
+        { progreso = null, tipo = '' } = {}
+      ) {
         const partes = []
         let i = 0
         for (const condensado of condensados) {
           if (progreso) progreso(i, condensados.length)
-          const respuesta = await fetch(SERVIDOR + `internalapi/asset/${condensado}.wav/get/`)
+          const respuesta = await fetch(
+            SERVIDOR + `internalapi/asset/${condensado}.wav/get/`
+          )
           if (!respuesta.ok) {
             throw new Error(await respuesta.text())
           }
@@ -88,7 +93,10 @@
         const fontBlob = await descargar(['3c61347f747835ffc2af6d353f3b3272'], {
           tipo: 'font/ttf',
           progreso: (progress, total) => {
-            document.body.style.setProperty('--progress', progress / total * 100 + '%')
+            document.body.style.setProperty(
+              '--progress',
+              (progress / total) * 100 + '%'
+            )
           }
         })
         document.body.classList.remove('loading')
@@ -107,7 +115,11 @@
       const input = document.getElementById('input')
       input.value = decodeURIComponent(window.location.hash.slice(1))
       input.addEventListener('input', e => {
-        window.history.replaceState({}, '', '#' + encodeURIComponent(input.value))
+        window.history.replaceState(
+          {},
+          '',
+          '#' + encodeURIComponent(input.value)
+        )
       })
     </script>
   </body>
