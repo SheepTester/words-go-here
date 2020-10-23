@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Aræn sinke Fek sinke babeben</title>
+    <meta name="description" content="" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family: 'Fek';
+        display: flex;
+        margin: 0;
+      }
+      body::after {
+        content: '';
+        position: fixed;
+        z-index: -1;
+        background-color: black;
+        bottom: 0;
+        left: 0;
+        height: 5vh;
+        width: var(--progress);
+        transition: width .2s, opacity .5s;
+        opacity: 0;
+      }
+      .loading::after {
+        opacity: 1;
+        transition: width .2s;
+      }
+      textarea {
+        -webkit-appearance: none;
+        border: none;
+        background: none;
+        font: inherit;
+        color: inherit;
+      }
+      #input {
+        flex: auto;
+        padding: 40px;
+        font-size: 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="input" placeholder="Arebabeben" autofocus></textarea>
+    <script>
+      const SERVIDOR = 'https://assets.scratch.mit.edu/'
+      async function descargar (condensados, { progreso = null, tipo = '' } = {}) {
+        const partes = []
+        let i = 0
+        for (const condensado of condensados) {
+          if (progreso) progreso(i, condensados.length)
+          const respuesta = await fetch(SERVIDOR + `internalapi/asset/${condensado}.wav/get/`)
+          if (!respuesta.ok) {
+            throw new Error(await respuesta.text())
+          }
+          // https://javascript.info/fetch-progress ¡Gracias!
+          const tamañoTotal = +respuesta.headers.get('Content-Length')
+          const lector = respuesta.body.getReader()
+          let cargado = 0
+          while (true) {
+            const { done: terminado, value: parte } = await lector.read()
+            if (terminado) break
+            // `parte` es un Uint8Array
+            partes.push(parte)
+            if (progreso) {
+              cargado += parte.length
+              progreso(i + cargado / tamañoTotal, condensados.length)
+            }
+          }
+          i++
+        }
+        if (progreso) progreso(condensados.length, condensados.length)
+        return new Blob(partes, { type: tipo })
+      }
+
+      async function main () {
+        document.body.classList.add('loading')
+        const fontBlob = await descargar(['3c61347f747835ffc2af6d353f3b3272'], {
+          tipo: 'font/ttf',
+          progreso: (progress, total) => {
+            document.body.style.setProperty('--progress', progress / total * 100 + '%')
+          }
+        })
+        document.body.classList.remove('loading')
+        const url = URL.createObjectURL(fontBlob)
+        const style = document.createElement('style')
+        style.innerHTML = `
+        @font-face {
+          font-family: 'Fek';
+          src: url("${url}");
+        }
+        `
+        document.head.appendChild(style)
+      }
+      main()
+
+      const input = document.getElementById('input')
+      input.value = decodeURIComponent(window.location.hash.slice(1))
+      input.addEventListener('input', e => {
+        window.history.replaceState({}, '', '#' + encodeURIComponent(input.value))
+      })
+    </script>
+  </body>
+</html>
