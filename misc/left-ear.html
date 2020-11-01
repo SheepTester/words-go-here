@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>rip my left ear</title>
+    <meta name="description" content="pan left/right" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      /* TEMP */
+    </style>
+  </head>
+  <body>
+    <p>Press play, then move your mouse/finger left/right</p>
+    <audio src="/platformre/a/waterflame_glorious_morning.mp3" id="audio" autoplay loop controls></audio>
+    <p>Music: <a href="https://www.newgrounds.com/audio/listen/91476">Glorious morning</a> by Waterflame</p>
+    <textarea id="output" rows="8" cols="80" readonly></textarea>
+    <script>
+      const audio = document.getElementById('audio')
+      const output = document.getElementById('output')
+
+      // https://github.com/LLK/scratch-audio/blob/develop/src/AudioEngine.js#L112
+      const DECAY_WAIT = 0.05
+      const DECAY_DURATION = 0.025
+
+      let audioContext
+      audio.addEventListener('play', e => {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)()
+
+        const audioSource = audioContext.createMediaElementSource(audio)
+        // https://github.com/LLK/scratch-audio/blob/develop/src/effects/PanEffect.js
+        const inputNode = audioContext.createGain()
+        const leftGain = audioContext.createGain()
+        const rightGain = audioContext.createGain()
+        const channelMerger = audioContext.createChannelMerger(2)
+
+        audioSource.connect(inputNode)
+        inputNode.connect(leftGain)
+        inputNode.connect(rightGain)
+        leftGain.connect(channelMerger, 0, 0)
+        rightGain.connect(channelMerger, 0, 1)
+        channelMerger.connect(audioContext.destination)
+
+        window.addEventListener('pointermove', e => {
+          const pan = e.clientX / window.innerWidth
+
+          // https://github.com/LLK/scratch-audio/blob/develop/src/effects/PanEffect.js
+          // Use trig functions for equal-loudness panning
+          // See e.g. https://docs.cycling74.com/max7/tutorials/13_panningchapter01
+          const leftVal = Math.cos(pan * Math.PI / 2)
+          const rightVal = Math.sin(pan * Math.PI / 2)
+
+          const currentTime = audioContext.currentTime
+          leftGain.gain.setTargetAtTime(leftVal, currentTime + DECAY_WAIT, DECAY_DURATION)
+          rightGain.gain.setTargetAtTime(rightVal, currentTime + DECAY_WAIT, DECAY_DURATION)
+
+          output.value = [
+            `Scratch pan value = ${(pan - 0.5) * 200}`,
+            `left gain = ${(leftVal * 100).toFixed(4)}%`,
+            `right gain = ${(rightVal * 100).toFixed(4)}%`,
+            `left is ${(leftVal / rightVal * 100).toFixed(4)}% of right`,
+            `left hears ${(rightVal / leftVal * 100).toFixed(4)}% of what right hears (reciprocal)`
+          ].join('\n')
+        })
+      }, { once: true })
+    </script>
+  </body>
+</html>
