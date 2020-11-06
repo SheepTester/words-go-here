@@ -8,7 +8,7 @@ import Html.Attributes as A
 import Html.Events as E
 import Price exposing (Price)
 import Utility exposing (Utility)
-import Utils exposing (removeFromArray, removeFromList, noAttribute)
+import Utils exposing (noAttribute, removeFromArray, removeFromList)
 
 
 main =
@@ -28,7 +28,8 @@ init =
     }
 
 
-type alias Msg = Model -> Model
+type alias Msg =
+    Model -> Model
 
 
 updateGood : (GoodRaw -> GoodRaw) -> Int -> Model -> Model
@@ -45,25 +46,30 @@ updateGood updateFn index model =
 
 
 update : Msg -> Model -> Model
-update msg model = msg model
+update msg model =
+    msg model
+
 
 newGood : Model -> Model
 newGood model =
     { model | goods = Array.push Good.new model.goods }
+
 
 updateUtility : Int -> Int -> (String -> UtilityRaw) -> String -> Model -> Model
 updateUtility goodIndex utilityIndex utilityField utility model =
     updateGood
         (\good ->
             { good
-            | utilities =
-                Array.set
-                    utilityIndex
-                    (if utility == "" then
-                        Unset
-                    else
-                        utilityField utility)
-                    good.utilities
+                | utilities =
+                    Array.set
+                        utilityIndex
+                        (if utility == "" then
+                            Unset
+
+                         else
+                            utilityField utility
+                        )
+                        good.utilities
             }
         )
         goodIndex
@@ -94,6 +100,7 @@ row elements =
             elements
         ]
 
+
 floatInput : String -> String -> (String -> Msg) -> Html Msg
 floatInput placeholder value msg =
     Html.input
@@ -103,6 +110,7 @@ floatInput placeholder value msg =
         , case String.toFloat value of
             Just _ ->
                 A.style "background-color" "rgba(0, 127, 255, 0.1)"
+
             Nothing ->
                 A.style "background-color" "rgba(255, 0, 0, 0.2)"
         , A.value value
@@ -111,13 +119,18 @@ floatInput placeholder value msg =
 
 
 utilityInput : String -> (String -> Msg) -> Html Msg
-utilityInput = floatInput "Utility"
+utilityInput =
+    floatInput "Utility"
+
 
 utilityEditor : Array Good.Calculation -> Int -> Array Good.UtilityRaw -> Int -> Good.UtilityRaw -> Html Msg
 utilityEditor computedUtilities goodIndex utilities utilityIndex utility =
     let
-        updater = updateUtility goodIndex utilityIndex
-        computed = Array.get utilityIndex computedUtilities
+        updater =
+            updateUtility goodIndex utilityIndex
+
+        computed =
+            Array.get utilityIndex computedUtilities
     in
     Html.tr []
         (((utilityIndex + 1) |> String.fromInt |> text)
@@ -144,14 +157,22 @@ utilityEditor computedUtilities goodIndex utilities utilityIndex utility =
                         [ TotalUtilityRaw, MarginalUtilityRaw, MUPerDollarRaw ]
                             |> List.map updater
                             |> List.map (utilityInput "")
-               )++ [Html.button [ E.onClick (\model -> updateGood
-               (\good2 ->
-                   { good2
-                   | utilities = removeFromArray utilityIndex good2.utilities
-                   }
                )
-               goodIndex
-               model) ] [ text "x" ]]
+            ++ [ Html.button
+                    [ E.onClick
+                        (\model ->
+                            updateGood
+                                (\good2 ->
+                                    { good2
+                                        | utilities = removeFromArray utilityIndex good2.utilities
+                                    }
+                                )
+                                goodIndex
+                                model
+                        )
+                    ]
+                    [ text "x" ]
+               ]
             |> List.map List.singleton
             |> List.map td
         )
@@ -160,10 +181,11 @@ utilityEditor computedUtilities goodIndex utilities utilityIndex utility =
 goodEditor : Int -> GoodRaw -> Html Msg
 goodEditor goodIndex good =
     let
-        utilities = Good.toGood good
-            |> Maybe.map Good.calculateUtilities
-            |> Maybe.withDefault []
-            |> Array.fromList
+        utilities =
+            Good.toGood good
+                |> Maybe.map Good.calculateUtilities
+                |> Maybe.withDefault []
+                |> Array.fromList
     in
     Html.table
         [ A.style "border-collapse" "collapse"
@@ -171,8 +193,10 @@ goodEditor goodIndex good =
         ]
         ([ row
             [ Html.input
-                [ E.onInput (\name model ->
-                    updateGood (\good2 -> { good2 | name = name }) goodIndex model)
+                [ E.onInput
+                    (\name model ->
+                        updateGood (\good2 -> { good2 | name = name }) goodIndex model
+                    )
                 , A.placeholder "Good name"
                 , A.value good.name
                 ]
@@ -180,17 +204,28 @@ goodEditor goodIndex good =
             ]
          , row
             [ text "Price: $"
-            , floatInput "Price" good.price (\price model ->
-                updateGood (\good2 -> { good2 | price = price }) goodIndex model)
+            , floatInput "Price"
+                good.price
+                (\price model ->
+                    updateGood (\good2 -> { good2 | price = price }) goodIndex model
+                )
             ]
-        , row [ Html.button [ E.onClick (\model -> updateGood
-            (\good2 ->
-                { good2
-                | utilities = Array.push Unset good2.utilities
-                }
-            )
-            goodIndex
-            model) ] [ text "+ Add row" ] ]
+         , row
+            [ Html.button
+                [ E.onClick
+                    (\model ->
+                        updateGood
+                            (\good2 ->
+                                { good2
+                                    | utilities = Array.push Unset good2.utilities
+                                }
+                            )
+                            goodIndex
+                            model
+                    )
+                ]
+                [ text "+ Add row" ]
+            ]
          , Html.tr []
             [ "Quantity" |> text |> List.singleton |> td
             , "Total utility" |> text |> List.singleton |> td
@@ -202,8 +237,9 @@ goodEditor goodIndex good =
             ++ (Array.indexedMap (utilityEditor utilities goodIndex good.utilities) good.utilities |> Array.toList)
         )
 
-renderMaxUtilityResult : (Good, Int) -> Html Msg
-renderMaxUtilityResult ({ name }, count) =
+
+renderMaxUtilityResult : ( Good, Int ) -> Html Msg
+renderMaxUtilityResult ( { name }, count ) =
     [ name
     , String.fromInt count
     ]
@@ -212,19 +248,21 @@ renderMaxUtilityResult ({ name }, count) =
         |> List.map td
         |> Html.tr []
 
+
 renderMaxUtility : Model -> Html Msg
 renderMaxUtility model =
-    case (Price.fromString model.income, model.goods |> Array.toList |> List.filterMap Good.toGood) of
-        (Nothing, _) ->
+    case ( Price.fromString model.income, model.goods |> Array.toList |> List.filterMap Good.toGood ) of
+        ( Nothing, _ ) ->
             text "Invalid income"
                 |> List.singleton
                 |> Html.p []
-        (_, []) ->
+
+        ( _, [] ) ->
             text "No valid goods (add a new good or look for red outlines)"
                 |> List.singleton
                 |> Html.p []
 
-        (Just income, goods) ->
+        ( Just income, goods ) ->
             Good.maxUtility goods income
                 |> List.map2 Tuple.pair goods
                 |> List.map renderMaxUtilityResult
@@ -236,13 +274,15 @@ renderMaxUtility model =
 view : Model -> Html Msg
 view model =
     Html.div []
-        (Html.p [] [
-        Html.label [] [
-        text "Income: ",
-        floatInput "Income" model.income (\income model2 -> { model2 | income = income })
-        ] |> List.singleton |> Html.p []
-        ]
-        :: Html.button [ E.onClick newGood ] [ text "New good" ]
+        (Html.p []
+            [ Html.label []
+                [ text "Income: "
+                , floatInput "Income" model.income (\income model2 -> { model2 | income = income })
+                ]
+                |> List.singleton
+                |> Html.p []
+            ]
+            :: Html.button [ E.onClick newGood ] [ text "New good" ]
             :: (Array.indexedMap goodEditor model.goods |> Array.toList)
-            ++ [renderMaxUtility model]
+            ++ [ renderMaxUtility model ]
         )

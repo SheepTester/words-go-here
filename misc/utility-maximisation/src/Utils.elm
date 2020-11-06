@@ -1,8 +1,9 @@
-module Utils exposing (justEqual, removeFromArray, removeFromList, isJust, noAttribute, mapUntil)
+module Utils exposing (isJust, justEqual, mapUntil, noAttribute, removeFromArray, removeFromList)
 
 import Array exposing (Array)
 import Html
 import Html.Attributes
+
 
 
 -- https://stackoverflow.com/a/33101419
@@ -27,6 +28,7 @@ justEqual maybeA maybeB =
         _ ->
             False
 
+
 isJust : Maybe a -> Bool
 isJust maybe =
     case maybe of
@@ -36,9 +38,11 @@ isJust maybe =
         Nothing ->
             False
 
+
 noAttribute : Html.Attribute msg
 noAttribute =
     Html.Attributes.classList []
+
 
 mapUntil : (a -> Maybe b) -> List a -> List b
 mapUntil filter list =
@@ -47,7 +51,9 @@ mapUntil filter list =
             case filter head of
                 Just value ->
                     value :: mapUntil filter tail
+
                 Nothing ->
                     []
+
         [] ->
             []

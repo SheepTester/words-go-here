@@ -1,9 +1,9 @@
-module Good exposing (Calculation, Good, GoodRaw, UtilityRaw(..), UtilityDatum(..), new, maxUtility, toGood, calculateUtilities)
+module Good exposing (Calculation, Good, GoodRaw, UtilityDatum(..), UtilityRaw(..), calculateUtilities, maxUtility, new, toGood)
 
 import Array exposing (Array)
 import Price exposing (Price)
 import Utility exposing (Utility)
-import Utils exposing (justEqual, isJust, mapUntil)
+import Utils exposing (isJust, justEqual, mapUntil)
 
 
 type UtilityRaw
@@ -12,14 +12,17 @@ type UtilityRaw
     | MUPerDollarRaw String
     | Unset
 
+
 type alias GoodRaw =
     { name : String
     , price : String
     , utilities : Array UtilityRaw
     }
 
+
 new : GoodRaw
-new = { name = "", price = "", utilities = Array.repeat 1 Unset }
+new =
+    { name = "", price = "", utilities = Array.repeat 1 Unset }
 
 
 type UtilityDatum
@@ -27,6 +30,7 @@ type UtilityDatum
     | MarginalUtility Utility
     | MUPerDollar Utility
     | Unknown
+
 
 toUtility : UtilityRaw -> Maybe UtilityDatum
 toUtility raw =
@@ -42,6 +46,7 @@ toUtility raw =
 
         Unset ->
             Just Unknown
+
 
 type alias Calculation =
     { total : Utility
@@ -96,22 +101,29 @@ calculateUtilities good =
         |> Tuple.second
         |> List.reverse
 
+
 type alias Good =
     { name : String
     , price : Price
     , utilities : Array UtilityDatum
     }
 
+
 toGood : GoodRaw -> Maybe Good
 toGood raw =
     Price.fromString raw.price
-        |> Maybe.map (\price -> { name = raw.name
-        , price = price
-        , utilities = Array.map toUtility raw.utilities
-            |> Array.toList
-            |> mapUntil identity
-            |> Array.fromList
-        })
+        |> Maybe.map
+            (\price ->
+                { name = raw.name
+                , price = price
+                , utilities =
+                    Array.map toUtility raw.utilities
+                        |> Array.toList
+                        |> mapUntil identity
+                        |> Array.fromList
+                }
+            )
+
 
 type alias ResolvedGood =
     { price : Price
@@ -183,6 +195,7 @@ maxUtilityStep goods ( income, purchased ) =
 maxUtility : List Good -> Price -> List Int
 maxUtility goodData income =
     let
-        goods = List.map resolveGood goodData
+        goods =
+            List.map resolveGood goodData
     in
     maxUtilityStep goods ( income, List.repeat (List.length goods) 0 )
