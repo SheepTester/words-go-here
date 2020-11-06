@@ -1,9 +1,9 @@
 module Utility exposing
-    (Utility
-    , fromString
-    , toString
+    ( Utility
     , fromPerDollar
+    , fromString
     , toPerDollar
+    , toString
     )
 
 import Price exposing (Price)
@@ -22,9 +22,11 @@ fromString : String -> Maybe Utility
 fromString =
     String.toFloat
 
+
 fromPerDollar : Price -> Utility -> Utility
 fromPerDollar price perDollar =
     perDollar * price
+
 
 toPerDollar : Price -> Utility -> Utility
 toPerDollar price utility =

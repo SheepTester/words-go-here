@@ -23,29 +23,33 @@ type alias Model =
 
 init : Model
 init =
-    { goods = Array.fromList
-        [ { name = "Product X"
-            , price = "10"
-            , utilities = [42, 82, 118, 148, 170, 182, 182]
-                |> List.map Utility.toString
-                |> List.map TotalUtilityRaw
-                |> Array.fromList
-            }
-        , { name = "Product Y"
-            , price = "2"
-            , utilities = [14, 26, 36, 44, 50, 54, 56.4]
-                |> List.map Utility.toString
-                |> List.map TotalUtilityRaw
-                |> Array.fromList
-            }
-        , { name = "Product Z"
-            , price = "8"
-            , utilities = [32, 60, 84, 100, 110, 116, 120]
-                |> List.map Utility.toString
-                |> List.map TotalUtilityRaw
-                |> Array.fromList
-            }
-        ]
+    { goods =
+        Array.fromList
+            [ { name = "Product X"
+              , price = "10"
+              , utilities =
+                    [ 42, 82, 118, 148, 170, 182, 182 ]
+                        |> List.map Utility.toString
+                        |> List.map TotalUtilityRaw
+                        |> Array.fromList
+              }
+            , { name = "Product Y"
+              , price = "2"
+              , utilities =
+                    [ 14, 26, 36, 44, 50, 54, 56.4 ]
+                        |> List.map Utility.toString
+                        |> List.map TotalUtilityRaw
+                        |> Array.fromList
+              }
+            , { name = "Product Z"
+              , price = "8"
+              , utilities =
+                    [ 32, 60, 84, 100, 110, 116, 120 ]
+                        |> List.map Utility.toString
+                        |> List.map TotalUtilityRaw
+                        |> Array.fromList
+              }
+            ]
     , income = "74"
     }
 
@@ -272,20 +276,26 @@ renderMaxUtilityResult ( { name }, count ) =
         |> List.map td
         |> Html.tr []
 
+
 renderStep : Int -> Good.Step -> Html Msg
 renderStep stepNumber { muPerDollars, bought, incomeAfter } =
     Html.tr []
         [ td [ text (String.fromInt (stepNumber + 1)) ]
         , muPerDollars
-            |> List.map (\{ name, quantity, utility, affordable } ->
-                [ name ++ if affordable then
-                    ""
-                else
-                    "*"
-                , String.fromInt (quantity + 1)
-                , Maybe.map Utility.toString utility
-                    |> Maybe.withDefault "?"
-                ])
+            |> List.map
+                (\{ name, quantity, utility, affordable } ->
+                    [ name
+                        ++ (if affordable then
+                                ""
+
+                            else
+                                "*"
+                           )
+                    , String.fromInt (quantity + 1)
+                    , Maybe.map Utility.toString utility
+                        |> Maybe.withDefault "?"
+                    ]
+                )
             |> List.map (Html.tr [] << List.map (td << List.singleton << text))
             |> (List.map th >> Html.tr [] >> (::))
                 [ "Product"
@@ -307,6 +317,7 @@ renderStep stepNumber { muPerDollars, bought, incomeAfter } =
             |> td
         ]
 
+
 renderMaxUtility : Model -> List (Html Msg)
 renderMaxUtility model =
     case ( Price.fromString model.income, model.goods |> Array.toList |> List.filterMap Good.toGood ) of
@@ -324,7 +335,8 @@ renderMaxUtility model =
 
         ( Just income, goods ) ->
             let
-                ( quantities, steps ) = Good.maxUtility goods income
+                ( quantities, steps ) =
+                    Good.maxUtility goods income
             in
             [ Html.p [] [ text "*Cannot afford" ]
             , steps

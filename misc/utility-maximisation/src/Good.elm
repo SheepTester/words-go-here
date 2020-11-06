@@ -2,13 +2,13 @@ module Good exposing
     ( Calculation
     , Good
     , GoodRaw
+    , Step
     , UtilityDatum(..)
     , UtilityRaw(..)
     , calculateUtilities
     , maxUtility
     , new
     , toGood
-    , Step
     )
 
 import Array exposing (Array)
@@ -150,14 +150,16 @@ resolveGood good =
     , muPerDollars = good |> calculateUtilities |> List.map .perDollar |> Array.fromList
     }
 
+
 type alias Step =
     { muPerDollars : List { name : String, quantity : Int, utility : Maybe Utility, affordable : Bool }
     , bought : List String
     , incomeAfter : Price
     }
 
+
 type alias MaxUtilityModel =
-    ( List Step, (Price, List Int) )
+    ( List Step, ( Price, List Int ) )
 
 
 getMUPP : ( Int, ResolvedGood ) -> ( ( Int, Price ), Maybe Utility )
@@ -166,8 +168,9 @@ getMUPP ( count, { price, muPerDollars } ) =
     , Array.get count muPerDollars
     )
 
-maxUtilityStep : List ResolvedGood -> MaxUtilityModel -> (List Int, List Step)
-maxUtilityStep goods ( steps, (income, purchased) ) =
+
+maxUtilityStep : List ResolvedGood -> MaxUtilityModel -> ( List Int, List Step )
+maxUtilityStep goods ( steps, ( income, purchased ) ) =
     let
         -- ((quantity bought, item price), MU per dollar)[]
         withMUPP : List ( ( Int, Price ), Maybe Utility )
@@ -178,7 +181,7 @@ maxUtilityStep goods ( steps, (income, purchased) ) =
         maxMUPP : Maybe Utility
         maxMUPP =
             withMUPP
-                |> List.filter (\((_, price), _) -> income >= price)
+                |> List.filter (\( ( _, price ), _ ) -> income >= price)
                 |> List.filterMap Tuple.second
                 |> List.maximum
 
@@ -191,14 +194,22 @@ maxUtilityStep goods ( steps, (income, purchased) ) =
 
         step : Step
         step =
-            { muPerDollars = List.map2 Tuple.pair withMUPP goods
-                |> List.map (\(((quantity, price), mupp), { name }) ->
-                    { name = name, quantity = quantity, utility = mupp, affordable = income >= price })
-            , bought = List.map2 Tuple.pair withMUPP goods
-                |> List.filterMap (\(( _, mupp ), { name }) -> if justEqual mupp maxMUPP then
-                    Just name
-                else
-                    Nothing)
+            { muPerDollars =
+                List.map2 Tuple.pair withMUPP goods
+                    |> List.map
+                        (\( ( ( quantity, price ), mupp ), { name } ) ->
+                            { name = name, quantity = quantity, utility = mupp, affordable = income >= price }
+                        )
+            , bought =
+                List.map2 Tuple.pair withMUPP goods
+                    |> List.filterMap
+                        (\( ( _, mupp ), { name } ) ->
+                            if justEqual mupp maxMUPP then
+                                Just name
+
+                            else
+                                Nothing
+                        )
             , incomeAfter = income - spent
             }
     in
@@ -218,13 +229,13 @@ maxUtilityStep goods ( steps, (income, purchased) ) =
                 |> maxUtilityStep goods
 
         _ ->
-            (purchased, steps)
+            ( purchased, steps )
 
 
-maxUtility : List Good -> Price -> (List Int, List Step)
+maxUtility : List Good -> Price -> ( List Int, List Step )
 maxUtility goodData income =
     let
         goods =
             List.map resolveGood goodData
     in
-    maxUtilityStep goods ( [], (income, List.repeat (List.length goods) 0) )
+    maxUtilityStep goods ( [], ( income, List.repeat (List.length goods) 0 ) )
