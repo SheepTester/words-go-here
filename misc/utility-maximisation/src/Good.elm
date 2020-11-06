@@ -77,7 +77,7 @@ calculateDatum price datum ( maybeLastUtility, muPerPrices ) =
             ( Just total
             , { total = total
               , marginal = total - lastUtility
-              , perDollar = (total - lastUtility) / price
+              , perDollar = Utility.toPerDollar price (total - lastUtility)
               }
                 :: muPerPrices
             )
@@ -86,15 +86,15 @@ calculateDatum price datum ( maybeLastUtility, muPerPrices ) =
             ( Just (lastUtility + marginal)
             , { total = lastUtility + marginal
               , marginal = marginal
-              , perDollar = marginal / price
+              , perDollar = Utility.toPerDollar price marginal
               }
                 :: muPerPrices
             )
 
         ( Just lastUtility, MUPerDollar perDollar ) ->
-            ( Just (lastUtility + perDollar * price)
-            , { total = lastUtility + perDollar * price
-              , marginal = perDollar * price
+            ( Just (lastUtility + Utility.fromPerDollar price perDollar)
+            , { total = lastUtility + Utility.fromPerDollar price perDollar
+              , marginal = Utility.fromPerDollar price perDollar
               , perDollar = perDollar
               }
                 :: muPerPrices
@@ -139,7 +139,7 @@ toGood raw =
 type alias ResolvedGood =
     { name : String
     , price : Price
-    , muPerDollars : Array Price
+    , muPerDollars : Array Utility
     }
 
 
@@ -151,7 +151,7 @@ resolveGood good =
     }
 
 type alias Step =
-    { muPerDollars : List (String, Int, Maybe Utility)
+    { muPerDollars : List { name : String, quantity : Int, utility : Maybe Utility, affordable : Bool }
     , bought : List String
     , incomeAfter : Price
     }
@@ -160,14 +160,10 @@ type alias MaxUtilityModel =
     ( List Step, (Price, List Int) )
 
 
-getMUPP : Price -> ( Int, ResolvedGood ) -> ( ( Int, Price ), Maybe Utility )
-getMUPP income ( count, { price, muPerDollars } ) =
+getMUPP : ( Int, ResolvedGood ) -> ( ( Int, Price ), Maybe Utility )
+getMUPP ( count, { price, muPerDollars } ) =
     ( ( count, price )
-    , if income < price then
-        Nothing
-
-      else
-        Array.get count muPerDollars
+    , Array.get count muPerDollars
     )
 
 maxUtilityStep : List ResolvedGood -> MaxUtilityModel -> (List Int, List Step)
@@ -177,11 +173,12 @@ maxUtilityStep goods ( steps, (income, purchased) ) =
         withMUPP : List ( ( Int, Price ), Maybe Utility )
         withMUPP =
             List.map2 Tuple.pair purchased goods
-                |> List.map (getMUPP income)
+                |> List.map getMUPP
 
         maxMUPP : Maybe Utility
         maxMUPP =
             withMUPP
+                |> List.filter (\((_, price), _) -> income >= price)
                 |> List.filterMap Tuple.second
                 |> List.maximum
 
@@ -195,7 +192,8 @@ maxUtilityStep goods ( steps, (income, purchased) ) =
         step : Step
         step =
             { muPerDollars = List.map2 Tuple.pair withMUPP goods
-                |> List.map (\(((quantity, _), mupp), { name }) -> (name, quantity, mupp))
+                |> List.map (\(((quantity, price), mupp), { name }) ->
+                    { name = name, quantity = quantity, utility = mupp, affordable = income >= price })
             , bought = List.map2 Tuple.pair withMUPP goods
                 |> List.filterMap (\(( _, mupp ), { name }) -> if justEqual mupp maxMUPP then
                     Just name

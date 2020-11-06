@@ -277,10 +277,14 @@ renderStep stepNumber { muPerDollars, bought, incomeAfter } =
     Html.tr []
         [ td [ text (String.fromInt (stepNumber + 1)) ]
         , muPerDollars
-            |> List.map (\(name, quantity, utility) ->
-                [ name
+            |> List.map (\{ name, quantity, utility, affordable } ->
+                [ name ++ if affordable then
+                    ""
+                else
+                    "*"
                 , String.fromInt (quantity + 1)
-                , Maybe.map Utility.toString utility |> Maybe.withDefault "?"
+                , Maybe.map Utility.toString utility
+                    |> Maybe.withDefault "?"
                 ])
             |> List.map (Html.tr [] << List.map (td << List.singleton << text))
             |> (List.map th >> Html.tr [] >> (::))
@@ -322,7 +326,8 @@ renderMaxUtility model =
             let
                 ( quantities, steps ) = Good.maxUtility goods income
             in
-            [ steps
+            [ Html.p [] [ text "*Cannot afford" ]
+            , steps
                 |> List.reverse
                 |> List.indexedMap renderStep
                 |> (List.map th >> Html.tr [] >> (::))
