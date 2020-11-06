@@ -1,5 +1,7 @@
 module Price exposing (Price, fromString, toString)
 
+import Round
+
 
 type alias Price =
     Float
@@ -7,7 +9,7 @@ type alias Price =
 
 toString : Price -> String
 toString =
-    String.fromFloat
+    Round.round 2 >> String.append "$"
 
 
 fromString : String -> Maybe Price

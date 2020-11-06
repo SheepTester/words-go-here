@@ -23,8 +23,30 @@ type alias Model =
 
 init : Model
 init =
-    { goods = Array.empty
-    , income = ""
+    { goods = Array.fromList
+        [ { name = "Product X"
+            , price = "10"
+            , utilities = [42, 82, 118, 148, 170, 182, 182]
+                |> List.map Utility.toString
+                |> List.map TotalUtilityRaw
+                |> Array.fromList
+            }
+        , { name = "Product Y"
+            , price = "2"
+            , utilities = [14, 26, 36, 44, 50, 54, 56.4]
+                |> List.map Utility.toString
+                |> List.map TotalUtilityRaw
+                |> Array.fromList
+            }
+        , { name = "Product Z"
+            , price = "8"
+            , utilities = [32, 60, 84, 100, 110, 116, 120]
+                |> List.map Utility.toString
+                |> List.map TotalUtilityRaw
+                |> Array.fromList
+            }
+        ]
+    , income = "74"
     }
 
 
@@ -76,10 +98,12 @@ updateUtility goodIndex utilityIndex utilityField utility model =
         model
 
 
-th : List (Html Msg) -> Html Msg
-th =
-    Html.td
+th : String -> Html Msg
+th heading =
+    Html.th
         [ A.style "border" "1px solid black"
+        ]
+        [ text heading
         ]
 
 
@@ -227,11 +251,11 @@ goodEditor goodIndex good =
                 [ text "+ Add row" ]
             ]
          , Html.tr []
-            [ "Quantity" |> text |> List.singleton |> td
-            , "Total utility" |> text |> List.singleton |> td
-            , "Marginal utility" |> text |> List.singleton |> td
-            , "Marginal utility over price" |> text |> List.singleton |> td
-            , "Remove" |> text |> List.singleton |> td
+            [ "Quantity" |> th
+            , "Total utility" |> th
+            , "Marginal utility" |> th
+            , "Marginal utility over price" |> th
+            , "Remove" |> th
             ]
          ]
             ++ (Array.indexedMap (utilityEditor utilities goodIndex good.utilities) good.utilities |> Array.toList)
@@ -248,27 +272,77 @@ renderMaxUtilityResult ( { name }, count ) =
         |> List.map td
         |> Html.tr []
 
+renderStep : Int -> Good.Step -> Html Msg
+renderStep stepNumber { muPerDollars, bought, incomeAfter } =
+    Html.tr []
+        [ td [ text (String.fromInt (stepNumber + 1)) ]
+        , muPerDollars
+            |> List.map (\(name, quantity, utility) ->
+                [ name
+                , String.fromInt (quantity + 1)
+                , Maybe.map Utility.toString utility |> Maybe.withDefault "?"
+                ])
+            |> List.map (Html.tr [] << List.map (td << List.singleton << text))
+            |> (List.map th >> Html.tr [] >> (::))
+                [ "Product"
+                , "Next quantity"
+                , "MU per dollar"
+                ]
+            |> Html.table
+                [ A.style "border-collapse" "collapse"
+                ]
+            |> List.singleton
+            |> td
+        , String.join " and " bought
+            |> text
+            |> List.singleton
+            |> td
+        , Price.toString incomeAfter
+            |> text
+            |> List.singleton
+            |> td
+        ]
 
-renderMaxUtility : Model -> Html Msg
+renderMaxUtility : Model -> List (Html Msg)
 renderMaxUtility model =
     case ( Price.fromString model.income, model.goods |> Array.toList |> List.filterMap Good.toGood ) of
         ( Nothing, _ ) ->
             text "Invalid income"
                 |> List.singleton
                 |> Html.p []
+                |> List.singleton
 
         ( _, [] ) ->
             text "No valid goods (add a new good or look for red outlines)"
                 |> List.singleton
                 |> Html.p []
+                |> List.singleton
 
         ( Just income, goods ) ->
-            Good.maxUtility goods income
+            let
+                ( quantities, steps ) = Good.maxUtility goods income
+            in
+            [ steps
+                |> List.reverse
+                |> List.indexedMap renderStep
+                |> (List.map th >> Html.tr [] >> (::))
+                    [ "Step"
+                    , "Product / Next quantity / MU per dollar"
+                    , "Purchase"
+                    , "Income left"
+                    ]
+                |> Html.table
+                    [ A.style "border-collapse" "collapse"
+                    , A.style "margin" "20px 0"
+                    ]
+            , quantities
                 |> List.map2 Tuple.pair goods
                 |> List.map renderMaxUtilityResult
                 |> Html.table
                     [ A.style "border-collapse" "collapse"
+                    , A.style "margin" "20px 0"
                     ]
+            ]
 
 
 view : Model -> Html Msg
@@ -284,5 +358,5 @@ view model =
             ]
             :: Html.button [ E.onClick newGood ] [ text "New good" ]
             :: (Array.indexedMap goodEditor model.goods |> Array.toList)
-            ++ [ renderMaxUtility model ]
+            ++ renderMaxUtility model
         )
