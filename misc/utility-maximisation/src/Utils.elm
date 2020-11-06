@@ -1,7 +1,8 @@
-module Utils exposing (justEqual, removeFromArray, removeFromList)
+module Utils exposing (justEqual, removeFromArray, removeFromList, isJust, noAttribute)
 
 import Array exposing (Array)
-
+import Html
+import Html.Attributes
 
 
 -- https://stackoverflow.com/a/33101419
@@ -25,3 +26,16 @@ justEqual maybeA maybeB =
 
         _ ->
             False
+
+isJust : Maybe a -> Bool
+isJust maybe =
+    case maybe of
+        Just _ ->
+            True
+
+        Nothing ->
+            False
+
+noAttribute : Html.Attribute msg
+noAttribute =
+    Html.Attributes.classList []

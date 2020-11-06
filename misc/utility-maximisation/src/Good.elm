@@ -1,9 +1,25 @@
-module Good exposing (Calculation, Good, UtilityDatum(..))
+module Good exposing (Calculation, Good, GoodRaw, UtilityRaw(..), UtilityDatum(..), new)
 
 import Array exposing (Array)
 import Price exposing (Price)
 import Utility exposing (Utility)
-import Utils exposing (justEqual)
+import Utils exposing (justEqual, isJust)
+
+
+type UtilityRaw
+    = TotalUtilityRaw String
+    | MarginalUtilityRaw String
+    | MUPerDollarRaw String
+    | Unset
+
+type alias GoodRaw =
+    { name : String
+    , price : String
+    , utilities : Array UtilityRaw
+    }
+
+new : GoodRaw
+new = { name = "", price = "", utilities = Array.repeat 1 Unset }
 
 
 type UtilityDatum
@@ -12,6 +28,20 @@ type UtilityDatum
     | MUPerDollar Utility
     | Unknown
 
+toUtility : UtilityRaw -> Maybe UtilityDatum
+toUtility raw =
+    case raw of
+        TotalUtilityRaw utility ->
+            utility |> Utility.fromString |> Maybe.map TotalUtility
+
+        MarginalUtilityRaw utility ->
+            utility |> Utility.fromString |> Maybe.map MarginalUtility
+
+        MUPerDollarRaw utility ->
+            utility |> Utility.fromString |> Maybe.map MUPerDollar
+
+        Unset ->
+            Just Unknown
 
 type alias Calculation =
     { total : Utility
@@ -66,13 +96,25 @@ calculateUtilities good =
         |> Tuple.second
         |> List.reverse
 
-
 type alias Good =
     { name : String
     , price : Price
     , utilities : Array UtilityDatum
     }
 
+toGood : GoodRaw -> Maybe Good
+toGood raw =
+    let
+        maybeUtilities = Array.map toUtility raw.utilities |> Array.toList
+    in
+    if List.all isJust maybeUtilities then
+        Price.fromString raw.price
+            |> Maybe.map (\price -> { name = raw.name
+            , price = price
+            , utilities = List.filterMap identity maybeUtilities |> Array.fromList
+            })
+    else
+        Nothing
 
 type alias ResolvedGood =
     { price : Price
@@ -105,15 +147,18 @@ getMUPP income ( count, { price, muPerDollars } ) =
 maxUtilityStep : List ResolvedGood -> MaxUtilityModel -> List Int
 maxUtilityStep goods ( income, purchased ) =
     let
+        withMUPP : List ( ( Int, Price ), Maybe Utility )
         withMUPP =
             List.map2 Tuple.pair purchased goods
                 |> List.map (getMUPP income)
 
+        maxMUPP : Maybe Utility
         maxMUPP =
             withMUPP
                 |> List.filterMap Tuple.second
                 |> List.maximum
 
+        spent : Price
         spent =
             withMUPP
                 |> List.filter (\( _, mupp ) -> justEqual mupp maxMUPP)

@@ -2,13 +2,13 @@ module Main exposing (main)
 
 import Array exposing (Array)
 import Browser
-import Good exposing (Good, UtilityDatum(..))
+import Good exposing (GoodRaw, UtilityRaw(..))
 import Html exposing (Html, text)
 import Html.Attributes as A
 import Html.Events as E
 import Price exposing (Price)
 import Utility exposing (Utility)
-import Utils exposing (removeFromArray, removeFromList)
+import Utils exposing (removeFromArray, removeFromList, noAttribute)
 
 
 main =
@@ -16,13 +16,15 @@ main =
 
 
 type alias Model =
-    { goods : Array Good
+    { goods : Array GoodRaw
+    , income : String
     }
 
 
 init : Model
 init =
     { goods = Array.empty
+    , income = ""
     }
 
 
@@ -36,89 +38,44 @@ type Msg
     | SetMUPP Int Int String
 
 
-updateName : Int -> String -> Int -> Good -> Good
-updateName index name i good =
-    if index == i then
-        { good | name = name }
+updateGood : (GoodRaw -> GoodRaw) -> Int -> Model -> Model
+updateGood updateFn index model =
+    { model
+        | goods =
+            case Array.get index model.goods of
+                Just good ->
+                    Array.set index (updateFn good) model.goods
 
-    else
-        good
-
-
-updatePrice : Int -> Price -> Int -> Good -> Good
-updatePrice index price i good =
-    if index == i then
-        { good | price = price }
-
-    else
-        good
+                Nothing ->
+                    model.goods
+    }
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
         New ->
-            { model | goods = Array.push { name = "", price = 0, utilities = Array.repeat 1 Unknown } model.goods }
+            { model | goods = Array.push Good.new model.goods }
 
         ChangeName index name ->
-            { model
-                | goods =
-                    case Array.get index model.goods of
-                        Just good ->
-                            Array.set index { good | name = name } model.goods
+            updateGood (\good -> { good | name = name }) index model
 
-                        Nothing ->
-                            model.goods
-            }
-
-        ChangePrice index priceString ->
-            { model
-                | goods =
-                    case ( Array.get index model.goods, Price.fromString priceString ) of
-                        ( Just good, Just price ) ->
-                            Array.set index { good | price = price } model.goods
-
-                        _ ->
-                            model.goods
-            }
+        ChangePrice index price ->
+            updateGood (\good -> { good | price = price }) index model
 
         Remove index ->
             { model
                 | goods = removeFromArray index model.goods
             }
 
-        SetTU goodIndex utilityIndex utilString ->
-            { model
-                | goods =
-                    case ( Array.get goodIndex model.goods, Utility.fromString utilString |> Maybe.map TotalUtility ) of
-                        ( Just good, Just utility ) ->
-                            Array.set goodIndex { good | utilities = Array.set utilityIndex utility good.utilities } model.goods
+        SetTU goodIndex utilityIndex utility ->
+            updateGood (\good -> { good | utilities = Array.set utilityIndex (TotalUtilityRaw utility) good.utilities }) goodIndex model
 
-                        _ ->
-                            model.goods
-            }
+        SetMU goodIndex utilityIndex utility ->
+            updateGood (\good -> { good | utilities = Array.set utilityIndex (MarginalUtilityRaw utility) good.utilities }) goodIndex model
 
-        SetMU goodIndex utilityIndex utilString ->
-            { model
-                | goods =
-                    case ( Array.get goodIndex model.goods, Utility.fromString utilString |> Maybe.map MarginalUtility ) of
-                        ( Just good, Just utility ) ->
-                            Array.set goodIndex { good | utilities = Array.set utilityIndex utility good.utilities } model.goods
-
-                        _ ->
-                            model.goods
-            }
-
-        SetMUPP goodIndex utilityIndex utilString ->
-            { model
-                | goods =
-                    case ( Array.get goodIndex model.goods, Utility.fromString utilString |> Maybe.map MUPerDollar ) of
-                        ( Just good, Just utility ) ->
-                            Array.set goodIndex { good | utilities = Array.set utilityIndex utility good.utilities } model.goods
-
-                        _ ->
-                            model.goods
-            }
+        SetMUPP goodIndex utilityIndex utility ->
+            updateGood (\good -> { good | utilities = Array.set utilityIndex (MUPerDollarRaw utility) good.utilities }) goodIndex model
 
 
 th : List (Html Msg) -> Html Msg
@@ -145,50 +102,53 @@ row elements =
             elements
         ]
 
-
-utilityInput : Price -> (String -> Msg) -> Html Msg
-utilityInput utils msg =
+floatInput : String -> (String -> Msg) -> Html Msg
+floatInput value msg =
     Html.input
         [ A.type_ "number"
-
-        -- , utils |> fromPrice |> A.value
         , E.onInput msg
+        , case String.toFloat value of
+            Just _ ->
+                noAttribute
+            Nothing ->
+                A.style "box-shadow" "0 0 3px red"
+        , A.value value
         ]
         []
 
 
-utilityEditor : Int -> Array Good.UtilityDatum -> Int -> Good.UtilityDatum -> Html Msg
+utilityEditor : Int -> Array Good.UtilityRaw -> Int -> Good.UtilityRaw -> Html Msg
 utilityEditor goodIndex utilities utilityIndex utility =
     Html.tr []
         (((utilityIndex + 1) |> String.fromInt |> text |> List.singleton |> td)
             :: (case utility of
-                    TotalUtility utils ->
-                        [ SetTU goodIndex utilityIndex |> utilityInput utils
+                    TotalUtilityRaw utils ->
+                        [ SetTU goodIndex utilityIndex |> floatInput utils
                         , "3" |> text
                         , "3" |> text
                         ]
 
-                    MarginalUtility utils ->
+                    MarginalUtilityRaw utils ->
                         [ "3" |> text
-                        , SetMU goodIndex utilityIndex |> utilityInput utils
+                        , SetMU goodIndex utilityIndex |> floatInput utils
                         , "3" |> text
                         ]
 
-                    MUPerDollar utils ->
+                    MUPerDollarRaw utils ->
                         [ "3" |> text
                         , "3" |> text
-                        , SetMUPP goodIndex utilityIndex |> utilityInput utils
+                        , SetMUPP goodIndex utilityIndex |> floatInput utils
                         ]
 
-                    Unknown ->
-                        [ SetTU, SetMU, SetMUPP ] |> List.map (\msg -> msg goodIndex utilityIndex) |> List.map (utilityInput 0)
+                    Unset ->
+                        [ SetTU, SetMU, SetMUPP ] |> List.map (\msg -> msg goodIndex utilityIndex) |> List.map (floatInput "")
                )
             |> List.map List.singleton
             |> List.map td
         )
 
 
-goodEditor : Int -> Good -> Html Msg
+goodEditor : Int -> GoodRaw -> Html Msg
 goodEditor goodIndex good =
     Html.table
         [ A.style "border-collapse" "collapse"
@@ -207,7 +167,7 @@ goodEditor goodIndex good =
                 [ ChangePrice goodIndex |> E.onInput
                 , A.type_ "number"
                 , A.placeholder "Price"
-                , Price.toString good.price |> A.value
+                , A.value good.price
                 ]
                 []
             ]
@@ -221,10 +181,20 @@ goodEditor goodIndex good =
             ++ (Array.indexedMap (utilityEditor goodIndex good.utilities) good.utilities |> Array.toList)
         )
 
+renderMaxUtility : Model -> Html Msg
+renderMaxUtility model =
+    case Price.fromString model.income of
+        Just income ->
+            text "cool"
+
+        Nothing ->
+            text "Invalid income"
+
 
 view : Model -> Html Msg
 view model =
     Html.div []
         (Html.button [ E.onClick New ] [ text "New good" ]
             :: (Array.indexedMap goodEditor model.goods |> Array.toList)
+            ++ [renderMaxUtility model]
         )
