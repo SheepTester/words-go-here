@@ -1,9 +1,9 @@
-module Good exposing (Calculation, Good, GoodRaw, UtilityRaw(..), UtilityDatum(..), new)
+module Good exposing (Calculation, Good, GoodRaw, UtilityRaw(..), UtilityDatum(..), new, maxUtility, toGood, calculateUtilities)
 
 import Array exposing (Array)
 import Price exposing (Price)
 import Utility exposing (Utility)
-import Utils exposing (justEqual, isJust)
+import Utils exposing (justEqual, isJust, mapUntil)
 
 
 type UtilityRaw
@@ -104,17 +104,14 @@ type alias Good =
 
 toGood : GoodRaw -> Maybe Good
 toGood raw =
-    let
-        maybeUtilities = Array.map toUtility raw.utilities |> Array.toList
-    in
-    if List.all isJust maybeUtilities then
-        Price.fromString raw.price
-            |> Maybe.map (\price -> { name = raw.name
-            , price = price
-            , utilities = List.filterMap identity maybeUtilities |> Array.fromList
-            })
-    else
-        Nothing
+    Price.fromString raw.price
+        |> Maybe.map (\price -> { name = raw.name
+        , price = price
+        , utilities = Array.map toUtility raw.utilities
+            |> Array.toList
+            |> mapUntil identity
+            |> Array.fromList
+        })
 
 type alias ResolvedGood =
     { price : Price
@@ -183,10 +180,9 @@ maxUtilityStep goods ( income, purchased ) =
             purchased
 
 
-maxUtility : Array Good -> Price -> List Int
+maxUtility : List Good -> Price -> List Int
 maxUtility goodData income =
     let
-        goods =
-            goodData |> Array.toList |> List.map resolveGood
+        goods = List.map resolveGood goodData
     in
     maxUtilityStep goods ( income, List.repeat (List.length goods) 0 )

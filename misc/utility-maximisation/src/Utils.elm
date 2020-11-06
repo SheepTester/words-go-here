@@ -1,4 +1,4 @@
-module Utils exposing (justEqual, removeFromArray, removeFromList, isJust, noAttribute)
+module Utils exposing (justEqual, removeFromArray, removeFromList, isJust, noAttribute, mapUntil)
 
 import Array exposing (Array)
 import Html
@@ -39,3 +39,15 @@ isJust maybe =
 noAttribute : Html.Attribute msg
 noAttribute =
     Html.Attributes.classList []
+
+mapUntil : (a -> Maybe b) -> List a -> List b
+mapUntil filter list =
+    case list of
+        head :: tail ->
+            case filter head of
+                Just value ->
+                    value :: mapUntil filter tail
+                Nothing ->
+                    []
+        [] ->
+            []
