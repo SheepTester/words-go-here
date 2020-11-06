@@ -5,39 +5,13 @@ import Html exposing (Html, text)
 import Html.Attributes as A
 import Html.Events as E
 import Array exposing (Array)
-
+import Price exposing (Price)
+import Utility exposing (Utility)
+import Utils exposing (removeFromList, removeFromArray)
+import Good exposing (Good, UtilityDatum(..))
 
 main =
     Browser.sandbox { init = init, update = update, view = view }
-
--- https://stackoverflow.com/a/33101419
-removeFromList : Int -> List a -> List a
-removeFromList index list =
-  List.take index list ++ List.drop (index + 1) list
-
-removeFromArray : Int -> Array a -> Array a
-removeFromArray index =
-  Array.toList >> removeFromList index >> Array.fromList
-
-
-type alias Price = Int
-
-fromPrice : Price -> String
-fromPrice = String.fromInt
-
-type Utility
-    = TotalUtility Price
-    | MarginalUtility Price
-    | MUPerPrice Price
-    | Unknown
-
-
-type alias Good =
-    { name : String
-    , price : Price
-    , utilities : Array Utility
-    }
-
 
 type alias Model =
     { goods : Array Good
@@ -46,7 +20,8 @@ type alias Model =
 
 init : Model
 init =
-    { goods = Array.empty }
+    { goods = Array.empty
+    }
 
 
 type Msg
@@ -93,7 +68,7 @@ update msg model =
 
         ChangePrice index priceString ->
             { model
-            | goods = case (Array.get index model.goods, String.toInt priceString) of
+            | goods = case (Array.get index model.goods, Price.fromString priceString) of
                 (Just good, Just price) ->
                     Array.set index { good | price = price } model.goods
                 _ -> model.goods
@@ -106,7 +81,7 @@ update msg model =
 
         SetTU goodIndex utilityIndex utilString ->
             { model
-            | goods = case (Array.get goodIndex model.goods, String.toInt utilString |> Maybe.map TotalUtility) of
+            | goods = case (Array.get goodIndex model.goods, Utility.fromString utilString |> Maybe.map TotalUtility) of
                 (Just good, Just utility) ->
                     Array.set goodIndex { good | utilities = Array.set utilityIndex utility good.utilities } model.goods
                 _ -> model.goods
@@ -114,7 +89,7 @@ update msg model =
 
         SetMU goodIndex utilityIndex utilString ->
             { model
-            | goods = case (Array.get goodIndex model.goods, String.toInt utilString |> Maybe.map MarginalUtility) of
+            | goods = case (Array.get goodIndex model.goods, Utility.fromString utilString |> Maybe.map MarginalUtility) of
                 (Just good, Just utility) ->
                     Array.set goodIndex { good | utilities = Array.set utilityIndex utility good.utilities } model.goods
                 _ -> model.goods
@@ -122,7 +97,7 @@ update msg model =
 
         SetMUPP goodIndex utilityIndex utilString ->
             { model
-            | goods = case (Array.get goodIndex model.goods, String.toInt utilString |> Maybe.map MUPerPrice) of
+            | goods = case (Array.get goodIndex model.goods, Utility.fromString utilString |> Maybe.map MUPerDollar) of
                 (Just good, Just utility) ->
                     Array.set goodIndex { good | utilities = Array.set utilityIndex utility good.utilities } model.goods
                 _ -> model.goods
@@ -157,7 +132,7 @@ utilityInput utils msg =
     , E.onInput msg
     ] []
 
-utilityEditor : Int -> (Array Utility) -> Int -> Utility -> Html Msg
+utilityEditor : Int -> (Array Good.UtilityDatum) -> Int -> Good.UtilityDatum -> Html Msg
 utilityEditor goodIndex utilities utilityIndex utility =
     Html.tr []
         (((utilityIndex + 1) |> String.fromInt |> text |> List.singleton |> td) :: (case utility of
@@ -173,7 +148,7 @@ utilityEditor goodIndex utilities utilityIndex utility =
                 , "3" |> text
                 ]
 
-            MUPerPrice utils ->
+            MUPerDollar utils ->
                 [ "3" |> text
                 , "3" |> text
                 , SetMUPP goodIndex utilityIndex |> utilityInput utils
@@ -198,7 +173,7 @@ goodEditor goodIndex good =
                 [ ChangePrice goodIndex |> E.onInput
                 , A.type_ "number"
                 , A.placeholder "Price"
-                , fromPrice good.price |> A.value
+                , Price.toString good.price |> A.value
                 ]
                 []
             ]
