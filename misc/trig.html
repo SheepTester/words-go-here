@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Trig formulas</title>
+    <meta name="description" content="Memorizing these were a pain" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+      integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2"
+      crossorigin="anonymous"
+    >
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css"
+      integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X"
+      crossorigin="anonymous"
+    >
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js"
+      integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js"
+      integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa"
+      crossorigin="anonymous"
+      onload="renderMathInElement(document.body)"
+    ></script>
+
+    <style>
+      .formula {
+        font-family: serif;
+        --font-size: 24px;
+        font-size: var(--font-size);
+      }
+      .function,
+      .minus,
+      .space {
+        font-size: 0;
+      }
+      .function::after,
+      .minus::after {
+        font-size: var(--font-size);
+      }
+      .function::after {
+        content: attr(aria-label);
+        margin: 0 0.3ch;
+      }
+      .minus::after {
+        content: '−';
+      }
+      .plus,
+      .minus::after,
+      .equals {
+        margin: 0 0.3ch;
+      }
+      .lparen {
+        margin-left: 0.3ch;
+      }
+      .rparen {
+        margin-right: 0.3ch;
+      }
+      .var {
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body class="bg-dark text-light">
+    <!--
+    = TRIG IDENTITIES =
+
+    == Sum and difference ==
+    cos(A - B) = cos A cos B + sin A sin B
+    cos(A + B) = cos A cos B - sin A sin B
+
+    sin(A - B) = sin A cos B - cos A sin B
+    sin(A + B) = sin A cos B + cos A sin B
+
+    tan(A - B) = (tan A - tan B) / (1 + tan A tan B)
+    tan(A + B) = (tan A + tan B) / (1 - tan A tan B)
+
+    == Double angle ==
+    sin 2x = 2 sin x cos x
+    cos 2x = cos^2 x - sin^2 x = 1 - 2sin^2 x = 2cos^2 x - 1
+    tan 2x = 2 tan x / (1 - tan^2 x)
+
+    == Half angle ==
+    sin(th / 2) = pm sqrt((1 - cos th) / 2)
+    cos(th / 2) = pm sqrt((1 + cos th) / 2)
+    tan(th / 2) = pm sqrt((1 - cos th) / (1 + cos th) = sin th / (1 + cos th) = (1 - cos th) / sin th
+
+    = CALCULUS =
+
+    == Derivatives ==
+    d/dx sin x = cos x
+    d/dx cos x = -sin x
+    d/dx tan x = sec^2 x
+    d/dx cot x = -csc^2 x
+    d/dx sec x = sec x tan x
+    d/dx csc x = -csc x cot x
+
+    == Derivatives of inverses ==
+    d/dx sin^-1 x = 1 / sqrt(1 - x^2)
+    d/dx cos^-1 x = -1 / sqrt(1 - x^2)
+    d/dx tan^-1 x = 1 / (1 + x^2)
+    d/dx cot^-1 x = -1 / (1 + x^2)
+    d/dx sec^-1 x = 1 / (|x| sqrt(x^2 - 1))
+    d/dx csc^-1 x = -1 / (|x| sqrt(x^2 - 1))
+
+    == Integrals ==
+    integral of sin x dx = -cos x + C
+    integral of cos x dx = sin x + C
+    integral of tan x dx = -ln|cos x| + C = ln|sec x| + C
+    integral of cot x dx = ln|sin x|
+    integral of sec x dx = ln|sec x + tan x|
+    integral of csc x dx = -ln|csc x + cot x|
+    -->
+    <div class="container">
+      <h1 class="mt-5">Trig formulas</h1>
+      <p class="lead">Memorizing these were a pain</p>
+      <p>Self-promotion: a <a href="/hello-world/drills.html" class="text-warning">trig drill generator</a> for practice.</p>
+      <h2>Trig identities</h2>
+      <div class="row">
+        <div class="col">
+          <h3>Sum and difference</h3>
+          <p>
+            <span class="formula">
+              <span class="function" aria-label="cos">\cos</span><span class="lparen">(</span><span class="var">A</span><span class="minus">-</span><span class="var">B</span><span class="rparen">)</span><!--
+              --><span class="equals">=</span><!--
+              --><span class="function" aria-label="cos">\cos</span><span class="space"> </span><span class="var">A</span><span class="function" aria-label="cos">\cos</span><span class="space"> </span><span class="var">B</span><!--
+              --><span class="plus">+</span><!--
+              --><span class="function" aria-label="sin">\sin</span><span class="space"> </span><span class="var">A</span><span class="function" aria-label="sin">\sin</span><span class="space"> </span><span class="var">B</span>
+            </span>
+          </p>
+        </div>
+        <div class="col">
+          <h3>Double angle</h3>
+        </div>
+        <div class="col">
+          <h3>Half angle</h3>
+        </div>
+      </div>
+      <h2>Calculus</h2>
+      <div class="row">
+        <div class="col">
+          <h3>Derivatives</h3>
+        </div>
+        <div class="col">
+          <h3>Derivatives of inverses</h3>
+        </div>
+        <div class="col">
+          <h3>Integrals</h3>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
