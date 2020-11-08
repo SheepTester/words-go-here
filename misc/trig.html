@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-100">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -22,59 +22,20 @@
       integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X"
       crossorigin="anonymous"
     >
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js"
-      integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js"
-      integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa"
-      crossorigin="anonymous"
-      onload="renderMathInElement(document.body)"
-    ></script>
 
-    <style>
-      .formula {
-        font-family: serif;
-        --font-size: 24px;
-        font-size: var(--font-size);
-      }
-      .function,
-      .minus,
-      .space {
-        font-size: 0;
-      }
-      .function::after,
-      .minus::after {
-        font-size: var(--font-size);
-      }
-      .function::after {
-        content: attr(aria-label);
-        margin: 0 0.3ch;
-      }
-      .minus::after {
-        content: '−';
-      }
-      .plus,
-      .minus::after,
-      .equals {
-        margin: 0 0.3ch;
-      }
-      .lparen {
-        margin-left: 0.3ch;
-      }
-      .rparen {
-        margin-right: 0.3ch;
-      }
-      .var {
-        font-style: italic;
+    <style media="screen">
+      .math {
+        max-width: 100%;
+        overflow-x: auto;
+        padding: 5px 0;
+        margin: 0;
+        font-family: monospace;
+        white-space: pre-wrap;
       }
     </style>
   </head>
-  <body class="bg-dark text-light">
+
+  <body class="bg-dark text-light d-flex flex-column h-100">
     <!--
     = TRIG IDENTITIES =
 
@@ -124,43 +85,132 @@
     integral of sec x dx = ln|sec x + tan x|
     integral of csc x dx = -ln|csc x + cot x|
     -->
-    <div class="container">
+
+    <main role="main" class="container flex-shrink-0">
       <h1 class="mt-5">Trig formulas</h1>
       <p class="lead">Memorizing these were a pain</p>
-      <p>Self-promotion: a <a href="/hello-world/drills.html" class="text-warning">trig drill generator</a> for practice.</p>
+      <p>This is a quick reference sheet for sets of trig formulas whose members I had a hard time memorizing.</p>
+
       <h2>Trig identities</h2>
+      <p>You'll have to memorize the sum and difference formulas, but you can derive the double angle formulas, and the half angle formulas will be given when needed.</p>
+
       <div class="row">
-        <div class="col">
+        <section class="col-lg">
           <h3>Sum and difference</h3>
-          <p>
-            <span class="formula">
-              <span class="function" aria-label="cos">\cos</span><span class="lparen">(</span><span class="var">A</span><span class="minus">-</span><span class="var">B</span><span class="rparen">)</span><!--
-              --><span class="equals">=</span><!--
-              --><span class="function" aria-label="cos">\cos</span><span class="space"> </span><span class="var">A</span><span class="function" aria-label="cos">\cos</span><span class="space"> </span><span class="var">B</span><!--
-              --><span class="plus">+</span><!--
-              --><span class="function" aria-label="sin">\sin</span><span class="space"> </span><span class="var">A</span><span class="function" aria-label="sin">\sin</span><span class="space"> </span><span class="var">B</span>
-            </span>
+          <p class="math">
+            \def \+ {\textcolor{ffa5a5}{+}}
+            \def \- {\textcolor{a5b8ff}{-}}
+            \def \ccos {\textcolor{ffcb7e}{\cos}}
+            \def \csin {\textcolor{fffb7e}{\sin}}
+            \def \ctan {\textcolor{cff4ff}{\tan}}
+            \begin{aligned}
+            \ccos \left(A \- B\right) &amp;= \ccos A \ccos B \+ \csin A \csin B \\[1ex]
+            \ccos \left(A \+ B\right) &amp;= \ccos A \ccos B \- \csin A \csin B \\[1ex]
+            \csin \left(A \- B\right) &amp;= \csin A \ccos B \- \ccos A \csin B \\[1ex]
+            \csin \left(A \+ B\right) &amp;= \csin A \ccos B \+ \ccos A \csin B \\[1ex]
+            \ctan \left(A \- B\right) &amp;= \dfrac{\ctan A \- \ctan B}{1 \+ \ctan A \ctan B} \\[3ex]
+            \ctan \left(A \+ B\right) &amp;= \dfrac{\ctan A \+ \ctan B}{1 \- \ctan A \ctan B}
+            \end{aligned}
           </p>
-        </div>
-        <div class="col">
+        </section>
+
+        <section class="col-lg">
           <h3>Double angle</h3>
-        </div>
-        <div class="col">
+          <p class="math">
+            \begin{aligned}
+            \sin 2x &amp;= 2 \sin x \cos x \\[2ex]
+            \cos 2x &amp;= \cos^2 x - \sin^2 x \\
+            &amp;= 1 - 2 \sin^2 x \\
+            &amp;= 2 \cos^2 x - 1 \\[2ex]
+            \tan 2x &amp;= \dfrac{2 \tan x}{1 - \tan^2 x}
+            \end{aligned}
+          </p>
+        </section>
+
+        <section class="col-lg">
           <h3>Half angle</h3>
-        </div>
+          <p class="math">
+            \begin{aligned}
+            \sin\dfrac{\theta}{2} &amp;= \pm\sqrt{\dfrac{1 - \cos \theta}{2}} \\[2ex]
+            \cos\dfrac{\theta}{2} &amp;= \pm\sqrt{\dfrac{1 + \cos \theta}{2}} \\[2ex]
+            <!-- https://github.com/KaTeX/KaTeX/issues/531 -->
+            \tan \dfrac{\theta}{2} &amp;= \pm\sqrt{\dfrac{1 - \cos \theta}{1 + \cos \theta}} \\[2ex]
+            &amp;= \dfrac{\sin \theta}{1 + \cos \theta} \\[2ex]
+            &amp;= \dfrac{1 - \cos \theta}{\sin \theta}
+            \end{aligned}
+          </p>
+        </section>
       </div>
+
       <h2>Calculus</h2>
+      <p>You need to memorize the derivatives and the integrals for sine and cosine, but you probably don't need to know the integrals for secant and cosecant.</p>
+
       <div class="row">
-        <div class="col">
+        <section class="col-lg">
           <h3>Derivatives</h3>
-        </div>
-        <div class="col">
+          <p class="math">
+            \def \- {\textcolor{ff8585}{-}}
+            <!-- (Not co-) Function -->
+            \gdef \fun #1 {\textcolor{a8ebff}{#1}}
+            <!-- Cofunction -->
+            \gdef \cfn #1 {\textcolor{ffcb7e}{#1}}
+            \begin{aligned}
+            \dfrac{d}{dx} \fun \sin x &amp;= \cfn \cos x &amp;
+            \dfrac{d}{dx} \cfn \cos x &amp;= \-\fun \sin x \\[2ex]
+            \dfrac{d}{dx} \fun \tan x &amp;= \fun \sec^2 x &amp;
+            \dfrac{d}{dx} \cfn \cot x &amp;= \-\cfn \csc^2 x \\[2ex]
+            \dfrac{d}{dx} \fun \sec x &amp;= \fun \sec x \fun \tan x &amp;
+            \dfrac{d}{dx} \cfn \csc x &amp;= \-\cfn \csc x \cfn \cot x
+            \end{aligned}
+          </p>
+        </section>
+
+        <section class="col-lg">
           <h3>Derivatives of inverses</h3>
-        </div>
-        <div class="col">
+          <p class="math">
+            \def \- {\textcolor{ff8585}{-}}
+            \begin{aligned}
+            \dfrac{d}{dx} \sin^{-1} x &amp;= \dfrac{1}{\sqrt{1 - x^2}} &amp;
+            \dfrac{d}{dx} \cos^{-1} x &amp;= \-\dfrac{1}{\sqrt{1 - x^2}} \\[2ex]
+            \dfrac{d}{dx} \tan^{-1} x &amp;= \dfrac{1}{1 + x^2} &amp;
+            \dfrac{d}{dx} \cot^{-1} x &amp;= \-\dfrac{1}{1 + x^2} \\[2ex]
+            \dfrac{d}{dx} \sec^{-1} x &amp;= \dfrac{1}{\left|x\right| \sqrt{x^2 - 1}} &amp;
+            \dfrac{d}{dx} \csc^{-1} x &amp;= \-\dfrac{1}{\left|x\right| \sqrt{x^2 - 1}}
+            \end{aligned}
+          </p>
+        </section>
+
+        <section class="col-lg">
           <h3>Integrals</h3>
-        </div>
+          <p class="math">
+            \def \integral {\int\!}
+            \def \dx {\;\mathrm{d}x}
+            \def \c {&amp;\textcolor{595E63}{+ \; C}}
+            \begin{aligned}
+            \integral \sin x \dx &amp;= -\cos x \c \\
+            \integral \cos x \dx &amp;= \sin x \c \\
+            \integral \tan x \dx &amp;= -\ln\left|\cos x\right| \c \\
+            &amp;= \ln\left|\sec x\right| \c \\
+            \integral \cot x \dx &amp;= \ln\left|\sin x\right| \c \\
+            \integral \sec x \dx &amp;= \ln\left|\sec x + \tan x\right| \c \\
+            \integral \csc x \dx &amp;= -\ln\left|\csc x + \cot x\right| \c
+            \end{aligned}
+          </p>
+        </section>
       </div>
-    </div>
+    </main>
+
+    <footer class="footer mt-auto py-3 pr-5">
+      <div class="container">
+        <span class="text-muted">Equations rendered using <a href="https://katex.org/" class="text-warning">KaTeX</a>.</span>
+      </div>
+    </footer>
+
+    <script type="module" type="text/javascript">
+      import katex from 'https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.mjs'
+      for (const math of document.getElementsByClassName('math')) {
+        katex.render(math.textContent, math, { throwOnError: true })
+      }
+    </script>
   </body>
 </html>
