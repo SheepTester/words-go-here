@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PAUSD Board Meeting</title>
+    <meta name="description" content="Channel 28 on Midpen Media Center" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <script src="https://content.jwplatform.com/libraries/TtzdIAtZ.js"></script>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background-color: black;
+        display: flex;
+        flex-direction: column;
+        font-family: sans-serif;
+        color: rgba(255, 255, 255, 0.5);
+      }
+      #container {
+        width: 100% !important;
+        height: 100% !important;
+        flex: auto;
+      }
+      .bottom {
+        margin: 0;
+        padding: 10px;
+      }
+      a {
+        color: rgba(200, 200, 255, 0.7);
+        text-decoration: none;
+      }
+      a:href {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <p class="bottom">
+      You can also watch this on Youth, Education and Sports Channel 28 on
+      <a href="https://midpenmedia.org/local-tv/watch-now/"
+        >Midpen Media Center</a
+      >.
+    </p>
+    <script>
+      const bit_rate = 'all'
+      function play_local_tv (ss_no, channel) {
+        jwplayer('container').setup({
+          playlist: [
+            {
+              sources: [
+                {
+                  file:
+                    'https://5c2974786200d.streamlock.net:443/live-chan' +
+                    channel +
+                    '/ngrp:ch' +
+                    channel +
+                    '_' +
+                    bit_rate +
+                    '/playlist.m3u8'
+                }
+              ],
+              image: '/wp-content/themes/mpm/img/tv-img.jpg'
+            }
+          ],
+          width: '505',
+          primary: 'html5',
+          aspectratio: '16:9',
+          androidhls: true,
+          hlshtml: true,
+          ga: { label: 'Channel ' + channel }
+        })
+        jwplayer('container').play()
+      }
+      play_local_tv(1, 28)
+    </script>
+  </body>
+</html>
