@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>dehtmlify</title>
+    <meta name="description" content="tired" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      body {
+        font-family: 'Comic Sans', cursive;
+      }
+    </style>
+  </head>
+  <body>
+    <label><input type="file" accept="text/html" id="html"> </label>
+    <script src="../htmlifier/download.js" charset="utf-8"></script>
+    <script>
+const fileInput = document.getElementById('html')
+fileInput.addEventListener('change', e => {
+  if (fileInput.files[0]) {
+    fileInput.files[0].text().then(htmlFile => {
+      let match
+      match = htmlFile.match(/FILE\s*=\s*"([^"]+)"/)
+      if (match) {
+        download(match[1], 'thing.zip')
+        return 'rename to sb3 or sb2 idk the version sorry'
+      }
+      match = htmlFile.match(/PROJECT_ID\s*=\s*"(\d+)"/)
+      if (match) {
+        return `it seems like you htmlified this project from scratch, so maybe you can find it <a href="https://scratch.mit.edu/projects/${match[1]}/">here</a>`
+      }
+      return 'sorry cannot dehtmlify'
+    }).then(html => {
+      if (html) {
+        const p = document.createElement('p')
+        p.innerHTML = html
+        document.body.appendChild(p)
+      }
+    })
+  }
+})
+    </script>
+  </body>
+</html>
