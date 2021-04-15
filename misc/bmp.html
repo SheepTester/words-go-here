@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>basic multilingual plane</title>
+    <meta name="description" content="inspired by the unifont map thing on wikimedia commons" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      body {
+        margin: 0;
+      }
+      span {
+        position: absolute;
+      }
+      .key {
+        pointer-events: none;
+        user-select: none;
+        opacity: 0.5;
+        transform: scaleX(0.8);
+      }
+      .horiz {
+        transform-origin: left;
+      }
+      #info {
+        margin-left: 2em;
+      }
+    </style>
+  </head>
+  <body>
+    <p id="info">May take a while to render; inspired by <a href="https://en.wikipedia.org/wiki/File:Unifont_Full_Map.png">File:Unifont_Full_Map.png</a></p>
+    <script>
+      window.addEventListener('load', e => {
+        console.time('creating elems')
+        const fragment = document.createDocumentFragment()
+        for (let i = 0; i < 0x10000; i++) {
+          const span = document.createElement('span')
+          span.style.left = i % 0x100 + 1 + 'em'
+          span.style.top = (i / 0x100 | 0) + 1 + 'em'
+          span.textContent = String.fromCodePoint(i)
+          fragment.append(span)
+        }
+        for (let i = 0; i < 0x100; i++) {
+          const [horiz, vert] = [
+            document.createElement('span'),
+            document.createElement('span')
+          ].map(span => {
+            span.textContent = i.toString(16).padStart(2, '0')
+            span.className = 'key'
+            span.style.left = '0'
+            span.style.top = '0'
+            return span
+          })
+          horiz.style.left = i + 1 + 'em'
+          horiz.classList.add('horiz')
+          vert.style.top = i + 1 + 'em'
+          fragment.append(horiz, vert)
+        }
+        console.timeEnd('creating elems')
+        console.time('adding to body')
+        document.body.append(fragment)
+        console.timeEnd('adding to body')
+      })
+    </script>
+  </body>
+</html>
