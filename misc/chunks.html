@@ -61,7 +61,7 @@ function shuffleInPlace (arr) {
 
 function renderChunks () {
   if (!image) return
-  const chunkSize = +chunkSizeInput.value
+  const chunkSize = Math.max(Math.floor(+chunkSizeInput.value), 1) || 50
   const width = Math.floor(image.width / chunkSize)
   const height = Math.floor(image.height / chunkSize)
   output.width = width * chunkSize
