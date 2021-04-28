@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Chunk image scramble</title>
+    <meta name="description" content="randomise square chunks in image" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      #image,
+      #output {
+        max-width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      <label>
+        Select an image:
+        <input type="file" id="image-file" accept="image/*" autofocus>
+        (or paste an image here)
+      </label>
+    </p>
+    <p>
+      <label>
+        Chunk size
+        <input type="number" id="chunk" min="1" value="50">
+      </label>
+    </p>
+    <canvas id="output"></canvas>
+    <script>
+const imageFile = document.getElementById('image-file')
+const chunkSizeInput = document.getElementById('chunk')
+const output = document.getElementById('output')
+const c = output.getContext('2d')
+
+let image, oldUrl
+function loadImage (file) {
+  if (oldUrl) {
+    URL.revokeObjectURL(oldUrl)
+  }
+  const url = URL.createObjectURL(file)
+  image = new Image()
+  image.addEventListener('load', renderChunks, { once: true })
+  image.src = url
+  oldUrl = url
+}
+
+function shuffleInPlace (arr) {
+  for (let i = arr.length - 1; i >= 1; i--) {
+    const index = Math.random() * (i + 1) | 0
+    if (index !== i) {
+      ;[arr[i], arr[index]] = [arr[index], arr[i]]
+    }
+  }
+}
+
+function renderChunks () {
+  if (!image) return
+  const chunkSize = +chunkSizeInput.value
+  const width = Math.floor(image.width / chunkSize)
+  const height = Math.floor(image.height / chunkSize)
+  output.width = width * chunkSize
+  output.height = height * chunkSize
+  const chunks = []
+  const offsetX = (image.width - output.width) / 2
+  const offsetY = (image.height - output.height) / 2
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      chunks.push([
+        x * chunkSize + offsetX,
+        y * chunkSize + offsetY,
+        chunkSize,
+        chunkSize
+      ])
+    }
+  }
+  shuffleInPlace(chunks)
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      c.drawImage(
+        image,
+        ...chunks.pop(),
+        x * chunkSize,
+        y * chunkSize,
+        chunkSize,
+        chunkSize
+      )
+    }
+  }
+}
+
+imageFile.addEventListener('change', () => {
+  if (imageFile.files[0]) {
+    loadImage(imageFile.files[0])
+  }
+})
+document.addEventListener('paste', e => {
+  if (e.clipboardData.files[0]) {
+    loadImage(e.clipboardData.files[0])
+  }
+})
+
+chunkSizeInput.addEventListener('input', renderChunks)
+    </script>
+  </body>
+</html>
