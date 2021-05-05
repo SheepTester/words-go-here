@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>battery graph</title>
+    <meta name="description" content="graph how quickly your battery is dying" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        background-color: black;
+        color: white;
+      }
+      svg {
+        overflow: visible;
+        position: absolute;
+        z-index: -1;
+        top: 0;
+        left: 0;
+      }
+      .point {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        margin: -5px;
+        background-color: lime;
+        white-space: nowrap;
+        border-radius: 50%;
+      }
+      .point::after {
+        content: attr(title);
+      }
+      svg,
+      .point {
+        transform: translate(10px, 10px);
+      }
+      #path {
+        fill: green;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      your daily reminder that <a href="https://www.chartjs.org/">chart.js</a>
+      is terrible and sucks at line graphs
+    </p>
+    <svg xmlns="http://www.w3.org/2000/svg">
+      <!-- chartjs is BAD -->
+      <path id="path" />
+    </svg>
+    <script>
+const X_SCALE = 1 / 1000 // 1 px : 1 min
+const Y_SCALE = 600 // 600 px : 100% battery
+const HEIGHT = 600
+
+const path = document.getElementById('path')
+
+function displayTime (date) {
+  return ['getHours', 'getMinutes', 'getSeconds']
+    .map(method => date[method]())
+    .map(number => number.toString().padStart(2, '0'))
+    .join(':')
+}
+
+const points = []
+function addPoint (x, y) {
+  points.push({ x, y })
+
+  const point = Object.assign(document.createElement('div'), {
+    className: 'point',
+    title: `${displayTime(new Date(x + start))}: ${Math.round(y * 100)}%`
+  })
+  point.style.left = x * X_SCALE + 'px'
+  point.style.top = HEIGHT - y * Y_SCALE + 'px'
+  document.body.appendChild(point)
+
+  let d = `M 0 ${HEIGHT}`
+  for (const { x, y } of points) {
+    d += `L ${x * X_SCALE} ${HEIGHT - y * Y_SCALE}`
+  }
+  d += `L ${x * X_SCALE} ${HEIGHT} z`
+  path.setAttributeNS(null, 'd', d)
+}
+
+const start = Date.now()
+async function getBattery () {
+  const manager = await navigator.getBattery()
+  const { level } = manager
+  console.log(level)
+  addPoint(Date.now() - start, level)
+  return manager
+}
+getBattery().then(manager => {
+  manager.addEventListener('chargingchange', getBattery)
+  manager.addEventListener('chargingtimechange', getBattery)
+  manager.addEventListener('dischargingtimechange', getBattery)
+  manager.addEventListener('levelchange', getBattery)
+})
+    </script>
+  </body>
+</html>
