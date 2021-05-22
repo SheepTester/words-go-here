@@ -15,6 +15,8 @@
       #preview {
         margin: 0 auto;
         width: 500px;
+        max-height: 80vh;
+        object-fit: contain;
       }
       canvas {
         image-rendering: pixelated;
@@ -33,38 +35,40 @@
     </select></p>
     <p><label for="background">Background colour: </label><input type="color" id="background" value="#000000"> (only shows if <code>fit</code> is set to <code>contain</code>)</p>
     <p><label for="ticks">Ticks per frame: </label><input type="number" id="ticks" value="1"> (a positive integer; there are 20 ticks per second)</p>
+    <p><label><input type="checkbox" id="transparent"> Is the GIF transparent?</label> Note that <a href="https://bugs.mojang.com/browse/MC-164001">paintings might not support transparency</a>.</p>
     <h2>Preview</h2>
     <canvas id="preview"></canvas>
     <h2><code>TEXTURE_NAME.png</code></h2>
     <canvas id="output"></canvas>
     <h2><code>TEXTURE_NAME.png.mcmeta</code></h2>
-    <pre>
-      {
-        "animation": {
-          "frametime": <span id="frametime">1</span>
-        }
-      }
-    </pre>
+    <textarea id="frametime" rows="5" cols="20" readonly></textarea>
     <h1>About</h1>
     <p>Uses <a href="https://www.npmjs.com/package/gif-frames">gif-frames</a> to read the gif data.</p>
     <p>Thanks to <a href="https://gamepro5.github.io/">Gamepro5</a> for his resource pack knowledge and idea for this web app.</p>
     <p>You can read about how to use animations in your resource packs on the Wiki; <a href="https://minecraft.gamepedia.com/Resource_pack#Animation">these</a> <a href="https://minecraft.gamepedia.com/Tutorials/Creating_a_resource_pack#Animation_Properties">articles</a> may or may not be helpful.</p>
     <script>
+let url;
 let frames = null;
 function loadFile(file) {
   if (!file) return;
   error.textContent = '';
   if (file.type !== 'image/gif') {
-    error.textContent = 'Not a gif';
+    return error.textContent = 'Not a gif';
   }
-  const url = URL.createObjectURL(file);
+  if (url) {
+    URL.revokeObjectURL(url);
+  }
+  url = URL.createObjectURL(file);
+  loadFrames();
+}
+function loadFrames() {
+  if (!url) return;
   gifFrames({
     url,
     frames: 'all',
     outputType: 'canvas',
-    cumulative: true
+    cumulative: !isTransparent.checked
   }).then(frameData => {
-    URL.revokeObjectURL(url);
     frames = frameData.map(frame => frame.getImage());
     update();
   });
@@ -91,9 +95,15 @@ function update() {
   preview.width = output.width = width;
   preview.height = height;
   output.height = height * frames.length;
-  frameTime.textContent = ticks;
-  oc.fillStyle = background;
-  oc.fillRect(0, 0, output.width, output.height);
+  frameTime.value = JSON.stringify({
+    animation: {
+      frametime: ticks
+    }
+  }, null, 2);
+  if (fit === 'contain') {
+    oc.fillStyle = background;
+    oc.fillRect(0, 0, output.width, output.height);
+  }
   frames.forEach((frame, i) => {
     switch (fit) {
       case 'cover': {
@@ -105,10 +115,14 @@ function update() {
         }
         oc.drawImage(
           frame,
-          width / 2 - scale * frame.width / 2,
-          height / 2 - scale * frame.height / 2 + i * height,
-          scale * frame.width,
-          scale * frame.height
+          (frame.width - width / scale) / 2,
+          (frame.height - height / scale) / 2,
+          width / scale,
+          height / scale,
+          0,
+          i * height,
+          width,
+          height
         );
         break;
       }
@@ -135,10 +149,13 @@ function update() {
     }
   });
   let frame = 0;
-  previewIntervalID = setInterval(() => {
+  function drawFrame () {
+    pc.clearRect(0, 0, preview.width, preview.height);
     pc.drawImage(output, 0, frame * height, width, height, 0, 0, width, height);
     frame = (frame + 1) % frames.length;
-  }, 1000 / 20 * ticks);
+  }
+  previewIntervalID = setInterval(drawFrame, 1000 / 20 * ticks);
+  drawFrame();
 }
 const gifSelector = document.getElementById('gif');
 const error = document.getElementById('error');
@@ -149,6 +166,7 @@ const options = {
   background: document.getElementById('background'),
   ticks: document.getElementById('ticks')
 };
+const isTransparent = document.getElementById('transparent');
 const preview = document.getElementById('preview');
 const pc = preview.getContext('2d');
 const output = document.getElementById('output');
@@ -160,6 +178,9 @@ gifSelector.addEventListener('change', e => {
 });
 document.addEventListener('paste', e => {
   loadFile(e.clipboardData.files[0]);
+});
+isTransparent.addEventListener('change', e => {
+  loadFrames();
 });
     </script>
   </body>
