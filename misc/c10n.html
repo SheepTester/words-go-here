@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>c10n</title>
+    <meta name="description" content="Condense words as is done with i18n, l10n, and a11y." />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        font-family: 'Poppins', sans-serif;
+      }
+      #options {
+        padding: 10px;
+        background-color: darkblue;
+        color: white;
+      }
+      label {
+        margin-right: 10px;
+        cursor: pointer;
+      }
+      textarea {
+        -webkit-appearance: none;
+        border: none;
+        background: none;
+        font: inherit;
+        color: inherit;
+        flex: 1 0 0;
+        padding: 20px;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        resize: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="options">
+      <label><input type="radio" name="min-length" value="5"> A cat sees me f3t.</label>
+      <label><input type="radio" name="min-length" value="4" checked> A cat s2s me f3t.</label>
+      <label><input type="radio" name="min-length" value="3"> A c1t s2s me f3t.</label>
+      <label><input type="radio" name="min-length" value="2"> A c1t s2s m0e f3t.</label>
+    </div>
+    <textarea id="input" placeholder="internationalisation, localisation, accessibility" autofocus></textarea>
+    <textarea id="output" placeholder="i18n, l10n, a11y" readonly></textarea>
+    <script>
+      const options = document.getElementById('options')
+      let minLength = 4
+      options.addEventListener('change', e => {
+        minLength = +e.target.value
+        update()
+      })
+
+      const input = document.getElementById('input')
+      const output = document.getElementById('output')
+      input.addEventListener('input', update)
+      function update () {
+        output.value = input.value.replace(/[A-Za-z][A-Za-z'’]*[A-Za-z]/g, match => {
+          const word = match.replace(/['’]/g, '')
+          if (word.length < minLength) {
+            return match
+          } else {
+            return word[0] + (word.length - 2) + word[word.length - 1]
+          }
+        })
+      }
+    </script>
+  </body>
+</html>
