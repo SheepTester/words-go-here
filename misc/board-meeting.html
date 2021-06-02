@@ -14,6 +14,9 @@
     <script src="https://content.jwplatform.com/libraries/TtzdIAtZ.js"></script>
 
     <style>
+      :root {
+        color-scheme: dark;
+      }
       html,
       body {
         height: 100%;
@@ -47,12 +50,35 @@
   <body>
     <div id="container"></div>
     <p class="bottom">
-      You can also watch this on Youth, Education and Sports Channel 28 on
+      You can also watch this on
+      <select id="channel">
+        <option value="26">Channel 26: Government etc</option>
+        <option value="27"
+          >Channel 27: Bay Voice TV Regional Programming</option
+        >
+        <option value="28">Channel 28: Youth, Education and Sports</option>
+        <option value="29">Channel 29: Government etc</option>
+        <option value="30">Channel 30: Arts, Issues and Lifestyles</option>
+        <option value="75">Channel 75: Diversity and Culture</option>
+      </select>
+      on
       <a href="https://midpenmedia.org/local-tv/watch-now/"
         >Midpen Media Center</a
       >.
     </p>
     <script>
+      window.gtag = console.log
+
+      const params = new URL(window.location).searchParams
+      const channel = params.get('channel') || '28'
+
+      const channelSelect = document.getElementById('channel')
+      channelSelect.value = channel
+      channelSelect.addEventListener('change', e => {
+        params.set('channel', channelSelect.value)
+        window.location.search = params
+      })
+
       const bit_rate = 'all'
       function play_local_tv (ss_no, channel) {
         jwplayer('container').setup({
@@ -61,16 +87,19 @@
               sources: [
                 {
                   file:
-                    'https://5c2974786200d.streamlock.net:443/live-chan' +
-                    channel +
-                    '/ngrp:ch' +
-                    channel +
-                    '_' +
-                    bit_rate +
-                    '/playlist.m3u8'
+                    channel === '27'
+                      ? 'https://reflect-channel27-creatv.cablecast.tv/live/live.m3u8'
+                      : 'https://5c2974786200d.streamlock.net:443/live-chan' +
+                        channel +
+                        '/ngrp:ch' +
+                        channel +
+                        '_' +
+                        bit_rate +
+                        '/playlist.m3u8'
                 }
               ],
-              image: '/wp-content/themes/mpm/img/tv-img.jpg'
+              image:
+                'https://midpenmedia.org/wp-content/themes/mpm/img/tv-img.jpg'
             }
           ],
           width: '505',
@@ -82,7 +111,7 @@
         })
         jwplayer('container').play()
       }
-      play_local_tv(1, 28)
+      play_local_tv(1, channel)
     </script>
   </body>
 </html>
