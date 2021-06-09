@@ -198,6 +198,37 @@
           </p>
         </section>
       </div>
+
+      <h3>Other painful formulas</h3>
+      <p>I believe you need to know all of these.</p>
+
+      <h4>Taylor series</h4>
+      <p class="math">
+        \def \- {\textcolor{ff8585}{-}}
+        \def \negOne {\textcolor{ff8585}{\left( -1 \right) ^ n}}
+        \def \! {\textcolor{73d471}{!}}
+        \gdef \expanded #1 {\textcolor{8e97a0}{#1}}
+        \begin{aligned}
+        \sin x &amp;= \expanded {x \- \dfrac{x^3}{3\!} + \dfrac{x^5}{5\!} \- \dfrac{x^7}{7\!} + \dots}
+          = \sum_{n=0}^{\infty} \dfrac{\negOne x ^ {2n + 1}}{\left( 2n + 1 \right)\!} \\[3ex]
+        \cos x &amp;= \expanded {1 \- \dfrac{x^2}{2\!} + \dfrac{x^4}{4\!} \- \dfrac{x^6}{6\!} + \dots}
+          = \sum_{n=0}^{\infty} \dfrac{\negOne x ^ {2n}}{\left( 2n \right)\!} \\[3ex]
+        e^x &amp;= \expanded {1 + x + \dfrac{x^2}{2\!} + \dfrac{x^3}{3\!} + \dfrac{x^4}{4\!} + \dots}
+          = \sum_{n=0}^{\infty} \dfrac{x^n}{n\!} \\[3ex]
+        \dfrac{1}{1 - x} &amp;= \expanded {1 + x + x^2 + x^3 + x^4 + \dots}
+          = \sum_{n=0}^{\infty} x^n \\[3ex]
+        \tan^{-1} x &amp;= \expanded {x \- \dfrac{x^3}{3} + \dfrac{x^5}{5} \- \dfrac{x^7}{7} + \dots}
+          = \sum_{n=0}^{\infty} \dfrac{\negOne x ^ {2n + 1}}{2n + 1} \\[3ex]
+        \ln x &amp;= \expanded {\left(x - 1\right) \- \dfrac{\left(x - 1\right)^2}{2} + \dfrac{\left(x - 1\right)^3}{3} + \dots}
+          = \sum_{n=1}^{\infty} \dfrac{\textcolor{ff8585}{\left( -1 \right) ^ {n + 1}} \left(x - 1\right)}{n}
+        \end{aligned}
+      </p>
+
+      <h4>Lagrange form of the error</h4>
+      <p>Typically used only on non-alternating series.</p>
+      <p class="math">
+        R_n < \left| \dfrac{M}{\left( n + 1 \right)!} \left( x - a \right)^{n+1} \right| \\[1ex]
+      </p>
     </main>
 
     <footer class="footer mt-auto py-3 pr-5">
