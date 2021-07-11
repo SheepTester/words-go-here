@@ -66,6 +66,7 @@
         flex-direction: column;
         flex: auto;
         background-image: radial-gradient(#fff, #ddd);
+        padding: 40px;
       }
       .big-preview .logo-container {
         display: flex;
@@ -73,11 +74,43 @@
         height: 0;
         flex: auto;
       }
+      .big-preview .logo {
+        border-radius: 5px;
+      }
 
       .options {
         background-color: black;
         padding: 20px;
         color: white;
+      }
+      .option,
+      .colours-wrapper,
+      .range-wrapper {
+        display: inline-flex;
+        align-items: center;
+      }
+      .option {
+        margin-right: 20px;
+      }
+      .colour {
+        -webkit-appearance: none;
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        margin-left: 5px;
+        cursor: pointer;
+      }
+      .colour:hover {
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+      }
+      .colour:checked {
+        box-shadow: 0 0 0 2px white;
+      }
+      .slider-value {
+        display: inline-block;
+        text-align: right;
+        width: 4ch;
       }
 
       .colour-discord-dark {
@@ -90,11 +123,11 @@
       }
       .colour-gradient-1 {
         fill: url('#gradient-1');
-        background-image: linear-gradient(45deg, #20de88, #28bbe8);
+        background-image: linear-gradient(135deg, #20de88, #28bbe8);
       }
       .colour-gradient-2 {
         fill: url('#gradient-2');
-        background-image: linear-gradient(45deg, #20de88, #28bbe8);
+        background-image: linear-gradient(135deg, #ff5c00, #ff00b8);
       }
 
       path {
@@ -108,8 +141,21 @@
   <body>
     <div class="options">
       <div class="option">
-        <!--  -->
+        Background:
+        <div id="background-colours"></div>
       </div>
+      <div class="option">
+        Foreground:
+        <div id="foreground-colours"></div>
+      </div>
+      <label class="option">
+        Scale:
+        <div id="scale-range"></div>
+      </label>
+      <label class="option">
+        Vertical offset:
+        <div id="translate-y-range"></div>
+      </label>
     </div>
     <div class="preview">
       <div class="discord-server-bar discord-dark">
@@ -182,7 +228,7 @@
           'defs'
         )
         defs.appendChild(createGradient(['#20de88', '#28bbe8'], 'gradient-1'))
-        defs.appendChild(createGradient(['#20de88', '#28bbe8'], 'gradient-2'))
+        defs.appendChild(createGradient(['#FF5C00', '#FF00B8'], 'gradient-2'))
         svg.appendChild(defs)
 
         const rect = document.createElementNS(
@@ -204,6 +250,16 @@
         return svg
       }
 
+      for (const marker of document.querySelectorAll('.logo-marker')) {
+        marker.parentElement.replaceChild(
+          createLogo(marker.dataset.class?.split(' ')),
+          marker
+        )
+      }
+      for (const container of document.querySelectorAll('.logo-container')) {
+        container.appendChild(createLogo(container.dataset.class?.split(' ')))
+      }
+
       const colours = [
         'colour-discord-dark',
         'colour-discord-light',
@@ -219,23 +275,123 @@
         for (const path of document.querySelectorAll('.logo path')) {
           if (oldForeground) path.classList.remove(oldForeground)
           path.classList.add(foreground)
-          path.style.transform = `scale(${scale}) translateY(${translateY}px)`
+          path.style.transform = `translateY(${translateY}px) scale(${scale})`
         }
         oldBackground = background
         oldForeground = foreground
       }
 
-      for (const marker of document.querySelectorAll('.logo-marker')) {
-        marker.parentElement.replaceChild(
-          createLogo(marker.dataset.class?.split(' ')),
-          marker
-        )
+      function initColours (elem, name, onChange, currentValue = null) {
+        elem.classList.add('colours-wrapper')
+        for (const colour of colours) {
+          const radio = document.createElement('input')
+          radio.type = 'radio'
+          radio.className = `colour ${colour}`
+          radio.name = name
+          if (colour === currentValue) {
+            radio.checked = true
+          }
+          radio.addEventListener('change', () => onChange(colour))
+          elem.appendChild(radio)
+        }
       }
-      for (const container of document.querySelectorAll('.logo-container')) {
-        container.appendChild(createLogo(container.dataset.class?.split(' ')))
+      function initRange (
+        wrapper,
+        { min, max, step = 1, toFixed = 0, current = null },
+        onChange
+      ) {
+        wrapper.classList.add('range-wrapper')
+
+        const range = document.createElement('input')
+        range.className = 'slider'
+        range.type = 'range'
+        range.min = min
+        range.max = max
+        range.step = step
+        wrapper.appendChild(range)
+
+        const value = document.createElement('span')
+        value.className = 'slider-value'
+        wrapper.appendChild(value)
+
+        if (current !== null) {
+          range.value = current
+          value.textContent = current.toFixed(toFixed)
+        }
+
+        range.addEventListener('input', () => {
+          onChange(+range.value)
+          value.textContent = (+range.value).toFixed(toFixed)
+        })
       }
 
-      setLogo(colours[2], colours[1], 0.8, 13)
+      const options = {
+        background: colours[2],
+        foreground: colours[1],
+        scale: 0.8,
+        translateY: 8
+      }
+      Object.assign(
+        options,
+        Object.fromEntries(
+          Array.from(
+            new URL(window.location).searchParams.entries(),
+            ([key, value]) => [
+              key,
+              typeof options[key] === 'number' && !isNaN(value) ? +value : value
+            ]
+          )
+        )
+      )
+      function update () {
+        setLogo(
+          options.background,
+          options.foreground,
+          options.scale,
+          options.translateY
+        )
+        window.history.replaceState(
+          {},
+          '',
+          '?' + new URLSearchParams(Object.entries(options))
+        )
+      }
+      update()
+
+      initColours(
+        document.getElementById('background-colours'),
+        'background',
+        colour => {
+          options.background = colour
+          update()
+        },
+        options.background
+      )
+      initColours(
+        document.getElementById('foreground-colours'),
+        'foreground',
+        colour => {
+          options.foreground = colour
+          update()
+        },
+        options.foreground
+      )
+      initRange(
+        document.getElementById('scale-range'),
+        { min: 0, max: 2, step: 0.05, toFixed: 2, current: options.scale },
+        value => {
+          options.scale = value
+          update()
+        }
+      )
+      initRange(
+        document.getElementById('translate-y-range'),
+        { min: -480, max: 480, current: options.translateY },
+        value => {
+          options.translateY = value
+          update()
+        }
+      )
     </script>
   </body>
 </html>
