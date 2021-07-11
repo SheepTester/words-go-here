@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Discord server icon thing</title>
+    <meta
+      name="description"
+      content="Designing an icon for my Discord server based on my logo"
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Helvetica, Arial, sans-serif, 'Apple Color Emoji',
+          'Segoe UI Emoji', 'Segoe UI Symbol';
+      }
+      .preview {
+        display: flex;
+        flex: auto;
+      }
+
+      .discord-server-bar {
+        width: 72px;
+        padding-top: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .discord-server-bar .logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        margin-bottom: 8px;
+      }
+      .discord-server-bar .discord-selected {
+        /* NOTE: Discord's servers are not actually rounded squares */
+        border-radius: 16px;
+      }
+      .discord-dark {
+        background-color: #202225;
+      }
+      .discord-light {
+        background-color: #e3e5e8;
+      }
+      .discord-dark .logo {
+        background-color: #36393f;
+      }
+      .discord-light .logo {
+        background-color: #ffffff;
+      }
+
+      .big-preview {
+        display: flex;
+        flex-direction: column;
+        flex: auto;
+        background-image: radial-gradient(#fff, #ddd);
+      }
+      .big-preview .logo-container {
+        display: flex;
+        justify-content: center;
+        height: 0;
+        flex: auto;
+      }
+
+      .options {
+        background-color: black;
+        padding: 20px;
+        color: white;
+      }
+
+      .colour-discord-dark {
+        fill: #202225;
+        background-color: #202225;
+      }
+      .colour-discord-light {
+        fill: #e3e5e8;
+        background-color: #e3e5e8;
+      }
+      .colour-gradient-1 {
+        fill: url('#gradient-1');
+        background-image: linear-gradient(45deg, #20de88, #28bbe8);
+      }
+      .colour-gradient-2 {
+        fill: url('#gradient-2');
+        background-image: linear-gradient(45deg, #20de88, #28bbe8);
+      }
+
+      path {
+        transform-origin: center;
+      }
+      rect {
+        fill: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="options">
+      <div class="option">
+        <!--  -->
+      </div>
+    </div>
+    <div class="preview">
+      <div class="discord-server-bar discord-dark">
+        <div class="logo-container"></div>
+        <div class="logo-container" data-class="discord-selected"></div>
+      </div>
+      <div class="discord-server-bar discord-light">
+        <div class="logo-container"></div>
+        <div class="logo-container" data-class="discord-selected"></div>
+      </div>
+      <div class="big-preview">
+        <div class="logo-container"></div>
+      </div>
+    </div>
+    <script>
+      const logoPath = [
+        'M 90 90',
+        'a 50 50 0 0 0 0 100',
+        'H 98.579',
+        'A 150 150 0 1 0 381.421 190',
+        'H 390',
+        'a 50 50 0 0 0 0 -100',
+        'a 50 50 0 1 1 -100 0',
+        'a 50 50 0 1 1 -100 0',
+        'a 50 50 0 1 1 -100 0',
+        'z'
+      ].join(' ')
+
+      function createGradient (colours, id) {
+        const linearGradient = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'linearGradient'
+        )
+        linearGradient.setAttributeNS(null, 'id', id)
+        linearGradient.setAttributeNS(null, 'x1', 0)
+        linearGradient.setAttributeNS(null, 'y1', 0)
+        linearGradient.setAttributeNS(null, 'x2', 1)
+        linearGradient.setAttributeNS(null, 'y2', 1)
+        let index = 0
+        for (const colour of colours) {
+          const stop = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'stop'
+          )
+          stop.setAttributeNS(
+            null,
+            'offset',
+            `${(index / (colours.length - 1)) * 100}%`
+          )
+          stop.setAttributeNS(null, 'stop-color', colour)
+          linearGradient.appendChild(stop)
+          index++
+        }
+        return linearGradient
+      }
+
+      function createLogo (classes = []) {
+        const svg = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'svg'
+        )
+        svg.classList.add('logo')
+        for (const className of classes) {
+          svg.classList.add(className)
+        }
+        svg.setAttributeNS(null, 'viewBox', '0 0 480 480')
+
+        const defs = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'defs'
+        )
+        defs.appendChild(createGradient(['#20de88', '#28bbe8'], 'gradient-1'))
+        defs.appendChild(createGradient(['#20de88', '#28bbe8'], 'gradient-2'))
+        svg.appendChild(defs)
+
+        const rect = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'rect'
+        )
+        rect.setAttributeNS(null, 'x', 0)
+        rect.setAttributeNS(null, 'y', 0)
+        rect.setAttributeNS(null, 'width', 480)
+        rect.setAttributeNS(null, 'height', 480)
+        svg.appendChild(rect)
+
+        const path = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'path'
+        )
+        path.setAttributeNS(null, 'd', logoPath)
+        svg.appendChild(path)
+        return svg
+      }
+
+      const colours = [
+        'colour-discord-dark',
+        'colour-discord-light',
+        'colour-gradient-1',
+        'colour-gradient-2'
+      ]
+      let oldBackground, oldForeground
+      function setLogo (background, foreground, scale = 1, translateY = 0) {
+        for (const rect of document.querySelectorAll('.logo rect')) {
+          if (oldBackground) rect.classList.remove(oldBackground)
+          rect.classList.add(background)
+        }
+        for (const path of document.querySelectorAll('.logo path')) {
+          if (oldForeground) path.classList.remove(oldForeground)
+          path.classList.add(foreground)
+          path.style.transform = `scale(${scale}) translateY(${translateY}px)`
+        }
+        oldBackground = background
+        oldForeground = foreground
+      }
+
+      for (const marker of document.querySelectorAll('.logo-marker')) {
+        marker.parentElement.replaceChild(
+          createLogo(marker.dataset.class?.split(' ')),
+          marker
+        )
+      }
+      for (const container of document.querySelectorAll('.logo-container')) {
+        container.appendChild(createLogo(container.dataset.class?.split(' ')))
+      }
+
+      setLogo(colours[2], colours[1], 0.8, 13)
+    </script>
+  </body>
+</html>
