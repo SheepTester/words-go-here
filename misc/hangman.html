@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Hangman game</title>
+    <meta
+      name="description"
+      content="Easy difficulty because you are the guesser, and the computer is not very smart."
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background-color: black;
+        color: white;
+        font-family: 'Indie Flower', cursive;
+        display: flex;
+        --guess: #ffff80;
+      }
+      .hang {
+        height: 100%;
+        width: 50%;
+        max-width: 400px;
+        stroke: #ff80ff;
+        flex: none;
+        padding: 40px;
+        box-sizing: border-box;
+      }
+      .lines {
+        stroke: var(--guess);
+        margin-top: -20px;
+        margin-top: -40px;
+        display: block;
+        flex: none;
+      }
+      path {
+        stroke-width: 3;
+        stroke-linecap: round;
+      }
+      .word span {
+        display: inline-flex;
+        width: 77px;
+        justify-content: center;
+        align-items: center;
+        color: var(--guess);
+        font-size: 80px;
+      }
+      .hint {
+        color: grey;
+      }
+      .man,
+      .o,
+      .deadface,
+      .retry {
+        visibility: hidden;
+      }
+      .show-o .o,
+      .dead .deadface,
+      .dead .retry {
+        visibility: visible;
+      }
+      .retry {
+        color: #80d6ff;
+      }
+      .guess {
+        display: flex;
+        flex-direction: column;
+      }
+      .flex {
+        flex: auto;
+        border: none;
+      }
+      #guessables {
+        color: #80ff9e;
+        margin-bottom: 100px;
+        margin-top: 20px;
+      }
+      #no {
+        color: #ffc680;
+        display: flex;
+        flex-wrap: wrap-reverse;
+        white-space: pre-wrap;
+      }
+      .letter {
+        border: none;
+        background: none;
+        -webkit-appearance: none;
+        color: inherit;
+        font: inherit;
+        font-size: 50px;
+        cursor: pointer;
+        line-height: 1;
+      }
+      .letter:disabled {
+        cursor: auto;
+      }
+      #guessables .letter:disabled {
+        color: #58595b;
+      }
+      .guess {
+        padding: 20px;
+      }
+      @media (max-width: 700px) {
+        body {
+          flex-direction: column;
+        }
+        .hang {
+          width: 100%;
+          height: 50%;
+          max-width: unset;
+          max-height: 400px;
+        }
+      }
+      .inspiration {
+        color: #808285;
+        position: fixed;
+        bottom: 0;
+        right: 100px;
+      }
+      .inspiration a {
+        color: #b31564;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      viewBox="70 85 305 330"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class="hang"
+    >
+      <path
+        d="M72.3654 411.555C128.492 411.555 184.146 412.77 240.264 409.458C260.093 408.287 280.009 407.001 299.686 404.215C311.464 402.547 300.191 404.271 295.725 405.263"
+      />
+      <path
+        d="M164.645 403.166C164.645 316.256 163.831 229.823 152.062 143.512C149.869 127.432 150.867 107.777 142.624 93.3524C141.688 91.7153 144.561 94.2496 145.653 94.6341C153.581 97.4255 162.921 97.1916 171.17 96.8479C184.282 96.3015 197.189 93.436 210.261 92.3038C228.153 90.7541 246.094 91.2596 264.033 90.9056C285.36 90.4846 306.744 92.4014 327.999 93.8184C332.658 94.129 329.557 132.625 329.281 135.764C328.348 146.377 328.56 156.893 328.174 167.514C328.049 170.956 328.022 174.704 325.087 176.661"
+      />
+      <g class="man" id="man">
+        <path
+          d="M325.087 167.223C307.154 175.213 292.425 191.34 298.288 212.78C304.974 237.23 336.904 243.358 356.313 228.801C395.908 199.104 335.227 146.666 303.065 175.612"
+        />
+        <path
+          d="M329.281 237.482C332.777 259.622 333.476 327.009 333.476 304.594"
+        />
+        <path
+          d="M327.184 237.482C315.652 252.098 278.365 293.641 291.53 280.476"
+        />
+        <path
+          d="M326.135 239.579C337.949 247.421 347.862 256.063 357.827 266.028C359.929 268.129 365.983 272.669 365.983 275.232"
+        />
+        <path
+          d="M334.524 309.837C321.244 323.118 308.833 336.568 296.657 350.851C296.137 351.461 287.431 360.649 290.482 359.123"
+        />
+        <path
+          d="M335.573 307.74C343.678 321.719 352.725 335.997 362.837 348.637"
+        />
+      </g>
+      <g class="deadface">
+        <path
+          d="M306.782 191.727C309.876 195.652 312.564 200.241 316.504 203.393"
+        />
+        <path
+          d="M317.152 193.023C314.103 197.133 311.177 201.411 307.07 204.545C306.759 204.782 305.33 205.337 306.134 205.337"
+        />
+        <path
+          d="M338.539 190.431C342.311 193.673 346.361 198.554 350.853 200.8"
+        />
+        <path
+          d="M350.205 189.135C348.167 192.642 345.074 200.773 341.132 202.745"
+        />
+        <path
+          d="M315.856 217.651C323.416 214.606 330.206 211.714 338.395 211.818C339.088 211.827 343.026 212.466 342.428 212.466"
+        />
+      </g>
+    </svg>
+    <div class="guess">
+      <p class="hint">
+        (hint: the word changes every time)
+        <a href="./hangman.html" class="retry">try again?</a>
+      </p>
+      <div class="word">
+        <span></span>
+        <span class="o">o</span>
+        <span class="o">O</span>
+      </div>
+      <svg
+        width="247"
+        height="29"
+        viewBox="0 0 247 29"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        class="lines"
+      >
+        <path d="M15 14C31.3689 13.2844 52.8805 15.8949 68.6 10" />
+        <path
+          d="M100.6 13.2C112.693 14.8458 123.346 15.4645 135.267 12.8C139.146 11.933 142.999 10.8 147 10.8"
+        />
+        <path
+          d="M179.8 14.8C193.085 18.0955 204.255 17.1367 217.667 16.2222C221.574 15.9558 233.317 15.6 229.4 15.6"
+        />
+      </svg>
+      <hr class="flex" />
+      <div id="no"><span class="letter">&ZeroWidthSpace;</span></div>
+      <div id="guessables"></div>
+    </div>
+    <p class="inspiration">
+      inspired by
+      <a
+        href="https://www.youtube.com/watch?v=le5uGqHKll8&lc=UgwBLqNGuVA8YRf70854AaABAg"
+        target="_blank"
+        >some youtube comment</a
+      >
+    </p>
+
+    <script>
+      const guessables = document.getElementById('guessables')
+      const no = document.getElementById('no')
+      const man = document.getElementById('man')
+      let wrong = 0
+      for (const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+        const btn = Object.assign(document.createElement('button'), {
+          onclick: () => {
+            btn.disabled = true
+            btn.style.visibility = 'hidden'
+            if (letter === 'O') {
+              document.body.classList.add('show-o')
+            } else {
+              man.children[wrong++].style.visibility = 'visible'
+              no.append(
+                Object.assign(document.createElement('span'), {
+                  textContent: letter,
+                  className: 'letter'
+                })
+              )
+              if (wrong === 6) {
+                document.body.classList.add('dead')
+                for (const button of guessables.children) {
+                  button.disabled = true
+                }
+              }
+            }
+          },
+          textContent: letter,
+          className: 'letter'
+        })
+        guessables.append(btn)
+      }
+    </script>
+  </body>
+</html>
