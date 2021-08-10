@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Minimal self-auto-reloading service worker example (v5)</title>
+    <meta
+      name="description"
+      content="A minimal example of automatically reloading the page whenever there's an update available. Updates won't happen on GitHub Pages; you'll have to clone the repo and run inc.mjs."
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      /* TEMP */
+    </style>
+  </head>
+  <body>
+    <h1>v5</h1>
+    <script>
+      const hadServiceWorker = !!navigator.serviceWorker.controller
+      navigator.serviceWorker.register('./sw.js').then(registration => {
+        registration.addEventListener('updatefound', () => {
+          // When `updatefound` fires, `registration.installing` will contain
+          // the new ServiceWorker
+          const sw = registration.installing
+          sw.addEventListener('statechange', () => {
+            // The `hadServiceWorker` check is to prevent reloading the first
+            // time (which also fires `updatefound` etc.). I don't think the
+            // initial reload is necessary unless the service worker does mroe
+            // than just read from the cache.
+            if (hadServiceWorker && sw.state === 'activated') {
+              console.log(
+                "There's a new update, and it's safe to reload to see it!"
+              )
+              window.location.reload()
+            }
+          })
+        })
+      })
+    </script>
+  </body>
+</html>
