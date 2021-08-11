@@ -49,6 +49,7 @@
         fileReady()
       })
       let handle
+      let lastSavedValue = ''
       elems.open.addEventListener('click', async () => {
         fileChosen()
         const [fileHandle] = await window
@@ -75,7 +76,7 @@
           })
           .catch(() => [])
         if (fileHandle) {
-          elems.editor.value = await fileHandle
+          lastSavedValue = elems.editor.value = await fileHandle
             .getFile()
             .then(file => file.text())
           await localforage.setItem('[misc] file-editor.fileHandle', fileHandle)
@@ -95,8 +96,10 @@
           await localforage.setItem('[misc] file-editor.fileHandle', handle)
         }
         const writable = await handle.createWritable()
-        await writable.write(elems.editor.value)
+        const savedValue = elems.editor.value
+        await writable.write(savedValue)
         await writable.close()
+        lastSavedValue = savedValue
         elems.save.disabled = false
       })
       localforage.getItem('[misc] file-editor.fileHandle').then(fileHandle => {
@@ -105,7 +108,7 @@
           fileChosen()
           elems.load.disabled = true
           await fileHandle.requestPermission({ mode: 'readwrite' })
-          elems.editor.value = await fileHandle
+          lastSavedValue = elems.editor.value = await fileHandle
             .getFile()
             .then(file => file.text())
           handle = fileHandle
@@ -124,6 +127,21 @@
             return
           }
           e.preventDefault()
+        }
+      })
+      // Check if file has been modified
+      elems.editor.addEventListener('focus', async () => {
+        const currentValue = elems.editor.value
+        if (currentValue !== lastSavedValue) return
+        const newValue = await handle.getFile().then(file => file.text())
+        if (elems.editor.value === currentValue && newValue !== currentValue) {
+          elems.editor.value = newValue
+        }
+      })
+      window.addEventListener('beforeunload', e => {
+        if (elems.editor.value !== lastSavedValue) {
+          e.preventDefault()
+          return (e.returnValue = 'eh')
         }
       })
     </script>
