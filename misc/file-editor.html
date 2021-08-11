@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>File System Access API demo</title>
+    <meta name="description" content="I want to use this for an NBT editor" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      <button id="new-file">new file</button>
+      <button id="open-file">open a file</button>
+      <button id="save-file" disabled>save</button>
+      <button id="load-file" disabled>load previous</button>
+    </p>
+    <textarea id="editor" cols="80" rows="20" disabled></textarea>
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.9.0/dist/localforage.min.js"></script>
+    <script>
+      const elems = {
+        new: document.getElementById('new-file'),
+        open: document.getElementById('open-file'),
+        save: document.getElementById('save-file'),
+        load: document.getElementById('load-file'),
+        editor: document.getElementById('editor')
+      }
+      function fileChosen () {
+        elems.new.disabled = true
+        elems.open.disabled = true
+      }
+      function fileReady () {
+        elems.editor.disabled = false
+        elems.editor.focus()
+        elems.save.disabled = false
+      }
+      elems.new.addEventListener('click', () => {
+        fileChosen()
+        fileReady()
+      })
+      let handle
+      elems.open.addEventListener('click', async () => {
+        fileChosen()
+        const [fileHandle] = await window
+          .showOpenFilePicker({
+            id: 'boohoo',
+            types: [
+              {
+                description:
+                  "honk\nhonk (look you can't select ANY file, and this should've opened in Downloads)",
+                accept: {
+                  'text/plain': ['.txt', '.text', '.rs'],
+                  'text/html': ['.html', '.htm']
+                }
+              },
+              {
+                description: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+                accept: {
+                  'image/*': ['.png', '.gif', '.jpeg', '.jpg']
+                }
+              }
+            ],
+            excludeAcceptAllOption: true,
+            startIn: 'downloads'
+          })
+          .catch(() => [])
+        if (fileHandle) {
+          elems.editor.value = await fileHandle
+            .getFile()
+            .then(file => file.text())
+          await localforage.setItem('[misc] file-editor.fileHandle', fileHandle)
+          handle = fileHandle
+          fileReady()
+        } else {
+          elems.new.disabled = false
+          elems.open.disabled = false
+        }
+      })
+      elems.save.addEventListener('click', async () => {
+        elems.save.disabled = true
+        if (!handle) {
+          handle = await window.showSaveFilePicker({
+            suggestedName: 'ahhh.txt'
+          })
+          await localforage.setItem('[misc] file-editor.fileHandle', handle)
+        }
+        const writable = await handle.createWritable()
+        await writable.write(elems.editor.value)
+        await writable.close()
+        elems.save.disabled = false
+      })
+      localforage.getItem('[misc] file-editor.fileHandle').then(fileHandle => {
+        elems.load.disabled = false
+        elems.load.addEventListener('click', async () => {
+          fileChosen()
+          elems.load.disabled = true
+          await fileHandle.requestPermission({ mode: 'readwrite' })
+          elems.editor.value = await fileHandle
+            .getFile()
+            .then(file => file.text())
+          handle = fileHandle
+          fileReady()
+        })
+      })
+      document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+          if (e.key === 's') {
+            elems.save.click()
+          } else if (e.key === 'o') {
+            elems.open.click()
+          } else if (e.key === 'n') {
+            elems.new.click()
+          } else {
+            return
+          }
+          e.preventDefault()
+        }
+      })
+    </script>
+  </body>
+</html>
