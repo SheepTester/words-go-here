@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Fix .x in Scratch projects</title>
+    <meta
+      name="description"
+      content="For some reason, when E羊icques saves projects, some audio files' file extensions suddenly become .x (???), which prevents the project from being loaded properly. No idea why."
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <p>
+      <label>
+        Select your broken project:
+        <input type="file" accept=".sb3" id="file" autofocus />
+      </label>
+    </p>
+    <textarea
+      id="output"
+      cols="80"
+      rows="20"
+      placeholder="Output will appear here."
+      readonly
+    ></textarea>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.7.1/dist/jszip.min.js"></script>
+    <script src="../htmlifier/download.js"></script>
+    <script>
+      /** @type {HTMLInputElement} */
+      const fileInput = document.getElementById('file')
+      const output = document.getElementById('output')
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files[0]
+        if (file) {
+          output.value = ''
+          try {
+            const zip = await JSZip.loadAsync(file)
+            const projectJson = JSON.parse(
+              await zip.file('project.json').async('text')
+            )
+            for (const { sounds, name: spriteName } of projectJson.targets) {
+              for (const sound of sounds) {
+                const { assetId, dataFormat, name } = sound
+                if (!['wav', 'wave', 'mp3'].includes(dataFormat)) {
+                  output.value += `Sound "${name}" in sprite "${spriteName}" is apparently a .${dataFormat} rather than a .wav/.mp3. Bizarre!\n`
+                  const allSoundFileNames = Object.keys(zip.files).filter(
+                    fileName => fileName.startsWith(assetId)
+                  )
+                  const soundFileNames = allSoundFileNames.filter(
+                    name =>
+                      name.endsWith('.wav') ||
+                      name.endsWith('.wave') ||
+                      name.endsWith('.mp3')
+                  )
+                  if (soundFileNames.length > 0) {
+                    if (soundFileNames.length > 1) {
+                      output.value += `The sound could either be a ${soundFileNames
+                        .map(name => name.slice(-4))
+                        .join(' or ')}. `
+                    }
+                    sound.dataFormat = soundFileNames[0].slice(-3)
+                    output.value += `I think the sound is a .${soundFileNames[0].slice(
+                      -3
+                    )}.\n`
+                  } else {
+                    sound.dataFormat = 'wav'
+                    output.value +=
+                      "I don't know what the sound is, so I'll assume it's a .wav.\n"
+                    if (allSoundFileNames.length > 0) {
+                      zip.file(
+                        `${assetId}.wav`,
+                        await zip
+                          .file(allSoundFileNames[0])
+                          .async('arraybuffer')
+                      )
+                    }
+                  }
+                }
+              }
+            }
+            zip.file('project.json', JSON.stringify(projectJson))
+            output.value += 'Generating zip... (this might take a while)\n'
+            const blob = await zip.generateAsync({
+              // Options from Scratch:
+              // https://github.com/LLK/scratch-vm/blob/develop/src/virtual-machine.js#L389-L396
+              type: 'blob',
+              mimeType: 'application/x.scratch.sb3',
+              compression: 'DEFLATE',
+              compressionOptions: {
+                level: 6
+              }
+            })
+            output.value +=
+              'Your project is ready and might be fixed. It should automatically download now.'
+            download(blob, file.name, file.type)
+          } catch (err) {
+            output.value += 'stack' in err ? err.stack : err
+          }
+        }
+      })
+    </script>
+  </body>
+</html>
