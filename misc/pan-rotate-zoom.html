@@ -160,6 +160,7 @@
             pointer.other.lastY = e.clientY
           }
           if (pointer.other) {
+            const rect = wrapper.getBoundingClientRect()
             const initXDiff = pointer.initX - pointer.other.initX
             const initYDiff = pointer.initY - pointer.other.initY
             const currentXDiff = pointer.lastX - pointer.other.lastX
@@ -173,19 +174,21 @@
             const scale =
               Math.hypot(currentXDiff, currentYDiff) /
               Math.hypot(initXDiff, initYDiff)
-            // Midpoint between the two pointers (as the origin of rotation and
-            // dilation).
+            // Midpoint between the two pointers.
             const midX = (pointer.lastX + pointer.other.lastX) / 2
             const midY = (pointer.lastY + pointer.other.lastY) / 2
             // Offset of current midpoint from initial midpoint.
             const deltaX = midX - (pointer.initX + pointer.other.initX) / 2
             const deltaY = midY - (pointer.initY + pointer.other.initY) / 2
+            // Centre of rotation/dilation
+            const centreX = midX - (rect.left + rect.width / 2)
+            const centreY = midY - (rect.top + rect.height / 2)
             transformation = multiply(
               // Rotate and scale around midpoint
-              translate(midX, midY),
+              translate(centreX, centreY),
               rotate(angleDiff),
               dilate(scale),
-              translate(-midX, -midY),
+              translate(-centreX, -centreY),
               translate(deltaX, deltaY),
               pointer.transformation
             )
@@ -213,12 +216,28 @@
             pointer = null
           }
         } else if (pointer?.other?.id === e.pointerId) {
+          pointer.initX = pointer.lastX
+          pointer.initY = pointer.lastY
           pointer.other = null
-          pointer.transformation = pointer.transformation
+          pointer.transformation = transformation
         }
       }
       wrapper.addEventListener('pointerup', pointerEnd)
       wrapper.addEventListener('pointercancel', pointerEnd)
+      wrapper.addEventListener('wheel', e => {
+        const rect = wrapper.getBoundingClientRect()
+        const centreX = e.clientX - (rect.left + rect.width / 2)
+        const centreY = e.clientY - (rect.top + rect.height / 2)
+        transformation = multiply(
+          translate(centreX, centreY),
+          // Thanks Roger!
+          dilate(1.001 ** -e.deltaY),
+          translate(-centreX, -centreY),
+          transformation
+        )
+        image.style.transform = toCss(transformation)
+        e.preventDefault()
+      })
     </script>
   </body>
 </html>
