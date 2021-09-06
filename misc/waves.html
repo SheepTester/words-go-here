@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>👁️〰️👁️</title>
+    <meta name="description" content="randomised waves! and animated!" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      body {
+        margin: 0;
+        user-select: none;
+      }
+      svg {
+        overflow: visible;
+      }
+      path {
+        transition: d 0.5s;
+      }
+      p {
+        color: rgba(0, 0, 0, 0.3);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        margin: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Click to change wave.</p>
+    <script>
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      const path = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'path'
+      )
+      const HEIGHT = 500 // Height of the SVG
+      const RANGE = 200 // Range of randomness for the y values of each point
+      const SPACING = 100 // Space between each point
+      const CONTROL_PT_SPACE = 50 // x distance between the point and its control point
+      const MAX_CONTROL_PT_Y = 50 // Maximum y distance
+      let width
+      function generateWave () {
+        let down = Math.random() < 0.5
+        let d = `M ${width} 0 H 0 `
+        for (let x = 0; x < width - CONTROL_PT_SPACE; x += SPACING) {
+          const y = HEIGHT - Math.random() * RANGE
+          const controlY = Math.random() * MAX_CONTROL_PT_Y * (down ? 1 : -1)
+          if (x === 0) {
+            d += `V ${y} C ${x + CONTROL_PT_SPACE} ${y + controlY}, `
+          } else {
+            d += `${x - CONTROL_PT_SPACE} ${y - controlY}, ${x} ${y} C ${x +
+              CONTROL_PT_SPACE} ${y + controlY}, `
+          }
+          down = !down
+        }
+        const y = HEIGHT - Math.random() * RANGE
+        const controlY = Math.random() * MAX_CONTROL_PT_Y * (down ? 1 : -1)
+        d += `${width - CONTROL_PT_SPACE} ${y - controlY}, ${width} ${y} z`
+        path.setAttributeNS(null, 'd', d)
+      }
+      function resize () {
+        width = window.innerWidth
+        svg.setAttributeNS(null, 'width', width)
+        svg.setAttributeNS(null, 'height', HEIGHT)
+        generateWave()
+      }
+      resize()
+      window.addEventListener('resize', resize)
+      document.addEventListener('click', e => {
+        generateWave()
+      })
+      svg.append(path)
+      document.body.append(svg)
+    </script>
+  </body>
+</html>
