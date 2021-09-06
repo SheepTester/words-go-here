@@ -40,27 +40,30 @@
       )
       const HEIGHT = 500 // Height of the SVG
       const RANGE = 200 // Range of randomness for the y values of each point
-      const SPACING = 100 // Space between each point
-      const CONTROL_PT_SPACE = 50 // x distance between the point and its control point
+      const SPACING = 200 // Space between each point
+      const CONTROL_PT_SPACE = 100 // x distance between the point and its control point
       const MAX_CONTROL_PT_Y = 50 // Maximum y distance
       let width
       function generateWave () {
-        let down = Math.random() < 0.5
         let d = `M ${width} 0 H 0 `
+        const points = []
         for (let x = 0; x < width - CONTROL_PT_SPACE; x += SPACING) {
-          const y = HEIGHT - Math.random() * RANGE
-          const controlY = Math.random() * MAX_CONTROL_PT_Y * (down ? 1 : -1)
-          if (x === 0) {
+          points.push({ x, y: HEIGHT - Math.random() * RANGE })
+        }
+        points.push({ x: width, y: HEIGHT - Math.random() * RANGE })
+        for (let i = 0; i < points.length; i++) {
+          const { x, y } = points[i]
+          const controlY = 0
+          if (i === 0) {
             d += `V ${y} C ${x + CONTROL_PT_SPACE} ${y + controlY}, `
+          } else if (i === points.length - 1) {
+            d += `${width - CONTROL_PT_SPACE} ${y - controlY}, ${width} ${y} z`
           } else {
             d += `${x - CONTROL_PT_SPACE} ${y - controlY}, ${x} ${y} C ${x +
               CONTROL_PT_SPACE} ${y + controlY}, `
           }
-          down = !down
         }
-        const y = HEIGHT - Math.random() * RANGE
-        const controlY = Math.random() * MAX_CONTROL_PT_Y * (down ? 1 : -1)
-        d += `${width - CONTROL_PT_SPACE} ${y - controlY}, ${width} ${y} z`
+        d += 'z'
         path.setAttributeNS(null, 'd', d)
       }
       function resize () {
