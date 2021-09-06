@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Xeno Arrival</title>
+    <meta
+      name="description"
+      content="HTML/CSS rendition of some website made in Scratch."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background-color: #1a0f00;
+        font-family: 'Orbitron', sans-serif;
+        margin-top: 76px;
+        color: white;
+      }
+
+      .navbar {
+        position: fixed;
+        background-color: #1a0f00;
+        padding: 0 40px;
+        height: 76px;
+        display: flex;
+        align-items: center;
+        top: 0;
+        left: 0;
+        right: 0;
+      }
+      .site-name {
+        color: #cb8510;
+        text-transform: uppercase;
+        margin: 0;
+        margin-right: auto;
+      }
+      .icon {
+        display: inline-block;
+        background-color: #de9240;
+        font-size: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 5px;
+      }
+      .navbar-btn {
+        margin-left: 20px;
+      }
+
+      .content {
+        display: flex;
+      }
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        width: 200px;
+        padding: 20px 40px;
+      }
+      .menu-btn {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        color: inherit;
+        font-size: 18px;
+        margin: 10px 0;
+      }
+      .selected {
+        font-weight: bold;
+      }
+      .menu-btn .icon {
+        margin-right: 10px;
+        flex: none;
+      }
+      .menu-btn:not(.selected) .icon {
+        background-color: #331b00;
+      }
+
+      .main {
+        flex: auto;
+        padding-right: 60px;
+      }
+      .banner {
+        padding: 30px;
+        border-radius: 20px;
+        background-image: url('https://i.imgur.com/4bUD69K.png'),
+          linear-gradient(90deg, #de9240, #ce8711);
+        background-position: right;
+        background-size: contain;
+        background-repeat: no-repeat;
+      }
+      .tagline {
+        font-size: 28px;
+        max-width: 300px;
+        font-weight: bold;
+        line-height: 1.15;
+      }
+      .sub-tagline {
+        margin-top: 30px;
+      }
+      .features {
+        font-size: 12px;
+        margin-top: 10px;
+      }
+
+      .projects {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        margin-top: 40px;
+        gap: 40px;
+      }
+      .project {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.2s;
+      }
+      .project:hover {
+        transform: scale(1.2);
+      }
+      .thumbnail-wrapper {
+        display: flex;
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+      }
+      .thumbnail-wrapper::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.25);
+      }
+      .thumbnail-wrapper::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin: auto;
+        width: 5rem;
+        height: 5rem;
+        border-radius: 100%;
+        background-color: rgba(255, 255, 255, 0.75);
+        border: 3px solid white;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16.63 17.5' fill='%23CE8711' stroke='%23875910' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M.75,2A6.44,6.44,0,0,1,8.44,2h0a6.44,6.44,0,0,0,7.69,0V12.4a6.44,6.44,0,0,1-7.69,0h0a6.44,6.44,0,0,0-7.69,0'/%3E%3Cline x1='0.75' y1='16.75' x2='0.75' y2='0.75' stroke-width='1.5'/%3E%3C/svg%3E");
+        background-size: 44px;
+        background-position: center;
+        background-repeat: no-repeat;
+        transform: scale(0.7);
+      }
+      .thumbnail {
+        width: 100%;
+      }
+      .trending {
+        position: absolute;
+        top: -65px;
+        right: -130px;
+        background-color: #d30000;
+        padding: 100px;
+        padding-bottom: 5px;
+        text-transform: uppercase;
+        transform: rotate(40deg);
+        font-size: 12px;
+      }
+      .hd {
+        position: absolute;
+        bottom: 10px;
+        right: 20px;
+        background-color: rgba(0, 0, 0, 0.3);
+        padding: 5px 10px;
+        border-radius: 5px;
+      }
+      .project-name,
+      .project-info {
+        margin: 0 20px;
+      }
+      .project-name {
+        font-size: 14px;
+        margin-top: 5px;
+      }
+      .project-info {
+        font-size: 10px;
+        margin-top: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <h1 class="site-name">Xeno Archival</h1>
+      <a href="#" class="navbar-btn icon">Flashlight emitting ripples</a>
+      <a href="#" class="navbar-btn icon"
+        >Silhouette of prisoner in submarine</a
+      >
+    </nav>
+    <div class="content">
+      <aside class="sidebar">
+        <a href="#" class="menu-btn selected">
+          <span class="icon"></span>
+          Home
+        </a>
+        <a href="#" class="menu-btn">
+          <span class="icon"></span>
+          Mobile
+        </a>
+        <a href="#" class="menu-btn">
+          <span class="icon"></span>
+          PC
+        </a>
+        <a href="#" class="menu-btn">
+          <span class="icon"></span>
+          Cross Compatible
+        </a>
+      </aside>
+      <main class="main">
+        <div class="banner">
+          <div class="tagline">
+            Get a free Xeno Archival+ Pass by contributing and helping.
+          </div>
+          <div class="sub-tagline">
+            You will get exclusive features.
+          </div>
+          <div class="features">
+            VIP Servers &middot; Exclusive Trailers &middot; In-Game Rewards
+          </div>
+        </div>
+        <div class="projects">
+          <a class="project" href="#">
+            <div class="thumbnail-wrapper">
+              <img
+                src="https://cdn.discordapp.com/attachments/775792479844696087/884271464944111677/24colors_cover_art2.png"
+                alt="Thumbnail of some project"
+                class="thumbnail"
+              />
+              <span class="trending">Trending</span>
+            </div>
+            <div class="project-name">Battlefront Redux</div>
+            <div class="project-info">
+              SurvivCreator &middot; 2020 <span class="space"> </span> 480x360
+            </div>
+          </a>
+          <a class="project" href="#">
+            <div class="thumbnail-wrapper">
+              <img
+                src="https://cdn.discordapp.com/attachments/775792479844696087/884271464944111677/24colors_cover_art2.png"
+                alt="Thumbnail of some project"
+                class="thumbnail"
+              />
+              <span class="hd">HD</span>
+            </div>
+            <div class="project-name">Battlefront Redux</div>
+            <div class="project-info">
+              SurvivCreator &middot; 2020 <span class="space"> </span> 480x360
+            </div>
+          </a>
+          <a class="project" href="#">
+            <div class="thumbnail-wrapper">
+              <img
+                src="https://cdn.discordapp.com/attachments/775792479844696087/884271464944111677/24colors_cover_art2.png"
+                alt="Thumbnail of some project"
+                class="thumbnail"
+              />
+            </div>
+            <div class="project-name">Battlefront Redux</div>
+            <div class="project-info">
+              SurvivCreator &middot; 2020 <span class="space"> </span> 480x360
+            </div>
+          </a>
+          <a class="project" href="#">
+            <div class="thumbnail-wrapper">
+              <img
+                src="https://cdn.discordapp.com/attachments/775792479844696087/884271464944111677/24colors_cover_art2.png"
+                alt="Thumbnail of some project"
+                class="thumbnail"
+              />
+            </div>
+            <div class="project-name">Battlefront Redux</div>
+            <div class="project-info">
+              SurvivCreator &middot; 2020 <span class="space"> </span> 480x360
+            </div>
+          </a>
+          <a class="project" href="#">
+            <div class="thumbnail-wrapper">
+              <img
+                src="https://cdn.discordapp.com/attachments/775792479844696087/884271464944111677/24colors_cover_art2.png"
+                alt="Thumbnail of some project"
+                class="thumbnail"
+              />
+            </div>
+            <div class="project-name">Battlefront Redux</div>
+            <div class="project-info">
+              SurvivCreator &middot; 2020 <span class="space"> </span> 480x360
+            </div>
+          </a>
+          <a class="project" href="#">
+            <div class="thumbnail-wrapper">
+              <img
+                src="https://cdn.discordapp.com/attachments/775792479844696087/884271464944111677/24colors_cover_art2.png"
+                alt="Thumbnail of some project"
+                class="thumbnail"
+              />
+            </div>
+            <div class="project-name">Battlefront Redux</div>
+            <div class="project-info">
+              SurvivCreator &middot; 2020 <span class="space"> </span> 480x360
+            </div>
+          </a>
+          <a class="project" href="#">
+            <div class="thumbnail-wrapper">
+              <img
+                src="https://cdn.discordapp.com/attachments/775792479844696087/884271464944111677/24colors_cover_art2.png"
+                alt="Thumbnail of some project"
+                class="thumbnail"
+              />
+            </div>
+            <div class="project-name">Battlefront Redux</div>
+            <div class="project-info">
+              SurvivCreator &middot; 2020 <span class="space"> </span> 480x360
+            </div>
+          </a>
+          <a class="project" href="#">
+            <div class="thumbnail-wrapper">
+              <img
+                src="https://cdn.discordapp.com/attachments/775792479844696087/884271464944111677/24colors_cover_art2.png"
+                alt="Thumbnail of some project"
+                class="thumbnail"
+              />
+            </div>
+            <div class="project-name">Battlefront Redux</div>
+            <div class="project-info">
+              SurvivCreator &middot; 2020 <span class="space"> </span> 480x360
+            </div>
+          </a>
+          <a class="project" href="#">
+            <div class="thumbnail-wrapper">
+              <img
+                src="https://cdn.discordapp.com/attachments/775792479844696087/884271464944111677/24colors_cover_art2.png"
+                alt="Thumbnail of some project"
+                class="thumbnail"
+              />
+            </div>
+            <div class="project-name">Battlefront Redux</div>
+            <div class="project-info">
+              SurvivCreator &middot; 2020 <span class="space"> </span> 480x360
+            </div>
+          </a>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
