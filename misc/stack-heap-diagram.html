@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>stack and heap</title>
+    <meta name="description" content="for cs class" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      /* TEMP */
+    </style>
+  </head>
+  <body>
+    <script src="./stack-heap.js"></script>
+    <script>
+      // https://ucsd-cse11-f21.github.io/lectures/lecture9.html
+      class Point {
+        x
+        y
+        constructor (x, y) {
+          this.x = x
+          this.y = y
+        }
+        belowLeftOf (p) {
+          return this.x < p.x && this.y < p.y
+        }
+        aboveRightOf (p) {
+          return this.x > p.x && this.y > p.y
+        }
+      }
+      class RectRegion {
+        lowerLeft
+        upperRight
+        constructor (lowerL, upperR) {
+          this.lowerLeft = lowerL
+          this.upperRight = upperR
+        }
+        contains (p) {
+          return (
+            this.lowerLeft.belowLeftOf(p) && this.upperRight.aboveRightOf(p)
+          )
+        }
+      }
+
+      class ExamplesRegion {
+        r1 = new RectRegion(new Point(30, 40), new Point(100, 200))
+        r2 = new RectRegion(new Point(10, 10), new Point(50, 50))
+
+        toTest1 = new Point(60, 60)
+        toTest2 = new Point(20, 20)
+
+        testContains (t) {
+          return (
+            t.checkExpect(this.r1.contains(this.toTest1), true) &&
+            t.checkExpect(this.r2.contains(this.toTest1), false) &&
+            t.checkExpect(this.r1.contains(this.toTest2), false) &&
+            t.checkExpect(this.r2.contains(this.toTest2), true)
+          )
+        }
+
+        // https://ucsd-cse11-f21.github.io/assignments/pa3.html#task-3
+        pa3Rect = new RectRegion(new Point(10, 20), new Point(30, 40))
+        p = new Point(50, 60)
+        result = this.pa3Rect.contains(this.p)
+      }
+
+      const diagram = new Diagram()
+      ;[Point, RectRegion, ExamplesRegion] = [
+        Point,
+        RectRegion,
+        ExamplesRegion
+      ].map(diagram.wrapClass)
+      console.log(new ExamplesRegion())
+    </script>
+  </body>
+</html>
