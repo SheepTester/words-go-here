@@ -15,16 +15,23 @@ function mapNamesToValues (names, values) {
 const shapes = {
   circle: 'M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2z',
   rect: 'M3 3h18v18H3z',
-  triangle: 'M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z',
+  triangle: 'M1 21h22L12 2 1 21z',
   star:
     'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'
 }
-function makeShape (type, colour) {
+function makeShape ({ shape, colour }) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttributeNS(null, 'width', '24')
+  svg.setAttributeNS(null, 'height', '24')
   svg.setAttributeNS(null, 'viewBox', '0 0 24 24')
+  svg.classList.add('shape')
+
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-  path.setAttributeNS(null, 'd', shapes[type])
+  path.setAttributeNS(null, 'd', shapes[shape])
   path.classList.add(colour)
+  svg.append(path)
+
+  return svg
 }
 
 const colours = ['red', 'orange', 'green', 'blue', 'purple']
@@ -37,32 +44,44 @@ function shuffleCombos () {
   const combos = Object.keys(shapes).flatMap(shape =>
     colours.map(colour => ({ shape, colour }))
   )
+  // Shuffle all the pairs
   for (let i = combos.length - 1; i > 0; i--) {
     const index = Math.floor(Math.random() * (i + 1))
     ;[combos[index], combos[i]] = [combos[i], combos[index]]
   }
-  const killed = []
-  for (let i = 1; i < combos.length; i++) {
-    if (
-      combos[i - 1].shape === combos[i].shape ||
-      combos[i - 1].colour === combos[i].colour
+  const pairs = []
+  // Insert at the earliest appropriate spot
+  while (combos.length > 0) {
+    const pair = combos.pop()
+    if (pairs.length === 0) {
+      pairs.push(pair)
+    } else if (
+      pairs[0].shape !== pair.shape &&
+      pairs[0].colour !== pair.colour
     ) {
-      killed.push(...combos.splice(i--, 1))
-    }
-  }
-  while (killed.length > 0) {
-    const last = combos[combos.length - 1]
-    const next = killed.findIndex(
-      ({ shape, colour }) => shape !== last.shape && colour !== last.colour
-    )
-    if (next !== -1) {
-      combos.push(...killed.splice(next, 1))
+      pairs.unshift(pair)
     } else {
-      throw { combos, killed }
+      const index = pairs.findIndex(
+        ({ shape, colour }, i) =>
+          shape !== pair.shape &&
+          colour !== pair.colour &&
+          (i + 1 === pairs.length ||
+            (pairs[i + 1].shape !== pair.shape &&
+              pairs[i + 1].colour !== pair.colour))
+      )
+      if (index !== -1) {
+        pairs.splice(index + 1, 0, pair)
+      } else {
+        if (pair._recycled) {
+          throw { pair, combos, pairs }
+        }
+        pair._recycled = true
+        combos.unshift(pair)
+      }
     }
   }
+  return pairs
 }
-for (let i = 1000; i--; ) shuffleCombos()
 
 export class Diagram {
   /** Objects */
@@ -102,14 +121,16 @@ export class Diagram {
             if (typeof method === 'function') {
               const argNames = getArgNames(method)
               return (...args) => {
+                const returnValue = method.call(proxy, ...args)
                 this.#deferred.push(() => {
                   this.#stack.push({
                     title: `${Class.name}.${method.name}`,
+                    return: returnValue,
                     this: instance,
                     ...mapNamesToValues(argNames, args)
                   })
                 })
-                return method.call(proxy, ...args)
+                return returnValue
               }
             } else {
               return method
@@ -126,5 +147,92 @@ export class Diagram {
       deferred()
     }
     this.#deferred = []
+    return this
+  }
+
+  #renderValue (references, value) {
+    const elem = document.createElement('div')
+    elem.className = 'value'
+    if (typeof value === 'object' && value !== null) {
+      if (value.isProxy) value = this.#heap.get(value)
+      elem.append(makeShape(references.get(value)))
+    } else if (typeof value === 'string') {
+      elem.append(`"${value.replace(/["\\]/g, char => '\\' + char)}"`)
+    } else {
+      elem.append(`${value}`)
+    }
+    return elem
+  }
+
+  render () {
+    /** Assign a coloured shape to each object */
+    const references = new Map()
+    const combos = shuffleCombos()
+    for (const object of this.#heap.values()) {
+      references.set(object, combos.pop())
+    }
+
+    const heap = document.createElement('div')
+    heap.className = 'heap'
+    for (const object of this.#heap.values()) {
+      const wrapper = document.createElement('div')
+      wrapper.className = 'object'
+      heap.append(wrapper)
+
+      const className = document.createElement('div')
+      className.className = 'class-name'
+      className.textContent = object.constructor.name
+
+      for (const [fieldName, value] of Object.entries(object)) {
+        const field = document.createElement('div')
+        field.className = 'binding'
+        wrapper.append(field)
+
+        const name = document.createElement('div')
+        name.className = 'name'
+        name.textContent = fieldName
+
+        field.append(name, this.#renderValue(references, value))
+      }
+
+      wrapper.append(makeShape(references.get(object)), className)
+    }
+
+    const stack = document.createElement('div')
+    stack.className = 'stack'
+    for (const { title, return: returnValue, ...args } of this.#stack) {
+      const wrapper = document.createElement('div')
+      wrapper.className = 'stack-frame'
+      stack.append(wrapper)
+
+      const titleElem = document.createElement('div')
+      titleElem.className = 'stack-title'
+      titleElem.textContent = title
+
+      const argValues = document.createElement('div')
+      argValues.className = 'arguments'
+
+      for (const [fieldName, value] of Object.entries(args)) {
+        const field = document.createElement('div')
+        field.className = 'binding'
+        argValues.append(field)
+
+        const name = document.createElement('div')
+        name.className = 'name'
+        name.textContent = fieldName
+
+        field.append(name, this.#renderValue(references, value))
+      }
+
+      wrapper.append(titleElem, argValues)
+
+      if (returnValue !== undefined) {
+        const returnElem = this.#renderValue(references, returnValue)
+        returnElem.classList.add('return-value')
+        wrapper.append(returnElem)
+      }
+    }
+
+    return { heap, stack }
   }
 }

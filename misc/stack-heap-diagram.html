@@ -15,6 +15,14 @@
     </style>
   </head>
   <body>
+    <div>
+      <h1>Stack</h1>
+      <div id="stack-placeholder"></div>
+    </div>
+    <div>
+      <h1>Heap</h1>
+      <div id="heap-placeholder"></div>
+    </div>
     <script type="module">
       import { Diagram } from './stack-heap.js'
 
@@ -76,8 +84,10 @@
         ExamplesRegion
       ].map(diagram.wrapClass)
       void new ExamplesRegion()
-      diagram.unwind()
-      console.log(diagram)
+
+      const { stack, heap } = diagram.unwind().render()
+      document.getElementById('stack-placeholder').replaceWith(stack)
+      document.getElementById('heap-placeholder').replaceWith(heap)
     </script>
   </body>
 </html>
