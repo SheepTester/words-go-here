@@ -179,9 +179,14 @@ export class Diagram {
       wrapper.className = 'object'
       heap.append(wrapper)
 
+      const shape = makeShape(references.get(object))
+      shape.classList.add('reference')
+
       const className = document.createElement('div')
       className.className = 'class-name'
       className.textContent = object.constructor.name
+
+      wrapper.append(shape, className)
 
       for (const [fieldName, value] of Object.entries(object)) {
         const field = document.createElement('div')
@@ -194,8 +199,6 @@ export class Diagram {
 
         field.append(name, this.#renderValue(references, value))
       }
-
-      wrapper.append(makeShape(references.get(object)), className)
     }
 
     const stack = document.createElement('div')

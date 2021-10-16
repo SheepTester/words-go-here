@@ -7,11 +7,121 @@
     <title>stack and heap</title>
     <meta name="description" content="for cs class" />
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;600&display=swap"
+      rel="stylesheet"
+    />
+
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
 
     <style>
-      /* TEMP */
+      body {
+        margin: 40px;
+        font-family: 'Source Sans Pro', sans-serif;
+        font-weight: 300;
+        display: flex;
+        background-color: #121c37;
+        color: #caccd2;
+        gap: 40px;
+        justify-content: center;
+      }
+
+      h1 {
+        font-weight: 600;
+        font-size: 20px;
+        text-align: center;
+      }
+
+      .stack-frame {
+        display: flex;
+        flex-direction: column;
+        margin: 20px 0;
+      }
+      .stack-title,
+      .arguments,
+      .return-value {
+        border: 1px solid #4c546c;
+        background-color: #2b3553;
+        padding: 5px 10px;
+      }
+      .stack-title {
+        align-self: flex-start;
+        margin-right: 20px;
+        border-bottom: none;
+      }
+      .return-value {
+        align-self: flex-end;
+        margin-left: 20px;
+        border-top: none;
+      }
+      .arguments {
+        background-color: #1d2744;
+      }
+
+      .object {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        background-color: #1d2744;
+        border: 1px solid #4c546c;
+        border-radius: 15px;
+        border-top-left-radius: 0;
+        padding: 15px 20px;
+        margin: 20px 0;
+      }
+      .reference {
+        position: absolute;
+        top: 0;
+        left: 0;
+        margin: -12px;
+      }
+      .class-name {
+        border-left: 1px solid #4c546c;
+        border-bottom: 1px solid #4c546c;
+        background-color: #2b3553;
+        padding: 5px 10px;
+        border-bottom-left-radius: 15px;
+        border-top-right-radius: 15px;
+        margin-top: -15px;
+        margin-right: -20px;
+        margin-left: 60px;
+        margin-bottom: 10px;
+        align-self: flex-end;
+      }
+
+      .binding {
+        display: flex;
+        align-items: center;
+        height: 28px;
+      }
+      .name,
+      .value {
+        flex: 1 0 0;
+      }
+
+      .red {
+        stroke: #f01539;
+        fill: #661e2a;
+      }
+      .orange {
+        stroke: #dc7013;
+        fill: #583212;
+      }
+      .green {
+        stroke: #3bcb1b;
+        fill: #226014;
+      }
+      .blue {
+        stroke: #19c3f3;
+        fill: #154755;
+      }
+      .purple {
+        stroke: #d863f3;
+        fill: #541662;
+      }
     </style>
   </head>
   <body>
@@ -56,20 +166,20 @@
       }
 
       class ExamplesRegion {
-        r1 = new RectRegion(new Point(30, 40), new Point(100, 200))
-        r2 = new RectRegion(new Point(10, 10), new Point(50, 50))
+        // r1 = new RectRegion(new Point(30, 40), new Point(100, 200))
+        // r2 = new RectRegion(new Point(10, 10), new Point(50, 50))
 
-        toTest1 = new Point(60, 60)
-        toTest2 = new Point(20, 20)
+        // toTest1 = new Point(60, 60)
+        // toTest2 = new Point(20, 20)
 
-        testContains (t) {
-          return (
-            t.checkExpect(this.r1.contains(this.toTest1), true) &&
-            t.checkExpect(this.r2.contains(this.toTest1), false) &&
-            t.checkExpect(this.r1.contains(this.toTest2), false) &&
-            t.checkExpect(this.r2.contains(this.toTest2), true)
-          )
-        }
+        // testContains (t) {
+        //   return (
+        //     t.checkExpect(this.r1.contains(this.toTest1), true) &&
+        //     t.checkExpect(this.r2.contains(this.toTest1), false) &&
+        //     t.checkExpect(this.r1.contains(this.toTest2), false) &&
+        //     t.checkExpect(this.r2.contains(this.toTest2), true)
+        //   )
+        // }
 
         // https://ucsd-cse11-f21.github.io/assignments/pa3.html#task-3
         pa3Rect = new RectRegion(new Point(10, 20), new Point(30, 40))
