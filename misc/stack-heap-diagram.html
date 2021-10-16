@@ -15,8 +15,9 @@
     </style>
   </head>
   <body>
-    <script src="./stack-heap.js"></script>
-    <script>
+    <script type="module">
+      import { Diagram } from './stack-heap.js'
+
       // https://ucsd-cse11-f21.github.io/lectures/lecture9.html
       class Point {
         x
@@ -74,7 +75,9 @@
         RectRegion,
         ExamplesRegion
       ].map(diagram.wrapClass)
-      console.log(new ExamplesRegion())
+      void new ExamplesRegion()
+      diagram.unwind()
+      console.log(diagram)
     </script>
   </body>
 </html>
