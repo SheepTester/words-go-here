@@ -87,7 +87,7 @@
         border-top-right-radius: 15px;
         margin-top: -15px;
         margin-right: -20px;
-        margin-left: 60px;
+        margin-left: 40px;
         margin-bottom: 10px;
         align-self: flex-end;
       }
@@ -100,6 +100,12 @@
       .name,
       .value {
         flex: 1 0 0;
+      }
+      /* Hack because padding does not work as I want it to */
+      .binding .value::before {
+        content: '';
+        display: inline-block;
+        width: 20px;
       }
 
       .red {
@@ -187,13 +193,43 @@
         result = this.pa3Rect.contains(this.p)
       }
 
+      class C1 {
+        other
+
+        constructor (other) {
+          this.other = other
+        }
+      }
+
+      class C2 {
+        x
+
+        constructor (x) {
+          this.x = x
+        }
+      }
+
+      class Task1 {
+        first = new C2(10)
+        second = new C1(new C2(2))
+        third = new C1(this.first)
+      }
+
       const diagram = new Diagram()
-      ;[Point, RectRegion, ExamplesRegion] = [
+      ;[Point, RectRegion, ExamplesRegion, C1, C2, Task1] = [
         Point,
         RectRegion,
-        ExamplesRegion
+        ExamplesRegion,
+        C1,
+        C2,
+        Task1
       ].map(diagram.wrapClass)
-      void new ExamplesRegion()
+
+      if (window.location.search.includes('Task1')) {
+        new Task1()
+      } else {
+        new ExamplesRegion()
+      }
 
       const { stack, heap } = diagram.unwind().render()
       document.getElementById('stack-placeholder').replaceWith(stack)
