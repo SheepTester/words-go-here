@@ -1,6 +1,51 @@
 // @ts-check
 
 /**
+ * I want to use bitwise operators but I would rather have readable and
+ * inefficient code because the rest of the program is inefficient anyways.
+ *
+ * @see https://en.wikipedia.org/wiki/Binary_GCD_algorithm#Algorithm
+ * @param {bigint} a
+ * @param {bigint} b
+ */
+function gcd (a, b) {
+  let multiplier = 1n
+  while (a !== 0n && b !== 0n) {
+    if (a % 2n === 0n) {
+      if (b % 2n === 0n) {
+        // If both are even, then 2 is a common factor.
+        multiplier *= 2n
+        a /= 2n
+        b /= 2n
+      } else {
+        // b is odd, so 2 is not a common factor. Remove it from a.
+        a /= 2n
+      }
+    } else {
+      if (b % 2n === 0n) {
+        // Likewise, but a is odd rather than b.
+        b /= 2n
+      } else {
+        // From Wikipedia:
+        // gcd(u, v) = gcd(|u − v|, min(u, v))
+        // Only works if both are odd.
+
+        // Math.abs and Math.min don't support BigInts, so I'm just using an if
+        // statement here.
+        if (a > b) {
+          // a - b will be positive, and min(a, b) will be b, so we can keep b
+          // and set a = a - b.
+          a -= b
+        } else {
+          b -= a
+        }
+      }
+    }
+  }
+  return multiplier * (a === 0n ? b : a)
+}
+
+/**
  * @typedef {Rational | number | bigint} RationalResolveable
  */
 
@@ -65,25 +110,38 @@ class Rational {
         'The denominator of a rational number cannot be zero.'
       )
     }
-    for (
-      let divisor = 2n;
-      divisor <=
-      (this.numerator < this.denominator ? this.numerator : this.denominator);
-      divisor++
-    ) {
-      while (
-        this.numerator % divisor === 0n &&
-        this.denominator % divisor === 0n
-      ) {
-        this.numerator /= divisor
-        this.denominator /= divisor
-      }
+    const negative = this.numerator < 0n !== this.denominator < 0n
+    if (this.numerator < 0n) this.numerator *= -1n
+    if (this.denominator < 0n) this.denominator *= -1n
+    const cancel = gcd(this.numerator, this.denominator)
+    this.numerator /= cancel
+    this.denominator /= cancel
+    if (negative) {
+      this.numerator *= -1n
     }
     return this
   }
 
+  get isZero () {
+    return this.numerator === 0n
+  }
+
+  get isOne () {
+    return this.numerator === this.denominator
+  }
+
+  get isInteger () {
+    this.simplify()
+    return this.denominator === 1n
+  }
+
+  /** The reciprocal */
+  get inverse () {
+    return new Rational(this.denominator, this.numerator)
+  }
+
   toString () {
-    if (this.denominator === 1n) {
+    if (this.isInteger) {
       return `${this.numerator}`
     } else {
       return `${this.numerator}/${this.denominator}`
@@ -155,12 +213,18 @@ class Matrix {
    * @param {number} row2 The position of the other row in the swap.
    */
   interchange (row1, row2) {
+    if (row1 < 1 || row1 > this.rows.length) {
+      throw new RangeError(`The row ${row1} is out of bounds.`)
+    }
+    if (row2 < 1 || row2 > this.rows.length) {
+      throw new RangeError(`The row ${row2} is out of bounds.`)
+    }
     return new Matrix(
       this.rows.map((row, i) =>
         i + 1 === row1
-          ? this.rows[row2]
+          ? this.rows[row2 - 1]
           : i + 1 === row2
-          ? this.rows[row1]
+          ? this.rows[row1 - 1]
           : row
       )
     )
@@ -202,7 +266,7 @@ class Matrix {
       this.rows.map((row, i) =>
         i + 1 === target
           ? row.map((number, col) =>
-              number.add(this.rows[source][col].multiply(scalar))
+              number.add(this.rows[source - 1][col].multiply(scalar))
             )
           : row
       )
@@ -222,12 +286,127 @@ class Matrix {
     return new Matrix(this.rows.filter((_, i) => i + 1 !== row))
   }
 
+  get columns () {
+    return this.rows[0].length
+  }
+
+  /**
+   * 1-indexed.
+   *
+   * @param {number} row
+   * @param {number} column
+   */
+  get (row, column) {
+    return this.rows[row - 1][column - 1]
+  }
+
+  toString () {
+    return this.rows.map(row => row.join('\t')).join('\n')
+  }
+
   /**
    * Row reduce the matrix to echelon form.
    *
    * @param {Matrix} matrix
    */
   static rref (matrix) {
-    //
+    let row = 1
+    for (let col = 1; col <= matrix.columns; col++) {
+      // Find a row I would like in this position.
+      let oneRow, nonZeroRow
+      for (let r = row; r <= matrix.rows.length; r++) {
+        if (!matrix.get(r, col).isZero && nonZeroRow === undefined) {
+          nonZeroRow = r
+        }
+        if (matrix.get(r, col).isOne && oneRow === undefined) {
+          oneRow = r
+        }
+      }
+
+      // Prioritize a row starting with 1.
+      if (oneRow !== undefined) {
+        if (oneRow !== row) {
+          console.log(
+            `Let us interchange rows ${oneRow} and ${row} because I would like to have 1 in this position.`
+          )
+          matrix = matrix.interchange(oneRow, row)
+          console.log(matrix.toString())
+        }
+      } else if (nonZeroRow !== undefined) {
+        if (nonZeroRow !== row) {
+          console.log(`Let us interchange rows ${nonZeroRow} and ${row}.`)
+          matrix = matrix.interchange(nonZeroRow, row)
+          console.log(matrix.toString())
+        }
+      } else {
+        // Rest of column is zeroes; this column is a free variable.
+        continue
+      }
+
+      let entryInverse = matrix.get(row, col).inverse
+
+      // Kill other entries in the column that are easy to kill.
+      for (let i = 1; i <= matrix.rows.length; i++) {
+        if (i !== row) {
+          const entry = matrix.get(i, col)
+          const c = entry.multiply(entryInverse).multiply(-1)
+          // If it's an integer then it is easy.
+          if (!entry.isZero && c.isInteger) {
+            console.log(
+              `I add to row ${i} row ${row} multiplied by ${c} in order to kill this ${entry}.`
+            )
+            matrix = matrix.addRow(row, i, c)
+          }
+        }
+      }
+      console.log(matrix.toString())
+
+      // Divide the row to make the leading entry 1.
+      if (!entryInverse.isOne) {
+        console.log(`I multiply row ${row} by ${entryInverse}.`)
+        matrix = matrix.multiply(row, entryInverse)
+        console.log(matrix.toString())
+
+        entryInverse = matrix.get(row, col).inverse
+      }
+
+      // Kill the rest of the entries in the column.
+      for (let i = 1; i <= matrix.rows.length; i++) {
+        if (i !== row) {
+          const entry = matrix.get(i, col)
+          if (!entry.isZero) {
+            const c = entry.multiply(entryInverse).multiply(-1)
+            console.log(
+              `I add to row ${i} row ${row} multiplied by ${c} in order to kill this ${entry}.`
+            )
+            matrix = matrix.addRow(row, i, c)
+          }
+        }
+      }
+      console.log(matrix.toString())
+
+      // Check for zero rows
+      for (let r = row + 1; r <= matrix.rows.length; r++) {
+        if (matrix.rows[r - 1].every(entry => entry.isZero)) {
+          console.log(`I have this zero row. I forget about it.`)
+          matrix = matrix.drop(r--)
+          console.log(matrix.toString())
+        }
+      }
+
+      row++
+    }
+    return matrix
   }
 }
+
+const matrix = new Matrix(
+  [
+    [1, 2, 7, -2, -6],
+    [1, 0, 3, -5, 1],
+    [0, 1, 2, 3, -2],
+    [-3, 2, -5, 14, 7]
+  ].map(row => row.map(Rational.from))
+)
+console.log(matrix.toString())
+console.log(Matrix.rref(matrix))
