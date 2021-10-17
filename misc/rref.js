@@ -400,13 +400,21 @@ class Matrix {
   }
 }
 
-const matrix = new Matrix(
-  [
-    [1, 2, 7, -2, -6],
-    [1, 0, 3, -5, 1],
-    [0, 1, 2, 3, -2],
-    [-3, 2, -5, 14, 7]
-  ].map(row => row.map(Rational.from))
+const m = matrix => {
+  console.log(matrix.toString())
+  console.log(Matrix.rref(matrix))
+}
+
+m(
+  new Matrix(
+    [
+      // [1, 2, 7, -2, -6],
+      // [1, 0, 3, -5, 1],
+      // [0, 1, 2, 3, -2],
+      // [-3, 2, -5, 14, 7]
+      [1, -4, 2, -6],
+      [0, 1, -4, -23],
+      [5, -21, 10, -3]
+    ].map(row => row.map(Rational.from))
+  )
 )
-console.log(matrix.toString())
-console.log(Matrix.rref(matrix))

@@ -115,3 +115,179 @@ So I suppose here is a generalized form of the algorithm.
 
    6. Repeat step 4, but without the integer constraint. This should thus kill
       all the other entries in the column.
+
+## Dialogue
+
+> ### Manipulations
+>
+> 1. add to some equation another equation, multiplied by a number,
+> 2. interchange two equations,
+> 3. multiply an equation by a nonzero number.
+
+> **The main idea**: identify a variable in an equation and "kill" these
+> variables in all other equations.
+
+### Lecture 1
+
+```
+1	1	-2	0
+0	1	-8	0
+1	1	1	1
+```
+
+So I identify in the first equation, x_1. And that explains why I wanted to
+interchange the first two equations because the first one does not have x_1, and
+I wanted to have x_1. So I identify this variable and then kill this variable in
+all other equations. How do we do it? Okay. You want to kill x_1 in the second
+equation. What do you need to do? Nothing. There is no x_1 in the second
+equation.
+
+So let's move on to the third equation. It has x_1, and we don't want it to have
+x_1. So what do you do? You subtract the first equation, just multiplied by one.
+You subtract the first equation. What do you get? Okay. Can you subtract the
+first equation from the third equation? x_1 disappears, x_2 disappears. What
+happens to x_3? 1 + 2, 3. What happens to the right-hand sides? So on. So you
+have got this system. You have to agree is as it is better than the first
+system.
+
+And you can easily write solution. x_3 is equal to 1/3. Then you go back. x_2 is
+equal to 8 x_3, so 8/3. x_1 is equal to -x_2 + 2 x_3, -2.
+
+```
+1	-4	3	5
+2	-7	2	3
+3	-8	4	9
+```
+
+You see this 2 x_1. We want to kill it. What do you do? You have to subtract the first
+equation, multiplied by 2, right? So let's do it.
+
+First of all, you write an augmented matrix. You all understand why this is an
+augmented matrix, right? In order to kill this two, you have to subtract from
+the second row the first row multiplied by 2. And simultaneously, I want to kill
+this 3 x_1, so I want to kill this 3. And for that, I will subtract the first
+row multiplied by what? 3. So let us do it.
+
+So here we get 0 because we know we subtract from the second row the first row
+multiplied by 2. We get 0. What do we get here? -7 + 8. You all understand why
++8? You multiply -4 by 2, then you subtract it. So you get 1. By the way, the
+first row goes without changes. You use it to kill other rows, but you don't
+change the first row. It's a killing instrument. Okay, what do you get here? 2 -
+6\. So -4. By the way, you should check my computations; I could easily make a
+mistake. I should, some give, some bonus to people who catch my mistakes. So 1,
+-4. What do you write here? -7: 3 - 10. So we all understood the second line,
+right? This second row. The third row, you subtract the first row multiplied by
+3\. So here you get 0. What do you get here? -8 + 12. 4. You understand why +
+12? Here, 4 - 9: -5. 9 - 15: -6. Now, second step. After you have killed all
+this, x_1 everywhere, forget about the first equation, and about x_1. It has
+done its job. Now for some time. You should leave it in peace. Look at the
+second equation and identify a variable.
+
+So you see is this 1. I want to kill x_2 here. What do I do for that? I subtract
+from the third row the second row multiplied by 4. Or if you wish, from the
+third equation here, I subtract the second equation multiplied by 4. So now the
+first equation is kept. The second equation is here. What do I get here? 0
+because I killed this 4. What do I get here? -5 + 16. You understand why + 16?
+So 11. -6 +, multiplication tables, + 28. -6 plus 28 is 22. You have got this
+matrix. It is triangular.
+
+### Lecture 2
+
+```
+1	1	-2	0
+0	1	-8	0
+3	2	2	3
+```
+
+This is the augmented matrix. You start with this variable x_1, or equivalently
+this coefficient 1. And you want to kill this 3. You know, we kill x_1 in all
+other equations. In the second equation, you don't need to kill it. It is not
+there. But in the third, you need. So how do you kill this 3? You have to
+subtract from this third row the first row multiplied by 3. Let us do it. The
+first row is unchanged. The second role is unchanged. Now you kill this 3. What
+do you write here? So you multiply the first row by 3. So that's 3 and subtract
+it from this, from this third row, you get -1. You multiply -2 by 3: -6.
+Subtract it from 2, you get 8. Here, you get 3. Okay, we are happy, we killed
+x_1 in this equation. And after that, forget about the first row. Forget about
+the first row and about first column.
+
+Look at the second row. You see here 1. It corresponds to x_2. You want to kill
+x_2 in all equations that are down, that are below this equation. Well, you have
+to kill it here. You have to kill this -1. How do you kill -1? With the help of
+this one. You have to add this second row to the third row. So do it.
+
+You'll get 0 here, you get 0 here. What do you have here? 3, because if you add
+0 to 3 you still get 3. And you have this interesting matrix.
+
+```
+1	1	-2	0
+0	1	-8	0
+3	2	2	0
+```
+
+First, I kill this 3. Then I kill, well, this -1. And I end up with this matrix.
+Are you still on board? Okay. Now I write the systems. This matrix corresponds
+to this system. This is the last row is— I can just drop it. It does not carry
+any information.
+
+```
+1	3	5	7
+3	5	7	9
+5	7	9	1
+```
+
+So the algorithm. When I said before, we identify some variable, it's a bit
+imprecise. Now I will try to be more precise. Look at the first column. Identify
+a non-zero entry, a simpler one. You know, for example, 1 is preferable to 3 or
+to 5, just to make computations easier. So you see this one, okay? It will be
+our leading entry. We will kill this 3 and this 5. And if the first column were
+0, forget about it. Look at the second column. So you see 1. Let us kill 3. How
+do we kill 3? You subtract from the second row the first row multiplied by 3. We
+will also want to kill 5. How do we kill five? We subtract from the third row,
+the first row multiplied by 5. Let us do it. You see this -3, -5. So here we
+have 0. What do we have here? 3 \* 3 is 9, 5 - 9 is negative 4. 5 \* 3 is 15. 7
+\- 15, -8. 7 \* 3 is 21. 9 - 21 is -12. Any questions about the second row? So
+that's how I get this row. And I will— With this, 1 \* 5 is 5. 5 - 5 is 0, so I
+kill it. 3 \* 5 is 15, 7 - 15, -8. 5 \* 5, 25. 9 - 25 is -16. 7 \* 5 is 35. 1 -
+35 is -34. I've got this matrix.
+
+Now the first column is ideal. I'm happy with it. So let's forget about the
+first row and first column and move on to this smaller matrix. In this column
+you have two negative numbers, -4 and -8. Which one is better? Of course,
+negative four. And it is clear how to kill this -8. I have to subtract from the
+third row the second row multiplied by 2. You see? Okay. This is killed. -8 \* 2
+is -16. This is also 0. -12 \* 2 is -24, -34 + 24 is -10. Questions about this
+matrix? By the way, it is an echelon form. Because look, leading entries move to
+the right. All entries below are zero. Be happy.
+
+But I want to improve it further. For example, I want to red—. This is an
+echelon form but not reduced echelon form. I want to reduce it. I want to reduce
+it further. And I'm not satisfied that we have -4, -10, so let us divide the
+second row by -4 because I want to have 1 here. You see? Questions about the
+second row?
+
+Another condition said that other entries in pivotal columns should be equal to
+0\. For example, instead of this 3, we should have 0. And instead of this 7 and
+3, we also should have zeros. So this matrix is not reduced. How do I reduce it?
+Okay. I kill this 3 and this 7. I subtract from the second row the third row
+multiplied by 3. And I subtract from the first row the third row multiplied by
+7\. I killed this 3 and this 7. In this matrix, for example, I want to kill this
+3, I'm unhappy with this 3. I subtract from the first— Let us move from left to
+right. So I subtract from the first row the second row multiplied by 3 in order
+to kill this 3. So I get 0 here. 2 \* 3 is 6. 5 - 6, -1. 3 \* 3, 9. 7 - 9, -2.
+The second and the third row so far are intact. Questions? Do you understand how
+I got this matrix and why I wanted to get it? I look at this matrix. It is not
+reduced. [...] And then I kill all entries above the leading entries. Moving
+from left to right, starting with this 3, I subtract from the first row the
+second row multiplied by 3. Why? In order to kill this 3. So I get 0, -1, and
+-2. This, I did not do anything with the second row and the third row. You
+understand how I got this matrix? [...] In order to make it reduced, I have to
+kill all entries above the leading ones. I start the murder from this 3. 3 \* 3
+is 9. 7 - 9 is -2.
+
+So is this matrix in reduced? No because of this -2 and this 3. They stand in
+the pivotal column. I have to kill them. In order to do that, I subtract from
+the second row the third row multiplied by 3. And in order to kill this -2, I
+subtract from the first row the third row— Nah, I don't subtract, I add to the
+first row the third row multiplied by 2. So I've got this matrix. This is in
+reduced echelon form.
