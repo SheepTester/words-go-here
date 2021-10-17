@@ -328,9 +328,9 @@
         run.default = () => new ExamplesRegion()
       }
 
-      if (window.location.search === 'ExamplesRegion') {
+      if (window.location.search.endsWith('ExamplesRegion')) {
         run.ExamplesRegion()
-      } else if (window.location.search === 'Task1') {
+      } else if (window.location.search.endsWith('Task1')) {
         run.Task1()
       } else {
         run.default()

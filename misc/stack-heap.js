@@ -121,7 +121,6 @@ export class Diagram {
             if (typeof method === 'function') {
               const argNames = getArgNames(method)
               return (...args) => {
-                const returnValue = method.call(proxy, ...args)
                 this.#deferred.push(() => {
                   this.#stack.push({
                     title: `${Class.name}.${method.name}`,
@@ -130,6 +129,7 @@ export class Diagram {
                     ...mapNamesToValues(argNames, args)
                   })
                 })
+                const returnValue = method.call(proxy, ...args)
                 return returnValue
               }
             } else {
