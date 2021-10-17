@@ -291,3 +291,254 @@ the second row the third row multiplied by 3. And in order to kill this -2, I
 subtract from the first row the third row— Nah, I don't subtract, I add to the
 first row the third row multiplied by 2. So I've got this matrix. This is in
 reduced echelon form.
+
+### Lecture 3
+
+```
+1	-2	7	-6
+0	1	-6	5
+```
+
+So it is in the row echelon form. But not in the reduced one. Why not in the
+reduced one? Because of this -2. You remember in the reduced echelon form, all
+entries in the pivotal column except the leading entry have to be equal to 0.
+Here the pivotal columns are the first column and the second column. In the
+second column, -2 is not 0. We have to kill it. And for that we add to the first
+row the second row multiplied by 2. That's what we get. And this is a matrix in
+the reduced echelon form.
+
+```
+4	-2	7	-5
+8	-3	10	-3
+```
+
+This as an augmented matrix. Look at the first column. Is it zero?. No, it is
+non-zero. It contains four and eight. Are you happy with the order? Yeah, I'm
+happy. Four is smaller and it is the upper position. What do you need to do to
+kill this eight? You need to subtract from the second equation, the second row,
+the first row multiplied by two. Let us do it. Zero, one, negative four. Then
+you multiply by two, negative ten, subtract. So minus three plus ten, seven. We
+have got this matrix. It is in the echelon form, but not reduced echelon form.
+
+For example, I don't like the fact that here we have negative two, not zero, and
+four is also not equal to one. So to kill this negative two, we add to the first
+row the second row multiplied by two. The second row is unchanged. The first row
+becomes this. I give you time to do computations. For each time when you catch a
+mistake in my computations, you'll get some bonus. Okay?
+
+Now, this matrix is still not in reduced form. You have to divide the first row
+by four. So we divide. Now with this reduced form [...]
+
+```
+1	2	1	1
+3	4	5	1
+5	6	9	2
+```
+
+Okay, reduce it to echelon form. So you look at the—. Well, kill three, kill
+this three and kill this five. Actually, we already had this equation. Okay, you
+subtract from the second row the first row multiplied by three. You get this
+row. Then you subtract from the third equation—er, third row—the first row
+multiplied by five. Why by five? To kill this five. You have got this.
+
+You will see this row are very nice. Negative two, two; negative four, four.
+This is double of this. So I want to subtract from the third row the second row
+multiplied by two. I got this.
+
+I don't go further. Each time when in the matrix of coefficients you have zeros,
+but on the right hand side, you have a non-zero number. You stop computations.
+And you say that the system is inconsistent.
+
+### Lecture 4
+
+```
+1	2	1	1
+3	4	5	1
+5	6	9	2
+```
+
+Then you reduce it to an echelon form. You know, you kill the three. You
+subtract from the second row the first row multiplied by three. You subtract
+from the third row the first row multiplied by five. I hope that by now you
+understand why three and why five. I want to kill these two numbers. So I do it,
+and I get this matrix.
+
+And then I have irresistible temptation to subtract from the third row the
+second row multiplied by two. You understand why? To get zeros. But here, I get
+not zero. Well, I get one. The system is inconsistent [...]
+
+```
+1	-2	1	b_1
+0	2	-8	b_2
+5	0	5	b_3
+```
+
+So we write augmentation matrix. As always, we want to kill this five. For that,
+you subtract from the third row the first row multiplied by five. So the first
+two rows are unchanged, and the third row becomes this. Clear? Okay.
+
+Then you forget about the first row, and you want to kill this ten. For that,
+you subtract from the third row the second row multiplied by five. You've got
+this matrix.
+
+At this point, you can already say that the system is consistent, and that it
+has a unique solution. You don't even need to— If you wish, you can continue and
+bringing it to reduced echelon form, but it's not necessary.
+
+```
+1	0	2	b_1
+2	1	3	b_2
+1	2	0	b_3
+```
+
+You write the augmented matrix. I hope you don't have questions how to do it.
+Because by this moment, you are supposed to know it. Okay. Then as always, you
+see we have only one algorithm in this course. Gauss's algorithm. And it is used
+non-stop. That's why I did not want to save time on Gauss's algorithm. This is
+most important part of the course. Okay.
+
+So in order to kill this two, you subtract from the second row the first row
+multiplied by two. And in order to kill this one, you subtract from the third
+row the first row. You have got this matrix.
+
+Do you follow? Then, you know, I want, you know, it's tempting. I subtract from
+the third row the second row multiplied by two to kill this, and I do kill it.
+So did you all follow up to this matrix? Questions about the way I got this
+matrix are welcome.
+
+### Lecture 5
+
+```
+2	-1	1	0
+5	2	-1	0
+1	-5	4	0
+```
+
+You write the matrix. You ignore the zeros because what would be the point of
+writing it? So this is the matrix of this system. Here we have two, here we have
+five, one. I would like to have one in this position. Therefore, I interchange
+the first row and the third row. I get this matrix.
+
+Then I want to kill this five and this two. So I subtract from the second row
+the first row multiplied by five. I get this row. And I subtract from this third
+row the first row multiplied by two in order to kill this two. I got this row.
+
+Again, I want to interchange them. Do I need to explain why? Because it is
+easier to kill twenty-seven with the help of nine than to kill nine with the
+help of twenty-seven. Then I kill this twenty-seven; I just subtract from the
+third row the second row multiplied by thre. I got this.
+
+I have this zero row. I could forget about it, but I still keep it, but I didn't
+have to. Okay. I divided the second— Well, at this point, you already can say
+that there are infinitely many non-zero solutions. Why? The pivotal column— Even
+at this point you can say it. The pivotal columns are the first one and the
+second one. Because pivot columns are the columns that contain leading entries.
+In the first row, the leading entry is one. In the second row, the leading entry
+is nine. So the pivotal columns are the first column and the second column. And
+basic variables x one and x two. x three is a free variable, so there are infinitely
+many non-zero solutions, but I will finish this example. I divide the second row
+by nine. I get this.
+
+Then I add to the first row the second row multiplied by five. I want to kill
+this negative five. So I got zero. What do I get here? Four minus twenty-eight
+divided by nine. Four times nine is thirty-six, Thirty-six minus— [...] Okay,
+I'm not sure that it is one over nine, I hope. [...] No. It's a question— It
+boils down to the question whether we all remember multiplication table. Four
+minus twenty-eight divided by nine, thirty-six minus twenty-eight, eight over
+nine. So I think it's not one over nine. [...] So it is, right? [...] Okay, you
+see, I'm relieved. And this row is the same, and I dropped this row because it
+is not informative any longer.
+
+```
+1	2	-1	1	1
+2	-1	1	-1	1
+1	7	-4	4	2
+3	1	0	0	2
+```
+
+So in any case, we write the augmented matrix and do what we did many times. We
+reduce it to reduced form. You subtract from the second row the first row
+multiplied by two. You subtract from the third row the first row. You subtract
+from the fourth row the first row multiplied by three. Any questions about this
+matrix?
+
+Now, you add to the third row the second row to kill this five. You subtract
+from the fourth row the second row.
+
+Luckily you got two zero rows. Then I just throw them away. I don't need to copy
+them again and again. It's not informative. I forgot about them. Only two rows
+remain. Okay. Then I killed— It's still, you know, leading entries are equal to
+one, that is fine, but it's not reduced because here we have two, not zero. In
+order to kill this two, I subtract from the first row the second row multiplied
+by two.
+
+Now I can hope only that I did not make arithmetical mistakes here. And this is
+the reduced form.
+
+### Lecture 6
+
+```
+1	2	-1	1	1
+2	-1	1	-1	1
+1	7	-4	4	2
+3	1	0	0	2
+```
+
+You write the augmented matrix. You reduce it to echelon form. Any questions
+about how to reduce echelon form? This is an absolute must. On your exam, both
+on the midterm exam, on the final exam, there will be something related to
+reduction of matrices to echelon form because that was the only, the main
+algorithm that we went over. So you reduce— This is the echelon form, not
+reduced echelon.
+
+In order to reduce it, you have to subtract from the first row the second row
+multiplied by two in order to kill this two. That's what you get.
+
+### Lecture 7
+
+```
+1	1	1	b_1
+3	0	6	b_2
+-1	1	-3	b_3
+```
+
+Well, hopefully by now you know what to do. You subtract from the second row the
+first row multiplied by three. You add to the third row the first row. You get
+this.
+
+You divide the second row by three. You divide the third row by two. You get
+this.
+
+You subtract from the third row the second row, you'll get this.
+
+Now, if you had problems reducing a matrix the echelon form, it's time to get
+very worried. If you don't understand this algorithm, we will see to it that
+there is no way to pass the exam.
+
+```
+1	1	1	1
+0	2	-1	3
+3	1	4	0
+```
+
+You have this matrix. Reduce. I don't know to which extent I have to explain
+again and again how do we reduce? It will be easier if you see some strange
+step, immediately ask. It may happen that it was my mistake. And then I will
+give you some bonus for catching it. Okay. So you see zero row. Discard it,
+throw it away. Divide the second row by two.
+
+Subtract the second row from the first row. And this matrix is in reduced
+echelon form.
+
+### Lecture 8
+
+```
+1	2	-1	b_1
+0	1	1	b_2
+2	1	-5	b_3
+```
+
+Well, we bring it to an echelon form. We subtract from the third row the first
+row multiplied by two. We get this.
+
+Then I add it to the third row the second row multiplied by three. I got this.
