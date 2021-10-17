@@ -99,6 +99,7 @@
       }
       .name,
       .value {
+        display: flex;
         flex: 1 0 0;
       }
       /* Hack because padding does not work as I want it to */
@@ -142,93 +143,197 @@
     <script type="module">
       import { Diagram } from './stack-heap.js'
 
-      // https://ucsd-cse11-f21.github.io/lectures/lecture9.html
-      class Point {
-        x
-        y
-        constructor (x, y) {
-          this.x = x
-          this.y = y
-        }
-        belowLeftOf (p) {
-          return this.x < p.x && this.y < p.y
-        }
-        aboveRightOf (p) {
-          return this.x > p.x && this.y > p.y
-        }
-      }
-      class RectRegion {
-        lowerLeft
-        upperRight
-        constructor (lowerL, upperR) {
-          this.lowerLeft = lowerL
-          this.upperRight = upperR
-        }
-        contains (p) {
-          return (
-            this.lowerLeft.belowLeftOf(p) && this.upperRight.aboveRightOf(p)
-          )
-        }
-      }
-
-      class ExamplesRegion {
-        // r1 = new RectRegion(new Point(30, 40), new Point(100, 200))
-        // r2 = new RectRegion(new Point(10, 10), new Point(50, 50))
-
-        // toTest1 = new Point(60, 60)
-        // toTest2 = new Point(20, 20)
-
-        // testContains (t) {
-        //   return (
-        //     t.checkExpect(this.r1.contains(this.toTest1), true) &&
-        //     t.checkExpect(this.r2.contains(this.toTest1), false) &&
-        //     t.checkExpect(this.r1.contains(this.toTest2), false) &&
-        //     t.checkExpect(this.r2.contains(this.toTest2), true)
-        //   )
-        // }
-
-        // https://ucsd-cse11-f21.github.io/assignments/pa3.html#task-3
-        pa3Rect = new RectRegion(new Point(10, 20), new Point(30, 40))
-        p = new Point(50, 60)
-        result = this.pa3Rect.contains(this.p)
-      }
-
-      class C1 {
-        other
-
-        constructor (other) {
-          this.other = other
-        }
-      }
-
-      class C2 {
-        x
-
-        constructor (x) {
-          this.x = x
-        }
-      }
-
-      class Task1 {
-        first = new C2(10)
-        second = new C1(new C2(2))
-        third = new C1(this.first)
-      }
-
       const diagram = new Diagram()
-      ;[Point, RectRegion, ExamplesRegion, C1, C2, Task1] = [
-        Point,
-        RectRegion,
-        ExamplesRegion,
-        C1,
-        C2,
-        Task1
-      ].map(diagram.wrapClass)
 
-      if (window.location.search.includes('Task1')) {
-        new Task1()
+      const run = {}
+
+      {
+        // https://ucsd-cse11-f21.github.io/lectures/lecture9.html
+        class Point {
+          x
+          y
+          constructor (x, y) {
+            this.x = x
+            this.y = y
+          }
+          belowLeftOf (p) {
+            return this.x < p.x && this.y < p.y
+          }
+          aboveRightOf (p) {
+            return this.x > p.x && this.y > p.y
+          }
+        }
+
+        class RectRegion {
+          lowerLeft
+          upperRight
+          constructor (lowerL, upperR) {
+            this.lowerLeft = lowerL
+            this.upperRight = upperR
+          }
+          contains (p) {
+            return (
+              this.lowerLeft.belowLeftOf(p) && this.upperRight.aboveRightOf(p)
+            )
+          }
+        }
+
+        class ExamplesRegion {
+          // r1 = new RectRegion(new Point(30, 40), new Point(100, 200))
+          // r2 = new RectRegion(new Point(10, 10), new Point(50, 50))
+
+          // toTest1 = new Point(60, 60)
+          // toTest2 = new Point(20, 20)
+
+          // testContains (t) {
+          //   return (
+          //     t.checkExpect(this.r1.contains(this.toTest1), true) &&
+          //     t.checkExpect(this.r2.contains(this.toTest1), false) &&
+          //     t.checkExpect(this.r1.contains(this.toTest2), false) &&
+          //     t.checkExpect(this.r2.contains(this.toTest2), true)
+          //   )
+          // }
+
+          // https://ucsd-cse11-f21.github.io/assignments/pa3.html#task-3
+          pa3Rect = new RectRegion(new Point(10, 20), new Point(30, 40))
+          p = new Point(50, 60)
+          result = this.pa3Rect.contains(this.p)
+        }
+
+        ;[Point, RectRegion, ExamplesRegion] = [
+          Point,
+          RectRegion,
+          ExamplesRegion
+        ].map(diagram.wrapClass)
+        run.ExamplesRegion = () => new ExamplesRegion()
+      }
+
+      {
+        class C1 {
+          other
+
+          constructor (other) {
+            this.other = other
+          }
+        }
+
+        class C2 {
+          x
+
+          constructor (x) {
+            this.x = x
+          }
+        }
+
+        class Task1 {
+          first = new C2(10)
+          second = new C1(new C2(2))
+          third = new C1(this.first)
+        }
+
+        ;[C1, C2, Task1] = [C1, C2, Task1].map(diagram.wrapClass)
+        run.Task1 = () => new Task1()
+      }
+
+      {
+        // https://ucsd-cse11-f21.github.io/lectures/lecture11.html
+        class Point {
+          x
+          y
+          constructor (x, y) {
+            this.x = x
+            this.y = y
+          }
+          belowLeftOf (p) {
+            return this.x < p.x && this.y < p.y
+          }
+          aboveRightOf (p) {
+            return this.x > p.x && this.y > p.y
+          }
+          distance (p) {
+            let dx = p.x - this.x
+            let dy = p.y - this.y
+            return Math.sqrt(dx * dx + dy * dy)
+          }
+        }
+        class RectRegion {
+          lowerLeft
+          upperRight
+          constructor (lowerL, upperR) {
+            this.lowerLeft = lowerL
+            this.upperRight = upperR
+          }
+          contains (p) {
+            return (
+              this.lowerLeft.belowLeftOf(p) && this.upperRight.aboveRightOf(p)
+            )
+          }
+        }
+        class CircleRegion {
+          center
+          radius
+          constructor (center, radius) {
+            this.center = center
+            this.radius = radius
+          }
+          contains (p) {
+            return this.center.distance(p) < this.radius
+          }
+        }
+        class UnionRegion {
+          r1
+          r2
+          constructor (r1, r2) {
+            this.r1 = r1
+            this.r2 = r2
+          }
+          contains (p) {
+            return this.r1.contains(p) || this.r2.contains(p)
+          }
+        }
+        class IntersectRegion {
+          r1
+          r2
+          constructor (r1, r2) {
+            this.r1 = r1
+            this.r2 = r2
+          }
+          contains (p) {
+            return this.r1.contains(p) && this.r2.contains(p)
+          }
+        }
+        class ExamplesRegion {
+          r1 = new RectRegion(new Point(30, 40), new Point(100, 200))
+          r2 = new RectRegion(new Point(10, 10), new Point(50, 50))
+          c1 = new CircleRegion(new Point(40, 40), 20)
+          i1 = new IntersectRegion(new UnionRegion(this.r1, this.r2), this.c1)
+          result = this.i1.contains(new Point(51, 51))
+        }
+
+        ;[
+          Point,
+          RectRegion,
+          CircleRegion,
+          UnionRegion,
+          IntersectRegion,
+          ExamplesRegion
+        ] = [
+          Point,
+          RectRegion,
+          CircleRegion,
+          UnionRegion,
+          IntersectRegion,
+          ExamplesRegion
+        ].map(diagram.wrapClass)
+        run.default = () => new ExamplesRegion()
+      }
+
+      if (window.location.search === 'ExamplesRegion') {
+        run.ExamplesRegion()
+      } else if (window.location.search === 'Task1') {
+        run.Task1()
       } else {
-        new ExamplesRegion()
+        run.default()
       }
 
       const { stack, heap } = diagram.unwind().render()
