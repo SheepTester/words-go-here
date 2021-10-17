@@ -65,11 +65,33 @@ class Rational {
         'The denominator of a rational number cannot be zero.'
       )
     }
+    for (
+      let divisor = 2n;
+      divisor <=
+      (this.numerator < this.denominator ? this.numerator : this.denominator);
+      divisor++
+    ) {
+      while (
+        this.numerator % divisor === 0n &&
+        this.denominator % divisor === 0n
+      ) {
+        this.numerator /= divisor
+        this.denominator /= divisor
+      }
+    }
     return this
   }
 
+  toString () {
+    if (this.denominator === 1n) {
+      return `${this.numerator}`
+    } else {
+      return `${this.numerator}/${this.denominator}`
+    }
+  }
+
   valueOf () {
-    return this.numerator / this.denominator
+    return Number(this.numerator) / Number(this.denominator)
   }
 
   /**
@@ -88,7 +110,17 @@ class Rational {
         return new Rational(BigInt(number))
       } else {
         const string = number.toString()
-        return new Rational(0n)
+        const [coefficientStr, exponentStr = '0'] = string.split(/e[-+]/)
+        let exponent = BigInt(exponentStr)
+        if (coefficientStr.includes('.')) {
+          exponent -= BigInt(coefficientStr.split('.')[1].length)
+        }
+        const coefficient = BigInt(coefficientStr.split('.').join(''))
+        if (exponent < 0) {
+          return new Rational(coefficient, 10n ** -exponent)
+        } else {
+          return new Rational(coefficient, 10n ** exponent)
+        }
       }
     } else {
       throw new RangeError('Number is not finite.')
