@@ -559,6 +559,7 @@ Then I add it to the third row the second row multiplied by three. I got this.
   - Okay, reduce it to echelon form.
   - Then you reduce it to an echelon form.
   - You reduce it to echelon form.
+  - We reduce it to reduced form.
   - Well, we bring it to an echelon form.
   - Reduce.
 
@@ -675,24 +676,39 @@ Then I add it to the third row the second row multiplied by three. I got this.
 - I get this.
 
   - So you have got this system.
-  - You have got this matrix.
-  - So that's how I get this row.
+  - and I get this matrix.
+  - I get this matrix.
   - I've got this matrix.
   - So I've got this matrix.
-  - That's what we get.
-  - We have got this matrix.
-  - You get this row.
-  - You have got this.
-  - I got this.
-  - and I get this matrix.
+  - You have got this matrix.
   - You've got this matrix.
   - You have got this matrix.
-  - I get this matrix.
+  - We have got this matrix.
   - I get this row.
+  - So that's how I get this row.
   - I got this row.
-  - I got this. x2
+  - You get this row.
   - I get this.
-  - That's what you get.
-  - You get this. x2
+  - I got this.
+  - You get this.
   - you'll get this.
+  - You have got this.
   - We get this.
+  - That's what you get.
+  - That's what we get.
+
+- Reduced echelon form
+
+  - Not reduced
+
+    - By the way, it is an echelon form. Because look, leading entries move to
+      the right. All entries below are zero. Be happy.
+    - So it is in the row echelon form. But not in the reduced one.
+    - It is in the echelon form, but not reduced echelon form.
+    - but it's not reduced
+    - This is the echelon form, not reduced echelon.
+
+  - This is in reduced echelon form.
+  - And this is a matrix in the reduced echelon form.
+  - And this is the reduced form.
+  - And this matrix is in reduced echelon form.
