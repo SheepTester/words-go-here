@@ -159,8 +159,8 @@ equal to 8 x_3, so 8/3. x_1 is equal to -x_2 + 2 x_3, -2.
 3	-8	4	9
 ```
 
-You see this 2 x_1. We want to kill it. What do you do? You have to subtract the first
-equation, multiplied by 2, right? So let's do it.
+You see this 2 x_1. We want to kill it. What do you do? You have to subtract the
+first equation, multiplied by 2, right? So let's do it.
 
 First of all, you write an augmented matrix. You all understand why this is an
 augmented matrix, right? In order to kill this two, you have to subtract from
@@ -426,7 +426,7 @@ row the first row multiplied by two in order to kill this two. I got this row.
 Again, I want to interchange them. Do I need to explain why? Because it is
 easier to kill twenty-seven with the help of nine than to kill nine with the
 help of twenty-seven. Then I kill this twenty-seven; I just subtract from the
-third row the second row multiplied by thre. I got this.
+third row the second row multiplied by three. I got this.
 
 I have this zero row. I could forget about it, but I still keep it, but I didn't
 have to. Okay. I divided the second— Well, at this point, you already can say
@@ -542,3 +542,157 @@ Well, we bring it to an echelon form. We subtract from the third row the first
 row multiplied by two. We get this.
 
 Then I add it to the third row the second row multiplied by three. I got this.
+
+## Types of dialogue
+
+- Start
+
+  - You write the matrix.
+  - You have this matrix.
+  - This is the augmented matrix.
+  - This is an augmented matrix.
+  - So we write augmentation matrix.
+  - You write the augmented matrix.
+  - So in any case, we write the augmented matrix and do what we did many times.
+  - Well, hopefully by now you know what to do.
+  - So the algorithm.
+  - Okay, reduce it to echelon form.
+  - Then you reduce it to an echelon form.
+  - You reduce it to echelon form.
+  - Well, we bring it to an echelon form.
+  - Reduce.
+
+- Interchange
+
+  - And that explains why I wanted to interchange the first two equations
+    because the first one does not have x_1, and I wanted to have x_1.
+  - I would like to have one in this position. Therefore, I interchange the
+    first row and the third row.
+  - I want to interchange them. Do I need to explain why? Because it is easier
+    to kill twenty-seven with the help of nine than to kill nine with the help
+    of twenty-seven.
+
+- Multiply
+
+  - And I'm not satisfied that we have -4, -10, so let us divide the
+    second row by -4 because I want to have 1 here.
+  - You have to divide the first row by four. So we divide.
+  - I divide the second row by nine.
+  - You divide the second row by three.
+  - You divide the third row by two.
+  - Divide the second row by two.
+
+- Add and multiply
+
+  - You subtract the first equation, just multiplied by one.
+  - You have to subtract the first equation, multiplied by 2, right? So let's do
+    it.
+  - In order to kill this two, you have to subtract from the second row the
+    first row multiplied by 2.
+  - And simultaneously, I want to kill this 3 x_1, so I want to kill this 3. And
+    for that, I will subtract the first row multiplied by what? 3. So let us do
+    it.
+  - we subtract from the second row the first row multiplied by 2.
+  - The third row, you subtract the first row multiplied by 3.
+  - I subtract from the third row the second row multiplied by 4.
+  - from the third equation here, I subtract the second equation multiplied by 4.
+  - So how do you kill this 3? You have to subtract from this third row the
+    first row multiplied by 3.
+  - You have to add this second row to the third row. So do it.
+  - First, I kill this 3.
+  - Then I kill, well, this -1.
+  - We will kill this 3 and this 5.
+  - Let us kill 3. How do we kill 3? You subtract from the second row the first
+    row multiplied by 3.
+  - We will also want to kill 5. How do we kill five? We subtract from the third
+    row, the first row multiplied by 5. Let us do it.
+  - And it is clear how to kill this -8. I have to subtract from the third row
+    the second row multiplied by 2. You see? Okay. This is killed.
+  - I kill this 3 and this 7. I subtract from the second row the third row
+    multiplied by 3. And I subtract from the first row the third row multiplied
+    by 7. I killed this 3 and this 7.
+  - In this matrix, for example, I want to kill this 3, I'm unhappy with this 3.
+    I subtract from the first—
+  - So I subtract from the first row the second row multiplied by 3 in order to
+    kill this 3.
+  - starting with this 3, I subtract from the first row the second row
+    multiplied by 3. Why? In order to kill this 3.
+  - In order to do that, I subtract from the second row the third row multiplied
+    by 3.
+  - And in order to kill this -2, I subtract from the first row the third row—
+    Nah, I don't subtract, I add to the first row the third row multiplied by 2.
+  - We have to kill it. And for that we add to the first row the second row
+    multiplied by 2.
+  - What do you need to do to kill this eight? You need to subtract from the
+    second equation, the second row, the first row multiplied by two. Let us do
+    it.
+  - So to kill this negative two, we add to the first row the second row
+    multiplied by two.
+  - Well, kill three, kill this three and kill this five.
+  - Okay, you subtract from the second row the first row multiplied by three.
+  - Then you subtract from the third equation—er, third row—the first row
+    multiplied by five. Why by five? To kill this five.
+  - So I want to subtract from the third row the second row multiplied by two.
+  - You know, you kill the three. You subtract from the second row the first row
+    multiplied by three.
+  - You subtract from the third row the first row multiplied by five.
+  - And then I have irresistible temptation to subtract from the third row the
+    second row multiplied by two.
+  - As always, we want to kill this five. For that, you subtract from the third
+    row the first row multiplied by five.
+  - Then you forget about the first row, and you want to kill this ten. For
+    that, you subtract from the third row the second row multiplied by five.
+  - So in order to kill this two, you subtract from the second row the first row
+    multiplied by two.
+  - And in order to kill this one, you subtract from the third row the first
+    row.
+  - Then, you know, I want, you know, it's tempting. I subtract from the third
+    row the second row multiplied by two to kill this, and I do kill it.
+  - Then I want to kill this five and this two.
+  - So I subtract from the second row the first row multiplied by five.
+  - And I subtract from this third row the first row multiplied by two in order
+    to kill this two.
+  - Then I kill this twenty-seven; I just subtract from the third row the second
+    row multiplied by three.
+  - Then I add to the first row the second row multiplied by five. I want to
+    kill this negative five.
+  - You subtract from the second row the first row multiplied by two.
+  - You subtract from the third row the first row.
+  - You subtract from the fourth row the first row multiplied by three.
+  - Now, you add to the third row the second row to kill this five.
+  - You subtract from the fourth row the second row.
+  - In order to kill this two, I subtract from the first row the second row
+    multiplied by two.
+  - In order to reduce it, you have to subtract from the first row the second
+    row multiplied by two in order to kill this two.
+  - You subtract from the second row the first row multiplied by three.
+  - You add to the third row the first row.
+  - You subtract from the third row the second row
+  - Subtract the second row from the first row.
+  - We subtract from the third row the first row multiplied by two.
+  - Then I add it to the third row the second row multiplied by three.
+
+- I get this.
+
+  - So you have got this system.
+  - You have got this matrix.
+  - So that's how I get this row.
+  - I've got this matrix.
+  - So I've got this matrix.
+  - That's what we get.
+  - We have got this matrix.
+  - You get this row.
+  - You have got this.
+  - I got this.
+  - and I get this matrix.
+  - You've got this matrix.
+  - You have got this matrix.
+  - I get this matrix.
+  - I get this row.
+  - I got this row.
+  - I got this. x2
+  - I get this.
+  - That's what you get.
+  - You get this. x2
+  - you'll get this.
+  - We get this.
