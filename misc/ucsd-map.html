@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Get UCSD map tiles</title>
+    <meta name="description" content="Into a single image" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <p>
+      <label>
+        Zoom:
+        <input type="range" id="zoom" min="11" max="20" value="18" />
+      </label>
+      <label>
+        Min X
+        <input type="number" id="min-x" max="0" value="-1" />
+      </label>
+      <label>
+        Min Y
+        <input type="number" id="min-y" max="0" value="-1" />
+      </label>
+      <label>
+        Max X
+        <input type="number" id="max-x" min="0" value="1" />
+      </label>
+      <label>
+        Max Y
+        <input type="number" id="max-y" min="0" value="1" />
+      </label>
+    </p>
+    <canvas id="output"></canvas>
+    <script>
+      const RADIUS = 6378137
+      const TILE_SIZE = 256
+      const TILES_NAME = '1005_Map_3'
+      function latLngToTile (latitude, longitude, zoom) {
+        // 1. LatLng -> pixels
+        // 1a. Project LatLng onto a plane
+        // From https://map.concept3d.com/js/leaflet.js
+        const sine = Math.sin((latitude * Math.PI) / 180)
+        const projectedX = (RADIUS * longitude * Math.PI) / 180
+        const projectedY = (RADIUS * Math.log((1 + sine) / (1 - sine))) / 2
+        // 1b. Transform??
+        const zoomScale = 256 * 2 ** zoom
+        const projectScale = 0.5 / (Math.PI * RADIUS)
+        const pointX = zoomScale * (projectScale * projectedX + 0.5)
+        const pointY = zoomScale * (projectScale * projectedY + 0.5)
+        // 2. pixels -> tile
+        return {
+          x: Math.floor(pointX / TILE_SIZE),
+          y: Math.floor(pointY / TILE_SIZE)
+        }
+      }
+
+      const canvas = document.getElementById('output')
+      const c = canvas.getContext('2d')
+      function render () {
+        const zoom = +inputs.zoom.value
+        const minX = +inputs.minX.value
+        const minY = +inputs.minY.value
+        const maxX = +inputs.maxX.value
+        const maxY = +inputs.maxY.value
+
+        const centre = latLngToTile(32.877341347399, -117.23531663418, zoom)
+        canvas.width = TILE_SIZE * (maxX - minX + 1)
+        canvas.height = TILE_SIZE * (maxY - minY + 1)
+        for (let x = 0; x <= maxX - minX; x++) {
+          for (let y = 0; y <= maxY - minY; y++) {
+            const image = new Image()
+            image.addEventListener('load', () => {
+              c.drawImage(image, x * TILE_SIZE, y * TILE_SIZE)
+            })
+            image.src = `https://assets.concept3d.com/assets/1005/${TILES_NAME}/${zoom}/${centre.x +
+              minX +
+              x}/${centre.y + maxY - y}`
+          }
+        }
+      }
+
+      const inputs = {
+        zoom: document.getElementById('zoom'),
+        minX: document.getElementById('min-x'),
+        minY: document.getElementById('min-y'),
+        maxX: document.getElementById('max-x'),
+        maxY: document.getElementById('max-y')
+      }
+      document.addEventListener('change', render)
+      render()
+    </script>
+  </body>
+</html>
