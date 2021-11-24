@@ -96,8 +96,36 @@ export class Diagram {
    */
   #deferred = []
 
+  createGetter = (className, object, getProxy) => (_, methodName, isStatic) => {
+    if (methodName === 'isProxy') {
+      return true
+    }
+
+    const method = object[methodName]
+    if (typeof method === 'function') {
+      const argNames = getArgNames(method)
+      return (...args) => {
+        let returnValue
+        this.#deferred.push(() => {
+          this.#stack.push({
+            title: `${className}.${method.name}`,
+            return: returnValue,
+            this: isStatic ? undefined : object,
+            ...mapNamesToValues(argNames, args)
+          })
+        })
+        // Set `returnValue` in a separate statement because it may never happen
+        // if an error is thrown, for example.
+        returnValue = method.call(getProxy(), ...args)
+        return returnValue
+      }
+    } else {
+      return method
+    }
+  }
+
   wrapClass = Class => {
-    return new Proxy(Class, {
+    const classProxy = new Proxy(Class, {
       construct: (_, args) => {
         this.#deferred.push(() => {
           this.#heap.set(proxy, instance)
@@ -112,34 +140,21 @@ export class Diagram {
         })
         const instance = new Class(...args)
         const proxy = new Proxy(instance, {
-          get: (_, methodName) => {
-            if (methodName === 'isProxy') {
-              return true
-            }
-
-            const method = instance[methodName]
-            if (typeof method === 'function') {
-              const argNames = getArgNames(method)
-              return (...args) => {
-                this.#deferred.push(() => {
-                  this.#stack.push({
-                    title: `${Class.name}.${method.name}`,
-                    return: returnValue,
-                    this: instance,
-                    ...mapNamesToValues(argNames, args)
-                  })
-                })
-                const returnValue = method.call(proxy, ...args)
-                return returnValue
-              }
-            } else {
-              return method
-            }
-          }
+          get: this.createGetter(Class.name, instance, () => proxy, false)
         })
         return proxy
-      }
+      },
+
+      get: this.createGetter(Class.name, Class, () => classProxy, true)
     })
+    return classProxy
+  }
+
+  array (type, ...values) {
+    this.#deferred.push(() => {
+      this.#heap.set(values, { type, values, isArray: true })
+    })
+    return values
   }
 
   unwind () {
@@ -154,7 +169,9 @@ export class Diagram {
     const elem = document.createElement('div')
     elem.className = 'value'
     if (typeof value === 'object' && value !== null) {
-      if (value.isProxy) value = this.#heap.get(value)
+      if (value.isProxy || Array.isArray(value)) {
+        value = this.#heap.get(value)
+      }
       elem.append(makeShape(references.get(value)))
     } else if (typeof value === 'string') {
       elem.append(`"${value.replace(/["\\]/g, char => '\\' + char)}"`)
@@ -188,16 +205,27 @@ export class Diagram {
 
       wrapper.append(shape, className)
 
-      for (const [fieldName, value] of Object.entries(object)) {
-        const field = document.createElement('div')
-        field.className = 'binding'
-        wrapper.append(field)
+      if (object.isArray) {
+        className.textContent = object.type
 
-        const name = document.createElement('div')
-        name.className = 'name'
-        name.textContent = fieldName
+        const items = document.createElement('div')
+        items.className = 'items'
+        items.textContent = `{ ${object.values
+          .map(item => (item === null ? 'null' : `"${item}"`))
+          .join(', ')} }`
+        wrapper.append(items)
+      } else {
+        for (const [fieldName, value] of Object.entries(object)) {
+          const field = document.createElement('div')
+          field.className = 'binding'
+          wrapper.append(field)
 
-        field.append(name, this.#renderValue(references, value))
+          const name = document.createElement('div')
+          name.className = 'name'
+          name.textContent = fieldName
+
+          field.append(name, this.#renderValue(references, value))
+        }
       }
     }
 
@@ -216,6 +244,10 @@ export class Diagram {
       argValues.className = 'arguments'
 
       for (const [fieldName, value] of Object.entries(args)) {
+        if (value === undefined) {
+          continue
+        }
+
         const field = document.createElement('div')
         field.className = 'binding'
         argValues.append(field)

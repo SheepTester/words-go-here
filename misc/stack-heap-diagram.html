@@ -328,10 +328,74 @@
         run.default = () => new ExamplesRegion()
       }
 
+      {
+        class IllegalArgumentException extends Error {
+          name = this.constructor.name
+        }
+
+        /**
+         * Compares `String`s by length, where shorter strings are "smaller."
+         */
+        class StringLengthCompare {
+          compare (first, other) {
+            return first.length - other.length
+          }
+        }
+
+        // Needed because otherwise CompareLists.main will refer to the original
+        // CompareLists
+        let CompareLists = class {
+          /**
+           * @return Whether the elements in the array list are in increasing order
+           *         according to the comparator.
+           * @throws IllegalArgumentException If any of the elements in the list are null.
+           */
+          inOrder (list, comparator) {
+            let previous = null
+            for (const item of list) {
+              if (item == null) {
+                throw new IllegalArgumentException('null value in list')
+              }
+              if (
+                !(previous == null || comparator.compare(item, previous) >= 0)
+              ) {
+                return false
+              }
+              previous = item
+            }
+            return true
+          }
+
+          static main (args) {
+            // Should throw an exception
+            new CompareLists().inOrder(
+              diagram.array('ArrayList<String>', null),
+              new StringLengthCompare()
+            )
+          }
+        }
+
+        ;[StringLengthCompare, CompareLists] = [
+          StringLengthCompare,
+          CompareLists
+        ].map(diagram.wrapClass)
+        run.CompareLists = () => {
+          try {
+            CompareLists.main(diagram.array('String[]'))
+          } catch (error) {
+            if (!(error instanceof IllegalArgumentException)) {
+              throw error
+            }
+          }
+        }
+      }
+
       if (window.location.search.endsWith('ExamplesRegion')) {
         run.ExamplesRegion()
       } else if (window.location.search.endsWith('Task1')) {
         run.Task1()
+      } else if (window.location.search.endsWith('CompareLists')) {
+        run.CompareLists()
       } else {
         run.default()
       }
