@@ -1,0 +1,51 @@
+/* From https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css */
+
+@font-face {
+  font-family: 'KaTeX_Main';
+  src: url(https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/fonts/KaTeX_Main-Regular.woff2)
+      format('woff2'),
+    url(https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/fonts/KaTeX_Main-Regular.woff)
+      format('woff'),
+    url(https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/fonts/KaTeX_Main-Regular.ttf)
+      format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.matrix-input {
+  font-family: 'KaTeX_Main', 'Times New Roman', serif;
+  font-size: 1.21em;
+  line-height: 1.2;
+  width: 5ch;
+}
+
+.matrix {
+  display: grid;
+  grid-template-columns: [left] auto [matrix-left] repeat(3, auto) [matrix-right] auto [right];
+  grid-template-rows: [top] auto [matrix-top] repeat(3, auto) [matrix-bottom] auto [bottom];
+  justify-items: center;
+}
+.matrix-sizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.row {
+  grid-column: left / right;
+}
+.top {
+  grid-row: top;
+}
+.bottom {
+  grid-row: matrix-bottom;
+}
+.col {
+  grid-row: matrix-top / matrix-bottom;
+  flex-direction: column;
+}
+.left {
+  grid-column: left;
+}
+.right {
+  grid-column: matrix-right;
+}

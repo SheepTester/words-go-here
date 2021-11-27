@@ -13,12 +13,41 @@
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
 
+    <link rel="stylesheet" href="./matrix-entry.css" />
+
     <style>
       /* TEMP */
     </style>
   </head>
   <body>
     <p>see console</p>
+    <div class="matrix">
+      <div class="matrix-sizer row top">
+        <button class="resize">🔼</button>
+        <button class="resize">🔽</button>
+      </div>
+      <div class="matrix-sizer row bottom">
+        <button class="resize">🔼</button>
+        <button class="resize">🔽</button>
+      </div>
+      <div class="matrix-sizer col left">
+        <button class="resize">◀</button>
+        <button class="resize">▶</button>
+      </div>
+      <div class="matrix-sizer col right">
+        <button class="resize">◀</button>
+        <button class="resize">▶</button>
+      </div>
+      <input type="text" class="matrix-input" value="1" />
+      <input type="text" class="matrix-input" value="0" />
+      <input type="text" class="matrix-input" value="0" />
+      <input type="text" class="matrix-input" value="0" />
+      <input type="text" class="matrix-input" value="1" />
+      <input type="text" class="matrix-input" value="0" />
+      <input type="text" class="matrix-input" value="0" />
+      <input type="text" class="matrix-input" value="0" />
+      <input type="text" class="matrix-input" value="1" />
+    </div>
     <script src="./rref.js"></script>
   </body>
 </html>
