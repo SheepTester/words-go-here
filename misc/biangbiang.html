@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>𰻞𰻞麵</title>
+    <meta
+      name="description"
+      content="biángbiángmiàn isn't supported on many computers."
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@0,400&directory=3&subset=latin&display=block&text=𰻞麵𰻝面"
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+      }
+      .mian {
+        flex: 1 0 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 20vh;
+      }
+      @media (max-aspect-ratio: 6/5) {
+        body {
+          display: flex;
+          flex-direction: column;
+        }
+        .mian {
+          font-size: 15vh;
+        }
+      }
+      .biangbiang {
+        color: blue;
+      }
+      @font-face {
+        font-family: 'Noto Sans TC script=latin';
+        font-style: normal;
+        font-weight: 400;
+        font-display: block;
+        src: url(https://fonts.gstatic.com/l/font?kit=-nF7OG829Oofr2wohFbTp9iFOjOJCtc1sjNzboxJUc7cJIoPIzFxEtmZVLtY4VwDI5YxWuN_NP_ify4i5RcMbfzO44CnfMYONKsyLYVNujT8YpjLl0fW2yRJGa_ATEXTMtptMVSsH6tK8KLjuaSyAP_GaTICMB3ulIjPfmk4Mi42av9LNsAXRTjeodHr96vtNYK7mropiI1LMKR0&skey=3904269dc8bdd0a1&v=v24)
+          format('woff2');
+      }
+      .noto-first {
+        font-family: 'Noto Sans TC script=latin', 'Noto Sans TC';
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mian traditional default-first">
+      <span class="biangbiang">𰻞𰻞</span>麵
+    </div>
+    <div class="mian traditional noto-first">
+      <span class="biangbiang">𰻞𰻞</span>麵
+    </div>
+    <div class="mian simplified default-first">
+      <span class="biangbiang">𰻝𰻝</span>面
+    </div>
+    <div class="mian simplified noto-first">
+      <span class="biangbiang">𰻝𰻝</span>面
+    </div>
+  </body>
+</html>
