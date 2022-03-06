@@ -1,4 +1,4 @@
-import { render, h } from 'https://esm.sh/preact@10.6.6/'
+import { render, h, Fragment } from 'https://esm.sh/preact@10.6.6/'
 import { useState } from 'https://esm.sh/preact@10.6.6/hooks'
 
 function * range (count) {
@@ -18,8 +18,8 @@ const tileStyles = [
   'fill top-right',
   'fill bottom-left',
   'fill bottom-right',
-  'fill left',
-  'fill right'
+  'empty left',
+  'empty right'
 ]
 
 function App () {
@@ -31,12 +31,38 @@ function App () {
       () => tileStyles[(tileStyles.length * Math.random()) | 0]
     )
   )
+  const [selected, setSelected] = useState('empty')
 
   return h(
-    'div',
-    { class: 'board', style: { '--width': width, '--height': height } },
-    Array.from(range(width * height), key =>
-      h('div', { class: `tile ${data[key]}`, key })
+    Fragment,
+    null,
+    h(
+      'div',
+      { class: 'tile-selection' },
+      tileStyles.map(style =>
+        h(
+          'div',
+          { class: 'tile-select-wrapper', key: style },
+          h('button', {
+            class: `tile-select-tile tile ${style} ${
+              selected === style ? 'tile-selected' : ''
+            }`,
+            onClick: () => setSelected(style)
+          }),
+          h(
+            'div',
+            { class: 'tile-count' },
+            data.filter(tile => tile === style).length
+          )
+        )
+      )
+    ),
+    h(
+      'div',
+      { class: 'board', style: { '--width': width, '--height': height } },
+      Array.from(range(width * height), key =>
+        h('div', { class: `tile ${data[key]}`, key })
+      )
     )
   )
 }

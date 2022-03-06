@@ -26,6 +26,42 @@
         justify-content: center;
         align-items: center;
       }
+      button {
+        -webkit-appearance: none;
+        border: none;
+        background: none;
+        color: inherit;
+        font: inherit;
+      }
+      button:not(:disabled) {
+        cursor: pointer;
+      }
+
+      #root {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .tile-selection {
+        display: flex;
+        margin-bottom: 20px;
+        gap: 10px;
+      }
+      .tile-select-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .tile-select-tile {
+        width: var(--size);
+        height: var(--size);
+        box-shadow: 0 0 0 1px var(--background), 0 0 0 2px var(--colour);
+      }
+      .tile-selected {
+        box-shadow: 0 0 0 1px var(--background), 0 0 0 5px var(--colour);
+      }
 
       .board {
         border: calc(var(--size) / 2) solid var(--colour);
@@ -35,7 +71,9 @@
         grid-template-columns: repeat(var(--width), 1fr);
         display: grid;
         gap: 1px;
+        cursor: crosshair;
       }
+
       .tile {
         overflow: hidden;
         position: relative;
