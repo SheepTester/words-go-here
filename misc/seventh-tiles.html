@@ -25,6 +25,10 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        /* https://systemfontstack.com/ */
+        font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir,
+          segoe ui, helvetica neue, helvetica, Ubuntu, roboto, noto, arial,
+          sans-serif;
       }
       button {
         -webkit-appearance: none;
@@ -72,6 +76,8 @@
         display: grid;
         gap: 1px;
         cursor: crosshair;
+        touch-action: none;
+        user-select: none;
       }
 
       .tile {
@@ -124,6 +130,34 @@
       }
       .right::before {
         right: -50%;
+      }
+
+      .controls {
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .size-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .slider {
+        accent-color: var(--colour);
+      }
+      .reset-btn {
+        background-color: var(--colour);
+        color: var(--background);
+        padding: 5px 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.2s;
+      }
+      .reset-btn:hover {
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+      }
+      .reset-btn:active {
+        box-shadow: 0 0 0 rgba(0, 0, 0, 0.2);
       }
     </style>
   </head>
