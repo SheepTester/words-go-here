@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>The Tiles at Seventh College</title>
+    <meta name="description" content="Building 2, West" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      :root {
+        --background: white;
+        --colour: #e36f1d;
+        --size: 40px;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .board {
+        border: calc(var(--size) / 2) solid var(--colour);
+        padding: 1px;
+        width: calc(var(--size) * var(--width));
+        height: calc(var(--size) * var(--height));
+        grid-template-columns: repeat(var(--width), 1fr);
+        display: grid;
+        gap: 1px;
+      }
+      .tile {
+        overflow: hidden;
+        position: relative;
+      }
+      .tile::before {
+        content: '';
+        background-color: var(--colour);
+        position: absolute;
+        border-radius: 50%;
+      }
+      .fill {
+        background-color: var(--colour);
+      }
+      .fill::before {
+        background-color: var(--background);
+      }
+      .top-left::before,
+      .top-right::before,
+      .bottom-left::before,
+      .bottom-right::before {
+        width: 200%;
+        height: 200%;
+      }
+      .top-left::before,
+      .top-right::before {
+        top: 0;
+      }
+      .bottom-left::before,
+      .bottom-right::before {
+        bottom: 0;
+      }
+      .top-left::before,
+      .bottom-left::before {
+        left: 0;
+      }
+      .top-right::before,
+      .bottom-right::before {
+        right: 0;
+      }
+      .left::before,
+      .right::before {
+        width: 100%;
+        height: 100%;
+        top: 0;
+      }
+      .left::before {
+        left: -50%;
+      }
+      .right::before {
+        right: -50%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script src="./seventh-tiles.js" type="module"></script>
+  </body>
+</html>
