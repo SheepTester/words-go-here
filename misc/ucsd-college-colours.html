@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>UCSD college colours as text</title>
+    <meta
+      name="description"
+      content="Figuring out good colours to use for Discord roles that contrast well on Discord"
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <!-- https://www.cdnfonts.com/whitney.font -->
+    <link href="http://fonts.cdnfonts.com/css/whitney" rel="stylesheet" />
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        font-family: 'Whitney-Semibold', Whitney, 'Helvetica Neue', Helvetica,
+          Arial, sans-serif;
+        font-size: 16px;
+        font-weight: 500;
+      }
+      section {
+        flex: 1 0 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      .dark {
+        background-color: #37393f;
+      }
+      .light {
+        background-color: #ffffff;
+      }
+    </style>
+  </head>
+  <body>
+    <template id="sample-text-template">
+      <p class="line">
+        <!-- Original -->
+        <span style="color: #095540">Muir</span>
+        <span style="color: #068a96">Sixth</span>
+        <span style="color: #5a8ab5">ERC</span>
+        <span style="color: #273b80">Revelle</span>
+        <span style="color: #802449">Warren</span>
+        <span style="color: #b01e28">Marshall</span>
+        <span style="color: #d09228">Seventh</span>
+      </p>
+      <p class="line">
+        <!-- Suggested by Devtools for dark theme contrast -->
+        <span style="color: #14b98c">Muir</span>
+        <span style="color: #08b4c4">Sixth</span>
+        <span style="color: #6ea9dd">ERC</span>
+        <span style="color: #839fff">Revelle</span>
+        <span style="color: #ff74ac">Warren</span>
+        <span style="color: #ff7a83">Marshall</span>
+        <span style="color: #d79729">Seventh</span>
+      </p>
+      <p class="line">
+        <!-- Manual adjustments -->
+        <span style="color: #14b98c">Muir</span>
+        <span style="color: #08b4c4">Sixth</span>
+        <span style="color: #6ea9dd">ERC</span>
+        <span style="color: #6987ed">Revelle</span>
+        <span style="color: #da719c">Warren</span>
+        <span style="color: #ff7a83">Marshall</span>
+        <span style="color: #d79729">Seventh</span>
+      </p>
+      <p class="line">
+        <!-- Based on original with L=60 from HSLuv https://www.hsluv.org/ -->
+        <span style="color: #1ba47e">Muir</span>
+        <span style="color: #08a0ad">Sixth</span>
+        <span style="color: #6295c3">ERC</span>
+        <span style="color: #798be2">Revelle</span>
+        <span style="color: #e76393">Warren</span>
+        <span style="color: #f45e64">Marshall</span>
+        <span style="color: #d09228">Seventh</span>
+      </p>
+      <p class="line">
+        <!-- Make Revelle more purple -->
+        <span style="color: #1ba47e">Muir</span>
+        <span style="color: #08a0ad">Sixth</span>
+        <span style="color: #6295c3">ERC</span>
+        <span style="color: #8987e2">Revelle</span>
+        <span style="color: #e76393">Warren</span>
+        <span style="color: #f45e64">Marshall</span>
+        <span style="color: #d09228">Seventh</span>
+      </p>
+    </template>
+    <section class="dark">
+      <sample-text></sample-text>
+    </section>
+    <section class="white">
+      <sample-text></sample-text>
+    </section>
+    <script>
+      const template = document.getElementById('sample-text-template')
+      customElements.define(
+        'sample-text',
+        class extends HTMLElement {
+          constructor () {
+            super()
+            const shadowRoot = this.attachShadow({ mode: 'open' })
+            shadowRoot.appendChild(template.content.cloneNode(true))
+          }
+        }
+      )
+    </script>
+  </body>
+</html>
