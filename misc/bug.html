@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>🐛</title>
+    <meta name="description" content="Change the colour of the bug" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+        }
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        display: flex;
+        margin: 0;
+        padding: 20px;
+        box-sizing: border-box;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji',
+          'Segoe UI Emoji', 'Segoe UI Symbol';
+      }
+      button {
+        -webkit-appearance: none;
+        background: none;
+        border: none;
+        font: inherit;
+        color: inherit;
+      }
+      button:not(:disabled) {
+        cursor: pointer;
+      }
+
+      #bug {
+        display: none;
+      }
+
+      #colours {
+        display: flex;
+        gap: 10px;
+      }
+      #colours button,
+      .custom-colour {
+        color: black;
+        padding: 5px 10px;
+        border-radius: 2px;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="colours"></div>
+    <canvas id="output"></canvas>
+    <label>Resolution: <input type="number" id="width" value="48" /></label>
+
+    <script type="module">
+      const COLOURS = {
+        BUG: '#9266CC',
+        UCSD25_REVELLE: '#95b8d1',
+        UCSD25_MUIR: '#b8dd81',
+        UCSD25_MARSHALL: '#eb694e',
+        UCSD25_WARREN: '#eea89f',
+        UCSD25_ERC: '#ce89ff',
+        UCSD25_SIXTH: '#7ad1b8',
+        UCSD25_SEVENTH: '#f7ea7f'
+      }
+
+      const buttons = document.getElementById('colours')
+      const widthInput = document.getElementById('width')
+      const image = document.createElement('img')
+      const svg = await fetch('./bug.svg').then(r => r.text())
+      const canvas = document.getElementById('output')
+      const c = canvas.getContext('2d')
+      const customColour = document.createElement('input')
+      customColour.type = 'color'
+      customColour.className = 'custom-colour'
+
+      const state = {
+        colour: COLOURS.BUG,
+        width: 48
+      }
+      async function render () {
+        canvas.width = state.width
+        canvas.height = state.width
+        customColour.value = state.colour
+        // https://stackoverflow.com/a/45334496
+        image.src = `data:image/svg+xml;base64,${btoa(
+          svg.replace('#ABCDEF', state.colour)
+        )}`
+        await new Promise(resolve => {
+          image.addEventListener('load', resolve, { once: true })
+        })
+        c.drawImage(image, 0, 0, state.width, state.width)
+      }
+      render()
+
+      for (const [name, colour] of Object.entries(COLOURS)) {
+        const button = document.createElement('button')
+        button.textContent = name.replace('UCSD25_', '')
+        button.style.backgroundColor = colour
+        button.addEventListener('click', () => {
+          state.colour = colour
+          render()
+        })
+        buttons.append(button)
+      }
+      customColour.addEventListener('input', () => {
+        state.colour = customColour.value
+        render()
+      })
+      buttons.append(customColour)
+
+      widthInput.addEventListener('input', () => {
+        const width = +widthInput.value
+        if (width > 0) {
+          state.width = width
+          render()
+        }
+      })
+    </script>
+  </body>
+</html>
