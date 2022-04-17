@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>ACM Bug</title>
+    <meta name="description" content="Introducing ACM's newest community" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      body {
+        font-family: 'DM Sans', sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="importmap">
+      {
+        "imports": {
+          "preact": "https://unpkg.com/preact@10.7.1/dist/preact.module.js",
+          "preact/hooks": "https://unpkg.com/preact@10.7.1/hooks/dist/hooks.module.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import { h, Fragment, render } from 'preact'
+      import { useEffect, useState, useRef } from 'preact/hooks'
+
+      function Label ({ children }) {
+        return h('p', null, h('label', null, children))
+      }
+      function App () {
+        const [size, setSize] = useState('512')
+        const [label, setLabel] = useState('dsgn')
+        const [colour, setColour] = useState('#816DFF')
+        const [blackText, setBlackText] = useState(false)
+        const canvas = useRef(null)
+
+        useEffect(() => {
+          if (canvas.current) {
+            canvas.current.width = +size
+            canvas.current.height = +size
+            const c = canvas.current.getContext('2d')
+            c.scale(+size / 60, +size / 60)
+            // From https://acmucsd.com/_next/static/media/acm-ai.4b66d604.svg
+            c.beginPath()
+            c.moveTo(3.73715, 33.7371)
+            c.bezierCurveTo(
+              1.67318,
+              31.6732,
+              1.67318,
+              28.3268,
+              3.73715,
+              26.2628
+            )
+            c.lineTo(26.2629, 3.73712)
+            c.bezierCurveTo(
+              28.3268,
+              1.67315,
+              31.6732,
+              1.67315,
+              33.7371,
+              3.73712
+            )
+            c.lineTo(56.2629, 26.2628)
+            c.bezierCurveTo(
+              58.3268,
+              28.3268,
+              58.3268,
+              31.6732,
+              56.2629,
+              33.7371
+            )
+            c.lineTo(33.7371, 56.2628)
+            c.bezierCurveTo(
+              31.6732,
+              58.3268,
+              28.3268,
+              58.3268,
+              26.2629,
+              56.2628
+            )
+            c.lineTo(3.73715, 33.7371)
+            c.fillStyle = colour
+            c.fill()
+            c.fillStyle = blackText ? 'black' : 'white'
+            c.font = '700 16px "DM Sans", sans-serif'
+            c.textAlign = 'center'
+            c.textBaseline = 'middle'
+            c.fillText(label, 30, 30)
+          }
+        }, [size, label, colour, blackText, canvas.current])
+
+        return h(
+          Fragment,
+          null,
+          h(
+            Label,
+            null,
+            'Size: ',
+            h('input', {
+              type: 'number',
+              value: size,
+              onInput: e => setSize(e.currentTarget.value)
+            }),
+            h('input', {
+              type: 'range',
+              min: 1,
+              max: 1000,
+              value: size,
+              onInput: e => setSize(e.currentTarget.value)
+            })
+          ),
+          h(
+            Label,
+            null,
+            'Text: ',
+            h('input', {
+              type: 'text',
+              value: label,
+              onInput: e => setLabel(e.currentTarget.value)
+            })
+          ),
+          h(
+            Label,
+            null,
+            'Colour: ',
+            h('input', {
+              type: 'color',
+              value: colour,
+              onInput: e => setColour(e.currentTarget.value)
+            })
+          ),
+          h(
+            Label,
+            null,
+            h('input', {
+              type: 'checkbox',
+              value: blackText,
+              onInput: e => setBlackText(e.currentTarget.value)
+            }),
+            ' Use black text?'
+          ),
+          h('canvas', { ref: canvas })
+        )
+      }
+
+      render(h(App), document.getElementById('root'))
+    </script>
+  </body>
+</html>
