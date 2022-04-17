@@ -21,6 +21,17 @@
       body {
         font-family: 'DM Sans', sans-serif;
       }
+      button,
+      input {
+        font: inherit;
+      }
+      button:not(:disabled),
+      input[type='color']:not(:disabled) {
+        cursor: pointer;
+      }
+      .community {
+        color: white;
+      }
     </style>
   </head>
   <body>
@@ -37,13 +48,22 @@
       import { h, Fragment, render } from 'preact'
       import { useEffect, useState, useRef } from 'preact/hooks'
 
+      // https://acmucsd.com/communities
+      const communities = [
+        { name: 'ai', colour: '#ff6f6f' },
+        { name: 'cybr', colour: '#51c0c0' },
+        { name: 'hack', colour: '#f9a857' },
+        { name: 'invt', colour: '#816dff' },
+        { name: 'dsgn', colour: '#e981a0' }
+      ]
+
       function Label ({ children }) {
         return h('p', null, h('label', null, children))
       }
       function App () {
         const [size, setSize] = useState('512')
-        const [label, setLabel] = useState('dsgn')
-        const [colour, setColour] = useState('#816DFF')
+        const [label, setLabel] = useState('bug')
+        const [colour, setColour] = useState('#00ff00')
         const [blackText, setBlackText] = useState(false)
         const canvas = useRef(null)
 
@@ -110,14 +130,14 @@
             null,
             'Size: ',
             h('input', {
-              type: 'number',
+              type: 'range',
+              min: 1,
+              max: 1000,
               value: size,
               onInput: e => setSize(e.currentTarget.value)
             }),
             h('input', {
-              type: 'range',
-              min: 1,
-              max: 1000,
+              type: 'number',
               value: size,
               onInput: e => setSize(e.currentTarget.value)
             })
@@ -152,7 +172,27 @@
             }),
             ' Use black text?'
           ),
-          h('canvas', { ref: canvas })
+          h('canvas', { ref: canvas }),
+          h(
+            'p',
+            null,
+            communities.map(({ name, colour }) =>
+              h(
+                'button',
+                {
+                  class: 'community',
+                  style: { backgroundColor: colour },
+                  onClick: () => {
+                    setLabel(name)
+                    setColour(colour)
+                    setBlackText(false)
+                  },
+                  key: name
+                },
+                name
+              )
+            )
+          )
         )
       }
 
