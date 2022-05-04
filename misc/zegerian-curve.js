@@ -1,6 +1,6 @@
 import chroma from 'chroma'
 import { h, Fragment, render } from 'preact'
-import { useEffect, useState, useRef } from 'preact/hooks'
+import { useState } from 'preact/hooks'
 
 function Quiz ({ name, scores, afterCurrent, onSelect }) {
   return h(
@@ -134,18 +134,39 @@ function EstimatedCurve ({ distribution }) {
   const average = distribution
     .map((count, score) => (count / students) * score)
     .reduce((a, b) => a + b)
+  let studentsLeft = Math.floor(students / 2)
+  let median = 0
+  while (true) {
+    studentsLeft -= distribution[median]
+    if (studentsLeft < 0) {
+      if (students % 2 === 0 && studentsLeft === -1) {
+        let next = median + 1
+        while (distribution[next] === 0) next++
+        median = (median + next) / 2
+      }
+      break
+    }
+    median++
+  }
+  const stddev = Math.sqrt(
+    distribution
+      .map((count, score) => count * (score - average) ** 2)
+      .reduce((a, b) => a + b) / students
+  )
 
   return h(
     'div',
     { class: 'section estimated-curve' },
-    h('h2', { class: 'heading' }, 'Predicted curve'),
+    h('h2', { class: 'heading' }, 'Statistics'),
     h('p', null, 'Total students: ', h('strong', null, students)),
     h(
       'p',
       null,
       'Average total quiz score: ',
-      h('strong', null, average.toFixed(2))
-    )
+      h('strong', null, +average.toFixed(2))
+    ),
+    h('p', null, 'Median: ', h('strong', null, median)),
+    h('p', null, 'Standard deviation: ', h('strong', null, +stddev.toFixed(2)))
   )
 }
 
