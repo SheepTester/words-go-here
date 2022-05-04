@@ -1,3 +1,4 @@
+import chroma from 'chroma'
 import { h, Fragment, render } from 'preact'
 import { useEffect, useState, useRef } from 'preact/hooks'
 
@@ -20,7 +21,7 @@ function Quiz ({ name, scores, afterCurrent, onSelect }) {
             title: `${score}/3`,
             style: { flexGrow: count }
           },
-          h('span', { class: 'score-number' }, count)
+          h('span', { class: 'number' }, count)
         )
       )
     )
@@ -59,18 +60,37 @@ function Quizzes ({ quizzes, quiz, onQuiz }) {
   )
 }
 
+const barGradient = chroma.scale(['#ef4444', '#eab308', '#84cc16']).mode('lab')
+
 function Histogram ({ scores, showingAll }) {
   const maxCount = Math.max(...scores)
+  const colours = barGradient.colors(scores.length)
 
   return h(
     'div',
     { class: `histogram ${showingAll ? 'showing-all' : ''}` },
     scores.map((count, score) =>
-      h('div', {
-        key: score,
-        class: 'bar',
-        style: { height: `${(count / maxCount) * 100}%` }
-      })
+      h(
+        'div',
+        {
+          key: score,
+          class: 'bar',
+          style: {
+            height: `${(count / maxCount) * 100}%`,
+            backgroundColor: colours[score]
+          }
+        },
+        h(
+          'span',
+          {
+            class: `number count-number ${
+              count < maxCount * 0.1 ? 'low-count' : ''
+            }`
+          },
+          count
+        ),
+        h('span', { class: 'number score-number' }, score)
+      )
     )
   )
 }
@@ -81,15 +101,26 @@ function Histograms ({ histogram, quiz }) {
   return h(
     'div',
     { class: 'histograms' },
+    h('h2', { class: 'heading' }, 'Histogram of total scores'),
     h(
       'div',
-      { class: 'histogram-wrapper' },
-      histogram.map((scores, i) =>
-        showAll || i + 2 === quiz
-          ? h(Histogram, { scores, key: i, showingAll: showAll })
-          : null
+      { class: 'histogram-row' },
+      h(
+        'div',
+        { class: 'graph-label graph-label-y' },
+        h('span', { class: 'graph-label-y-text' }, 'Students')
+      ),
+      h(
+        'div',
+        { class: 'histogram-wrapper' },
+        histogram.map((scores, i) =>
+          showAll || i + 2 === quiz
+            ? h(Histogram, { scores, key: i, showingAll: showAll })
+            : null
+        )
       )
-    )
+    ),
+    h('div', { class: 'graph-label graph-label-x' }, 'Score')
   )
 }
 
@@ -118,7 +149,7 @@ render(
       [25, 50, 46, 27],
       [21, 22, 36, 27, 23, 16, 2],
       [9, 23, 15, 29, 20, 13, 10, 7, 6, 1],
-      [6, 16, 18, 20, 18, 19, 10, 8, 7, 2, 5, 4]
+      [6, 16, 18, 20, 18, 19, 10, 8, 7, 2, 5, 4, 0]
     ]
   }),
   document.getElementById('root')

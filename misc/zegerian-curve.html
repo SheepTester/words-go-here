@@ -63,8 +63,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-        font-weight: bold;
         position: relative;
       }
       .score-0 {
@@ -79,8 +77,10 @@
       .score-3 {
         background-color: #84cc16;
       }
-      .score-number {
+      .number {
         position: absolute;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        font-weight: bold;
       }
       .key {
         display: flex;
@@ -108,15 +108,21 @@
       }
 
       .histograms {
-        width: 400px;
-        height: 300px;
+        display: inline-block;
         padding: 10px;
         border: 1px solid #334155;
         margin-top: 10px;
+        width: 400px;
+      }
+      .histogram-row {
+        display: flex;
+        margin-top: 30px;
+        margin-bottom: 20px;
       }
       .histogram-wrapper {
         position: relative;
-        height: 100%;
+        flex: auto;
+        height: 300px;
       }
       .histogram {
         position: absolute;
@@ -133,7 +139,37 @@
       }
       .bar {
         flex: auto;
-        background-color: #64748b;
+        display: flex;
+        justify-content: center;
+        position: relative;
+      }
+      .bar .number,
+      .graph-label {
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .showing-all .bar .number {
+        display: none;
+      }
+      .count-number {
+        top: 0;
+      }
+      .low-count {
+        top: auto;
+        bottom: 100%;
+      }
+      .score-number {
+        top: 100%;
+      }
+      .graph-label-y {
+        width: 20px;
+        height: auto;
+        margin-right: 10px;
+      }
+      .graph-label-y-text {
+        transform: rotate(-90deg);
       }
     </style>
   </head>
@@ -142,6 +178,7 @@
     <script type="importmap">
       {
         "imports": {
+          "chroma": "https://esm.sh/chroma-js@2.4.2",
           "preact": "https://unpkg.com/preact@10.7.1/dist/preact.module.js",
           "preact/hooks": "https://unpkg.com/preact@10.7.1/hooks/dist/hooks.module.js"
         }
