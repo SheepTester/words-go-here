@@ -31,8 +31,8 @@ function Quiz ({ name, scores, afterCurrent, onSelect }) {
 function Quizzes ({ quizzes, quiz, onQuiz }) {
   return h(
     'div',
-    { class: 'quizzes', onMouseLeave: onQuiz && (() => onQuiz(null)) },
-    h('h2', { class: 'heading quizzes-heading' }, 'Quiz scores'),
+    { class: 'section quizzes', onMouseLeave: onQuiz && (() => onQuiz(null)) },
+    h('h2', { class: 'heading' }, 'Quiz scores'),
     quizzes.map((scores, i) =>
       h(Quiz, {
         key: i,
@@ -100,8 +100,13 @@ function Histograms ({ histogram, quiz }) {
 
   return h(
     'div',
-    { class: 'histograms' },
-    h('h2', { class: 'heading' }, 'Histogram of total scores'),
+    { class: 'section histograms' },
+    h(
+      'h2',
+      { class: 'heading' },
+      'Histogram of total scores',
+      h('span', { title: 'Lowest quiz score dropped' }, '*')
+    ),
     h(
       'div',
       { class: 'histogram-row' },
@@ -124,6 +129,26 @@ function Histograms ({ histogram, quiz }) {
   )
 }
 
+function EstimatedCurve ({ distribution }) {
+  const students = distribution.reduce((a, b) => a + b)
+  const average = distribution
+    .map((count, score) => (count / students) * score)
+    .reduce((a, b) => a + b)
+
+  return h(
+    'div',
+    { class: 'section estimated-curve' },
+    h('h2', { class: 'heading' }, 'Predicted curve'),
+    h('p', null, 'Total students: ', h('strong', null, students)),
+    h(
+      'p',
+      null,
+      'Average total quiz score: ',
+      h('strong', null, average.toFixed(2))
+    )
+  )
+}
+
 function App ({ quizzes, histogram }) {
   const [quiz, setQuiz] = useState(null)
 
@@ -131,7 +156,11 @@ function App ({ quizzes, histogram }) {
     Fragment,
     null,
     h(Quizzes, { quizzes, quiz, onQuiz: setQuiz }),
-    h(Histograms, { histogram, quiz })
+    h(Histograms, { histogram, quiz }),
+    h(EstimatedCurve, {
+      distribution:
+        histogram[quiz === null || quiz < 2 ? histogram.length - 1 : quiz - 2]
+    })
   )
 }
 

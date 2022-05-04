@@ -23,13 +23,22 @@
         color: rgba(255, 255, 255, 0.7);
         margin: 10px;
       }
+      #root {
+        display: flex;
+        /* align-items: flex-start; */
+        flex-wrap: wrap;
+        gap: 10px;
+      }
 
-      .quizzes {
+      .section {
         display: flex;
         flex-direction: column;
-        width: 300px;
         padding: 10px;
         border: 1px solid #334155;
+      }
+
+      .quizzes {
+        width: 300px;
       }
       .heading {
         background-color: #64748b;
@@ -108,10 +117,6 @@
       }
 
       .histograms {
-        display: inline-block;
-        padding: 10px;
-        border: 1px solid #334155;
-        margin-top: 10px;
         width: 400px;
       }
       .histogram-row {
@@ -170,6 +175,11 @@
       }
       .graph-label-y-text {
         transform: rotate(-90deg);
+      }
+
+      p {
+        margin-top: 10px;
+        margin-bottom: 0;
       }
     </style>
   </head>
