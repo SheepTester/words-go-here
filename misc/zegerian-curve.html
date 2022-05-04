@@ -21,6 +21,7 @@
           'Segoe UI Emoji', 'Segoe UI Symbol';
         background-color: #0f172a;
         color: rgba(255, 255, 255, 0.7);
+        margin: 10px;
       }
 
       .quizzes {
@@ -40,6 +41,9 @@
       .quiz {
         display: flex;
         margin-top: 10px;
+      }
+      .after {
+        opacity: 0.5;
       }
       .quiz-name {
         font-weight: normal;
@@ -61,6 +65,7 @@
         justify-content: center;
         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
         font-weight: bold;
+        position: relative;
       }
       .score-0 {
         background-color: #ef4444;
@@ -73,6 +78,9 @@
       }
       .score-3 {
         background-color: #84cc16;
+      }
+      .score-number {
+        position: absolute;
       }
       .key {
         display: flex;
@@ -97,6 +105,35 @@
         height: 10px;
         border-radius: 50%;
         margin-right: 5px;
+      }
+
+      .histograms {
+        width: 400px;
+        height: 300px;
+        padding: 10px;
+        border: 1px solid #334155;
+        margin-top: 10px;
+      }
+      .histogram-wrapper {
+        position: relative;
+        height: 100%;
+      }
+      .histogram {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+      }
+      .showing-all {
+        opacity: 0.3;
+      }
+      .bar {
+        flex: auto;
+        background-color: #64748b;
       }
     </style>
   </head>
