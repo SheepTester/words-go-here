@@ -37,7 +37,7 @@
     <script>
       const RADIUS = 6378137
       const TILE_SIZE = 256
-      const TILES_NAME = '1005_Map_3'
+      const TILES_NAME = '1005_Maps'
       function latLngToTile (latitude, longitude, zoom) {
         // 1. LatLng -> pixels
         // 1a. Project LatLng onto a plane
@@ -75,9 +75,9 @@
             image.addEventListener('load', () => {
               c.drawImage(image, x * TILE_SIZE, y * TILE_SIZE)
             })
-            image.src = `https://assets.concept3d.com/assets/1005/${TILES_NAME}/${zoom}/${centre.x +
-              minX +
-              x}/${centre.y + maxY - y}`
+            image.src = `https://assets.concept3d.com/assets/1005/${TILES_NAME}/${zoom}/${
+              centre.x + minX + x
+            }/${centre.y + maxY - y}`
           }
         }
       }
