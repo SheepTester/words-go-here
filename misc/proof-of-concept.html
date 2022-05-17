@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>please dont use this</title>
+    <meta
+      name="description"
+      content="made it because it could be made, doesn't mean it's meant to be used"
+    />
+
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family: tahoma, geneva, sans-serif;
+        display: flex;
+        flex-direction: column;
+        max-width: 95%;
+        margin: 0 auto;
+      }
+      .progress {
+        position: fixed;
+        display: flex;
+        flex-direction: column;
+        top: 0;
+        left: 0;
+        right: 0;
+      }
+      .progress-bar {
+        background-color: #007ac0;
+        height: 4px;
+        border-radius: 4px;
+        margin-right: 4px;
+      }
+      .percents {
+        display: flex;
+        justify-content: space-between;
+        font-weight: 600;
+        margin: 0 4px;
+        margin-top: 6px;
+        color: #007ac0;
+      }
+      .logo {
+        height: 70px;
+        margin-top: 80px;
+        margin-left: 15px;
+        margin-bottom: 45px;
+      }
+      .main-wrapper {
+        max-width: 95%;
+        margin: 0 auto;
+        padding: 60px 40px;
+        box-sizing: border-box;
+      }
+      p {
+        margin: 0;
+      }
+      input {
+        -webkit-appearance: none;
+        border: none;
+        font: inherit;
+        color: inherit;
+        padding: 0;
+      }
+      .date {
+        color: #27ae60;
+        font-weight: bold;
+        font-size: 24px;
+      }
+      .name {
+        font-size: 16px;
+        font-family: Arial, Helvetica, sans-serif;
+        color: #16a085;
+        font-weight: bold;
+      }
+      .name input {
+        text-transform: uppercase;
+      }
+      .thumb {
+        width: 200px;
+        float: left;
+        margin: 0 20px;
+      }
+      .space {
+        visibility: hidden;
+      }
+      .link {
+        color: #007ac0;
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="qualtrics">
+      <div class="progress">
+        <div class="progress-bar"></div>
+        <div class="percents">
+          <span>0%</span>
+          <span>100%</span>
+        </div>
+      </div>
+      <img src="https://i.imgur.com/NaEXqUl.png" class="logo" />
+      <main class="main-wrapper">
+        <p class="date" id="date">04/20/2022</p>
+        <img src="https://i.imgur.com/egR7hik.png" class="thumb" />
+        <p class="name">
+          <input type="text" id="name" value="LEUF MUNKLER," />
+        </p>
+        <p>
+          <strong>
+            Cleared to be on the UC San Diego campus and the Health System
+          </strong>
+        </p>
+        <p class="space">just for spacing</p>
+        <p>
+          <strong>
+            <ins>Reminder: Wear your mask, slow the spread of COVID-19</ins>
+          </strong>
+        </p>
+        <p class="space">just for spacing</p>
+        <p>
+          This clearance only applies to UC San Diego sites (including UC San
+          Diego Medical Center Sites). If you are currently working at another
+          institution such as Rady Childrens or the VA, please follow the
+          guidelines of that institution.
+        </p>
+        <p>
+          Please remember to sign up for the
+          <strong>exposure notification system</strong>. For more information go
+          here: <span class="link">https://canotify.ca.gov</span>
+        </p>
+      </main>
+      <!--
+        Too lazy to deal with the "Powered by Qualtrics" thing at the bottom
+        L + ratio
+      -->
+    </div>
+    <script>
+      const date = document.getElementById('date')
+      date.textContent = new Date().toLocaleDateString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric'
+      })
+      const name = document.getElementById('name')
+      name.value = `${
+        decodeURIComponent(window.location.hash.slice(1)) || 'Leuf Munkler'
+      },`
+      name.addEventListener('input', () => {
+        window.location.hash =
+          '#' + encodeURIComponent(name.value.replaceAll(',', ''))
+      })
+      name.addEventListener('change', () => {
+        if (!name.value.endsWith(',')) {
+          name.value += ','
+        }
+      })
+    </script>
+  </body>
+</html>
