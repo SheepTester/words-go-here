@@ -2,6 +2,38 @@ import chroma from 'chroma'
 import { h, Fragment, render } from 'preact'
 import { useState } from 'preact/hooks'
 
+function analyze (distribution) {
+  const total = distribution.reduce((a, b) => a + b)
+  const average = distribution
+    .map((count, score) => (count / total) * score)
+    .reduce((a, b) => a + b)
+  let remaining = Math.floor(total / 2)
+  let median = 0
+  while (true) {
+    remaining -= distribution[median]
+    if (remaining < 0) {
+      if (total % 2 === 0 && remaining === -1) {
+        let next = median + 1
+        while (distribution[next] === 0) next++
+        median = (median + next) / 2
+      }
+      break
+    }
+    median++
+  }
+  const stddev = Math.sqrt(
+    distribution
+      .map((count, score) => count * (score - average) ** 2)
+      .reduce((a, b) => a + b) / total
+  )
+  return {
+    total,
+    average,
+    median,
+    stddev
+  }
+}
+
 function Quiz ({ name, scores, afterCurrent, onSelect }) {
   return h(
     'div',
@@ -129,40 +161,37 @@ function Histograms ({ histogram, quiz }) {
   )
 }
 
-function EstimatedCurve ({ distribution }) {
-  const students = distribution.reduce((a, b) => a + b)
-  const average = distribution
-    .map((count, score) => (count / students) * score)
-    .reduce((a, b) => a + b)
-  let studentsLeft = Math.floor(students / 2)
-  let median = 0
-  while (true) {
-    studentsLeft -= distribution[median]
-    if (studentsLeft < 0) {
-      if (students % 2 === 0 && studentsLeft === -1) {
-        let next = median + 1
-        while (distribution[next] === 0) next++
-        median = (median + next) / 2
-      }
-      break
-    }
-    median++
-  }
-  const stddev = Math.sqrt(
-    distribution
-      .map((count, score) => count * (score - average) ** 2)
-      .reduce((a, b) => a + b) / students
-  )
+function QuizStatistics ({ quiz, distribution }) {
+  const { total: students, average, median, stddev } = analyze(distribution)
 
   return h(
     'div',
-    { class: 'section estimated-curve' },
-    h('h2', { class: 'heading' }, 'Statistics'),
+    { class: 'section' },
+    h('h2', { class: 'heading' }, 'Quiz ', quiz, ' statistics'),
     h('p', null, 'Total students: ', h('strong', null, students)),
     h(
       'p',
       null,
-      'Average total quiz score: ',
+      'Average quiz score: ',
+      h('strong', null, +average.toFixed(2))
+    ),
+    h('p', null, 'Median: ', h('strong', null, median)),
+    h('p', null, 'Standard deviation: ', h('strong', null, +stddev.toFixed(2)))
+  )
+}
+
+function EstimatedCurve ({ distribution }) {
+  const { total: students, average, median, stddev } = analyze(distribution)
+
+  return h(
+    'div',
+    { class: 'section estimated-curve' },
+    h('h2', { class: 'heading' }, 'Overall statistics'),
+    h('p', null, 'Total students: ', h('strong', null, students)),
+    h(
+      'p',
+      null,
+      'Average total score: ',
       h('strong', null, +average.toFixed(2))
     ),
     h('p', null, 'Median: ', h('strong', null, median)),
@@ -178,10 +207,19 @@ function App ({ quizzes, histogram }) {
     null,
     h(Quizzes, { quizzes, quiz, onQuiz: setQuiz }),
     h(Histograms, { histogram, quiz }),
-    h(EstimatedCurve, {
-      distribution:
-        histogram[quiz === null || quiz < 2 ? histogram.length - 1 : quiz - 2]
-    })
+    h(
+      'div',
+      { class: 'stat-column' },
+      h(EstimatedCurve, {
+        distribution:
+          histogram[quiz === null || quiz < 2 ? histogram.length - 1 : quiz - 2]
+      }),
+      quiz &&
+        h(QuizStatistics, {
+          quiz,
+          distribution: quizzes[quiz - 1]
+        })
+    )
   )
 }
 
