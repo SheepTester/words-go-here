@@ -19,8 +19,11 @@
         font-family: tahoma, geneva, sans-serif;
         display: flex;
         flex-direction: column;
-        max-width: 95%;
         margin: 0 auto;
+      }
+      .qualtrics {
+        display: flex;
+        flex-direction: column;
       }
       .progress {
         position: fixed;
@@ -43,15 +46,16 @@
         margin: 0 4px;
         margin-top: 6px;
         color: #007ac0;
+        line-height: 18px;
       }
       .logo {
         height: 70px;
         margin-top: 80px;
         margin-left: 15px;
         margin-bottom: 45px;
+        align-self: flex-start;
       }
       .main-wrapper {
-        max-width: 95%;
         margin: 0 auto;
         padding: 60px 40px;
         box-sizing: border-box;
@@ -76,9 +80,10 @@
         font-family: Arial, Helvetica, sans-serif;
         color: #16a085;
         font-weight: bold;
-      }
-      .name input {
         text-transform: uppercase;
+      }
+      .name::after {
+        content: ',';
       }
       .thumb {
         width: 200px;
@@ -91,6 +96,24 @@
       .link {
         color: #007ac0;
         text-decoration: underline;
+      }
+
+      @media (min-width: 770px) {
+        body,
+        .main-wrapper {
+          max-width: 95%;
+        }
+      }
+      @media (max-width: 767px) {
+        .percents {
+          display: none;
+        }
+      }
+      @media (max-width: 480px) {
+        .logo {
+          max-height: 46.2px;
+          margin-top: 10px;
+        }
       }
     </style>
   </head>
@@ -107,8 +130,9 @@
       <main class="main-wrapper">
         <p class="date" id="date">04/20/2022</p>
         <img src="https://i.imgur.com/egR7hik.png" class="thumb" />
-        <p class="name">
-          <input type="text" id="name" value="LEUF MUNKLER," />
+        <!-- https://stackoverflow.com/a/60338716 -->
+        <p class="name" contenteditable="plaintext-only" id="name">
+          LEUF MUNKLER
         </p>
         <p>
           <strong>
@@ -140,6 +164,7 @@
       -->
     </div>
     <script>
+      const KEY = '[wgh.poc] name'
       const date = document.getElementById('date')
       date.textContent = new Date().toLocaleDateString('en-US', {
         month: '2-digit',
@@ -147,17 +172,10 @@
         year: 'numeric'
       })
       const name = document.getElementById('name')
-      name.value = `${
-        decodeURIComponent(window.location.hash.slice(1)) || 'Leuf Munkler'
-      },`
+      name.textContent = localStorage[KEY] ?? 'Leuf Munkler'
+      // https://stackoverflow.com/a/49287032
       name.addEventListener('input', () => {
-        window.location.hash =
-          '#' + encodeURIComponent(name.value.replaceAll(',', ''))
-      })
-      name.addEventListener('change', () => {
-        if (!name.value.endsWith(',')) {
-          name.value += ','
-        }
+        localStorage[KEY] = name.textContent
       })
     </script>
   </body>
