@@ -173,10 +173,18 @@ function QuizStatistics ({ quiz, distribution }) {
       'p',
       null,
       'Average quiz score: ',
-      h('strong', null, +average.toFixed(2))
+      h('strong', null, average.toFixed(2)),
+      '/3'
+    ),
+    h(
+      'p',
+      null,
+      'Average percentage: ',
+      h('strong', null, ((average / 3) * 100).toFixed(2)),
+      '%'
     ),
     h('p', null, 'Median: ', h('strong', null, median)),
-    h('p', null, 'Standard deviation: ', h('strong', null, +stddev.toFixed(2)))
+    h('p', null, 'Standard deviation: ', h('strong', null, stddev.toFixed(2)))
   )
 }
 
@@ -192,10 +200,23 @@ function EstimatedCurve ({ distribution }) {
       'p',
       null,
       'Average total score: ',
-      h('strong', null, +average.toFixed(2))
+      h('strong', null, average.toFixed(2)),
+      '/',
+      distribution.length - 1
+    ),
+    h(
+      'p',
+      null,
+      'Average percentage: ',
+      h(
+        'strong',
+        null,
+        ((average / (distribution.length - 1)) * 100).toFixed(2)
+      ),
+      '%'
     ),
     h('p', null, 'Median: ', h('strong', null, median)),
-    h('p', null, 'Standard deviation: ', h('strong', null, +stddev.toFixed(2)))
+    h('p', null, 'Standard deviation: ', h('strong', null, stddev.toFixed(2)))
   )
 }
 
