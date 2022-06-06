@@ -46,7 +46,6 @@
       pre.math {
         max-width: 100%;
         overflow-x: auto;
-        padding: 5px 0;
       }
       .katex-display,
       .katex-display > .katex {
@@ -116,7 +115,13 @@
         <a href="/hello-world/ece45.pdf">cheat sheet</a>.
       </p>
       <h2 class="misc">Math things</h2>
-      <p>Remember <code class="math">\omega_0 = \frac{2\pi}{T}</code>.</p>
+      <p>
+        Remember <code class="math">\omega_0 = \frac{2\pi}{T}</code>. Also, for
+        phasors,
+      </p>
+      <pre class="math">
+        A\cos(\omega t) \to \boxed{H(\omega)} \to A|H(\omega)| \cos(\omega t + \measuredangle H(\omega))
+      </pre>
       <div class="row misc">
         <section class="col-lg">
           <h3>Zeger fetishes</h3>
@@ -194,7 +199,7 @@ T\left(t\right)=\left\{0\le t&lt;1:t,0\right\}</pre
         <section class="col-lg">
           <h3>Fourier coefficients</h3>
           <pre class="math">
-            F_n = \frac{1}{T} \int_T f(t) e^{-jk\omega_0 t} dt
+            F_n = \frac{1}{T} \int_T f(t) e^{-jn\omega_0 t} dt
           </pre>
         </section>
         <section class="col-lg">
@@ -295,7 +300,6 @@ T\left(t\right)=\left\{0\le t&lt;1:t,0\right\}</pre
             \frac{df(t)}{dt} &\is j\omega F(\omega) ~ \text{(derivative)} \\
             -jtf(t) &\is \frac{dF}{d\omega} ~ \text{(derivative)} \\
             F(t) &\is 2\pi f(-\omega) ~ \text{(duality/symmetry)} \\
-            f(at) &\is \frac{1}{|a|} F\left(\frac{\omega}{a}\right) ~ \text{(time scaling)} \\
             \sum_{n = -\infty}^\infty F_n e^{jn\omega_0 t} &\is \sum_{n = -\infty}^\infty F_n \cdot 2\pi\delta(\omega - n\omega_0) ~ \text{(Fourier series)}
             \end{aligned}
           </pre>
@@ -313,7 +317,7 @@ T\left(t\right)=\left\{0\le t&lt;1:t,0\right\}</pre
             \cos(a t) &\is \pi\delta(\omega - a) + \pi\delta(\omega + a) \\
             \sin(a t) &\is \frac{\pi}{j}\delta(\omega - a) - \frac{\pi}{j}\delta(\omega + a) \\
             \delta(t) &\is 1 \\
-            1 &\is 2\pi\delta(t) \\
+            1 &\is 2\pi\delta(\omega) ~ \text{($e^{j\omega_0t}$ can be derived by freq. shift)} \\
             e^{-at} u(t) &\is \frac{1}{a + j\omega} ~ \text{(where $a > 0$)} \\
             \frac{1}{a + jt} &\is 2\pi e^{a\omega} u(-\omega)
             \end{aligned}
