@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>ECE 45 reference sheet</title>
+    <meta
+      name="description"
+      content="When Zeger tests more on calculator resourcefulness than actual understanding"
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+      integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css"
+      integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X"
+      crossorigin="anonymous"
+    />
+
+    <style media="screen">
+      body {
+        background-color: #0f172a;
+        color: #94a3b8;
+      }
+      h1,
+      h2,
+      h3 {
+        color: #e2e8f0;
+      }
+      .math {
+        margin: 0;
+        font: inherit;
+        font-family: monospace;
+        white-space: pre-wrap;
+        color: #f8fafc;
+      }
+      pre.math {
+        max-width: 100%;
+        overflow-x: auto;
+        padding: 5px 0;
+      }
+      .katex-display,
+      .katex-display > .katex {
+        text-align: left;
+      }
+      .katex .text {
+        color: #94a3b8;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji',
+          'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        font-size: 1rem;
+      }
+      td {
+        padding: 10px;
+      }
+      a {
+        color: #38bdf8;
+      }
+      a:hover {
+        color: #7dd3fc;
+      }
+      h2.misc {
+        color: #bef264;
+      }
+      .misc h3,
+      .misc h3 .math {
+        color: #a3e635;
+      }
+      .misc h4,
+      .misc h4 .math {
+        color: #84cc16;
+        font-size: inherit;
+      }
+      h2.fs {
+        color: #fef08a;
+      }
+      .fs h3 {
+        color: #fde047;
+      }
+      h2.ft {
+        color: #d8b4fe;
+      }
+      .ft h3 {
+        color: #c084fc;
+      }
+      h2.lt {
+        color: #fda4af;
+      }
+      .lt h3 {
+        color: #fb7185;
+      }
+      .desmos {
+        color: #f8fafc;
+        white-space: pre-wrap;
+        overflow-x: auto;
+        user-select: all;
+      }
+    </style>
+  </head>
+
+  <body class="d-flex flex-column h-100">
+    <main role="main" class="container flex-shrink-0">
+      <h1 class="mt-5">ECE 45 reference sheet</h1>
+      <p class="lead">Screw derivation.</p>
+      <p>
+        A cleaned up version of my old
+        <a href="/hello-world/ece45.pdf">cheat sheet</a>.
+      </p>
+      <h2 class="misc">Math things</h2>
+      <p>Remember <code class="math">\omega_0 = \frac{2\pi}{T}</code>.</p>
+      <div class="row misc">
+        <section class="col-lg">
+          <h3>Zeger fetishes</h3>
+          <pre class="math">
+            \begin{aligned}
+            2 \cos t &= e^{jt} + e^{-jt} \\
+            2j \sin t &= e^{jt} - e^{-jt}
+            \end{aligned}
+          </pre>
+        </section>
+        <section class="col-lg">
+          <h3>Dirac delta things</h3>
+          <pre class="math">
+            \begin{aligned}
+            x(t) \, \delta(t - a) &= x(a) \, \delta(t - a) \\
+            \int_{-\infty}^{\infty} x(t) \, \delta(t - a) \; dt &= x(a) \\
+            x(t) * \delta(t - a) &= x(t - a)
+            \end{aligned}
+          </pre>
+        </section>
+        <section class="col-lg">
+          <h3>Convolutions</h3>
+          <pre class="math">
+            \begin{aligned}
+            x(t) * h(t) &= \int_{-\infty}^{\infty} x(\tau) h(t - \tau) d\tau \\
+            &= \int_{-\infty}^{\infty} x(t - \tau) h(\tau) d\tau \\
+            y(t - a - b) &= f(t - a) * h(t - b) ~ \text{(shift)} \\
+            y'(t) &= f'(t) * h(t) ~ \text{(derivative)}
+            \end{aligned}
+          </pre>
+        </section>
+      </div>
+      <div class="row misc">
+        <section class="col-lg">
+          <h3>For Desmos</h3>
+          <p>You can paste the code directly into Desmos.</p>
+          <h4><code class="math">\sinc</code></h4>
+          <pre class="math">
+            \sinc t = \frac{\sin t}{t}
+          </pre>
+          <h4>
+            <code class="math">\rect</code>, <code class="math">r(t)</code>
+          </h4>
+          <pre class="desmos">
+r\left(t\right)=\left\{-\frac{1}{2}\le t\le\frac{1}{2}:1,0\right\}</pre
+          >
+          <h4>Unit function, <code class="math">u(t)</code></h4>
+          <pre class="desmos">u\left(t\right)=\left\{t\le0:0,1\right\}</pre>
+          <h4>Triangle/ramp, <code class="math">T(t)</code></h4>
+          <pre class="desmos">
+T\left(t\right)=\left\{0\le t&lt;1:t,0\right\}</pre
+          >
+        </section>
+        <section class="col-lg">
+          <h3>Impulse train</h3>
+          <pre class="math">
+            \begin{aligned}
+            s(t) &= \sum_{n = -\infty}^\infty \delta(t - nT) \\
+            S(\omega) &= \omega_s \sum_{n = -\infty}^\infty \delta(\omega - n\omega_s) \\
+            X_s(\omega) &= \frac{1}{T_s} \sum_{n = -\infty}^\infty X(\omega - n\omega_s) ~ \text{(for $x(t) s(t)$)}
+            \end{aligned}
+          </pre>
+        </section>
+      </div>
+
+      <h2 class="fs">Fourier series stuff</h2>
+      <div class="row fs">
+        <section class="col-lg">
+          <h3>Fourier series</h3>
+          <pre class="math">
+            f(t) = \sum_{n = -\infty}^\infty F_n e^{jn\omega_0 t}
+          </pre>
+        </section>
+        <section class="col-lg">
+          <h3>Fourier coefficients</h3>
+          <pre class="math">
+            F_n = \frac{1}{T} \int_T f(t) e^{-jk\omega_0 t} dt
+          </pre>
+        </section>
+        <section class="col-lg">
+          <h3>LTI systems</h3>
+          <pre class="math">
+            Y_n = X_n H(n\omega_0)
+          </pre>
+        </section>
+      </div>
+      <div class="row fs">
+        <section class="col-lg">
+          <h3>Properties</h3>
+          <pre class="math">
+            \begin{aligned}
+            f(t - a) &\is F_n e^{jn\omega_0 a} ~ \text{(time shift)} \\
+            f'(t) &\is jn\omega_0 F_n ~ \text{(derivative)} \\
+            f(t) g(t) &\is \sum_{k = -\infty}^\infty F_k G_{n - k} ~ \text{(multiplication)} \\
+            \frac{1}{T} \int_T |f(t)|^2 dt &\is \sum_{n = -\infty}^\infty |F_n|^2 ~ \text{(Parseval's)} \\
+            f^*(t) &\is F^*_{-n}
+            \end{aligned}
+          </pre>
+        </section>
+        <section class="col-lg">
+          <h3>Examples</h3>
+          <table>
+            <tr>
+              <td><code class="math">\cos(kt)</code></td>
+              <td>
+                <code class="math">F_{\pm 1} = \frac{1}{2}</code>, others
+                <code class="math">0</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code class="math">\sin(kt)</code></td>
+              <td>
+                <code class="math">F_{-1} = \frac{1}{2j}</code>,
+                <code class="math">F_1 = -\frac{1}{2j}</code>, others
+                <code class="math">0</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code class="math">|\sin t|</code></td>
+              <td>
+                <code class="math">F_{-1} = \frac{1}{2j}</code>,
+                <code class="math">F_1 = -\frac{1}{2j}</code>, others
+                <code class="math">0</code>
+              </td>
+            </tr>
+            <tr>
+              <td>triangle wave*</td>
+              <td>
+                <code class="math">F_0 = \frac{1}{2}</code>, others
+                <code class="math">\frac{j}{2\pi n}</code>
+              </td>
+            </tr>
+          </table>
+          <p>
+            *<code class="math">f(t) = t</code> between
+            <span class="math">0</span> and <span class="math">1</span>,
+            repeating
+          </p>
+        </section>
+      </div>
+
+      <h2 class="ft">Fourier transforms time</h2>
+      <div class="row ft">
+        <section class="col-lg">
+          <h3>Fourier transform</h3>
+          <pre class="math">
+            F(\omega) = \int_{-\infty}^\infty f(t) e^{-j\omega t} dt
+          </pre>
+        </section>
+        <section class="col-lg">
+          <h3>Inverse fourier transform</h3>
+          <pre class="math">
+            f(t) = \frac{1}{2\pi} \int_{-\infty}^\infty F(\omega) e^{j\omega t} d\omega
+          </pre>
+        </section>
+        <section class="col-lg">
+          <h3>LTI systems</h3>
+          <pre class="math">
+            \begin{aligned}
+            y(t) &= x(t) * h(t) \\
+            Y(\omega) &= X(\omega) H(\omega)
+            \end{aligned}
+          </pre>
+        </section>
+      </div>
+      <div class="row ft">
+        <section class="col-lg">
+          <h3>Properties</h3>
+          <pre class="math">
+            \begin{aligned}
+            f(t - a) &\is F(\omega) e^{-j\omega a} ~ \text{(time shift)} \\
+            f(t) e^{jat} &\is F(\omega - a) ~ \text{(frequency shift)} \\
+            f(t) * g(t) &\is F(\omega) G(\omega) ~ \text{(convolution)} \\
+            f(t) g(t) &\is \frac{1}{2\pi} F(\omega) * G(\omega) ~ \text{(multiplication)} \\
+            \frac{df(t)}{dt} &\is j\omega F(\omega) ~ \text{(derivative)} \\
+            -jtf(t) &\is \frac{dF}{d\omega} ~ \text{(derivative)} \\
+            F(t) &\is 2\pi f(-\omega) ~ \text{(duality/symmetry)} \\
+            f(at) &\is \frac{1}{|a|} F\left(\frac{\omega}{a}\right) ~ \text{(time scaling)} \\
+            \sum_{n = -\infty}^\infty F_n e^{jn\omega_0 t} &\is \sum_{n = -\infty}^\infty F_n \cdot 2\pi\delta(\omega - n\omega_0) ~ \text{(Fourier series)}
+            \end{aligned}
+          </pre>
+          <p>
+            There are other less-used properties, like Parseval's theorem, in
+            the old <a href="/hello-world/ece45.pdf">cheat sheet</a>.
+          </p>
+        </section>
+        <section class="col-lg">
+          <h3>Examples</h3>
+          <pre class="math">
+            \begin{aligned}
+            \sinc(a t) &\is \frac{\pi}{a} \rect\left(\frac{\omega}{2a}\right) \\
+            \rect\left(\frac{t}{a}\right) &\is a\sinc\left(\frac{\omega a}{2}\right) \\
+            \cos(a t) &\is \pi\delta(\omega - a) + \pi\delta(\omega + a) \\
+            \sin(a t) &\is \frac{\pi}{j}\delta(\omega - a) - \frac{\pi}{j}\delta(\omega + a) \\
+            \delta(t) &\is 1 \\
+            1 &\is 2\pi\delta(t) \\
+            e^{-at} u(t) &\is \frac{1}{a + j\omega} ~ \text{(where $a > 0$)} \\
+            \frac{1}{a + jt} &\is 2\pi e^{a\omega} u(-\omega)
+            \end{aligned}
+          </pre>
+        </section>
+      </div>
+
+      <h2 class="lt">Laplace transform</h2>
+      <pre class="math">
+        X(s) = \int_{-\infty}^\infty x(t) e^{-st} dt
+      </pre>
+      <div class="row lt">
+        <section class="col-lg">
+          <h3>Properties</h3>
+          <pre class="math">
+            \begin{aligned}
+            x(t - a) &\is e^{-as} X(s) ~ \text{(time shift)} \\
+            e^{at} x(t) &\is X(s - a) ~ \text{(frequency shift)} \\
+            -t x(t) &\is \frac{dX(s)}{ds} ~ \text{(derivative)} \\
+            t^n x(t) &\is (-1)^n X^{(n)}(s) ~ \text{($n$th derivative)}
+            \end{aligned}
+          </pre>
+        </section>
+        <section class="col-lg">
+          <h3>Examples</h3>
+          <pre class="math">
+            \begin{aligned}
+            e^{-at} u(t) &\is \frac{1}{s + a} & \text{ROC:} & \re(s) > \re(-a) \\
+            -e^{-at} u(-t) &\is \frac{1}{s + a} & \text{ROC:} & \re(s) < \re(-a) \\
+            \delta(t) &\is 1 & \text{ROC:} & \, \text{all of $\mathbb{C}$} \\
+            \cos(at) u(t) &\is \frac{s}{s^2 + a^2} & \text{ROC:} & \re(s) > 0 \\
+            \sin(at) u(t) &\is \frac{a}{s^2 + a^2} & \text{ROC:} & \re(s) > 0 \\
+            e^{-a|t|} &\is \frac{-2a}{s^2 - a^2} & \text{ROC:} & -\re(a) < \re(s) < \re(a)
+            \end{aligned}
+          </pre>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" type="text/javascript">
+      import katex from 'https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.mjs'
+      for (const math of document.getElementsByClassName('math')) {
+        katex.render(math.textContent, math, {
+          throwOnError: true,
+          displayMode: math.tagName === 'PRE',
+          macros: {
+            '\\is': '\\longleftrightarrow',
+            '\\rect': '\\operatorname{rect}',
+            '\\sinc': '\\operatorname{sinc}',
+            '\\re': '\\operatorname{Re}'
+          }
+        })
+      }
+    </script>
+  </body>
+</html>
