@@ -13,9 +13,15 @@
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
 
-    <!-- https://www.cdnfonts.com/whitney.font -->
-    <link href="https://fonts.cdnfonts.com/css/whitney" rel="stylesheet" />
     <style>
+      @font-face {
+        font-family: 'Whitney';
+        font-style: normal;
+        font-weight: 500;
+        src: local('Whitney'),
+          url('https://sheeptester.gitlab.io/test/whitney-500.woff2')
+            format('woff');
+      }
       html,
       body {
         height: 100%;
@@ -95,6 +101,16 @@
         <span style="color: #e76393">Warren</span>
         <span style="color: #f45e64">Marshall</span>
         <span style="color: #d09228">Seventh</span>
+      </p>
+      <p class="line">
+        <!-- Based on two rows up but with brightened colours -->
+        <span style="color: #22c195">Muir</span>
+        <span style="color: #0bbdcc">Sixth</span>
+        <span style="color: #96bce5">ERC</span>
+        <span style="color: #95a2e8">Revelle</span>
+        <span style="color: #e97ba0">Warren</span>
+        <span style="color: #f5777b">Marshall</span>
+        <span style="color: #e19e2c">Seventh</span>
       </p>
     </template>
     <section class="dark">
