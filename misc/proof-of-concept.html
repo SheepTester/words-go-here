@@ -89,6 +89,7 @@
         width: 200px;
         float: left;
         margin: 0 20px;
+        cursor: pointer;
       }
       .space {
         visibility: hidden;
@@ -129,7 +130,7 @@
       <img src="https://i.imgur.com/NaEXqUl.png" class="logo" />
       <main class="main-wrapper">
         <p class="date" id="date">04/20/2022</p>
-        <img src="https://i.imgur.com/egR7hik.png" class="thumb" />
+        <img src="https://i.imgur.com/egR7hik.png" class="thumb" id="thumb" />
         <!-- https://stackoverflow.com/a/60338716 -->
         <p class="name" contenteditable="plaintext-only" id="name">
           LEUF MUNKLER
@@ -176,6 +177,9 @@
       // https://stackoverflow.com/a/49287032
       name.addEventListener('input', () => {
         localStorage[KEY] = name.textContent
+      })
+      document.getElementById('thumb').addEventListener('click', () => {
+        document.documentElement.requestFullscreen()
       })
     </script>
   </body>
