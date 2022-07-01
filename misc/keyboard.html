@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>when you dont lift your finger</title>
+    <meta name="description" content="keyboard playback" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      .key {
+        color: #0073ff;
+        fill: currentColor;
+        fill-opacity: 0.5;
+        stroke: currentColor;
+        stroke-opacity: 0.8;
+        rx: 5px;
+      }
+      .no-char {
+        opacity: 0.5;
+      }
+      #input {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      #keyboard {
+        display: block;
+      }
+      .flash1 {
+        animation: flash1 0.5s;
+      }
+      @keyframes flash1 {
+        from {
+          color: #ff0000;
+        }
+        to {
+          color: #0073ff;
+        }
+      }
+      .flash2 {
+        animation: flash2 0.5s;
+      }
+      @keyframes flash2 {
+        from {
+          color: #ff0000;
+        }
+        to {
+          color: #0073ff;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <textarea
+      id="input"
+      rows="10"
+      placeholder="what did tim type this time"
+      autofocus
+    >
+libgfrerdsasdfghjkl
+cdsasdbn yuioiu treryukll wefghgfdsasdt io;';l,m trtyuing tyuio tyuiopoiuytre
+tghgfrde qwertyuiugfcvghjk bgfrtyuioiuytrewerghn fghjiojhvcx jujm,klopokjhgfds oijhbgvcfder thgfre lkjhgfdsazxdfgy dfghuioijuhg
+iikmklpoiuytrrtyuijhgfdssdfghjijhbvfde</textarea
+    >
+    <svg xmlns="http://www.w3.org/2000/svg" id="keyboard"></svg>
+    <p>
+      <label
+        >character: <input type="range" id="scrub" min="0" value="0"
+      /></label>
+      <button id="play">play</button>
+    </p>
+    <pre id="state"></pre>
+    <script>
+      const KEY_SIZE = 50
+      const KEY_SPACE = 10
+      const keyboard = [
+        [...'`1234567890-=', { width: 80 }],
+        [{ width: 60 }, ...'qwertyuiop[]', { width: 70, char: '\\' }],
+        [{ width: 70 }, ..."asdfghjkl;'", { width: 120, char: '\n' }],
+        [{ width: 100 }, ...'zxcvbnm,./', { width: 150 }],
+        [
+          { width: 60 },
+          '',
+          '',
+          '',
+          { width: 310, char: ' ' },
+          '',
+          '',
+          '',
+          { isArrow: true },
+          ''
+        ]
+      ]
+      const svg = document.getElementById('keyboard')
+      svg.setAttributeNS(
+        null,
+        'width',
+        keyboard[0].length * (KEY_SIZE + KEY_SPACE) - KEY_SPACE + 30
+      )
+      svg.setAttributeNS(
+        null,
+        'height',
+        keyboard.length * (KEY_SIZE + KEY_SPACE) - KEY_SPACE
+      )
+      for (const [r, row] of keyboard.entries()) {
+        const y = r * (KEY_SIZE + KEY_SPACE)
+        let x = 0
+        for (const [c, key] of row.entries()) {
+          const rect = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'rect'
+          )
+          const char = typeof key === 'string' ? key : key.char ?? ''
+          const width = key.width ?? KEY_SIZE
+          rect.setAttributeNS(null, 'x', x)
+          rect.setAttributeNS(null, 'y', y)
+          rect.setAttributeNS(null, 'width', width)
+          rect.setAttributeNS(
+            null,
+            'height',
+            key.isArrow ? KEY_SIZE / 2 : KEY_SIZE
+          )
+          rect.classList.add('key')
+          if (!char) {
+            rect.classList.add('no-char')
+          }
+          rect.dataset.key = char.codePointAt()
+          svg.append(rect)
+          if (key.isArrow) {
+            const downArrow = rect.cloneNode()
+            downArrow.setAttributeNS(null, 'y', y + KEY_SIZE / 2)
+            svg.append(downArrow)
+          }
+          x += width + KEY_SPACE
+        }
+      }
+
+      const input = document.getElementById('input')
+      const scrub = document.getElementById('scrub')
+      const playBtn = document.getElementById('play')
+      const state = document.getElementById('state')
+      scrub.max = input.value.length - 1
+      input.addEventListener('input', () => {
+        scrub.max = input.value.length - 1
+      })
+      function highlight () {
+        const index = +scrub.value
+        const char = input.value[index]
+        if (!char) return
+        const key = document.querySelector(
+          `.key[data-key='${char.codePointAt()}']`
+        )
+        if (key) {
+          if (key.classList.contains('flash2')) {
+            key.classList.replace('flash2', 'flash1')
+          } else {
+            key.classList.remove('flash1')
+            key.classList.add('flash2')
+          }
+        }
+        state.textContent = `${input.value}\n${input.value
+          .slice(0, index)
+          .replace(/./g, ' ')}^`
+        return index
+      }
+      scrub.addEventListener('input', highlight)
+      let playing = false
+      let intervalId
+      playBtn.addEventListener('click', () => {
+        if (playing) {
+          playBtn.textContent = 'play'
+          clearInterval(intervalId)
+        } else {
+          playBtn.textContent = 'pause'
+          intervalId = setInterval(() => {
+            const index = highlight()
+            scrub.value = (index + 1) % input.value.length
+          }, 100)
+        }
+        playing = !playing
+      })
+    </script>
+  </body>
+</html>
