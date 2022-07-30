@@ -143,8 +143,16 @@
               canvas.height = SIZE
               const context = canvas.getContext('2d')
               const gif = new GIF({
-                workerScript:
-                  'https://sheeptester.github.io/animations/gif-worker.js',
+                // workerScript:
+                //   'https://sheeptester.github.io/animations/gif-worker.js',
+                workerScript: URL.createObjectURL(
+                  new Blob(
+                    [
+                      "importScripts('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js')"
+                    ],
+                    { type: 'application/javascript' }
+                  )
+                ),
                 width: SIZE,
                 height: SIZE,
                 // https://github.com/jnordberg/gif.js/issues/52#issuecomment-193065178
@@ -174,7 +182,19 @@
                   SIZE,
                   SIZE
                 )
-                gif.addFrame(context, { delay: 1000 / FPS, copy: true })
+                const data = context.getImageData(0, 0, SIZE, SIZE)
+                for (let i = 0; i < data.data.length; i += 4) {
+                  // Remove translucent pixels after a threshold (I don't think
+                  // gifs support translucency)
+                  if (data.data[i + 3] < 100) {
+                    // Black means transparent for gif.js it seems
+                    data.data[i + 0] = 0
+                    data.data[i + 1] = 0
+                    data.data[i + 2] = 0
+                    data.data[i + 3] = 0
+                  }
+                }
+                gif.addFrame(data, { delay: 1000 / FPS })
               }
               gif.render()
             })
