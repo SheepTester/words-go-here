@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Microsoft fluent emoji animations</title>
+    <meta name="description" content="Stolen from Microsoft Teams." />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"
+      charset="utf-8"
+    ></script>
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      :root {
+        --background: #ffffff;
+        --shaded: #f5f5f5;
+        --text: #242424;
+      }
+      body {
+        margin: 0 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui,
+          'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Web', sans-serif;
+        font-size: 14px;
+        line-height: 1.4286;
+        color: var(--text);
+        background-color: var(--background);
+      }
+
+      .emote-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 140px);
+        justify-content: center;
+      }
+      .category-name {
+        font-weight: 600;
+        margin-bottom: 6px;
+        font-size: unset;
+        grid-column: 1 / -1;
+      }
+      .emote-btn {
+        -webkit-appearance: none;
+        border: none;
+        background: none;
+        font: inherit;
+        color: inherit;
+        padding: 20px;
+
+        border-radius: 4px;
+      }
+      .emote-btn:not(:disabled) {
+        cursor: pointer;
+      }
+      .emote-btn:hover {
+        background-color: var(--shaded);
+      }
+      .emote-image-wrapper {
+        display: block;
+        width: 100px;
+        height: 100px;
+        position: relative;
+        overflow: hidden;
+      }
+      .emote-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100px;
+        animation: frames infinite;
+        animation-play-state: paused;
+      }
+      .emote-btn:hover .emote-image {
+        animation-play-state: running;
+      }
+      @keyframes frames {
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(-100%);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="emote-list" id="wrapper"></div>
+    <script type="module">
+      // Using "emote" so I can distinguish between singular and plural
+      import emoteData from './fluent-emoji.json' assert { type: 'json' }
+
+      const SIZE = 100
+      const FPS = 24
+
+      const fragment = document.createDocumentFragment()
+      for (const [catName, emoteNames] of Object.entries(emoteData)) {
+        const id = catName.toLowerCase().replaceAll(' ', '-')
+        const catNameHeading = Object.assign(document.createElement('h1'), {
+          className: 'category-name',
+          textContent: catName,
+          id
+        })
+        fragment.append(catNameHeading)
+
+        for (const emoteName of emoteNames) {
+          const displayName = emoteName.split('_').at(-1)
+
+          const button = Object.assign(document.createElement('button'), {
+            className: 'emote-btn',
+            title: displayName,
+            ariaLabel: `Create a gif for the ${displayName} emoji`,
+            disabled: true
+          })
+          fragment.append(button)
+
+          const imageWrapper = Object.assign(document.createElement('span'), {
+            className: 'emote-image-wrapper'
+          })
+          button.append(imageWrapper)
+
+          const image = Object.assign(document.createElement('img'), {
+            className: 'emote-image',
+            loading: 'lazy',
+            src: `https://statics.teams.cdn.office.net/evergreen-assets/personal-expressions/v2/assets/emoticons/${emoteName}/default/100_anim_f.png`,
+            crossOrigin: 'anonymous'
+          })
+          image.addEventListener('load', () => {
+            const frames = image.naturalHeight / image.naturalWidth
+            Object.assign(image.style, {
+              animationDuration: `${frames / FPS}s`,
+              animationTimingFunction: `steps(${frames})`
+            })
+
+            button.disabled = false
+            button.addEventListener('click', () => {
+              const canvas = document.createElement('canvas')
+              canvas.width = SIZE
+              canvas.height = SIZE
+              const context = canvas.getContext('2d')
+              const gif = new GIF({
+                workerScript:
+                  'https://sheeptester.github.io/animations/gif-worker.js',
+                width: SIZE,
+                height: SIZE
+              })
+              gif.on('finished', blob => {
+                const url = URL.createObjectURL(blob)
+                const saveLink = Object.assign(document.createElement('a'), {
+                  href: url,
+                  download: `${displayName}.gif`
+                })
+                document.body.append(saveLink)
+                saveLink.click()
+                saveLink.remove()
+                URL.revokeObjectURL(url)
+              })
+              for (let i = 0; i < frames; i++) {
+                context.drawImage(
+                  image,
+                  0,
+                  i * SIZE,
+                  SIZE,
+                  SIZE,
+                  0,
+                  0,
+                  SIZE,
+                  SIZE
+                )
+                gif.addFrame(context, { delay: 1 / FPS, copy: true })
+              }
+              gif.render()
+            })
+          })
+          imageWrapper.append(image)
+        }
+      }
+      document.getElementById('wrapper').append(fragment)
+    </script>
+  </body>
+</html>
