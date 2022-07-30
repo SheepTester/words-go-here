@@ -123,8 +123,10 @@
 
           const image = Object.assign(document.createElement('img'), {
             className: 'emote-image',
+            // https://stackoverflow.com/a/57389607
             loading: 'lazy',
             src: `https://statics.teams.cdn.office.net/evergreen-assets/personal-expressions/v2/assets/emoticons/${emoteName}/default/100_anim_f.png`,
+            // https://stackoverflow.com/a/27840082
             crossOrigin: 'anonymous'
           })
           image.addEventListener('load', () => {
@@ -144,7 +146,9 @@
                 workerScript:
                   'https://sheeptester.github.io/animations/gif-worker.js',
                 width: SIZE,
-                height: SIZE
+                height: SIZE,
+                // https://github.com/jnordberg/gif.js/issues/52#issuecomment-193065178
+                transparent: 'transparent'
               })
               gif.on('finished', blob => {
                 const url = URL.createObjectURL(blob)
@@ -158,6 +162,7 @@
                 URL.revokeObjectURL(url)
               })
               for (let i = 0; i < frames; i++) {
+                context.clearRect(0, 0, SIZE, SIZE)
                 context.drawImage(
                   image,
                   0,
