@@ -17,18 +17,35 @@
 
     <style>
       :root {
+        --theme: #5b5fc7;
         --background: #ffffff;
         --shaded: #f5f5f5;
+        --line: #e0e0e0;
+        --icon: #616161;
         --text: #242424;
       }
+      html {
+        scroll-padding-top: 64px;
+      }
       body {
-        margin: 0 20px;
+        margin: 0 24px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui,
           'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Web', sans-serif;
         font-size: 14px;
         line-height: 1.4286;
         color: var(--text);
         background-color: var(--background);
+      }
+      button,
+      input {
+        -webkit-appearance: none;
+        border: none;
+        background: none;
+        font: inherit;
+        color: inherit;
+      }
+      button:not(:disabled) {
+        cursor: pointer;
       }
 
       .emote-list {
@@ -38,22 +55,19 @@
       }
       .category-name {
         font-weight: 600;
+        margin-top: 6px;
         margin-bottom: 6px;
         font-size: unset;
         grid-column: 1 / -1;
       }
+      .category-name:first-of-type {
+        margin-top: 0;
+      }
       .emote-btn {
-        -webkit-appearance: none;
-        border: none;
-        background: none;
-        font: inherit;
-        color: inherit;
+        font-size: 0;
         padding: 20px;
 
         border-radius: 4px;
-      }
-      .emote-btn:not(:disabled) {
-        cursor: pointer;
       }
       .emote-btn:hover {
         background-color: var(--shaded);
@@ -76,6 +90,11 @@
       .emote-btn:hover .emote-image {
         animation-play-state: running;
       }
+      @media (hover: none) {
+        .emote-image {
+          animation-play-state: running;
+        }
+      }
       @keyframes frames {
         from {
           transform: translateY(0);
@@ -84,10 +103,82 @@
           transform: translateY(-100%);
         }
       }
+
+      .query-wrapper {
+        grid-column: 1 / -1;
+        padding-top: 20px;
+        padding-bottom: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background-color: var(--background);
+      }
+      .query {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 5px 12px;
+        padding-right: 35px;
+        border-bottom: 2px solid transparent;
+        border-radius: 4px;
+        background-color: var(--shaded);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='2 2 16 16' fill='%23242424'%3E%3Cpath d='M8.5 3C11.5376 3 14 5.46243 14 8.5C14 9.83879 13.5217 11.0659 12.7266 12.0196L16.8536 16.1464C17.0488 16.3417 17.0488 16.6583 16.8536 16.8536C16.68 17.0271 16.4106 17.0464 16.2157 16.9114L16.1464 16.8536L12.0196 12.7266C11.0659 13.5217 9.83879 14 8.5 14C5.46243 14 3 11.5376 3 8.5C3 5.46243 5.46243 3 8.5 3ZM8.5 4C6.01472 4 4 6.01472 4 8.5C4 10.9853 6.01472 13 8.5 13C10.9853 13 13 10.9853 13 8.5C13 6.01472 10.9853 4 8.5 4Z' /%3E%3Cpath d='M8.5 3C11.5376 3 14 5.46243 14 8.5C14 9.74832 13.5841 10.8995 12.8834 11.8226L17.0303 15.9697C17.3232 16.2626 17.3232 16.7374 17.0303 17.0303C16.7641 17.2966 16.3474 17.3208 16.0538 17.1029L15.9697 17.0303L11.8226 12.8834C10.8995 13.5841 9.74832 14 8.5 14C5.46243 14 3 11.5376 3 8.5C3 5.46243 5.46243 3 8.5 3ZM8.5 4.5C6.29086 4.5 4.5 6.29086 4.5 8.5C4.5 10.7091 6.29086 12.5 8.5 12.5C10.7091 12.5 12.5 10.7091 12.5 8.5C12.5 6.29086 10.7091 4.5 8.5 4.5Z' /%3E%3C/svg%3E");
+        background-size: 16px;
+        background-position: center right 8px;
+        background-repeat: no-repeat;
+      }
+      .query:focus {
+        outline: none;
+        border-radius: 4px 4px 2px 2px;
+        border-bottom-color: var(--theme);
+      }
+
+      .category-bar {
+        position: sticky;
+        bottom: 0;
+        padding: 8px;
+        background-color: var(--background);
+        display: flex;
+        border-top: 1px solid var(--line);
+      }
+      .category-link {
+        font-size: 0;
+        flex: auto;
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .category-icon {
+        display: block;
+        width: 20px;
+        height: 20px;
+        -webkit-mask-position-y: 0;
+        -webkit-mask-size: 20px;
+        mask-size: 20px;
+        background-color: var(--icon);
+      }
+      .category-link:hover .category-icon {
+        -webkit-mask-position-y: 100%;
+        background-color: var(--theme);
+      }
     </style>
+    <style id="filter"></style>
   </head>
   <body>
-    <div class="emote-list" id="wrapper"></div>
+    <div class="emote-list">
+      <div class="query-wrapper">
+        <input
+          type="search"
+          class="query"
+          name="emoji"
+          id="query"
+          placeholder="Search"
+          autofocus
+        />
+      </div>
+      <span id="replace-me"></span>
+    </div>
+    <div class="category-bar" id="categories"></div>
     <script type="module">
       // Using "emote" so I can distinguish between singular and plural
       import emoteData from './fluent-emoji.json' assert { type: 'json' }
@@ -95,8 +186,14 @@
       const SIZE = 100
       const FPS = 24
 
+      const elems = {
+        filter: document.getElementById('filter'),
+        query: document.getElementById('query'),
+        categories: document.getElementById('categories')
+      }
+
       const fragment = document.createDocumentFragment()
-      for (const [catName, emoteNames] of Object.entries(emoteData)) {
+      for (const [catName, { icon, emoji }] of Object.entries(emoteData)) {
         const id = catName.toLowerCase().replaceAll(' ', '-')
         const catNameHeading = Object.assign(document.createElement('h1'), {
           className: 'category-name',
@@ -105,15 +202,32 @@
         })
         fragment.append(catNameHeading)
 
-        for (const emoteName of emoteNames) {
+        const catLink = Object.assign(document.createElement('a'), {
+          className: 'category-link',
+          href: '#' + id,
+          title: catName,
+          textContent: catName
+        })
+        const catIcon = Object.assign(document.createElement('span'), {
+          className: 'category-icon'
+        })
+        Object.assign(catIcon.style, {
+          webkitMaskImage: `url('${icon}')`
+        })
+        catLink.append(catIcon)
+        elems.categories.append(catLink)
+
+        for (const emoteName of emoji) {
           const displayName = emoteName.split('_').at(-1)
 
           const button = Object.assign(document.createElement('button'), {
             className: 'emote-btn',
             title: displayName,
+            textContent: displayName,
             ariaLabel: `Create a gif for the ${displayName} emoji`,
             disabled: true
           })
+          button.dataset.emoji = displayName
           fragment.append(button)
 
           const imageWrapper = Object.assign(document.createElement('span'), {
@@ -143,8 +257,6 @@
               canvas.height = SIZE
               const context = canvas.getContext('2d')
               const gif = new GIF({
-                // workerScript:
-                //   'https://sheeptester.github.io/animations/gif-worker.js',
                 workerScript: URL.createObjectURL(
                   new Blob(
                     [
@@ -202,7 +314,16 @@
           imageWrapper.append(image)
         }
       }
-      document.getElementById('wrapper').append(fragment)
+      document.getElementById('replace-me').replaceWith(fragment)
+
+      elems.query.addEventListener('input', () => {
+        elems.filter.textContent =
+          elems.query.value === ''
+            ? ''
+            : `.emote-btn:not([data-emoji*='${CSS.escape(
+                elems.query.value
+              )}']) { display: none; }`
+      })
     </script>
   </body>
 </html>
