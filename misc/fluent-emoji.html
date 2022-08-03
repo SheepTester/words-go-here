@@ -147,6 +147,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        border-radius: 4px;
       }
       .category-icon {
         display: block;
@@ -157,9 +158,19 @@
         mask-size: 20px;
         background-color: var(--icon);
       }
-      .category-link:hover .category-icon {
+      .category-link:not(.selected):hover .category-icon {
         -webkit-mask-position-y: 100%;
         background-color: var(--theme);
+      }
+      .selected {
+        background-color: var(--shaded);
+      }
+      .selected .category-icon {
+        background-color: var(--theme);
+      }
+
+      sheep-btn {
+        bottom: 67px;
       }
     </style>
     <style id="filter"></style>
@@ -192,15 +203,16 @@
         categories: document.getElementById('categories')
       }
 
+      const headings = []
       const fragment = document.createDocumentFragment()
       for (const [catName, { icon, emoji }] of Object.entries(emoteData)) {
         const id = catName.toLowerCase().replaceAll(' ', '-')
-        const catNameHeading = Object.assign(document.createElement('h1'), {
+        const heading = Object.assign(document.createElement('h1'), {
           className: 'category-name',
           textContent: catName,
           id
         })
-        fragment.append(catNameHeading)
+        fragment.append(heading)
 
         const catLink = Object.assign(document.createElement('a'), {
           className: 'category-link',
@@ -216,6 +228,8 @@
         })
         catLink.append(catIcon)
         elems.categories.append(catLink)
+
+        headings.unshift({ heading, link: catLink })
 
         for (const emoteName of emoji) {
           const displayName = emoteName.split('_').at(-1)
@@ -324,6 +338,26 @@
                 elems.query.value
               )}']) { display: none; }`
       })
+
+      let lastHighlighted = null
+      function updateHighlighted () {
+        // From bottom to top
+        for (const { heading, link } of headings) {
+          const { top } = heading.getBoundingClientRect()
+          if (top < window.innerHeight / 2) {
+            if (link !== lastHighlighted) {
+              if (lastHighlighted) {
+                lastHighlighted.classList.remove('selected')
+              }
+              link.classList.add('selected')
+              lastHighlighted = link
+            }
+            break
+          }
+        }
+      }
+      window.addEventListener('scroll', updateHighlighted)
+      updateHighlighted()
     </script>
   </body>
 </html>
