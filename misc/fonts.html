@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>your fonts</title>
+    <meta name="description" content="chrome lets you give me your fonts now" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji',
+          'Segoe UI Emoji', 'Segoe UI Symbol';
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        margin: 50px;
+        gap: 10px;
+        word-wrap: break-word;
+      }
+
+      .family {
+        grid-column: 1 / -1;
+        font-weight: normal;
+        font-size: 14px;
+        color: rgba(0, 0, 0, 0.7);
+        margin: 0;
+        margin-top: 40px;
+      }
+      .family:first-of-type {
+        margin-top: 0;
+      }
+      .font {
+        display: flex;
+        flex-direction: column;
+      }
+      .name {
+        font-weight: normal;
+        font-size: 36px;
+        margin: 0;
+        margin-bottom: 5px;
+      }
+      .description {
+        font-size: 14px;
+        color: rgba(0, 0, 0, 0.5);
+        margin: 0;
+        margin-top: 5px;
+      }
+      .postscript {
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo,
+          monospace;
+      }
+
+      .loading {
+        grid-column: 1 / -1;
+        color: rgba(0, 0, 0, 0.7);
+      }
+      .loading a {
+        color: black;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="loading" id="loading">
+      Waiting for permission to
+      <a href="https://wicg.github.io/local-font-access/">get your fonts</a>.
+    </p>
+    <script type="module">
+      let localFonts
+      do {
+        localFonts = await queryLocalFonts().catch(() => null)
+      } while (!localFonts)
+
+      const weights = {
+        extralight: 100,
+        thin: 100,
+        hairline: 100,
+        semilight: 200,
+        light: 300,
+        // regular: 400,
+        medium: 500,
+        semibold: 600,
+        demibold: 600,
+        demi: 600,
+        bold: 700,
+        black: 900,
+        heavy: 900
+      }
+      const styles = {
+        // roman: 0,
+        italic: 1,
+        oblique: 2
+      }
+      const styleValues = ['normal', 'italic', 'oblique']
+      const stretches = {
+        condensed: 2,
+        cond: 2,
+        narrow: 2,
+        semicondensed: 1
+      }
+      const stretchValues = ['normal', 'semi-condensed', 'condensed']
+
+      const fonts = {}
+      for (const { postscriptName, fullName, family, style } of localFonts) {
+        fonts[family] ??= []
+        const font = {
+          fullName,
+          postscriptName,
+          styleName: style,
+          weight: 400,
+          style: 0,
+          stretch: 0
+        }
+        for (const property of `${fullName} ${style}`
+          .replace(/(ultra|extra) /, '$1')
+          .toLowerCase()
+          .split(' ')) {
+          if (Object.hasOwn(weights, property)) {
+            // Eras ITC and Franklin Gothic are weird because they have medium
+            // and demi, but weights 500 and 600 respectively look identical. I
+            // think they use "medium" to mean "regular." Dubai and Yu Gothic
+            // have medium weight 500, but they also define regular and don't
+            // use demi. Another quirk of Eras and Franklin Gothic is that their
+            // `style` is set to `Regular` for all weights, so I'll use that to
+            // detect this special case.
+            font.weight =
+              property === 'medium' &&
+              (style === 'Regular' || style === 'Italic')
+                ? 400
+                : weights[property]
+          } else if (Object.hasOwn(styles, property)) {
+            font.style = styles[property]
+          } else if (Object.hasOwn(stretches, property)) {
+            font.stretch = stretches[property]
+          }
+        }
+        fonts[family].push(font)
+      }
+
+      const fragment = document.createDocumentFragment()
+      for (const [family, styles] of Object.entries(fonts)) {
+        const heading = Object.assign(document.createElement('h2'), {
+          className: 'family',
+          textContent: family
+        })
+        fragment.append(heading)
+
+        for (const {
+          fullName,
+          postscriptName,
+          styleName,
+          weight,
+          style,
+          stretch
+        } of styles.sort(
+          (a, b) =>
+            a.stretch - b.stretch || a.weight - b.weight || a.style - b.style
+        )) {
+          const entry = Object.assign(document.createElement('div'), {
+            className: 'font'
+          })
+          fragment.append(entry)
+
+          const name = Object.assign(document.createElement('h3'), {
+            className: 'name',
+            textContent: fullName
+          })
+          Object.assign(name.style, {
+            fontFamily: family,
+            fontWeight: weight,
+            fontStyle: styleValues[style],
+            fontStretch: stretchValues[stretch]
+          })
+          const postscript = Object.assign(document.createElement('p'), {
+            className: 'description postscript',
+            textContent: postscriptName
+          })
+          const styleDesc = Object.assign(document.createElement('p'), {
+            className: 'description style',
+            textContent: styleName
+          })
+
+          entry.append(name, styleDesc, postscript)
+        }
+      }
+      document.body.append(fragment)
+
+      document.getElementById('loading').remove()
+
+      Object.assign(window, { fonts })
+    </script>
+  </body>
+</html>
