@@ -41,17 +41,36 @@
         font-weight: normal;
         font-size: 36px;
         margin: 0;
-        margin-bottom: 5px;
+        margin-block-end: 5px;
       }
       .description {
         font-size: 14px;
         color: rgba(0, 0, 0, 0.5);
         margin: 0;
-        margin-top: 5px;
+        margin-block-start: 5px;
       }
       .postscript {
         font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo,
           monospace;
+      }
+
+      @media (max-width: 610px) {
+        body {
+          grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+          margin: 10px;
+        }
+        .family {
+          margin: 0 -10px;
+          text-align: center;
+          background-color: rgba(0, 0, 0, 0.05);
+          padding: 5px;
+        }
+        .font {
+          writing-mode: vertical-rl;
+        }
+        .description {
+          margin: 0;
+        }
       }
 
       .loading {
