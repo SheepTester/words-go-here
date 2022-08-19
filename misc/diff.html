@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Diff</title>
+    <meta
+      name="description"
+      content="Shows the differences between two pieces of text using Monaco (VS Code)'s diff editor"
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      #container {
+        flex: auto;
+        margin: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <script src="https://unpkg.com/monaco-editor@0.34.0/min/vs/loader.js"></script>
+    <script>
+      // https://stackoverflow.com/a/68746273
+      require.config({
+        paths: { vs: 'https://unpkg.com/monaco-editor@0.34.0/min/vs' }
+      })
+      require(['vs/editor/editor.main'], () => {
+        // https://microsoft.github.io/monaco-editor/playground.html#creating-the-diffeditor-multi-line-example
+        const original = monaco.editor.createModel(
+          'Four legs good, two legs bad\n',
+          'text/plain'
+        )
+        const modified = monaco.editor.createModel(
+          'Four legs good, two legs better\n',
+          'text/plain'
+        )
+        const diffEditor = monaco.editor.createDiffEditor(
+          document.getElementById('container'),
+          // https://microsoft.github.io/monaco-editor/api/interfaces/monaco.editor.IStandaloneDiffEditorConstructionOptions.html#originalEditable
+          // https://stackoverflow.com/a/47163918
+          { originalEditable: true, automaticLayout: true }
+        )
+        diffEditor.setModel({ original, modified })
+      })
+    </script>
+  </body>
+</html>
