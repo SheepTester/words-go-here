@@ -40,24 +40,25 @@
     <script type="importmap">
       {
         "imports": {
-          "three": "https://unpkg.com/three@0.143.0/build/three.module.js"
+          "three": "https://unpkg.com/three@0.143.0/build/three.module.js",
+          "three/": "https://unpkg.com/three@0.143.0/"
         }
       }
     </script>
     <script type="module">
       import * as THREE from 'three'
+      import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+      import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+      import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
+      import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js'
+      import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js'
       import { loadImage } from 'https://sheeptester.github.io/thirty-eight/src/lib/canvas.js'
-      import { EffectComposer } from '//unpkg.com/three@0.143.0/examples/jsm/postprocessing/EffectComposer.js'
-      import { RenderPass } from '//unpkg.com/three@0.143.0/examples/jsm/postprocessing/RenderPass.js'
-      import { ShaderPass } from '//unpkg.com/three@0.143.0/examples/jsm/postprocessing/ShaderPass.js'
-      import { GammaCorrectionShader } from '//unpkg.com/three@0.143.0/examples/jsm/shaders/GammaCorrectionShader.js'
-      import { FXAAShader } from '//unpkg.com/three@0.143.0/examples/jsm/shaders/FXAAShader.js'
 
       const gui = new dat.GUI()
       const options = {
         width: 1920,
         height: 1080,
-        fontSize: 280,
+        fontSize: 250,
         logoSize: 480,
         char: '羊'
       }
@@ -93,8 +94,8 @@
 
           uniforms: {
             tDiffuse: { value: null },
-            baseIor: { value: 0.075 },
-            bandOffset: { value: 0.003 },
+            baseIor: { value: 1 },
+            bandOffset: { value: -0.003 },
             jitterIntensity: { value: 1.0 },
             jitterOffset: { value: 0.0 }
           },
@@ -140,7 +141,7 @@
     #endif
     for ( int i = 0; i < CHROMA_SAMPLES; i ++ ) {
       index = float( i );
-      randValue = rand( sin( index + 1. ) * gl_FragCoord.xy + vec2( jitterOffset, - jitterOffset ) ) - 0.5;
+      randValue = rand( sin( index + 1. ) * vUv.xy + vec2( jitterOffset, - jitterOffset ) ) - 0.5;
       offsetValue = index / float( CHROMA_SAMPLES ) + randValue * jitterIntensity;
       #if BAND_MODE == 1
       randValue *= 2.0;
@@ -159,8 +160,8 @@
       b_sample = texture2D( tDiffuse, vUv + b_refracted.xy );
       #if BAND_MODE == 2
       y_ior = 1.0 + bandOffset * ( 1.0 + offsetValue );
-      c_ior = 1.0 + bandOffset * ( 3.0 + offsetValue );
-      v_ior = 1.0 + bandOffset * ( 5.0 + offsetValue );
+      c_ior = 1.0 + bandOffset * ( 5.0 + offsetValue );
+      v_ior = 1.0 + bandOffset * ( 3.0 + offsetValue );
       y_refracted = refract( vec3( 0.0, 0.0, - 1.0 ), normal, baseIor / y_ior );
       c_refracted = refract( vec3( 0.0, 0.0, - 1.0 ), normal, baseIor / c_ior );
       v_refracted = refract( vec3( 0.0, 0.0, - 1.0 ), normal, baseIor / v_ior );
@@ -186,6 +187,86 @@
     #endif
     gl_FragColor = vec4( color, 1.0 );
   }
+`
+        })
+      )
+      composer.addPass(
+        new ShaderPass({
+          uniforms: { tDiffuse: { value: null } },
+          // ahh this gives the fragment shader the vUv (pixel on screen)
+          vertexShader: /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+  }
+`,
+
+          // https://www.shadertoy.com/view/XdfGDH
+          // I have no idea what I'm doing
+          // https://github.com/mrdoob/three.js/blob/master/examples/jsm/shaders/CopyShader.js
+          fragmentShader: /* glsl */ `
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+varying vec2 vUv;
+
+// the ... texture ..
+uniform sampler2D tDiffuse;
+
+
+float normpdf(in float x, in float sigma)
+{
+	return 0.39894*exp(-0.5*x*x/(sigma*sigma))/sigma;
+}
+
+
+void main()
+{
+	vec3 c = texture(tDiffuse, vUv.xy).rgb;
+		//declare stuff
+        float x = vUv.x - 0.5; // iResolution.x / 2.;
+        float y = vUv.y - 0.5; // iResolution.y / 2.;
+        const int maxSize = 30;
+	 int mSize = int(sqrt(x*x+y*y) / 0.71 * float(maxSize));
+	if (mSize < 1)
+	{
+		gl_FragColor = vec4(c, 1.0);
+	} else {
+
+		 int kSize = (mSize-1)/2;
+		float kernel[maxSize];
+		vec3 final_colour = vec3(0.0);
+
+		//create the 1-D kernel
+		float sigma = 7.0;
+		float Z = 0.0;
+		for (int j = 0; j <= kSize; ++j)
+		{
+			kernel[kSize+j] = kernel[kSize-j] = normpdf(float(j), sigma);
+		}
+
+		//get the normalization factor (as the gaussian has been clamped)
+		for (int j = 0; j < mSize; ++j)
+		{
+			Z += kernel[j];
+		}
+
+		//read out the texels
+		for (int i=-kSize; i <= kSize; ++i)
+		{
+			for (int j=-kSize; j <= kSize; ++j)
+			{
+				final_colour += kernel[kSize+j]*kernel[kSize+i]*texture(tDiffuse, (vUv.xy+vec2(float(i) * 0.001,float(j) * 0.001)) ).rgb;
+
+			}
+		}
+
+
+		gl_FragColor = vec4(final_colour/(Z*Z), 1.0);
+	}
+}
 `
         })
       )
@@ -216,7 +297,7 @@
             c.fillText(
               options.char,
               x * charWidth + options.width / 2,
-              y * charHeight + options.height / 2
+              (y - 0.5) * charHeight + options.height / 2
             )
           }
         }
