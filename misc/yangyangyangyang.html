@@ -36,6 +36,7 @@
   </head>
   <body>
     <h1>羊。</h1>
+    <p>i'm gonna use this for social media banners lmao</p>
     <canvas id="texture"></canvas>
     <script type="importmap">
       {
@@ -56,10 +57,10 @@
 
       const gui = new dat.GUI()
       const options = {
-        width: 1920,
-        height: 1080,
-        fontSize: 250,
-        logoSize: 480,
+        width: 1500,
+        height: 500,
+        fontSize: 160,
+        logoSize: 360,
         char: '羊'
       }
 
@@ -69,7 +70,6 @@
       const scene = new THREE.Scene()
       const geometry = new THREE.PlaneGeometry(2, 2)
       const material = new THREE.MeshBasicMaterial({
-        map: new THREE.CanvasTexture(canvas),
         // color: 0xff0000, // it looks cool when red
         side: THREE.FrontSide
       })
@@ -312,16 +312,16 @@ void main()
           )
         }
         c.save()
-        c.globalAlpha = 0.2
+        c.globalAlpha = 0.3
         c.filter = `blur(${options.logoSize / 4}px)`
         drawLogo()
-        c.globalAlpha = 0.4
+        c.globalAlpha = 0.6
         c.filter = `blur(${options.logoSize / 10}px)`
         drawLogo()
         c.restore()
         drawLogo()
 
-        material.map.needsUpdate = true
+        material.map = new THREE.CanvasTexture(canvas)
         renderer.setSize(options.width, options.height)
         composer.setSize(options.width, options.height)
         composer.render()
