@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊</title>
+    <meta
+      name="description"
+      content="羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊羊"
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      body {
+        font-family: 'Noto Serif TC', serif;
+        font-weight: 900;
+      }
+      canvas {
+        max-width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>羊。</h1>
+    <canvas id="texture"></canvas>
+    <script type="module">
+      import { loadImage } from 'https://sheeptester.github.io/thirty-eight/src/lib/canvas.js'
+
+      const logo = await loadImage('./yangyang.svg')
+      await document.fonts.ready
+      const canvas = document.getElementById('texture')
+      const c = canvas.getContext('2d', { alpha: false })
+      const gui = new dat.GUI()
+      const options = {
+        width: 1920,
+        height: 1080,
+        fontSize: 280,
+        logoSize: 480,
+        char: '羊'
+      }
+      const render = () => {
+        if (options.char === '') {
+          return
+        }
+        canvas.width = options.width
+        canvas.height = options.height
+        c.fillStyle = 'white'
+        c.fillRect(0, 0, options.width, options.height)
+        c.fillStyle = 'black'
+        c.font = `900 ${options.fontSize}px 'Noto Serif TC', serif`
+        const charHeight = options.fontSize
+        c.textAlign = 'center'
+        c.textBaseline = 'middle'
+        const { width: charWidth } = c.measureText(options.char)
+        const startX = Math.floor(-options.width / 2 / charWidth)
+        const endX = Math.ceil(options.width / 2 / charWidth)
+        const startY = Math.floor(-options.height / 2 / charHeight)
+        const endY = Math.ceil(options.height / 2 / charHeight)
+        for (let x = startX; x <= endX; x++) {
+          for (let y = startY; y <= endY; y++) {
+            c.fillText(
+              options.char,
+              x * charWidth + options.width / 2,
+              y * charHeight + options.height / 2
+            )
+          }
+        }
+        const drawLogo = () => {
+          c.drawImage(
+            logo,
+            (options.width - options.logoSize) / 2,
+            (options.height - options.logoSize) / 2,
+            options.logoSize,
+            options.logoSize
+          )
+        }
+        c.save()
+        c.globalAlpha = 0.2
+        c.filter = `blur(${options.logoSize / 4}px)`
+        drawLogo()
+        c.globalAlpha = 0.4
+        c.filter = `blur(${options.logoSize / 10}px)`
+        drawLogo()
+        c.restore()
+        drawLogo()
+      }
+      for (const key of Object.keys(options)) {
+        gui.add(options, key).onChange(render)
+      }
+      render()
+    </script>
+  </body>
+</html>
