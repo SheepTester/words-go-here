@@ -299,6 +299,15 @@
               <code class="math">a \neq 0</code>. There is a unique solution.
             </p>
             <p>This also works for higher order equations.</p>
+            <p>
+              Spring word problems use this equation for the spring's motion,
+              with mass <code class="math">m</code>, damping constant
+              <code class="math">b</code>, and stiffness constant
+              <code class="math">k</code>.
+            </p>
+            <pre class="math">
+              my'' + by' + ky  = F_{ext}(t)
+            </pre>
           </section>
           <section class="col-lg">
             <h3>Solve</h3>
@@ -321,6 +330,24 @@
                 </p>
                 <pre class="math">
                   y(t) = C_1 e^{rt} + C_2 t e^{rt} + C_3 t^2 e^{rt}
+                </pre>
+              </li>
+            </ol>
+            <p>
+              If the roots are complex
+              <code class="math">r = \alpha \pm i\beta</code>, they want a real
+              solution.
+            </p>
+            <ol>
+              <li>
+                <pre class="math">
+                  e^{(\alpha + i\beta)t} = e^{\alpha t} e^{\beta i t} = e^{\alpha t} (\cos \beta t + i \sin \beta t)
+                </pre>
+                <p>You should show this use of Euler's formula.</p>
+              </li>
+              <li>
+                <pre class="math">
+                  y(t) = C_1 e^{\alpha t} \cos \beta t + C_2 e^{\alpha t} \sin \beta t
                 </pre>
               </li>
             </ol>
