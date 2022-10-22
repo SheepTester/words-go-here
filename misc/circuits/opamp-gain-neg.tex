@@ -1,0 +1,14 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+\usepackage[european,straightvoltages, RPvoltages, americanresistor, americaninductors]{circuitikz}
+\begin{document}
+\begin{tikzpicture}
+  \draw (0, 0) node[op amp] (opamp) {}
+  (opamp.-) to[short, -*] (-2, 0 |- opamp.-) -- (-2, 1.5) -- (2, 1.5) to[short, -*] (2, 0 |- opamp.out) -- (opamp.out)
+  (opamp.-) to[short, -o] (-3, 0 |- opamp.-)
+  node[label=left:$v_i$] {}
+  (opamp.out) to[short, -o] (3, 0 |- opamp.out)
+  node[label=right:$v_o$] {}
+  (opamp.+) -- (-2, 0 |- opamp.+) -- (-2, -1) node[ground] {}
+  ;
+\end{tikzpicture}
+\end{document}
