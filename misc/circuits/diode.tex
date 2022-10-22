@@ -1,0 +1,15 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+\usepackage[european,straightvoltages, RPvoltages, americanresistor, americaninductors]{circuitikz}
+\begin{document}
+\begin{tikzpicture}
+  \draw (0, 0)
+  node[label=left:$v_i$] {}
+  to[empty diode, o-o, v>=$i_D$, \circuitikzbasekey/bipole/voltage/position=above, name=diode]
+  (3, 0)
+  node[label=right:$v_o$] {}
+  (diode.south west) node[below left] {$+$}
+  (diode.south east) node[below right] {$-$}
+  (diode.south) node[below] {$v_D$}
+  ;
+\end{tikzpicture}
+\end{document}
