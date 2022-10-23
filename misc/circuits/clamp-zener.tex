@@ -1,0 +1,12 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+\usepackage[american]{circuitikz}
+\begin{document}
+\begin{tikzpicture}
+  \draw
+  (0, 0) to[C, o-] (2, 0) to[short, -o] (3, 0)
+  (2, 0) to[empty diode, *-] (2, -1.5)
+  (2, -3) to[ZZener diode, color=red] (2, -1.5)
+  (0, -3) to[short, o-*] (2, -3) to[short, -o] (3, -3)
+  ;
+\end{tikzpicture}
+\end{document}

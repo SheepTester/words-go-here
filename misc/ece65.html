@@ -274,6 +274,44 @@
           When <code class="math">v_i < V_{D_0}</code>, the diode is off, and
           <code class="math">v_o = v_i</code>.
         </p>
+        <div class="row flex-wrap">
+          <div class="col">
+            <img src="./circuits/clipper-default.svg" class="img-fluid" />
+            <pre class="math">
+              v_o \leq V_{D_0}
+            </pre>
+          </div>
+          <div class="col">
+            <img src="./circuits/clipper-vdc.svg" class="img-fluid" />
+            <pre class="math">
+              v_o \leq V_{D_0} + V_{DC}
+            </pre>
+          </div>
+          <div class="col">
+            <img src="./circuits/clipper-zener-up.svg" class="img-fluid" />
+            <pre class="math">
+              v_o \leq V_{D_0} + V_Z
+            </pre>
+          </div>
+          <div class="col">
+            <img src="./circuits/clipper-zener-down.svg" class="img-fluid" />
+            <pre class="math">
+              v_o \geq -V_{D_0} - V_Z
+            </pre>
+          </div>
+          <div class="col-sm-6">
+            <img src="./circuits/clipper-vdc-2.svg" class="img-fluid" />
+            <pre class="math">
+              -V_{D_0} - V_{DC_2} \leq v_o \leq V_{D_0} + V_{DC_1}
+            </pre>
+          </div>
+          <div class="col">
+            <img src="./circuits/clipper-two-zeners.svg" class="img-fluid" />
+            <pre class="math">
+              -V_{D_0} - V_{Z_2} \leq v_o \leq V_{D_0} + V_{Z_1}
+            </pre>
+          </div>
+        </div>
         <div class="row">
           <div class="col">
             <h3>Circuit</h3>
@@ -288,10 +326,6 @@
             <img src="./circuits/clipper-voltage.svg" class="img-fluid" />
           </div>
         </div>
-        <p>
-          Adjust the limiting voltage by placing a voltage source or Zener diode
-          in series with the diode.
-        </p>
       </section>
 
       <section class="peak-detector">
@@ -338,20 +372,32 @@
           Identical to the peak detector circuit except the output voltage is
           taken from the diode instead.
         </p>
-        <pre class="math">
-          v_o = v_i - (V_p - V_{D_0})
-        </pre>
-        <p>
-          Adjust the voltage shift by placing a voltage source or Zener diode
-          (facing the other direction) in series with the diode.
-        </p>
-        <pre class="math">
-          v_o = v_i - (V_p - V_{D_0} - V_{DC})
-        </pre>
-        <pre class="math">
-          v_o = v_i - (V_p - V_{D_0} - V_Z)
-        </pre>
-        <p>Pointing the diode upwards creates a positive voltage shift.</p>
+        <div class="row flex-wrap">
+          <div class="col">
+            <img src="./circuits/clamp-default.svg" class="img-fluid" />
+            <pre class="math">
+              v_o = v_i - (V_p - V_{D_0})
+            </pre>
+          </div>
+          <div class="col">
+            <img src="./circuits/clamp-vdc.svg" class="img-fluid" />
+            <pre class="math">
+              v_o = v_i - (V_p - V_{D_0} - V_{DC})
+            </pre>
+          </div>
+          <div class="col">
+            <img src="./circuits/clamp-zener.svg" class="img-fluid" />
+            <pre class="math">
+              v_o = v_i - (V_p - V_{D_0} - V_Z)
+            </pre>
+          </div>
+          <div class="col">
+            <img src="./circuits/clamp-reversed.svg" class="img-fluid" />
+            <pre class="math">
+              v_o = v_i + (V_p - V_{D_0})
+            </pre>
+          </div>
+        </div>
         <div class="row">
           <div class="col">
             <h3>Circuit</h3>
