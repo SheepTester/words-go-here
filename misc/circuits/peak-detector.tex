@@ -1,0 +1,14 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+\usepackage[european,straightvoltages, RPvoltages, americanresistor, americaninductors]{circuitikz}
+\begin{document}
+\begin{tikzpicture}
+  \draw (0, 1) node[below] {$+$} to[empty diode, o-] (4, 1) to[short, -o] (5, 1) node[below] {$+$}
+  (3.3, 1) to[C=$C$] (3.3, -1)
+  (0, -1) node[above] {$-$} to[short, o-o] (5, -1) node[above] {$-$}
+  (0, 0) node[] {$v_i$}
+  (5, 0) node[] {$v_o$}
+  ;
+  \draw[dotted] (1, 1.8) rectangle (4.3, -1.8);
+  \path (1, 2) rectangle (3, -2);
+\end{tikzpicture}
+\end{document}

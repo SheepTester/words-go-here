@@ -1,0 +1,20 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+\begin{document}
+\begin{tikzpicture}
+  \path (-0.5,-2) rectangle (7,2);
+  \draw[<->] (0, -1.5) -- (0, 1.5);
+  \draw[->] (0, 0) -- (6.5, 0) node[right] {$t$};
+
+  \draw[dotted] (0, 1) node[left] {$V_p$} -- (6, 1)
+  (0, 0.3) node[left] {$V_{D_0}$} -- (0.3, 0.3) -- (0.3, -1.5)
+  (1, 1) -- (1, -1.5)
+  (0.15, -1.5) node[above] {off}
+  (0.65, -1.5) node[above] {on}
+  (1, -1.5) node[above right] {off}
+  ;
+  \draw[dotted, color=red] (0, 0.7) node[left] {$V_p - V_{D_0}$} -- (6, 0.7);
+
+  \draw (0, 0) -- (1, 1) -- (3, -1) -- (5, 1) -- (6, 0) node[above] {$v_i$};
+  \draw[very thick, color=red] (0, 0) -- (0.3, 0) -- (1, 0.7) -- (6, 0.7) node[right] {$v_o$};
+\end{tikzpicture}
+\end{document}
