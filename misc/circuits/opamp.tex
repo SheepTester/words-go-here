@@ -9,6 +9,8 @@
   node[label=left:$v_+$] {}
   (opamp.out) to[short, -o] ++(1, 0)
   node[label=right:$v_o$] {}
+  (opamp.up) to[short, -o] ++(0, 1) node[above] {$15$ V}
+  (opamp.down) to[short, -o] ++(0, -1) node[below] {$-15$ V}
   ;
 \end{tikzpicture}
 \end{document}
