@@ -2,7 +2,8 @@
 \usepackage[european,straightvoltages, RPvoltages, americanresistor, americaninductors]{circuitikz}
 \begin{document}
 \begin{tikzpicture}
-  \draw (0, 1) node[below] {$+$} to[empty diode, o-] (4, 1) node[below] {$+$} -- (4.5, 1) to[R=$R_L$] (4.5, -1) -- (4, -1) node[above] {$-$} to[short, -o] (0, -1) node[above] {$-$}
+  \draw (0, 1) node[below] {$+$} to[empty diode, o-o] (4, 1) node[below] {$+$}
+  (4, -1) node[above] {$-$} to[short, o-o] (0, -1) node[above] {$-$}
   (0, 0) node[] {$v_i$}
   (4, 0) node[] {$v_o$}
   ;

@@ -1,0 +1,9 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+\begin{document}
+\begin{tikzpicture}
+  \path (-3,-3) rectangle (3,3);
+  \draw[<->] (-2, 0) -- (2, 0) node[right] {$v_i$};
+  \draw[<->] (0, -2) -- (0, 2) node[above] {$v_o$};
+  \draw[very thick, color=red] (-2, 1.5) -- (-0.5, 0) -- (0.5, 0) -- (2, 1.5);
+\end{tikzpicture}
+\end{document}

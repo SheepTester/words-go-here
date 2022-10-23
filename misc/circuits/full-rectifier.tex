@@ -1,0 +1,13 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+\usepackage[european,straightvoltages, RPvoltages, americanresistor, americaninductors]{circuitikz}
+\begin{document}
+\begin{tikzpicture}
+  \draw (1, 0) node[left] {$-$} to[short, o-] (2, 0) to[empty diode, *-*] (0, 2) to[empty diode, -*] (-2, 0) to[short, -o] (-1, 0) node[right] {$+$}
+  (2, 0) to[empty diode, -*] (0, -2) to[empty diode] (-2, 0)
+  (-3, -2) node[above] {$-$} to[short, o-] (0, -2)
+  (-3, 2) node[below] {$+$} to[short, o-] (0, 2)
+  (-3, 0) node[] {$v_i$}
+  (0, 0) node[] {$v_o$}
+  ;
+\end{tikzpicture}
+\end{document}
