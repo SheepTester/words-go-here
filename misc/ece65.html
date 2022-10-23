@@ -134,6 +134,7 @@
         <pre class="math">
           i_- = i_+ = 0
         </pre>
+        <p>The op-amp has both a maximum output voltage and current.</p>
         <pre class="math">
           V_{s^-} < V_{sat^-} \leq v_o \leq V_{sat^+} < V_{s^+}
         </pre>
@@ -234,6 +235,9 @@
             />
           </div>
         </div>
+        <p>
+          Flipping the diode upside down flips the transfer function around.
+        </p>
       </section>
 
       <section class="full-rectifier">
@@ -284,6 +288,10 @@
             <img src="./circuits/clipper-voltage.svg" class="img-fluid" />
           </div>
         </div>
+        <p>
+          Adjust the limiting voltage by placing a voltage source or Zener diode
+          in series with the diode.
+        </p>
       </section>
 
       <section class="peak-detector">
@@ -292,16 +300,58 @@
           <div class="col">
             <h3>Circuit</h3>
             <img src="./circuits/peak-detector.svg" class="img-fluid" />
+            <p>A load resistor will make the capacitor leak voltage.</p>
           </div>
           <div class="col">
             <h3>Output</h3>
             <img src="./circuits/peak-detector-voltage.svg" class="img-fluid" />
+            <p>
+              The shape of the output signal depends on
+              <code class="math">\frac{\tau}{T}</code>. As
+              <code class="math">\frac{\tau}{T}</code> decreases, the circuit
+              departs from a peak detector.
+            </p>
+            <ul>
+              <li>
+                <p>
+                  An ideal <code class="math">\frac{\tau}{T} \to \infty</code>.
+                </p>
+              </li>
+              <li>
+                <p>A good <code class="math">\frac{\tau}{T} >> 1</code>.</p>
+              </li>
+              <li>
+                <p>
+                  For <code class="math">\frac{\tau}{T} << 1</code>, the
+                  capacitor discharges very fast, and the output resembles a
+                  rectifier circuit.
+                </p>
+              </li>
+            </ul>
           </div>
         </div>
       </section>
 
       <section class="clamp">
         <h2>Clamp</h2>
+        <p>
+          Identical to the peak detector circuit except the output voltage is
+          taken from the diode instead.
+        </p>
+        <pre class="math">
+          v_o = v_i - (V_p - V_{D_0})
+        </pre>
+        <p>
+          Adjust the voltage shift by placing a voltage source or Zener diode
+          (facing the other direction) in series with the diode.
+        </p>
+        <pre class="math">
+          v_o = v_i - (V_p - V_{D_0} - V_{DC})
+        </pre>
+        <pre class="math">
+          v_o = v_i - (V_p - V_{D_0} - V_Z)
+        </pre>
+        <p>Pointing the diode upwards creates a positive voltage shift.</p>
         <div class="row">
           <div class="col">
             <h3>Circuit</h3>
