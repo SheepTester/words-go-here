@@ -51,6 +51,7 @@
       pre.math {
         max-width: 100%;
         overflow-x: auto;
+        margin-top: -1rem;
       }
       .katex-display,
       .katex-display > .katex {
@@ -95,6 +96,10 @@
         --heading: #67e8f9;
         --subheading: #22d3ee;
       }
+      .nonhomogeneous {
+        --heading: #5eead4;
+        --subheading: #2dd4bf;
+      }
     </style>
   </head>
 
@@ -112,7 +117,7 @@
       <section class="separable">
         <h2>Separable equations</h2>
         <pre class="math">
-          \frac{dy}{dx} = g(x) p(y)
+          \frac{dy}{dx} = g(x) \, p(y)
         </pre>
         <div class="row">
           <section class="col-lg">
@@ -134,7 +139,7 @@
               <li>
                 <p>Integrate both sides.</p>
                 <pre class="math">
-                  \int \frac{1}{p(y)} dy = \int g(x) dx
+                  \int \frac{1}{p(y)} \, dy = \int g(x) \, dx
                 </pre>
               </li>
               <li>
@@ -155,10 +160,10 @@
       <section class="linear">
         <h2>Linear equations</h2>
         <pre class="math">
-          a_1(x) \frac{dy}{dx} + a_0(x) y = b(x)
+          a_1(x) \, \frac{dy}{dx} + a_0(x) \, y = b(x)
         </pre>
         <pre class="math">
-          \frac{dy}{dx} + p(x) y = Q(x) ~ \text{(standard form)}
+          \frac{dy}{dx} + p(x) \, y = Q(x) ~ \text{(standard form)}
         </pre>
         <div class="row">
           <section class="col-lg">
@@ -191,23 +196,23 @@
                   <code class="math">C</code>.
                 </p>
                 <pre class="math">
-                  \mu(x) = e^{\int p(x) dx}
+                  \mu(x) = e^{\int p(x) \, dx}
                 </pre>
               </li>
               <li>
                 <p>
                   Multiply both sides by <code class="math">\mu(x)</code>. Note
-                  that <code class="math">\mu'(x) = \mu(x) p(x)</code>.
+                  that <code class="math">\mu'(x) = \mu(x) \, p(x)</code>.
                 </p>
                 <pre class="math">
-                  \mu y' + \mu' y = (\mu y)' = \mu(x) Q(x)
+                  \mu y' + \mu' y = (\mu y)' = \mu(x) \, Q(x)
                 </pre>
                 <p>You need to show this step.</p>
               </li>
               <li>
                 <p>Integrate to solve for <code class="math">y</code>.</p>
                 <pre class="math">
-                  y = \frac{1}{\mu} \int \mu(x) Q(x) dx
+                  y = \frac{1}{\mu} \int \mu(x) \, Q(x) \, dx
                 </pre>
               </li>
             </ol>
@@ -241,7 +246,7 @@
                   <code class="math">C</code>.
                 </p>
                 <pre class="math">
-                  \mu = e^{\displaystyle \int \dfrac{\frac{\partial M}{\partial y} - \frac{\partial N}{\partial x}}{N} dx}
+                  \mu = e^{\displaystyle \int \dfrac{\frac{\partial M}{\partial y} - \frac{\partial N}{\partial x}}{N} \, dx}
                 </pre>
               </li>
               <li>
@@ -250,7 +255,7 @@
                   <code class="math">C</code>.
                 </p>
                 <pre class="math">
-                  \mu = e^{\displaystyle \int \dfrac{\frac{\partial N}{\partial x} - \frac{\partial M}{\partial y}}{M} dx}
+                  \mu = e^{\displaystyle \int \dfrac{\frac{\partial N}{\partial x} - \frac{\partial M}{\partial y}}{M} \, dy}
                 </pre>
               </li>
             </ul>
@@ -266,7 +271,7 @@
             <ol>
               <li>
                 <pre class="math">
-                  F = \int M dx + g(y)
+                  F = \int M \, dx + g(y)
                 </pre>
               </li>
               <li>
@@ -280,7 +285,7 @@
               </li>
               <li>
                 <pre class="math">
-                  g(y) = \int g'(y) dy + C
+                  g(y) = \int g'(y) \, dy + C
                 </pre>
               </li>
               <li>
@@ -362,6 +367,89 @@
             </ol>
           </section>
         </div>
+      </section>
+
+      <section class="nonhomogeneous">
+        <h2>Nonhomogeneous equations</h2>
+        <pre class="math">
+          ay'' + by' + cy = f(t)
+        </pre>
+        <p>
+          The following finds a <em>particular solution</em>
+          <code class="math">y_p(t)</code>.
+        </p>
+        <div class="row">
+          <section class="col-lg">
+            <h3>Undetermined coefficients</h3>
+            <ol>
+              <li>
+                <p>
+                  Guess <code class="math">y_p</code> based on the terms in
+                  <code class="math">f(t)</code> and its derivatives.
+                </p>
+                <p>
+                  This sometimes doesn't work, so you'll have to use the other
+                  method.
+                </p>
+              </li>
+              <li>
+                <p>
+                  Find the solution <code class="math">y_c(t)</code> for the
+                  homogenous part.
+                </p>
+                <pre class="math">ay'' + by' + cy = 0</pre>
+              </li>
+              <li>
+                <p>
+                  Multiply terms by <code class="math">t</code> until there is
+                  no repeated term between <code class="math">y_p</code> and
+                  <code class="math">y_c</code>.
+                </p>
+              </li>
+            </ol>
+          </section>
+          <section class="col-lg">
+            <h3>Variation of parameters</h3>
+            <ol>
+              <li>
+                <p>
+                  Find the complementary solution
+                  <code class="math">y_c(t)</code> to find
+                  <code class="math">y_1</code> and
+                  <code class="math">y_2</code>.
+                </p>
+                <pre class="math">
+                  ay'' + by' + cy = 0 \to y(t) = y_1 + y_2
+                </pre>
+              </li>
+              <li>
+                <p>
+                  Set up a system for <code class="math">v_1'</code> and
+                  <code class="math">v_2'</code>.
+                </p>
+                <pre class="math">
+                  \begin{cases}
+                  v_1' y_1 + v_2' y_2 = 0 \\
+                  v_1' y_1' + v_2' y_2' = \dfrac{f(t)}{a}
+                  \end{cases}
+                </pre>
+              </li>
+              <li>
+                <p>
+                  Find <code class="math">v_1</code> and
+                  <code class="math">v_2</code>. Drop the integration constants.
+                </p>
+                <pre class="math">v_1 = \int v_1'</pre>
+                <pre class="math">v_2 = \int v_2'</pre>
+              </li>
+              <li>
+                <pre class="math">y_p = v_1 y_1 + v_2 y_2</pre>
+              </li>
+            </ol>
+          </section>
+        </div>
+        <p>Then, to find the <em>general solution</em>,</p>
+        <pre class="math">y(t) = y_c(t) + y_p(t)</pre>
       </section>
 
       <section class="other">
