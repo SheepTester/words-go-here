@@ -382,6 +382,13 @@
             <ol>
               <li>
                 <p>
+                  Find the solution <code class="math">y_c(t)</code> for the
+                  homogenous part.
+                </p>
+                <pre class="math">ay'' + by' + cy = 0</pre>
+              </li>
+              <li>
+                <p>
                   Guess <code class="math">y_p</code> based on the terms in
                   <code class="math">f(t)</code> and its derivatives.
                 </p>
@@ -392,17 +399,17 @@
               </li>
               <li>
                 <p>
-                  Find the solution <code class="math">y_c(t)</code> for the
-                  homogenous part.
-                </p>
-                <pre class="math">ay'' + by' + cy = 0</pre>
-              </li>
-              <li>
-                <p>
                   Multiply terms by <code class="math">t</code> until there is
                   no repeated term between <code class="math">y_p</code> and
                   <code class="math">y_c</code>.
                 </p>
+              </li>
+              <li>
+                <p>
+                  Solve for the coefficients of <code class="math">y_p</code> by
+                  plugging it into the original equation.
+                </p>
+                <pre class="math">ay_p'' + by_p' + cy_p = f(t)</pre>
               </li>
             </ol>
           </section>
