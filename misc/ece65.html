@@ -116,6 +116,14 @@
         --heading: #a5b4fc;
         --subheading: #818cf8;
       }
+      .bjt {
+        --heading: #d8b4fe;
+        --subheading: #c084fc;
+      }
+      .mosfet {
+        --heading: #f0abfc;
+        --subheading: #e879f9;
+      }
     </style>
   </head>
 
@@ -408,6 +416,61 @@
             <img src="./circuits/clamp-voltage.svg" class="img-fluid" />
           </div>
         </div>
+      </section>
+
+      <section class="bjt">
+        <h2>BJTs</h2>
+        <div class="row">
+          <figure class="col figure">
+            <img src="./circuits/npn.svg" class="img-fluid" />
+            <figcaption class="figure-caption">NPN transistor.</figcaption>
+          </figure>
+          <figure class="col figure">
+            <img src="./circuits/pnp.svg" class="img-fluid" />
+            <figcaption class="figure-caption">PNP transistor.</figcaption>
+          </figure>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            <h3>Off</h3>
+            <p>
+              <code class="math">i_B = 0, i_C = 0</code>
+              <br />
+              if <code class="math">v_{BE} < V_{D_0}</code> (NPN) or
+              <code class="math">v_{EB} < V_{D_0}</code> (PNP).
+            </p>
+          </div>
+          <div class="col-8">
+            <h3>On</h3>
+            <p>
+              <code class="math">v_{BE} = V_{D_0}</code> (NPN) or
+              <code class="math">v_{EB} = V_{D_0}</code> (PNP) if
+              <code class="math">i_B \geq 0</code>.
+            </p>
+            <div class="row">
+              <div class="col">
+                <h3>Active</h3>
+                <p>
+                  <code class="math">i_C = \beta i_B</code> <br />
+                  if <code class="math">v_{CE} \geq V_{D_0}</code> (NPN) or
+                  <code class="math">v_{EC} \geq V_{D_0}</code> (PNP).
+                </p>
+              </div>
+              <div class="col">
+                <h3>Saturation</h3>
+                <p>
+                  <code class="math">v_{CE} = V_{sat}</code> (NPN) or
+                  <code class="math">v_{EC} = V_{sat}</code> (PNP) <br />
+                  if <code class="math">i_C < \beta i_B</code>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mosfet">
+        <h2>MOSFETs</h2>
       </section>
     </main>
 

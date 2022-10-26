@@ -1,0 +1,24 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+\usepackage[european,straightvoltages, RPvoltages, americanresistor, americaninductors]{circuitikz}
+\begin{document}
+\begin{tikzpicture}
+  \draw
+  (0, 0) node [npn, color=red] (npn) {}
+  (npn.B) -- ++(-0.5, 0)
+  node[above] {$+$}
+  node[below] {$+$}
+  to[short, f_<=$i_B$, *-] ++(-1.5, 0)
+  (npn.C) -- ++(0, 0.5)
+  node[left] {$-$}
+  node[right] {$+$}
+  to[short, f_<=$i_C$, *-] ++(0, 1.5)
+  (npn.E) -- ++(0, -0.5)
+  node[left] {$-$}
+  node[right] {$-$}
+  to[short, f=$i_E$, *-] ++(0, -1.5)
+  (-0.8, -0.8) node[] {$v_{BE}$}
+  (-0.8, 0.8) node[] {$v_{BC}$}
+  (0.5, 0) node[] {$v_{CE}$}
+  ;
+\end{tikzpicture}
+\end{document}
