@@ -471,6 +471,58 @@
 
       <section class="mosfet">
         <h2>MOSFETs</h2>
+        <div class="row">
+          <div class="col">
+            <h3>NMOS</h3>
+            <img src="./circuits/nmos.svg" class="img-fluid" />
+            <pre class="math">V_{OV} = v_{GS} - V_{tn}</pre>
+          </div>
+          <div class="col">
+            <h3>PMOS</h3>
+            <img src="./circuits/pmos.svg" class="img-fluid" />
+            <pre class="math">V_{OV} = v_{SG} - |V_{tp}|</pre>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <h3>Off</h3>
+            <pre class="math">i_D = 0</pre>
+            <p>
+              if
+              <code class="math">V_{OV} < 0</code>.
+            </p>
+          </div>
+          <div class="col">
+            <h3>Triode</h3>
+            <pre class="math">
+              i_D = 0.5 \mu_n \, C_{ox} \, \dfrac{W}{L} \left(2 V_{OV} v_{DS} - v_{DS}^2\right)
+            </pre>
+            <pre class="math">
+              i_D = 0.5 \mu_p \, C_{ox} \, \dfrac{W}{L} \left(2 V_{OV} v_{SD} - v_{SD}^2\right)
+            </pre>
+            <p>
+              if
+              <code class="math">V_{OV} \geq 0</code> and <br />
+              <code class="math">v_{DS} \leq V_{OV}</code> (NMOS) or
+              <code class="math">v_{SD} \leq V_{OV}</code> (PMOS).
+            </p>
+          </div>
+          <div class="col">
+            <h3>Saturation</h3>
+            <pre class="math">
+              i_D = 0.5 \mu_n \, C_{ox} \, \dfrac{W}{L} V_{OV}^2 \left(1 + \lambda v_{DS}\right)
+            </pre>
+            <pre class="math">
+              i_D = 0.5 \mu_p \, C_{ox} \, \dfrac{W}{L} V_{OV}^2 \left(1 + \lambda v_{SD}\right)
+            </pre>
+            <p>
+              if
+              <code class="math">V_{OV} \geq 0</code> and <br />
+              <code class="math">v_{DS} \geq V_{OV}</code> (NMOS) or
+              <code class="math">v_{SD} \geq V_{OV}</code> (PMOS).
+            </p>
+          </div>
+        </div>
       </section>
     </main>
 

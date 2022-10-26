@@ -13,8 +13,8 @@ do
   svg="${file%.*}.svg"
   pdf2svg $file $svg
   sed -i \
-    -e 's/rgb(0%,0%,0%)/#94a3b8/' \
-    -e 's/rgb(100%,100%,100%)/#0f172a/' \
-    -e 's/rgb(100%,0%,0%)/white/' \
+    -e 's/rgb(0%,0%,0%)/#94a3b8/g' \
+    -e 's/rgb(100%,100%,100%)/#0f172a/g' \
+    -e 's/rgb(100%,0%,0%)/white/g' \
     $svg
 done

@@ -1,0 +1,24 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+\usepackage[arrowmos]{circuitikz}
+\begin{document}
+\begin{tikzpicture}
+  \draw
+  (0, 0) node [nmos, color=red] (mosfet) {}
+  (mosfet.G)
+  node[below] {$+$}
+  to[short, -o, f_<={$i_G = 0$}] ++(-1, 0)
+  node[left] {$G$}
+  (mosfet.S)
+  node[right] {$-$}
+  to[short, -o, f={$i_S = i_D$}] ++(0, -1)
+  node[left] {$-$}
+  node[below] {$S$}
+  (mosfet.D)
+  node[right] {$+$}
+  to[short, -o, f_<={$i_D$}] ++(0, 1)
+  node[above] {$D$}
+  (0.5, 0) node[] {$v_{DS}$}
+  (-0.6, -1) node[] {$v_{GS}$}
+  ;
+\end{tikzpicture}
+\end{document}
