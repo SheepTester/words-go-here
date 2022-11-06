@@ -105,6 +105,14 @@
         --heading: #6ee7b7;
         --subheading: #34d399;
       }
+      .linear-independence {
+        --heading: #86efac;
+        --subheading: #4ade80;
+      }
+      .matrix {
+        --heading: #bef264;
+        --subheading: #a3e635;
+      }
       .other {
         --heading: #cbd5e1;
         --subheading: #94a3b8;
@@ -501,18 +509,148 @@
         </div>
       </section>
 
-      <section class="other">
-        <h2>Other things</h2>
+      <section class="linear-independence">
+        <h2>Linear independence</h2>
         <div class="row">
           <section class="col-lg">
-            <h3>Wronskian</h3>
-            <pre class="math">
-              w(y_1, y_2) = y_1 y_2' - y_1' y_2
-            </pre>
+            <h3>Method 1</h3>
+            <ol>
+              <li>
+                <p>
+                  Let
+                  <code class="math">
+                    C_1 \vec{x_1} + \dots + C_n \vec{x_n} = 0</code
+                  >.
+                </p>
+              </li>
+              <li>
+                <p>
+                  Show
+                  <code class="math">C_1 = \dots = C_n = 0</code>.
+                </p>
+              </li>
+            </ol>
+          </section>
+          <section class="col-lg">
+            <h3>Method 2</h3>
             <p>
-              The functions are dependent if it's 0 for all
-              <code class="math">t</code>.
+              This only works if the problem says the vectors are solutions of
+              <code class="math">\vec{x}' = A\vec{x}</code>.
             </p>
+            <ol>
+              <li>
+                <p>Show that for every <code class="math">t</code>,</p>
+                <pre class="math">
+                  w(\vec{x_1}, \dots, \vec{x_n}) = \det \begin{bmatrix}
+                    x_{11}(t) & \dots & x_{n1}(t) \\
+                    \vdots & & \vdots \\
+                    x_{1n}(t) & \dots & x_{nn}(t)
+                  \end{bmatrix} \neq 0
+                </pre>
+              </li>
+            </ol>
+          </section>
+        </div>
+      </section>
+
+      <section class="matrix">
+        <h2>Linear systems with a constant-coefficient matrix</h2>
+        <pre class="math">
+          \vec{x}' = A\vec{x}
+        </pre>
+        <div class="row">
+          <section class="col-lg">
+            <h3>Solve</h3>
+            <ol>
+              <li>
+                <p>Solve for the eigenvalues <code class="math">r</code>.</p>
+                <pre class="math">
+                  \det(A - rI) = 0
+                </pre>
+              </li>
+            </ol>
+            <p>If <code class="math">r_1 \neq r_2</code>,</p>
+            <ol start="2">
+              <li>
+                <p>
+                  For each eigenvalue <code class="math">r</code>, find its
+                  eigenvector <code class="math">\vec{u}</code>.
+                </p>
+                <pre class="math">
+                  (A - rI) \vec{u} = 0
+                </pre>
+              </li>
+              <li>
+                <pre class="math">
+                  \vec{x}(t) = C_1 e^{r_1 t} \vec{u_1} + \dots + C_n e^{r_n t} \vec{u_n}
+                </pre>
+              </li>
+            </ol>
+            <p>
+              For complex eigenvalues
+              <code class="math">r_1 = \alpha + i\beta</code>,
+            </p>
+            <ol start="2">
+              <li>
+                <p>
+                  You only need to find one eigenvector
+                  <code class="math">\vec{u_1} = \vec{a} + i\vec{b}</code>
+                  because
+                  <code class="math">\vec{u_2} = \vec{a} - i\vec{b}</code>.
+                </p>
+              </li>
+              <li>
+                <p>
+                  Use Euler's formula and collect the real and imaginary terms.
+                </p>
+                <pre class="math">
+                  \begin{aligned}
+                    e^{(\alpha + i\beta) t} \vec{u_1} &= e^{\alpha t} (\cos \beta t + i \sin \beta t) \vec{u_1} \\
+                    &= e^{\alpha t} \left( \underbrace{\left(\cos(\beta t) \vec{a} - \sin(\beta t) \vec{b} \right)}_{\vec{x_1}} + i \underbrace{\left(\cos(\beta t) \vec{b} + \sin(\beta t) \vec{a} \right)}_{\vec{x_2}} \right)
+                  \end{aligned}
+                </pre>
+              </li>
+              <li>
+                <pre class="math">
+                  \vec{x}(t) = C_1 \vec{x_1} + C_2 \vec{x_2}
+                </pre>
+              </li>
+            </ol>
+            <p>
+              If there is a repeated eigenvalue on the homework or midterm, you
+              are probably wrong. But for your information,
+            </p>
+            <ol start="2">
+              <li>
+                <p>Solve for <code class="math">\vec{v}</code>.</p>
+                <pre class="math">
+                  (A - rI) \vec{v} = \vec{u}
+                </pre>
+              </li>
+              <li>
+                <pre class="math">
+                  \vec{x}(t) = te^{rt} \vec{u} + e^{rt} \vec{v}
+                </pre>
+              </li>
+            </ol>
+          </section>
+          <section class="col-lg">
+            <h3>Fundamentals</h3>
+            <p>With a general solution</p>
+            <pre class="math">
+              \vec{x}(t) = C_1 \vec{x_1} + \dots + C_n \vec{x_n}
+            </pre>
+            <p>the fundamental set is</p>
+            <pre class="math">
+              <!-- "Cursive script S" -->
+              \mathscr{S} = \{ \vec{x_1}, \dots, \vec{x_n} \}
+            </pre>
+            <p>and the fundamental matrix is</p>
+            <pre class="math">
+              X(t) = \begin{bmatrix}
+                \vec{x_1} (t) & \dots & \vec{x_n} (t)
+              \end{bmatrix}
+            </pre>
           </section>
         </div>
       </section>
