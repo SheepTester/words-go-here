@@ -80,6 +80,7 @@
       h3 {
         color: var(--subheading);
       }
+      /* 300 and 400 */
       .separable {
         --heading: #f0abfc;
         --subheading: #e879f9;
@@ -100,6 +101,14 @@
         --heading: #5eead4;
         --subheading: #2dd4bf;
       }
+      .cauchy-euler {
+        --heading: #6ee7b7;
+        --subheading: #34d399;
+      }
+      .other {
+        --heading: #cbd5e1;
+        --subheading: #94a3b8;
+      }
     </style>
   </head>
 
@@ -118,13 +127,6 @@
           \frac{dy}{dx} = g(x) \, p(y)
         </pre>
         <div class="row">
-          <section class="col-lg">
-            <h3>Identify</h3>
-            <p>
-              Find <code class="math">g(x)</code> and
-              <code class="math">p(y)</code>.
-            </p>
-          </section>
           <section class="col-lg">
             <h3>Solve</h3>
             <ol>
@@ -152,39 +154,22 @@
               </li>
             </ol>
           </section>
+          <section class="col-lg">
+            <h3>Identify</h3>
+            <p>
+              Find <code class="math">g(x)</code> and
+              <code class="math">p(y)</code>.
+            </p>
+          </section>
         </div>
       </section>
 
       <section class="linear">
         <h2>Linear equations</h2>
         <pre class="math">
-          a_1(x) \, \frac{dy}{dx} + a_0(x) \, y = b(x)
-        </pre>
-        <pre class="math">
-          \frac{dy}{dx} + p(x) \, y = Q(x) ~ \text{(standard form)}
+          \frac{dy}{dx} + p(x) \, y = Q(x)
         </pre>
         <div class="row">
-          <section class="col-lg">
-            <h3>Identify</h3>
-            <p>
-              <code class="math">y</code> and its derivatives can't be
-              multiplied by each other; they can only be multiplied by something
-              in terms of <code class="math">x</code>.
-            </p>
-            <p>
-              Linear equations can be any order, but we only learned how to
-              solve first-order linear equations.
-            </p>
-            <p>
-              Divide both sides by <code class="math">a_1(x)</code> to get
-              <code class="math">p(x)</code> and <code class="math">Q(x)</code>.
-            </p>
-            <p>
-              An initial condition has a unique solution in an interval where
-              <code class="math">p</code> and <code class="math">Q</code> are
-              continuous.
-            </p>
-          </section>
           <section class="col-lg">
             <h3>Solve</h3>
             <ol>
@@ -215,6 +200,20 @@
               </li>
             </ol>
           </section>
+          <section class="col-lg">
+            <h3>Identify and uniqueness</h3>
+            <p>
+              <code class="math">y</code> and its derivatives can't be
+              multiplied by each other or inside another function; they can only
+              be multiplied by something in terms of
+              <code class="math">x</code>.
+            </p>
+            <p>
+              An initial condition has a unique solution in an interval where
+              <code class="math">p</code> and <code class="math">Q</code> are
+              continuous.
+            </p>
+          </section>
         </div>
       </section>
 
@@ -224,6 +223,37 @@
           M(x, y) + N(x, y) \cdot \frac{dy}{dx} = 0
         </pre>
         <div class="row">
+          <section class="col-lg">
+            <h3>Solve</h3>
+            <ol>
+              <li>
+                <pre class="math">
+                  F = \int M \, dx + g(y)
+                </pre>
+              </li>
+              <li>
+                <pre class="math">
+                  N = \frac{\partial F}{\partial y} = \text{(something)} + g'(y)
+                </pre>
+                <p>
+                  Find <code class="math">g'(y)</code>. You have two expressions
+                  for <code class="math">N</code>.
+                </p>
+              </li>
+              <li>
+                <pre class="math">
+                  g(y) = \int g'(y) \, dy + C
+                </pre>
+              </li>
+              <li>
+                <p>
+                  Plug <code class="math">g(y)</code> into
+                  <code class="math">F</code>.
+                </p>
+                <p><code class="math">F(x, y) = C</code> is a solution.</p>
+              </li>
+            </ol>
+          </section>
           <section class="col-lg">
             <h3>Identify</h3>
             <p>Show that</p>
@@ -264,37 +294,6 @@
               <code class="math">\mu</code>'s denominator being zero.
             </p>
           </section>
-          <section class="col-lg">
-            <h3>Solve</h3>
-            <ol>
-              <li>
-                <pre class="math">
-                  F = \int M \, dx + g(y)
-                </pre>
-              </li>
-              <li>
-                <pre class="math">
-                  N = \frac{\partial F}{\partial y} = \text{(something)} + g'(y)
-                </pre>
-                <p>
-                  Find <code class="math">g'(y)</code>. You have two expressions
-                  for <code class="math">N</code>.
-                </p>
-              </li>
-              <li>
-                <pre class="math">
-                  g(y) = \int g'(y) \, dy + C
-                </pre>
-              </li>
-              <li>
-                <p>
-                  Plug <code class="math">g(y)</code> into
-                  <code class="math">F</code>.
-                </p>
-                <p><code class="math">F(x, y) = C</code> is a solution.</p>
-              </li>
-            </ol>
-          </section>
         </div>
       </section>
 
@@ -304,23 +303,6 @@
           ay'' + by' + cy = 0
         </pre>
         <div class="row">
-          <section class="col-lg">
-            <h3>Identify</h3>
-            <p>
-              For second-order equations,
-              <code class="math">a \neq 0</code>. There is a unique solution.
-            </p>
-            <p>This also works for higher order equations.</p>
-            <p>
-              Spring word problems use this equation for the spring's motion,
-              with mass <code class="math">m</code>, damping constant
-              <code class="math">b</code>, and stiffness constant
-              <code class="math">k</code>.
-            </p>
-            <pre class="math">
-              my'' + by' + ky  = F_{ext}(t)
-            </pre>
-          </section>
           <section class="col-lg">
             <h3>Solve</h3>
             <ol>
@@ -363,6 +345,23 @@
                 </pre>
               </li>
             </ol>
+          </section>
+          <section class="col-lg">
+            <h3>Uniqueness and springs</h3>
+            <p>
+              For second-order equations,
+              <code class="math">a \neq 0</code>. There is a unique solution.
+            </p>
+            <p>This also works for higher order equations.</p>
+            <p>
+              Spring word problems use this equation for the spring's motion,
+              with mass <code class="math">m</code>, damping constant
+              <code class="math">b</code>, and stiffness constant
+              <code class="math">k</code>.
+            </p>
+            <pre class="math">
+              my'' + by' + ky  = F_{ext}(t)
+            </pre>
           </section>
         </div>
       </section>
@@ -451,10 +450,55 @@
                 <pre class="math">y_p = v_1 y_1 + v_2 y_2</pre>
               </li>
             </ol>
+            <p>This also works with variable-coefficient equations.</p>
           </section>
         </div>
         <p>Then, to find the <em>general solution</em>,</p>
         <pre class="math">y(t) = y_c(t) + y_p(t)</pre>
+      </section>
+
+      <section class="cauchy-euler">
+        <h2>Cauchy&ndash;Euler equations</h2>
+        <pre class="math">
+          at^2 y'' + bty' + cy = f(t)
+        </pre>
+        <div class="row">
+          <section class="col-lg">
+            <h3>Solve</h3>
+            <ol>
+              <li>
+                <p>Find the roots of the characteristic equation.</p>
+                <pre class="math">ar^2 + (b - a)r + c = 0</pre>
+              </li>
+              <li>
+                <pre class="math">y(t) = C_1 t^{r_1} + C_2 t^{r_2}</pre>
+              </li>
+              <li>
+                <p>If <code class="math">r = \alpha + i\beta</code>,</p>
+                <pre class="math">
+                  y(t) = C_1 t^\alpha \cos(\beta \ln t) + C_2 t^\alpha \sin(\beta \ln t)
+                </pre>
+              </li>
+              <li>
+                <p>If <code class="math">r</code> is repeated,</p>
+                <pre class="math">y(t) = C_1 t^r + C_2 t^r \ln t</pre>
+              </li>
+            </ol>
+          </section>
+          <section class="col-lg">
+            <h3>Variable-coefficient equations' uniqueness</h3>
+            <pre class="math">
+              y''(t) + p(t) \, y'(t) + q(t) \, y(t) = g(t)
+            </pre>
+            <p>
+              An initial value problem of the above form has a unique solution
+              if
+              <code class="math">p</code>, <code class="math">q</code>, and
+              <code class="math">g</code> are continuous on
+              <code class="math">(a, b)</code>.
+            </p>
+          </section>
+        </div>
       </section>
 
       <section class="other">
