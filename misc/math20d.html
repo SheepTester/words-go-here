@@ -533,8 +533,30 @@
               <li>
                 <p>
                   Show
-                  <code class="math">C_1 = \dots = C_n = 0</code>.
+                  <code class="math">C_1 = \dots = C_n = 0</code> for some
+                  <code class="math">t</code>.
                 </p>
+                <p>
+                  One way to do this is to use the matrix form, then determine
+                  whether its inverse exists by calculating its determinant. If
+                  it's nonzero for some
+                  <code class="math">t</code>, then it's linearly independent.
+                  If it's always zero, you'll have to use a different approach.
+                </p>
+                <pre class="math">
+                  \begin{bmatrix}
+                    \vec{x_1} & \dots & \vec{x_n}
+                  \end{bmatrix}
+                  \begin{bmatrix}
+                    C_1 \\
+                    \vdots \\
+                    C_2
+                  \end{bmatrix} = 0
+                  \to
+                  \det \begin{bmatrix}
+                    \vec{x_1} & \dots & \vec{x_n}
+                  \end{bmatrix} \neq 0
+                </pre>
               </li>
             </ol>
           </section>
@@ -619,7 +641,7 @@
               </li>
               <li>
                 <pre class="math">
-                  \vec{x}(t) = C_1 \vec{x_1} + C_2 \vec{x_2}
+                  \vec{x}(t) = C_1 e^{\alpha t} \vec{x_1} + C_2 e^{\alpha t} \vec{x_2}
                 </pre>
               </li>
             </ol>
