@@ -512,7 +512,7 @@
             </p>
           </div>
           <div class="col">
-            <h3>Saturation</h3>
+            <h3>Saturation (active)</h3>
             <pre class="math">
               i_D = 0.5 \mu_n \, C_{ox} \, \dfrac{W}{L} V_{OV}^2 \left(1 + \lambda v_{DS}\right)
             </pre>
@@ -562,7 +562,9 @@
             <pre class="math">
               R_o = \frac{1}{g_m} \parallel r_\pi \parallel R_E \parallel r_o
             </pre>
-            <pre class="math">R_i = R_G</pre>
+            <pre class="math">
+              R_i = R_B \parallel (r_\pi + (\beta + 1)(r_o \parallel R_E \parallel R_L))
+            </pre>
             <p>Also known as an emitter follower.</p>
           </div>
           <div class="col">
@@ -575,10 +577,12 @@
               A_{vo} = \frac{-R_C}{R_E + \left(1 + \dfrac{R_C}{r_o}\right) \dfrac{R_E + r_\pi}{\beta}}
             </pre>
             <pre class="math">
-              R_o = \left[\frac{\frac{1}{g_m} \parallel r_o}{R_C \parallel r_o} + \frac{r_\pi \parallel R_E}{R_C}\right]^{-1} [(r_\pi \parallel R_E) + \frac{1}{g_m} \parallel r_o]
+              R_o = \frac
+                {(r_\pi \parallel R_E) + \frac{1}{g_m} \parallel r_o}
+                {\dfrac{\dfrac{1}{g_m} \parallel r_o}{R_C \parallel r_o} + \dfrac{r_\pi \parallel R_E}{R_C}}
             </pre>
             <pre class="math">
-              R_i = R_B \parallel \left[R_E + r_\pi + \frac{\beta R_E}{1 + \dfrac{R_E + R_C \parallel R_L}{r_o}}\right]
+              R_i = R_B \parallel \left(R_E + r_\pi + \frac{\beta R_E}{1 + \frac{R_E + R_C \parallel R_L}{r_o}}\right)
             </pre>
           </div>
           <div class="col">
@@ -607,11 +611,12 @@
             <pre class="math">
               A_{vo} = \frac{-g_m R_D}{1 + g_m R_S + \dfrac{R_D}{r_o}}
             </pre>
-            <pre class="math">R_o = R_D \parallel [r_o (1 + g_m R_S)]</pre>
+            <pre class="math">R_o = R_D \parallel (r_o \, (1 + g_m R_S))</pre>
             <pre class="math">R_i = R_G</pre>
           </div>
           <div class="col">
             <h3>Common gate</h3>
+            <p>???</p>
           </div>
         </div>
       </section>
