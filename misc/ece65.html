@@ -85,44 +85,36 @@
       }
       /* 300 and 400 */
       .opamp {
-        --heading: #fca5a5;
-        --subheading: #f87171;
+        --heading: #fda4af;
+        --subheading: #fb7185;
       }
       .diode {
-        --heading: #fdba74;
-        --subheading: #fb923c;
+        --heading: #f9a8d4;
+        --subheading: #f472b6;
       }
       .zener {
-        --heading: #fcd34d;
-        --subheading: #fbbf24;
+        --heading: #f0abfc;
+        --subheading: #e879f9;
       }
-      .half-rectifier {
-        --heading: #bef264;
-        --subheading: #a3e635;
-      }
-      .full-rectifier {
-        --heading: #86efac;
-        --subheading: #4ade80;
-      }
-      .clipper {
-        --heading: #5eead4;
-        --subheading: #2dd4bf;
-      }
-      .peak-detector {
-        --heading: #93c5fd;
-        --subheading: #60a5fa;
-      }
+      .half-rectifier,
+      .full-rectifier,
+      .clipper,
+      .peak-detector,
       .clamp {
-        --heading: #a5b4fc;
-        --subheading: #818cf8;
-      }
-      .bjt {
         --heading: #d8b4fe;
         --subheading: #c084fc;
       }
+      .bjt {
+        --heading: #a5b4fc;
+        --subheading: #818cf8;
+      }
       .mosfet {
-        --heading: #f0abfc;
-        --subheading: #e879f9;
+        --heading: #93c5fd;
+        --subheading: #60a5fa;
+      }
+      .small-signal {
+        --heading: #67e8f9;
+        --subheading: #22d3ee;
       }
     </style>
   </head>
@@ -420,6 +412,10 @@
 
       <section class="bjt">
         <h2>BJTs</h2>
+        <p>
+          The arrow is on the emitter node and points in the direction of the
+          emitter current.
+        </p>
         <div class="row">
           <figure class="col figure">
             <img src="./circuits/npn.svg" class="img-fluid" />
@@ -471,6 +467,10 @@
 
       <section class="mosfet">
         <h2>MOSFETs</h2>
+        <p>
+          The arrow is on the source node and points in the direction of the
+          drain current.
+        </p>
         <div class="row">
           <div class="col">
             <h3>NMOS</h3>
@@ -521,6 +521,28 @@
               <code class="math">v_{DS} \geq V_{OV}</code> (NMOS) or
               <code class="math">v_{SD} \geq V_{OV}</code> (PMOS).
             </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="small-signal">
+        <h2>Small signal model</h2>
+        <p>For the bias (DC) circuit, capacitors are open.</p>
+        <p>
+          For the small signal circuit, capacitors are shorted and sources are
+          turned off.
+        </p>
+        <div class="row">
+          <div class="col">
+            <h3>MOSFETs</h3>
+            <pre class="math">g_m = \frac{2I_D}{V_{OV}}</pre>
+            <pre class="math">r_o = \frac{1}{\lambda I_D}</pre>
+          </div>
+          <div class="col">
+            <h3>BJTs</h3>
+            <pre class="math">g_m = \frac{I_C}{V_T}</pre>
+            <pre class="math">r_o = \frac{V_A}{I_C}</pre>
+            <pre class="math">r_\pi = \frac{V_T}{I_B} = \frac{\beta}{g_m}</pre>
           </div>
         </div>
       </section>
