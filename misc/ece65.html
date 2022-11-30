@@ -116,10 +116,6 @@
         --heading: #67e8f9;
         --subheading: #22d3ee;
       }
-      .transistor-configs {
-        --heading: #5eead4;
-        --subheading: #2dd4bf;
-      }
     </style>
   </head>
 
@@ -514,10 +510,10 @@
           <div class="col">
             <h3>Saturation (active)</h3>
             <pre class="math">
-              i_D = 0.5 \mu_n \, C_{ox} \, \dfrac{W}{L} V_{OV}^2 \left(1 + \lambda v_{DS}\right)
+              i_D = 0.5 \mu_n \, C_{ox} \, \dfrac{W}{L} \cdot V_{OV}^2 \left(1 + \lambda v_{DS}\right)
             </pre>
             <pre class="math">
-              i_D = 0.5 \mu_p \, C_{ox} \, \dfrac{W}{L} V_{OV}^2 \left(1 + \lambda v_{SD}\right)
+              i_D = 0.5 \mu_p \, C_{ox} \, \dfrac{W}{L} \cdot V_{OV}^2 \left(1 + \lambda v_{SD}\right)
             </pre>
             <p>
               if
@@ -536,6 +532,11 @@
           For the small signal circuit, capacitors are shorted and sources are
           turned off.
         </p>
+        <p>
+          For transistor amplifier configurations, "common" refers to the
+          grounded pin. Input is connected to base/gate, and output is taken
+          from the non-grounded pin.
+        </p>
         <div class="row">
           <div class="col">
             <h3>MOSFETs</h3>
@@ -549,10 +550,6 @@
             <pre class="math">r_\pi = \frac{V_T}{I_B} = \frac{\beta}{g_m}</pre>
           </div>
         </div>
-      </section>
-
-      <section class="transistor-configs">
-        <h2>Transistor amplifier configurations</h2>
         <div class="row">
           <div class="col">
             <h3>Common collector</h3>
@@ -567,6 +564,19 @@
             </pre>
             <p>Also known as an emitter follower.</p>
           </div>
+          <div class="col">
+            <h3>Common drain</h3>
+            <pre class="math">
+              A_{vo} = \frac{g_m (R_S \parallel r_o)}{1 + g_m (R_S \parallel r_o)}
+            </pre>
+            <pre class="math">
+              R_o = \frac{1}{g_m} \parallel R_S \parallel r_o
+            </pre>
+            <pre class="math">R_i = R_G</pre>
+            <p>Also known as a source follower.</p>
+          </div>
+        </div>
+        <div class="row">
           <div class="col">
             <h3>Common emitter</h3>
             <pre class="math">A_{vo} = -g_m (R_C \parallel r_o)</pre>
@@ -586,23 +596,6 @@
             </pre>
           </div>
           <div class="col">
-            <h3>Common base</h3>
-            <p>Not covered in this class.</p>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col">
-            <h3>Common drain</h3>
-            <pre class="math">
-              A_{vo} = \frac{g_m (R_S \parallel r_o)}{1 + g_m (R_S \parallel r_o)}
-            </pre>
-            <pre class="math">
-              R_o = \frac{1}{g_m} \parallel R_S \parallel r_o
-            </pre>
-            <pre class="math">R_i = R_G</pre>
-            <p>Also known as a source follower.</p>
-          </div>
-          <div class="col">
             <h3>Common source</h3>
             <pre class="math">A_{vo} = -g_m (R_D \parallel r_o)</pre>
             <pre class="math">R_o = R_D \parallel r_o</pre>
@@ -613,10 +606,6 @@
             </pre>
             <pre class="math">R_o = R_D \parallel (r_o \, (1 + g_m R_S))</pre>
             <pre class="math">R_i = R_G</pre>
-          </div>
-          <div class="col">
-            <h3>Common gate</h3>
-            <p>???</p>
           </div>
         </div>
       </section>
