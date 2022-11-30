@@ -116,6 +116,10 @@
         --heading: #67e8f9;
         --subheading: #22d3ee;
       }
+      .transistor-configs {
+        --heading: #5eead4;
+        --subheading: #2dd4bf;
+      }
     </style>
   </head>
 
@@ -543,6 +547,71 @@
             <pre class="math">g_m = \frac{I_C}{V_T}</pre>
             <pre class="math">r_o = \frac{V_A}{I_C}</pre>
             <pre class="math">r_\pi = \frac{V_T}{I_B} = \frac{\beta}{g_m}</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="transistor-configs">
+        <h2>Transistor amplifier configurations</h2>
+        <div class="row">
+          <div class="col">
+            <h3>Common collector</h3>
+            <pre class="math">
+              A_{vo} = \frac{g_m (R_E \parallel r_o)}{1 + g_m (R_E \parallel r_o)}
+            </pre>
+            <pre class="math">
+              R_o = \frac{1}{g_m} \parallel r_\pi \parallel R_E \parallel r_o
+            </pre>
+            <pre class="math">R_i = R_G</pre>
+            <p>Also known as an emitter follower.</p>
+          </div>
+          <div class="col">
+            <h3>Common emitter</h3>
+            <pre class="math">A_{vo} = -g_m (R_C \parallel r_o)</pre>
+            <pre class="math">R_o = R_C \parallel r_o</pre>
+            <pre class="math">R_i = R_B \parallel r_\pi</pre>
+            <p>With an emitter resistor:</p>
+            <pre class="math">
+              A_{vo} = \frac{-R_C}{R_E + \left(1 + \dfrac{R_C}{r_o}\right) \dfrac{R_E + r_\pi}{\beta}}
+            </pre>
+            <pre class="math">
+              R_o = \left[\frac{\frac{1}{g_m} \parallel r_o}{R_C \parallel r_o} + \frac{r_\pi \parallel R_E}{R_C}\right]^{-1} [(r_\pi \parallel R_E) + \frac{1}{g_m} \parallel r_o]
+            </pre>
+            <pre class="math">
+              R_i = R_B \parallel \left[R_E + r_\pi + \frac{\beta R_E}{1 + \dfrac{R_E + R_C \parallel R_L}{r_o}}\right]
+            </pre>
+          </div>
+          <div class="col">
+            <h3>Common base</h3>
+            <p>Not covered in this class.</p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <h3>Common drain</h3>
+            <pre class="math">
+              A_{vo} = \frac{g_m (R_S \parallel r_o)}{1 + g_m (R_S \parallel r_o)}
+            </pre>
+            <pre class="math">
+              R_o = \frac{1}{g_m} \parallel R_S \parallel r_o
+            </pre>
+            <pre class="math">R_i = R_G</pre>
+            <p>Also known as a source follower.</p>
+          </div>
+          <div class="col">
+            <h3>Common source</h3>
+            <pre class="math">A_{vo} = -g_m (R_D \parallel r_o)</pre>
+            <pre class="math">R_o = R_D \parallel r_o</pre>
+            <pre class="math">R_i = R_G</pre>
+            <p>With a source resistor:</p>
+            <pre class="math">
+              A_{vo} = \frac{-g_m R_D}{1 + g_m R_S + \dfrac{R_D}{r_o}}
+            </pre>
+            <pre class="math">R_o = R_D \parallel [r_o (1 + g_m R_S)]</pre>
+            <pre class="math">R_i = R_G</pre>
+          </div>
+          <div class="col">
+            <h3>Common gate</h3>
           </div>
         </div>
       </section>
