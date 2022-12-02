@@ -114,6 +114,10 @@
         --heading: #bef264;
         --subheading: #a3e635;
       }
+      .laplace {
+        --heading: #fde047;
+        --subheading: #facc15;
+      }
       .other {
         --heading: #cbd5e1;
         --subheading: #94a3b8;
@@ -679,6 +683,40 @@
               X(t) = \begin{bmatrix}
                 \vec{x_1} (t) & \dots & \vec{x_n} (t)
               \end{bmatrix}
+            </pre>
+          </section>
+        </div>
+      </section>
+
+      <section class="laplace">
+        <h2>Laplace Transform</h2>
+        <pre class="math">
+          \mathscr{L}\{f\}(s) = F(s) = \int_0^\infty e^{-st} f(t) \,dt = \lim_{N \to \infty} \int_0^N e^{-st} f(t) \,dt
+        </pre>
+        <div class="row">
+          <section class="col-lg-4">
+            <h3>Examples</h3>
+            <pre class="math">
+              \begin{aligned}
+                f(t) &\longleftrightarrow F(s) \\
+                1 &\longleftrightarrow \frac{1}{s} && \text{for} ~ s > 0 \\
+                e^{at} &\longleftrightarrow \frac{1}{s - a} && \text{for} ~ s > a \\
+                \sin bt &\longleftrightarrow \frac{b}{s^2 + b^2} && \text{for} ~ s > 0 \\
+                \cos bt &\longleftrightarrow \frac{s}{s^2 + b^2} \\
+              \end{aligned}
+            </pre>
+          </section>
+          <section class="col-lg-8">
+            <h3>Properties</h3>
+            <pre class="math">
+              \begin{aligned}
+                f(t) &\longleftrightarrow F(s) && \text{for} ~ s > \alpha \\
+                af_1(t) + bf_2(t) &\longleftrightarrow aF_1(s) + bF_2(s) \\
+                e^{at}f(t) &\longleftrightarrow F(s - a) && \text{for} ~ s > \alpha + a \\
+                f'(t) &\longleftrightarrow sF(s) - f(0) && \text{for} ~ s > \alpha \\
+                f^{(n)}(t) &\longleftrightarrow s^nF(s) - s^{n-1} f(0) - s^{n-2} f'(0) - \dots - f^{(n-1)}(0) \\
+                t^n f(t) &\longleftrightarrow (-1)^n \frac{d^n F(s)}{ds^n} \\
+              \end{aligned}
             </pre>
           </section>
         </div>
