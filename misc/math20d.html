@@ -118,6 +118,10 @@
         --heading: #fde047;
         --subheading: #facc15;
       }
+      .power {
+        --heading: #fdba74;
+        --subheading: #fb923c;
+      }
       .other {
         --heading: #cbd5e1;
         --subheading: #94a3b8;
@@ -689,7 +693,7 @@
       </section>
 
       <section class="laplace">
-        <h2>Laplace Transform</h2>
+        <h2>Laplace transform</h2>
         <pre class="math">
           \mathscr{L}\{f\}(s) = F(s) = \int_0^\infty e^{-st} f(t) \,dt = \lim_{N \to \infty} \int_0^N e^{-st} f(t) \,dt
         </pre>
@@ -718,6 +722,130 @@
                 t^n f(t) &\longleftrightarrow (-1)^n \frac{d^n F(s)}{ds^n} \\
               \end{aligned}
             </pre>
+          </section>
+        </div>
+        <div class="row">
+          <section class="col">
+            <h3>Partial fractions</h3>
+            <p>For <code class="math">\dfrac{p(s)}{Q(s)}</code>,</p>
+            <ol>
+              <li>
+                <p>
+                  Nonrepeated linear factors. If the roots are all distinct,
+                </p>
+                <pre class="math">
+                  \frac{p(s)}{Q(s)} = \frac{A_1}{s - r_1} + \dots + \frac{A_n}{s - r_n}
+                </pre>
+              </li>
+              <li>
+                <p>
+                  Repeated linear factors. If
+                  <code class="math">Q(s) = (s - r)^m</code>,
+                </p>
+                <pre class="math">
+                  \frac{p(s)}{Q(s)} = \frac{A_1}{s - r} + \dots + \frac{A_m}{(s - r)^m}
+                </pre>
+              </li>
+              <li>
+                <p>
+                  Quadratic factors. If
+                  <code class="math"
+                    >Q(s) = \left((s - \alpha)^2 + \beta^2\right)^m</code
+                  >,
+                </p>
+                <pre class="math">
+                  \frac{p(s)}{Q(s)} = \frac{A_1(s - \alpha) + B_1 \beta}{(s-\alpha)^2 \beta^2} + \dots + \frac{A_m(s - \alpha) + B_m \beta}{((s-\alpha)^2 + \beta^2)^m}
+                </pre>
+              </li>
+            </ol>
+            <p>The test will not ask for more than these three cases.</p>
+          </section>
+          <section class="col">
+            <h3>Method</h3>
+            <ol start="0">
+              <li>
+                <p>
+                  If the initial value condition is
+                  <code class="math">w(k)</code> where
+                  <code class="math">k \neq 0</code>, then let
+                </p>
+                <pre class="math">
+                  \begin{cases}
+                    y(t) = w(t + k) \\
+                    y'(t) = w'(t + k) \\
+                    y''(t) = w''(t + k) \\
+                  \end{cases}
+                </pre>
+              </li>
+              <li>
+                <p>Take the Laplace transform of both sides.</p>
+                <pre class="math">
+                  a\left(s^2 Y - sy(0) - y'(0)\right) + b(sY - y(0)) + cY = \mathscr{L}\{f\}
+                </pre>
+              </li>
+              <li>
+                <p>
+                  Apply properties to solve for <code class="math">Y(s)</code>.
+                </p>
+              </li>
+              <li>
+                <p>
+                  Apply an inverse transform to find
+                  <code class="math">y(t)</code>.
+                </p>
+                <p>
+                  Don't forget <code class="math">w(t) = y(t - k)</code> if
+                  necessary.
+                </p>
+              </li>
+            </ol>
+          </section>
+        </div>
+      </section>
+
+      <section class="power">
+        <h2>Power series</h2>
+        <p>(Not done because I haven't started the chapter 8 homework yet)</p>
+        <div class="row">
+          <section class="col">
+            <h3>Method</h3>
+            <ol>
+              <li>
+                <p>Plug in</p>
+                <pre class="math">
+                  \begin{cases}
+                    y(x) = \displaystyle\sum\limits_{n=0}^\infty a_n x^n \\
+                    y'(x) = \displaystyle\sum\limits_{n=1}^\infty n a_n x^{n-1} \\
+                    y''(x) = \displaystyle\sum\limits_{n=2}^\infty n(n-1) a_n x^{n-2} \\
+                  \end{cases}
+                </pre>
+              </li>
+              <li>
+                <p>Simplify by moving all the terms inside summations.</p>
+              </li>
+              <li>
+                <p>
+                  Shift indices so that all summations are in terms of
+                  <code class="math">x^n</code>.
+                </p>
+              </li>
+              <li>
+                <p>
+                  Merge all summations into a single summation in terms of
+                  <code class="math">x^n</code>. Set this all equal to the right
+                  hand side.
+                </p>
+              </li>
+              <li>
+                <p>Solve for <code class="math">a_n</code>.</p>
+                <p>
+                  Kisun Lee wants us to collect terms into the following form:
+                </p>
+                <pre class="math">
+                  y(x) = a_0 \underbrace{(\dots)}_{y_1} + a_1 \underbrace{(\dots)}_{y_2}
+                </pre>
+              </li>
+            </ol>
           </section>
         </div>
       </section>
