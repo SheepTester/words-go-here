@@ -805,49 +805,76 @@
 
       <section class="power">
         <h2>Power series</h2>
-        <p>(Not done because I haven't started the chapter 8 homework yet)</p>
         <div class="row">
           <section class="col">
-            <h3>Method</h3>
-            <ol>
-              <li>
-                <p>Plug in</p>
-                <pre class="math">
-                  \begin{cases}
-                    y(x) = \displaystyle\sum\limits_{n=0}^\infty a_n x^n \\
-                    y'(x) = \displaystyle\sum\limits_{n=1}^\infty n a_n x^{n-1} \\
-                    y''(x) = \displaystyle\sum\limits_{n=2}^\infty n(n-1) a_n x^{n-2} \\
-                  \end{cases}
-                </pre>
-              </li>
-              <li>
-                <p>Simplify by moving all the terms inside summations.</p>
-              </li>
-              <li>
-                <p>
-                  Shift indices so that all summations are in terms of
-                  <code class="math">x^n</code>.
-                </p>
-              </li>
-              <li>
-                <p>
-                  Merge all summations into a single summation in terms of
-                  <code class="math">x^n</code>. Set this all equal to the right
-                  hand side.
-                </p>
-              </li>
-              <li>
-                <p>Solve for <code class="math">a_n</code>.</p>
-                <p>
-                  Kisun Lee wants us to collect terms into the following form:
-                </p>
-                <pre class="math">
-                  y(x) = a_0 \underbrace{(\dots)}_{y_1} + a_1 \underbrace{(\dots)}_{y_2}
-                </pre>
-              </li>
-            </ol>
+            <h3>Ratio test</h3>
+            <p>For</p>
+            <pre class="math">
+              \sum_{n=0}^\infty a_n (x - x_0)^n
+            </pre>
+            <p>the radius of convergence</p>
+            <pre class="math">
+              L = \lim_{n \to \infty} \left| \frac{a_n}{a_{n + 1}} \right|
+            </pre>
+          </section>
+          <section class="col">
+            <h3>Taylor series</h3>
+            <p>At <code class="math">x = 0</code>:</p>
+            <pre class="math">
+              f(x) = \sum_{n=0}^\infty \frac{f^{(n)}(0)}{n!} x^n
+            </pre>
+          </section>
+          <section class="col">
+            <h3>Singular points</h3>
+            <pre class="math">
+              y'' + p(x) y' + q(x) y = 0
+            </pre>
+            <p>
+              The singular points are when <code class="math">p</code> and
+              <code class="math">q</code> aren't defined.
+            </p>
           </section>
         </div>
+        <section>
+          <h3>Method</h3>
+          <ol>
+            <li>
+              <p>Plug in</p>
+              <pre class="math">
+                \begin{cases}
+                  y(x) = \displaystyle\sum\limits_{n=0}^\infty a_n x^n \\
+                  y'(x) = \displaystyle\sum\limits_{n=1}^\infty n a_n x^{n-1} \\
+                  y''(x) = \displaystyle\sum\limits_{n=2}^\infty n(n-1) a_n x^{n-2} \\
+                \end{cases}
+              </pre>
+            </li>
+            <li>
+              <p>Simplify by moving all the terms inside summations.</p>
+            </li>
+            <li>
+              <p>
+                Shift indices so that all summations are in terms of
+                <code class="math">x^n</code>.
+              </p>
+            </li>
+            <li>
+              <p>
+                Merge all summations into a single summation in terms of
+                <code class="math">x^n</code>. Set this all equal to the right
+                hand side.
+              </p>
+            </li>
+            <li>
+              <p>Solve for <code class="math">a_n</code>.</p>
+              <p>
+                Kisun Lee wants us to collect terms into the following form:
+              </p>
+              <pre class="math">
+                y(x) = a_0 \underbrace{(\dots)}_{y_1} + a_1 \underbrace{(\dots)}_{y_2}
+              </pre>
+            </li>
+          </ol>
+        </section>
       </section>
     </main>
 
