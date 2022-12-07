@@ -116,6 +116,10 @@
         --heading: #67e8f9;
         --subheading: #22d3ee;
       }
+      .voltage-amp {
+        --heading: #5eead4;
+        --subheading: #2dd4bf;
+      }
     </style>
   </head>
 
@@ -553,6 +557,8 @@
         <div class="row">
           <div class="col">
             <h3>Common collector</h3>
+            <p>Also known as an emitter follower.</p>
+            <img src="./circuits/common-collector.svg" class="img-fluid" />
             <pre class="math">
               A_{vo} = \frac{g_m (R_E \parallel r_o)}{1 + g_m (R_E \parallel r_o)}
             </pre>
@@ -562,10 +568,11 @@
             <pre class="math">
               R_i = R_B \parallel (r_\pi + (\beta + 1)(r_o \parallel R_E \parallel R_L))
             </pre>
-            <p>Also known as an emitter follower.</p>
           </div>
           <div class="col">
             <h3>Common drain</h3>
+            <p>Also known as a source follower.</p>
+            <img src="./circuits/common-drain.svg" class="img-fluid" />
             <pre class="math">
               A_{vo} = \frac{g_m (R_S \parallel r_o)}{1 + g_m (R_S \parallel r_o)}
             </pre>
@@ -573,16 +580,20 @@
               R_o = \frac{1}{g_m} \parallel R_S \parallel r_o
             </pre>
             <pre class="math">R_i = R_G</pre>
-            <p>Also known as a source follower.</p>
           </div>
         </div>
         <div class="row">
           <div class="col">
             <h3>Common emitter</h3>
+            <img src="./circuits/common-emitter.svg" class="img-fluid" />
             <pre class="math">A_{vo} = -g_m (R_C \parallel r_o)</pre>
             <pre class="math">R_o = R_C \parallel r_o</pre>
             <pre class="math">R_i = R_B \parallel r_\pi</pre>
             <p>With an emitter resistor:</p>
+            <img
+              src="./circuits/common-emitter-resistor.svg"
+              class="img-fluid"
+            />
             <pre class="math">
               A_{vo} = \frac{-R_C}{R_E + \left(1 + \dfrac{R_C}{r_o}\right) \dfrac{R_E + r_\pi}{\beta}}
             </pre>
@@ -597,15 +608,54 @@
           </div>
           <div class="col">
             <h3>Common source</h3>
+            <img src="./circuits/common-source.svg" class="img-fluid" />
             <pre class="math">A_{vo} = -g_m (R_D \parallel r_o)</pre>
             <pre class="math">R_o = R_D \parallel r_o</pre>
             <pre class="math">R_i = R_G</pre>
             <p>With a source resistor:</p>
+            <img
+              src="./circuits/common-source-resistor.svg"
+              class="img-fluid"
+            />
             <pre class="math">
               A_{vo} = \frac{-g_m R_D}{1 + g_m R_S + \dfrac{R_D}{r_o}}
             </pre>
             <pre class="math">R_o = R_D \parallel (r_o \, (1 + g_m R_S))</pre>
             <pre class="math">R_i = R_G</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="voltage-amp">
+        <h2>Voltage amplifier model</h2>
+        <img src="./circuits/voltage-amp.svg" class="img-fluid" />
+        <div class="row">
+          <div class="col">
+            <h3>Gain</h3>
+            <p>Circuit voltage gain:</p>
+            <pre class="math">
+              A = \frac{v_o}{v_{sig}}
+            </pre>
+            <p>Amplifier voltage gain:</p>
+            <pre class="math">
+              A_v = \frac{v_o}{v_i}
+            </pre>
+            <p>Open-loop gain:</p>
+            <pre class="math">
+              <!-- https://tex.stackexchange.com/a/15897 -->
+              A_{vo} = \left.\frac{v_o}{v_i}\right|_{R_L \to \infty}
+            </pre>
+          </div>
+          <div class="col">
+            <h3>Resistance</h3>
+            <p>Input resistance:</p>
+            <pre class="math">
+              R_i = \frac{v_i}{i_i}
+            </pre>
+            <p>Output resistance:</p>
+            <pre class="math">
+              R_o = \left.-\frac{v_o}{i_o}\right|_{v_i = 0}
+            </pre>
           </div>
         </div>
       </section>
