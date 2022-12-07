@@ -1,0 +1,13 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+\usepackage[arrowmos]{circuitikz}
+\begin{document}
+\begin{tikzpicture}
+  \draw
+  (0, 0) node[left] {$v_i$} to[C, o-*] (1.5, 0) to[R, l_=$R_B$] (1.5, -2) node[ground] (ground) {}
+  (1.5, 0) -- (2, 0) node [npn, anchor=B] (npn) {}
+  (npn.E) to[R, l_=$R_E$] (ground -| npn.E) node[ground] {}
+  (npn.C) to[C, *-o] ++(1.5, 0) node[right] {$v_o$}
+  (npn.C) to[R, l=$R_C$] ++(0, 2) node[ground, rotate=180] {}
+  ;
+\end{tikzpicture}
+\end{document}
