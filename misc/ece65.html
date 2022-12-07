@@ -495,6 +495,10 @@
               if
               <code class="math">V_{OV} < 0</code>.
             </p>
+            <p>
+              If <code class="math">i_D = 0</code> but the MOSFET is on, then
+              it's in the triode region.
+            </p>
           </div>
           <div class="col">
             <h3>Triode</h3>
@@ -527,33 +531,34 @@
             </p>
           </div>
         </div>
+        <p>
+          When analyzing logic gates, if you don't know what state one of the
+          MOSFETs in series is in, trying assuming that it's off.
+        </p>
       </section>
 
       <section class="small-signal">
         <h2>Small signal model</h2>
-        <p>For the bias (DC) circuit, capacitors are open.</p>
-        <p>
-          For the small signal circuit, capacitors are shorted and sources are
-          turned off.
-        </p>
-        <p>
-          For transistor amplifier configurations, "common" refers to the
-          grounded pin. Input is connected to base/gate, and output is taken
-          from the non-grounded pin.
-        </p>
         <div class="row">
           <div class="col">
             <h3>BJTs</h3>
+            <img src="./circuits/bjt-small-signal.svg" class="img-fluid" />
             <pre class="math">g_m = \frac{I_C}{V_T}</pre>
             <pre class="math">r_o = \frac{V_A}{I_C}</pre>
             <pre class="math">r_\pi = \frac{V_T}{I_B} = \frac{\beta}{g_m}</pre>
           </div>
           <div class="col">
             <h3>MOSFETs</h3>
+            <img src="./circuits/mos-small-signal.svg" class="img-fluid" />
             <pre class="math">g_m = \frac{2I_D}{V_{OV}}</pre>
             <pre class="math">r_o = \frac{1}{\lambda I_D}</pre>
           </div>
         </div>
+        <p>
+          For transistor amplifier configurations, "common" refers to the
+          grounded pin. Input is connected to base/gate, and output is taken
+          from the non-grounded pin.
+        </p>
         <div class="row">
           <div class="col">
             <h3>Common collector</h3>
@@ -582,6 +587,10 @@
             <pre class="math">R_i = R_G</pre>
           </div>
         </div>
+        <p>
+          Common collector/drain circuits have a gain of slightly less than
+          <code class="math">1 V/V</code>.
+        </p>
         <div class="row">
           <div class="col">
             <h3>Common emitter</h3>
@@ -658,6 +667,42 @@
             </pre>
           </div>
         </div>
+        <h3>Method</h3>
+        <ol>
+          <li>
+            <p>
+              Draw the bias circuit: open capacitors and set signal sources to
+              zero. Find the bias point parameters.
+            </p>
+          </li>
+          <li>
+            <p>
+              Find the small signal parameters <code class="math">g_m</code>,
+              <code class="math">r_o</code>, and
+              <code class="math">r_\pi</code> using the bias point parameters.
+            </p>
+          </li>
+          <li>
+            <p>
+              Draw the signal equivalent circuit: short capacitors, set DC
+              voltage and current sources to zero, and replace transistors with
+              their small signal models.
+            </p>
+          </li>
+          <li>
+            <p>
+              Find the amplifier parameters <code class="math">R_i</code>,
+              <code class="math">R_o</code>, and
+              <code class="math">A_{vo}</code>.
+            </p>
+          </li>
+          <li>
+            <p>
+              Use the voltage amplifier model and calculated parameters to find
+              the amplifier circuit gain <code class="math">A</code>.
+            </p>
+          </li>
+        </ol>
       </section>
     </main>
 

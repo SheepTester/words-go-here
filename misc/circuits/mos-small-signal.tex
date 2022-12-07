@@ -1,0 +1,19 @@
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+\usepackage[arrowmos, american]{circuitikz}
+\begin{document}
+\begin{tikzpicture}
+  \draw
+  (0, 0) node[left] {$G$}
+  to[short, o-] ++(0.5, 0)
+  to[open, v=$v_{gs}$, o-o] ++(0, -3)
+  -- ++(2, 0) to[short, *-o] ++(0, -0.5) node[below] {$S$}
+  ++(0, 0.5)
+  -- ++(2, 0)
+  to[R, l_=$r_o$] ++(0, 3)
+  to[short, *-o] ++(0.5, 0) node[right] {$D$}
+  ++(-0.5, 0)
+  -- ++(-2, 0)
+  to[american controlled current source, l=$g_m v_{gs}$] ++(0, -3)
+  ;
+\end{tikzpicture}
+\end{document}
