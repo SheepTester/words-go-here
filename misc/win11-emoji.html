@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Windows 11 emoji are more saturated than CSS can ever be</title>
+    <meta
+      name="description"
+      content="They probably take advantage of wide-gamut displays, while CSS is limited to sRGB."
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      html {
+        height: 100%;
+      }
+      body {
+        background-color: #ffb02e;
+        color: #402a32;
+        font-family: Segoe UI, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        margin: 0;
+        padding: 40px;
+        box-sizing: border-box;
+        min-height: 100%;
+        text-align: center;
+        gap: 15px;
+        line-height: 1;
+      }
+      .sides {
+        display: flex;
+        flex: auto;
+      }
+      .side {
+        flex: 1 0 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      a {
+        color: unset;
+      }
+      .small {
+        font-size: 64px;
+      }
+      .large {
+        font-size: 256px;
+      }
+      h2,
+      p {
+        margin: 0;
+      }
+      .pasted {
+        position: fixed;
+        z-index: -1;
+        top: 25vh;
+        left: 25vw;
+        width: 50vw;
+        height: 50vh;
+        object-fit: contain;
+      }
+    </style>
+  </head>
+  <body>
+    <template id="svg-emoji-template">
+      <style>
+        .svg {
+          height: 1em;
+        }
+      </style>
+      <svg
+        viewBox="0 0 32 32"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        class="svg"
+      >
+        <path
+          d="M15.9989 29.9978C25.3333 29.9978 29.9978 23.7303 29.9978 15.9989C29.9978 8.26751 25.3333 2 15.9989 2C6.66443 2 2 8.26751 2 15.9989C2 23.7303 6.66443 29.9978 15.9989 29.9978Z"
+          fill="#FFB02E"
+        />
+        <path
+          d="M11 21C11 22.1046 9.65685 23 8 23C6.34315 23 5 22.1046 5 21C5 19.8954 6.34315 19 8 19C9.65685 19 11 19.8954 11 21Z"
+          fill="#FF6723"
+        />
+        <path
+          d="M27 21C27 22.1046 25.6569 23 24 23C22.3431 23 21 22.1046 21 21C21 19.8954 22.3431 19 24 19C25.6569 19 27 19.8954 27 21Z"
+          fill="#FF6723"
+        />
+        <path
+          d="M10.5 18C12.9853 18 15 15.9853 15 13.5C15 11.0147 12.9853 9 10.5 9C8.01472 9 6 11.0147 6 13.5C6 15.9853 8.01472 18 10.5 18Z"
+          fill="white"
+        />
+        <path
+          d="M21.5 18C23.9853 18 26 15.9853 26 13.5C26 11.0147 23.9853 9 21.5 9C19.0147 9 17 11.0147 17 13.5C17 15.9853 19.0147 18 21.5 18Z"
+          fill="white"
+        />
+        <path
+          d="M12 16C13.1046 16 14 15.1046 14 14C14 12.8954 13.1046 12 12 12C10.8954 12 10 12.8954 10 14C10 15.1046 10.8954 16 12 16Z"
+          fill="#402A32"
+        />
+        <path
+          d="M20 16C21.1046 16 22 15.1046 22 14C22 12.8954 21.1046 12 20 12C18.8954 12 18 12.8954 18 14C18 15.1046 18.8954 16 20 16Z"
+          fill="#402A32"
+        />
+        <path
+          d="M8.06915 7.98761C7.47625 8.55049 7.11769 9.22774 6.97423 9.65811C6.88691 9.92009 6.60375 10.0617 6.34178 9.97434C6.07981 9.88702 5.93823 9.60386 6.02555 9.34189C6.21542 8.77226 6.65687 7.94951 7.38064 7.26239C8.1129 6.5672 9.1478 6 10.4999 6C10.776 6 10.9999 6.22386 10.9999 6.5C10.9999 6.77614 10.776 7 10.4999 7C9.45199 7 8.65355 7.4328 8.06915 7.98761Z"
+          fill="#402A32"
+        />
+        <path
+          d="M23.9306 7.98761C24.5235 8.55049 24.8821 9.22774 25.0255 9.65811C25.1129 9.92009 25.396 10.0617 25.658 9.97434C25.92 9.88702 26.0616 9.60386 25.9742 9.34189C25.7844 8.77226 25.3429 7.94951 24.6191 7.26239C23.8869 6.5672 22.852 6 21.4999 6C21.2237 6 20.9999 6.22386 20.9999 6.5C20.9999 6.77614 21.2237 7 21.4999 7C22.5478 7 23.3462 7.4328 23.9306 7.98761Z"
+          fill="#402A32"
+        />
+        <path
+          d="M13.9999 22C13.4476 22 12.9999 22.4477 12.9999 23C12.9999 23.5523 13.4476 24 13.9999 24H17.9999C18.5522 24 18.9999 23.5523 18.9999 23C18.9999 22.4477 18.5522 22 17.9999 22H13.9999Z"
+          fill="#402A32"
+        />
+      </svg>
+    </template>
+    <p>Intended to be viewed on Windows 11.</p>
+    <div class="sides">
+      <div class="side">
+        <h1>Native</h1>
+        <span class="small">😳</span>
+        <span class="large">😳</span>
+      </div>
+      <div class="side">
+        <h1>
+          <a
+            href="https://github.com/microsoft/fluentui-emoji/blob/main/assets/Flushed%20face/Flat/flushed_face_flat.svg"
+          >
+            SVG
+          </a>
+        </h1>
+        <svg-emoji class="small"></svg-emoji>
+        <svg-emoji class="large"></svg-emoji>
+      </div>
+    </div>
+    <h2>Notes</h2>
+    <p>
+      The native emoji color changes depending on its size. Try zooming in and
+      out.
+    </p>
+    <p>
+      Snipping Tool desaturates colors to compensate for HDR colors. Try
+      screenshotting this page (shift + Windows + S) and pasting (ctrl + V).
+    </p>
+    <script>
+      const template = document.getElementById('svg-emoji-template')
+      customElements.define(
+        'svg-emoji',
+        class extends HTMLElement {
+          constructor () {
+            super()
+            const shadowRoot = this.attachShadow({ mode: 'open' })
+            shadowRoot.appendChild(template.content.cloneNode(true))
+          }
+        }
+      )
+
+      const image = document.createElement('img')
+      image.className = 'pasted'
+      document.addEventListener('paste', e => {
+        const file = e.clipboardData.files[0]
+        if (file?.type === 'image/png') {
+          image.src = URL.createObjectURL(file)
+          document.body.append(image)
+        }
+      })
+    </script>
+  </body>
+</html>
