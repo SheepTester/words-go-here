@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Colors brighter than white</title>
+    <meta
+      name="description"
+      content="Every image and web page you've seen has been limited to sRGB, but it's possible your display supports wide-gamut colors, so there are colors brighter than your standard #FFFFFF."
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      html {
+        height: 100%;
+      }
+      body {
+        min-height: 100%;
+        display: flex;
+        margin: 0;
+      }
+      .side {
+        flex: 1 0 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        font-size: 60px;
+      }
+      .canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+      }
+      .color {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        text-align: center;
+        font-size: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="side">
+      <canvas class="canvas" id="srgb"></canvas>
+      <span>sRGB</span>
+    </div>
+    <div class="side">
+      <canvas class="canvas" id="p3"></canvas>
+      <span>Display P3</span>
+    </div>
+    <span class="color" id="color">rgba(1.000, 1.000, 1.000, 1.0)</span>
+    <script>
+      const colorText = document.getElementById('color')
+      const glSRGB = document.getElementById('srgb').getContext('webgl2')
+      const glP3 = document.getElementById('p3').getContext('webgl2')
+      glP3.drawingBufferColorSpace = 'display-p3'
+      const setColor = color => {
+        glSRGB.clearColor(...color)
+        glSRGB.clear(glSRGB.COLOR_BUFFER_BIT)
+        glP3.clearColor(...color)
+        glP3.clear(glP3.COLOR_BUFFER_BIT)
+        colorText.textContent = `rgba(${color
+          .slice(0, -1)
+          .map(channel => channel.toFixed(3))}, 1.0)`
+      }
+      const start = Date.now()
+      const paint = () => {
+        const time = (Date.now() - start) / 1000
+        setColor([
+          Math.cos(0.37 * time) * 0.5 + 0.5,
+          Math.cos(0.53 * time) * 0.5 + 0.5,
+          Math.cos(0.71 * time) * 0.5 + 0.5,
+          1
+        ])
+        window.requestAnimationFrame(paint)
+      }
+      paint()
+    </script>
+  </body>
+</html>
