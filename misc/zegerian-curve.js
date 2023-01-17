@@ -1,5 +1,5 @@
 import chroma from 'chroma'
-import { h, Fragment, render } from 'preact'
+import { h, Fragment } from 'preact'
 import { useState } from 'preact/hooks'
 
 function analyze (distribution) {
@@ -220,7 +220,7 @@ function EstimatedCurve ({ distribution }) {
   )
 }
 
-function App ({ quizzes, histogram }) {
+export function App ({ quizzes, histogram }) {
   const [quiz, setQuiz] = useState(null)
 
   return h(
@@ -243,34 +243,3 @@ function App ({ quizzes, histogram }) {
     )
   )
 }
-
-render(
-  h(App, {
-    // https://canvas.ucsd.edu/courses/35544/pages/quiz-scores
-    quizzes: [
-      [37, 51, 34, 25],
-      [61, 43, 36, 3],
-      [79, 40, 21, 3],
-      [54, 56, 12, 10],
-      [47, 57, 19, 6],
-      [50, 43, 21, 15],
-      [36, 55, 33, 6],
-      [13, 21, 28, 66],
-      [51, 40, 19, 10]
-    ],
-    histogram: [
-      [25, 50, 46, 27],
-      [21, 22, 36, 27, 23, 16, 2],
-      [9, 23, 15, 29, 20, 13, 10, 7, 6, 1],
-      [6, 16, 18, 20, 18, 19, 10, 8, 7, 2, 5, 4, 0],
-      [5, 9, 15, 13, 21, 13, 15, 8, 7, 10, 4, 1, 0, 5, 4, 0],
-      [2, 8, 8, 13, 15, 15, 12, 17, 7, 8, 7, 5, 3, 1, 0, 4, 4, 1, 0],
-      [1, 4, 5, 4, 6, 15, 13, 14, 9, 11, 13, 3, 8, 6, 5, 3, 1, 0, 4, 4, 1, 0],
-      [
-        1, 3, 6, 4, 5, 13, 10, 12, 8, 8, 16, 7, 4, 5, 7, 4, 5, 3, 0, 0, 2, 5, 1,
-        1, 0
-      ]
-    ]
-  }),
-  document.getElementById('root')
-)
