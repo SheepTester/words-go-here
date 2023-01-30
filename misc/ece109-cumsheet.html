@@ -27,16 +27,16 @@
     />
 
     <style media="screen">
-      /* https://tailwindcss.com/docs/customizing-colors */
       :root {
         color-scheme: dark;
         font-size: 14px;
         line-height: 1;
+        --font: 'Comic Sans MS', cursive, KaTeX_Main;
       }
       body {
         background-color: #0f172a;
         color: #94a3b8;
-        font-family: 'Comic Sans MS', cursive !important;
+        font-family: var(--font) !important;
       }
       main {
         padding-bottom: 3rem;
@@ -72,7 +72,7 @@
       .katex,
       .katex .mathnormal,
       .katex .op-symbol.large-op {
-        font-family: 'Comic Sans MS', cursive;
+        font-family: var(--font);
       }
       a {
         color: #38bdf8;
@@ -81,12 +81,15 @@
       h2 {
         color: var(--heading);
       }
-      /* 400 */
+      /* https://tailwindcss.com/docs/customizing-colors 400 */
       .week-1 {
         --heading: #f87171;
       }
       .week-2 {
         --heading: #fb7185;
+      }
+      .week-3 {
+        --heading: #f472b6;
       }
     </style>
   </head>
@@ -165,6 +168,75 @@
         <p>
           <strong>post quiz note</strong>: we did not use this. did need to know
           how to interpret gibberish like "ur mom but not my mom"
+        </p>
+      </section>
+
+      <section class="week-3">
+        <h2>week 3: independent</h2>
+        <p>
+          If <code class="math">E</code> and <code class="math">F</code> are
+          independent,
+        </p>
+        <ul>
+          <li><pre class="math">P(EF) = P(E) \, P(F)</pre></li>
+          <li>
+            <code class="math">P(E | F) = P(F)</code> if
+            <code class="math">P(E) \neq 0</code>
+          </li>
+          <li>
+            <code class="math">E</code> and <code class="math">F^C</code>,
+            <code class="math">E^C</code> and <code class="math">F</code>,
+            <code class="math">E^C</code> and <code class="math">F^C</code> are
+            also independent
+          </li>
+        </ul>
+        <p>
+          If <code class="math">A</code> and <code class="math">B</code> are
+          independent given <code class="math">C</code>,
+        </p>
+        <ul>
+          <li>
+            <code class="math">P(AB | C) = P(A | C) \, P(B | C</code> if
+            <code class="math">P(C) \neq 0</code>
+          </li>
+          <li>
+            <pre class="math">P(A | BC) = P(A | C)</pre>
+          </li>
+          <li>
+            but they aren't independent given <code class="math">C^C</code>!!
+          </li>
+        </ul>
+        <p>
+          If <code class="math">E</code> and <code class="math">F</code> are
+          disjoint and their probabilities aren't 0, they're
+          <em>not</em> independent
+        </p>
+        <p>
+          If three events are independent to each other ("pairwise independent")
+          <em>and</em>
+          <code class="math">P(ABC) = P(A) \, P(B) \, P(C)</code> (which isn't
+          necessarily true), they're independent
+        </p>
+        <p>
+          Probability <code class="math">E</code> occurs exactly
+          <code class="math">k</code> times in
+          <code class="math">n</code> independent trials:
+        </p>
+        <pre class="math">
+          \binom{n}{k} (P(E))^k (1 - P(E))^{n-k}
+        </pre>
+        <p>
+          For disjoint <code class="math">A</code> and
+          <code class="math">B</code>, probability that
+          <code class="math">A</code> occurs before
+          <code class="math">B</code> in independent trials:
+        </p>
+        <pre class="math">
+          \frac{P(A)}{P(A) + P(B)}
+        </pre>
+        <p>and i guess random vars are fair game too??</p>
+        <p>
+          "with replacement" = putting it back (&rightarrow; independent trials)
         </p>
       </section>
     </main>
