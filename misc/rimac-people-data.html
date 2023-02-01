@@ -34,18 +34,44 @@
         left: 0;
         fill: none;
       }
+      @media (max-width: 1300px) {
+        body {
+          flex-direction: column;
+        }
+        .graph-wrapper {
+          flex: none;
+          height: 70vh;
+        }
+      }
     </style>
   </head>
   <body>
     <script type="module">
-      const CSV_URL =
-        'https://gist.githubusercontent.com/SheepTester/b0129842a02b52c1cee5e277d69849ab/raw/4c8c6d03a49d0231647828fdd3c3bb5383387f82/rimac_activity_data.csv'
+      const utcTime = (hour, minute = 0) => Date.UTC(2000, 0, 1, hour, minute)
+      function partition (array, keyFn) {
+        const result = {}
+        for (const item of array) {
+          const key = keyFn(item)
+          result[key] ??= []
+          result[key].push(item)
+        }
+        return result
+      }
+
+      const MS_PER_WEEK = 1000 * 60 * 60 * 24 * 7
       const MARGIN = {
         top: 20,
         right: 20,
         bottom: 30,
         left: 40
       }
+      const HOURS = {
+        weekday: [utcTime(6), utcTime(23)],
+        weekend: [utcTime(8), utcTime(23)]
+      }
+      const CSV_URL =
+        'https://gist.githubusercontent.com/SheepTester/b0129842a02b52c1cee5e277d69849ab/raw/4c8c6d03a49d0231647828fdd3c3bb5383387f82/rimac_activity_data.csv'
+      const START = Date.UTC(2023, 0, 8) // Sunday before quarter starts
 
       const data = d3
         .csvParse(await fetch(CSV_URL).then(r => r.text()))
@@ -53,11 +79,19 @@
           const [dateString, time] = datetime.split(' ')
           const [year, month, date] = dateString.split('-')
           const [hour, minute] = time.split(':')
+          const dateObj = new Date(Date.UTC(+year, +month - 1, +date))
           return {
-            time: Date.UTC(+year, +month - 1, +date, +hour, +minute),
+            week: Math.floor((dateObj.getTime() - START) / MS_PER_WEEK),
+            day: dateObj.getUTCDay(),
+            time: utcTime(+hour, +minute),
             people: +people
           }
         })
+      const dataByDay = partition(data, ({ day }) => day)
+      const maxPeople = data.reduce(
+        (cum, curr) => Math.max(cum, curr.people),
+        0
+      )
 
       for (let day = 0; day < 7; day++) {
         const wrapper = Object.assign(document.createElement('div'), {
@@ -65,16 +99,16 @@
         })
         document.body.append(wrapper)
 
+        const weeks = partition(dataByDay[day], ({ week }) => week)
+
         const svg = d3.create('svg').attr('class', 'graph')
         wrapper.append(svg.node())
 
-        const xScale = d3.scaleTime()
-        // .domain([
-        //   data[0].time,
-        //   includeNow ? Date.now() : data[data.length - 1].time
-        // ])
+        const xScale = d3
+          .scaleUtc()
+          .domain(day === 0 || day === 6 ? HOURS.weekend : HOURS.weekday)
         const xAxis = svg.append('g').attr('class', 'axis')
-        const yScale = d3.scaleLinear() //.domain([includeZero ? 0 : min, max])
+        const yScale = d3.scaleLinear().domain([0, maxPeople])
         const yAxis = svg.append('g').attr('class', 'axis')
 
         const observer = new ResizeObserver(([{ borderBoxSize }]) => {
