@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>People in RIMAC over time</title>
+    <meta
+      name="description"
+      content="See the activity diminish over time. When is the best time to go to RIMAC?"
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.8.2"></script>
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        display: flex;
+      }
+      .graph-wrapper {
+        flex: 1 0 0;
+        position: relative;
+      }
+      .graph {
+        position: absolute;
+        top: 0;
+        left: 0;
+        fill: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      const CSV_URL =
+        'https://gist.githubusercontent.com/SheepTester/b0129842a02b52c1cee5e277d69849ab/raw/4c8c6d03a49d0231647828fdd3c3bb5383387f82/rimac_activity_data.csv'
+      const data = d3
+        .csvParse(await fetch(CSV_URL).then(r => r.text()))
+        .map(({ datetime, people }) => {
+          const [dateString, time] = datetime.split(' ')
+          const [year, month, date] = dateString.split('-')
+          const [hour, minute] = time.split(':')
+          return {
+            time: Date.UTC(+year, +month - 1, +date, +hour, +minute),
+            people: +people
+          }
+        })
+      console.log(data)
+      for (let day = 0; day < 6; day++) {
+        const wrapper = Object.assign(document.createElement('div'), {
+          className: 'graph-wrapper'
+        })
+        document.body.append(wrapper)
+
+        const observer = new ResizeObserver(([{ borderBoxSize }]) => {
+          const [{ blockSize: height, inlineSize: width }] = borderBoxSize
+        })
+        observer.observe(wrapper)
+      }
+    </script>
+  </body>
+</html>
