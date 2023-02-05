@@ -34,6 +34,9 @@
         left: 0;
         fill: none;
       }
+      .line {
+        stroke: black;
+      }
       @media (max-width: 1300px) {
         body {
           flex-direction: column;
@@ -99,17 +102,32 @@
         })
         document.body.append(wrapper)
 
-        const weeks = partition(dataByDay[day], ({ week }) => week)
+        const hours = day === 0 || day === 6 ? HOURS.weekend : HOURS.weekday
+        const weeks = partition(
+          dataByDay[day] /*.filter(
+            ({ time }) => hours[0] >= time && hours[1] <= time
+          )*/,
+          ({ week }) => week
+        )
 
         const svg = d3.create('svg').attr('class', 'graph')
         wrapper.append(svg.node())
 
-        const xScale = d3
-          .scaleUtc()
-          .domain(day === 0 || day === 6 ? HOURS.weekend : HOURS.weekday)
+        const xScale = d3.scaleUtc().domain(hours)
         const xAxis = svg.append('g').attr('class', 'axis')
         const yScale = d3.scaleLinear().domain([0, maxPeople])
         const yAxis = svg.append('g').attr('class', 'axis')
+        const line = d3
+          .line()
+          .x(d => xScale(d.time))
+          .y(d => yScale(d.people))
+        const lines = svg
+          .append('g')
+          .attr('class', 'lines')
+          .selectAll('path')
+          .data(Object.entries(weeks))
+          .join('path')
+          .attr('class', 'line')
 
         const observer = new ResizeObserver(([{ borderBoxSize }]) => {
           const [{ blockSize: height, inlineSize: width }] = borderBoxSize
@@ -125,6 +143,9 @@
           yAxis
             .attr('transform', `translate(${MARGIN.left}, 0)`)
             .call(d3.axisLeft(yScale))
+          lines
+            .attr('d', week => line(week[1]))
+            .attr('stroke-opacity', week => 1 - week[0] * 0.2)
         })
         observer.observe(wrapper)
       }

@@ -57,6 +57,9 @@
         white-space: pre-wrap;
         color: #f8fafc;
       }
+      strong {
+        color: #f8fafc;
+      }
       pre.math {
         max-width: 100%;
         overflow-x: auto;
@@ -91,6 +94,9 @@
       .week-3 {
         --heading: #f472b6;
       }
+      .week-4 {
+        --heading: #e879f9;
+      }
     </style>
   </head>
 
@@ -98,7 +104,10 @@
     <main role="main" class="container flex-shrink-0">
       <h1 class="mt-5">ece 109 cumsheet</h1>
       <p class="lead">cumulative cheat sheet</p>
-      <p>what</p>
+      <p>
+        i will turn this into a better cheat sheet for the final, just need to
+        know what doesn't need to be on it
+      </p>
 
       <section class="week-1">
         <h2>week 1: event</h2>
@@ -240,6 +249,85 @@
         </p>
         <p>disjoint and subset events are not independent</p>
         <p>don't forget that you know about their complements too</p>
+        <p>
+          post quiz: <code class="math">P(A | C)</code> is NOT
+          <code class="math">\frac{P(A)}{P(C)}</code>. the conditional
+          independence equations above were useful
+        </p>
+      </section>
+
+      <section class="week-4">
+        <h2>week 4</h2>
+        <p>
+          CDF: <strong>cum</strong>ulative distribution function
+          <code class="math">F_X(u) = P(X \leq u)</code>. graph: filled bubbles
+          always above open circles
+        </p>
+        <p>
+          pmf: probability mass function
+          <code class="math">p_X(u) = P(X = u)</code>. graph: bars with dots on
+          them
+        </p>
+        <p>
+          here are a bunch of formulas that are probably kind of easy to
+          remember/figure out on the spot
+        </p>
+        <ul>
+          <li><code class="math">P(X &gt; u) = 1 - F(u)</code></li>
+          <li><code class="math">P(X &lt; u) = F(u^-)</code></li>
+          <li><code class="math">P(X \geq u) = 1 - F(u^-)</code></li>
+          <li>
+            <code class="math">P(X = u) = </code> "jump at
+            <code class="math">u</code>" (if continuous it's 0)
+          </li>
+          <li><code class="math">P(a &lt; X \leq b) = F(b) - F(a)</code></li>
+          <li><code class="math">P(a &lt; X &lt; b) = F(b^-) - F(a)</code></li>
+          <li>
+            <code class="math">P(a \leq X &lt; b) = F(b^-) - F(a^-)</code>
+          </li>
+          <li><code class="math">P(a \leq X \leq b) = F(b) - F(a^-)</code></li>
+        </ul>
+        <p>
+          cumDF only needs to be right continuous, so
+          <code class="math">F(u) = F(u^+) \neq F(u^-)</code>
+        </p>
+        <p>
+          when zeger has <code class="math">P([a, b]) = b - a</code>, split into
+          cases based on possible values of <code class="math">X</code> or
+          endpoints of idk (for example, if <code class="math">X</code> could be
+          0 and 1, then your cases would be <code class="math">u &lt; 0</code>,
+          <code class="math">0 \leq u &lt; 1</code>, etc, see w4d2 lecture
+          example or winter 22 quiz 4.3)
+        </p>
+        <p>
+          i dont think they will be on the quiz because spencer didn't cover
+          them, but here are the special r.v.s
+        </p>
+        <ol>
+          <li>
+            uniform discrete rv, <code class="math">n</code> equally spaced rvs
+            of probability <code class="math">\frac{1}{n}</code>
+          </li>
+          <li>
+            binomial rv,
+            <code class="math">p_X(k) = \binom{n}{k} p^k (1 - p)^{n-k}</code>
+            (number of heads from flipping biased coin
+            <code class="math">n</code> tiimes)
+          </li>
+          <li>
+            poisson rv,
+            <code class="math">
+              p_X(k) = \dfrac{\lambda^k e^{-\lambda}}{k!}
+            </code>
+          </li>
+          <li>
+            geometric rv,
+            <code class="math">p_X(k) = p(1 - p)^{k - 1}</code> (number of
+            biased coin flips until first head)
+          </li>
+        </ol>
+        <p>also, <code class="math">P(E^C | F) = 1 - P(E | F)</code></p>
+        <p>i do not imagine any of this will be needed on the quiz</p>
       </section>
     </main>
 
