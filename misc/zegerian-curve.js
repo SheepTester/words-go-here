@@ -136,7 +136,7 @@ function Histograms ({ histogram, quiz }) {
     h(
       'h2',
       { class: 'heading' },
-      'Histogram of total scores',
+      'Histogram of overall scores',
       h('span', { title: 'Lowest quiz score dropped' }, '*')
     ),
     h(
