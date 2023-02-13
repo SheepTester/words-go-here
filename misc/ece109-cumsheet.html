@@ -80,6 +80,13 @@
       a {
         color: #38bdf8;
       }
+      .table {
+        width: unset;
+      }
+      .table td,
+      .table th {
+        padding: 0;
+      }
 
       h2 {
         color: var(--heading);
@@ -96,6 +103,9 @@
       }
       .week-4 {
         --heading: #e879f9;
+      }
+      .week-5 {
+        --heading: #c084fc;
       }
     </style>
   </head>
@@ -257,17 +267,52 @@
       </section>
 
       <section class="week-4">
-        <h2>week 4</h2>
-        <p>
-          CDF: <strong>cum</strong>ulative distribution function
-          <code class="math">F_X(u) = P(X \leq u)</code>. graph: filled bubbles
-          always above open circles
-        </p>
-        <p>
-          pmf: probability mass function
-          <code class="math">p_X(u) = P(X = u)</code>. graph: bars with dots on
-          them
-        </p>
+        <h2>week 4: cumdf</h2>
+        <table class="table table-dark">
+          <thead>
+            <tr>
+              <th scope="col">function</th>
+              <th scope="col">stands for</th>
+              <th scope="col">typical function name and formula</th>
+              <th scope="col">graph notes</th>
+              <th scope="col">rules/properties</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><p>CDF</p></td>
+              <td>
+                <p><strong>cum</strong>ulative distribution function</p>
+              </td>
+              <td><pre class="math">F_X(u) = P(X \leq u)</pre></td>
+              <td><p>filled bubbles always above open circles</p></td>
+              <td><p>never decreases, starts at 0 and ends at 1</p></td>
+            </tr>
+            <tr>
+              <td><p>pmf</p></td>
+              <td>
+                <p>probability mass function</p>
+              </td>
+              <td><pre class="math">p_X(u) = P(X = u)</pre></td>
+              <td><p>bars with dots on them</p></td>
+              <td><p>never negative, bars add to 1</p></td>
+            </tr>
+            <tr>
+              <td><p>pdf</p></td>
+              <td>
+                <p>probability density function</p>
+              </td>
+              <td><pre class="math">f_X(u) = \frac{dF_X(u)}{du}</pre></td>
+              <td></td>
+              <td>
+                <p>never negative, area under curve is 1</p>
+                <pre class="math">
+                  P(a < X \leq b) = \int_a^b f_X(u) du
+                </pre>
+              </td>
+            </tr>
+          </tbody>
+        </table>
         <p>
           here are a bunch of formulas that are probably kind of easy to
           remember/figure out on the spot
@@ -303,32 +348,181 @@
           i dont think they will be on the quiz because spencer didn't cover
           them, but here are the special r.v.s
         </p>
-        <ol>
-          <li>
-            uniform discrete rv, <code class="math">n</code> equally spaced rvs
-            of probability <code class="math">\frac{1}{n}</code>
-          </li>
-          <li>
-            binomial rv,
-            <code class="math">p_X(k) = \binom{n}{k} p^k (1 - p)^{n-k}</code>
-            (number of heads from flipping biased coin
-            <code class="math">n</code> tiimes)
-          </li>
-          <li>
-            poisson rv,
-            <code class="math">
-              p_X(k) = \dfrac{\lambda^k e^{-\lambda}}{k!}
-            </code>
-          </li>
-          <li>
-            geometric rv,
-            <code class="math">p_X(k) = p(1 - p)^{k - 1}</code> (number of
-            biased coin flips until first head)
-          </li>
-        </ol>
+        <table class="table table-dark">
+          <thead>
+            <tr>
+              <th scope="col">special r.v.s</th>
+              <th scope="col">pmf</th>
+              <th scope="col">intuition</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><p>uniform discrete rv</p></td>
+              <td>
+                <p>
+                  <code class="math">n</code> equally spaced rvs of probability
+                  <code class="math">\frac{1}{n}</code>
+                </p>
+              </td>
+              <td></td>
+            </tr>
+            <tr>
+              <td><p>binomial rv</p></td>
+              <td>
+                <pre class="math">
+                  p_X(k) = \binom{n}{k} p^k (1 - p)^{n-k}
+                </pre>
+              </td>
+              <td>
+                <p>
+                  number of heads from flipping biased coin
+                  <code class="math">n</code> times
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td><p>poisson rv</p></td>
+              <td>
+                <pre class="math">
+                  p_X(k) = \dfrac{\lambda^k e^{-\lambda}}{k!}
+                </pre>
+              </td>
+              <td></td>
+            </tr>
+            <tr>
+              <td><p>geometric rv</p></td>
+              <td>
+                <pre class="math">
+                  p_X(k) = p(1 - p)^{k - 1}
+                </pre>
+              </td>
+              <td>number of biased coin flips until first head</td>
+            </tr>
+          </tbody>
+        </table>
         <p>also, <code class="math">P(E^C | F) = 1 - P(E | F)</code></p>
         <p>i do not imagine any of this will be needed on the quiz</p>
         <p><strong>post quiz</strong>: nothing was used. the quiz was easy</p>
+      </section>
+
+      <section class="week-5">
+        <h2>week 5</h2>
+        <p>I put the pdf formula in a table in week 4</p>
+        <p>expected value/mean:</p>
+        <pre class="math">
+          E[X] = \sum_u u f_X(u)
+        </pre>
+        <pre class="math">
+          E[X] = \int^\infty_{-\infty} u f_X(u) du
+        </pre>
+        <table class="table table-dark">
+          <thead>
+            <tr>
+              <th scope="col">special rv</th>
+              <th scope="col">pdf</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><p>uniformly distributed rv</p></td>
+              <td>
+                <pre class="math">
+                  f_X(u) = \begin{cases}
+                    \frac{1}{b - a} & \text{if $a < u < b$} \\
+                    0 & \text{else}
+                  \end{cases}
+                </pre>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>gaussian/normal rv</p>
+                <pre class="math">
+                  X \sim \mathcal{N}(m, \sigma^2)
+                </pre>
+              </td>
+              <td>
+                <pre class="math">
+                  f_X = \frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{1}{2}}
+                </pre>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <table class="table table-dark">
+          <thead>
+            <tr>
+              <th scope="col">rv</th>
+              <th scope="col">mean</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <p>uniform rv on <code class="math">[a, b]</code></p>
+              </td>
+              <td>
+                <pre class="math">
+                  E[X] = \frac{a + b}{2}
+                </pre>
+              </td>
+            </tr>
+            <tr>
+              <td><p>binomial rv</p></td>
+              <td>
+                <pre class="math">
+                  E[X] = np
+                </pre>
+              </td>
+            </tr>
+            <tr>
+              <td><p>poisson rv</p></td>
+              <td>
+                <pre class="math">
+                  E[X] = \lambda
+                </pre>
+              </td>
+            </tr>
+            <tr>
+              <td><p>geometric rv</p></td>
+              <td>
+                <pre class="math">
+                  E[X] = \frac{1}{p}
+                </pre>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>
+                  gaussian
+                  <code class="math">X \sim \mathcal{N}(m, \sigma^2)</code>
+                </p>
+              </td>
+              <td>
+                <pre class="math">
+                  E[X] = m
+                </pre>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>exponential rv with pdf</p>
+                <pre class="math">
+                  f_X(u) = \begin{cases}
+                    \lambda e^{-\lambda u} & \text{if $u > 0$} \\
+                    0 & \text{else}
+                  \end{cases}
+                </pre>
+              </td>
+              <td>
+                <pre class="math">
+                  E[X] = \frac{1}{\lambda}
+                </pre>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </section>
     </main>
 
