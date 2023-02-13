@@ -268,6 +268,45 @@
 
       <section class="week-4">
         <h2>week 4: cumdf</h2>
+        <p>(CDF/pmf definitions moved to a table in week 5)</p>
+        <p>
+          here are a bunch of formulas that are probably kind of easy to
+          remember/figure out on the spot
+        </p>
+        <ul>
+          <li><code class="math">P(X &gt; u) = 1 - F(u)</code></li>
+          <li><code class="math">P(X &lt; u) = F(u^-)</code></li>
+          <li><code class="math">P(X \geq u) = 1 - F(u^-)</code></li>
+          <li>
+            <code class="math">P(X = u) = </code> "jump at
+            <code class="math">u</code>" (if continuous it's 0)
+          </li>
+          <li><code class="math">P(a &lt; X \leq b) = F(b) - F(a)</code></li>
+          <li><code class="math">P(a &lt; X &lt; b) = F(b^-) - F(a)</code></li>
+          <li>
+            <code class="math">P(a \leq X &lt; b) = F(b^-) - F(a^-)</code>
+          </li>
+          <li><code class="math">P(a \leq X \leq b) = F(b) - F(a^-)</code></li>
+        </ul>
+        <p>
+          cumDF only needs to be right continuous, so
+          <code class="math">F(u) = F(u^+) \neq F(u^-)</code>
+        </p>
+        <p>
+          when zeger has <code class="math">P([a, b]) = b - a</code>, split into
+          cases based on possible values of <code class="math">X</code> or
+          endpoints of idk (for example, if <code class="math">X</code> could be
+          0 and 1, then your cases would be <code class="math">u &lt; 0</code>,
+          <code class="math">0 \leq u &lt; 1</code>, etc, see w4d2 lecture
+          example or winter 22 quiz 4.3)
+        </p>
+        <p>also, <code class="math">P(E^C | F) = 1 - P(E | F)</code></p>
+        <p>i do not imagine any of this will be needed on the quiz</p>
+        <p><strong>post quiz</strong>: nothing was used. the quiz was easy</p>
+      </section>
+
+      <section class="week-5">
+        <h2>week 5</h2>
         <table class="table table-dark">
           <thead>
             <tr>
@@ -313,47 +352,20 @@
             </tr>
           </tbody>
         </table>
-        <p>
-          here are a bunch of formulas that are probably kind of easy to
-          remember/figure out on the spot
-        </p>
-        <ul>
-          <li><code class="math">P(X &gt; u) = 1 - F(u)</code></li>
-          <li><code class="math">P(X &lt; u) = F(u^-)</code></li>
-          <li><code class="math">P(X \geq u) = 1 - F(u^-)</code></li>
-          <li>
-            <code class="math">P(X = u) = </code> "jump at
-            <code class="math">u</code>" (if continuous it's 0)
-          </li>
-          <li><code class="math">P(a &lt; X \leq b) = F(b) - F(a)</code></li>
-          <li><code class="math">P(a &lt; X &lt; b) = F(b^-) - F(a)</code></li>
-          <li>
-            <code class="math">P(a \leq X &lt; b) = F(b^-) - F(a^-)</code>
-          </li>
-          <li><code class="math">P(a \leq X \leq b) = F(b) - F(a^-)</code></li>
-        </ul>
-        <p>
-          cumDF only needs to be right continuous, so
-          <code class="math">F(u) = F(u^+) \neq F(u^-)</code>
-        </p>
-        <p>
-          when zeger has <code class="math">P([a, b]) = b - a</code>, split into
-          cases based on possible values of <code class="math">X</code> or
-          endpoints of idk (for example, if <code class="math">X</code> could be
-          0 and 1, then your cases would be <code class="math">u &lt; 0</code>,
-          <code class="math">0 \leq u &lt; 1</code>, etc, see w4d2 lecture
-          example or winter 22 quiz 4.3)
-        </p>
-        <p>
-          i dont think they will be on the quiz because spencer didn't cover
-          them, but here are the special r.v.s
-        </p>
+        <p>expected value/mean:</p>
+        <pre class="math">
+          E[X] = \sum_u u f_X(u)
+        </pre>
+        <pre class="math">
+          E[X] = \int^\infty_{-\infty} u f_X(u) du
+        </pre>
         <table class="table table-dark">
           <thead>
             <tr>
-              <th scope="col">special r.v.s</th>
-              <th scope="col">pmf</th>
+              <th scope="col">special rv</th>
+              <th scope="col">pmf/pdf</th>
               <th scope="col">intuition</th>
+              <th scope="col">mean</th>
             </tr>
           </thead>
           <tbody>
@@ -365,6 +377,7 @@
                   <code class="math">\frac{1}{n}</code>
                 </p>
               </td>
+              <td></td>
               <td></td>
             </tr>
             <tr>
@@ -380,6 +393,11 @@
                   <code class="math">n</code> times
                 </p>
               </td>
+              <td>
+                <pre class="math">
+                  E[X] = np
+                </pre>
+              </td>
             </tr>
             <tr>
               <td><p>poisson rv</p></td>
@@ -389,6 +407,11 @@
                 </pre>
               </td>
               <td></td>
+              <td>
+                <pre class="math">
+                  E[X] = \lambda
+                </pre>
+              </td>
             </tr>
             <tr>
               <td><p>geometric rv</p></td>
@@ -398,40 +421,30 @@
                 </pre>
               </td>
               <td>number of biased coin flips until first head</td>
+              <td>
+                <pre class="math">
+                  E[X] = \frac{1}{p}
+                </pre>
+              </td>
             </tr>
-          </tbody>
-        </table>
-        <p>also, <code class="math">P(E^C | F) = 1 - P(E | F)</code></p>
-        <p>i do not imagine any of this will be needed on the quiz</p>
-        <p><strong>post quiz</strong>: nothing was used. the quiz was easy</p>
-      </section>
-
-      <section class="week-5">
-        <h2>week 5</h2>
-        <p>I put the pdf formula in a table in week 4</p>
-        <p>expected value/mean:</p>
-        <pre class="math">
-          E[X] = \sum_u u f_X(u)
-        </pre>
-        <pre class="math">
-          E[X] = \int^\infty_{-\infty} u f_X(u) du
-        </pre>
-        <table class="table table-dark">
-          <thead>
             <tr>
-              <th scope="col">special rv</th>
-              <th scope="col">pdf</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><p>uniformly distributed rv</p></td>
+              <td>
+                <p>
+                  uniformly distributed rv on <code class="math">[a, b]</code>
+                </p>
+              </td>
               <td>
                 <pre class="math">
                   f_X(u) = \begin{cases}
                     \frac{1}{b - a} & \text{if $a < u < b$} \\
                     0 & \text{else}
                   \end{cases}
+                </pre>
+              </td>
+              <td></td>
+              <td>
+                <pre class="math">
+                  E[X] = \frac{a + b}{2}
                 </pre>
               </td>
             </tr>
@@ -444,61 +457,10 @@
               </td>
               <td>
                 <pre class="math">
-                  f_X = \frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{1}{2}}
+                  f_X(u) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{1}{2}}
                 </pre>
               </td>
-            </tr>
-          </tbody>
-        </table>
-        <table class="table table-dark">
-          <thead>
-            <tr>
-              <th scope="col">rv</th>
-              <th scope="col">mean</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <p>uniform rv on <code class="math">[a, b]</code></p>
-              </td>
-              <td>
-                <pre class="math">
-                  E[X] = \frac{a + b}{2}
-                </pre>
-              </td>
-            </tr>
-            <tr>
-              <td><p>binomial rv</p></td>
-              <td>
-                <pre class="math">
-                  E[X] = np
-                </pre>
-              </td>
-            </tr>
-            <tr>
-              <td><p>poisson rv</p></td>
-              <td>
-                <pre class="math">
-                  E[X] = \lambda
-                </pre>
-              </td>
-            </tr>
-            <tr>
-              <td><p>geometric rv</p></td>
-              <td>
-                <pre class="math">
-                  E[X] = \frac{1}{p}
-                </pre>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <p>
-                  gaussian
-                  <code class="math">X \sim \mathcal{N}(m, \sigma^2)</code>
-                </p>
-              </td>
+              <td></td>
               <td>
                 <pre class="math">
                   E[X] = m
@@ -506,8 +468,8 @@
               </td>
             </tr>
             <tr>
+              <td><p>exponential rv</p></td>
               <td>
-                <p>exponential rv with pdf</p>
                 <pre class="math">
                   f_X(u) = \begin{cases}
                     \lambda e^{-\lambda u} & \text{if $u > 0$} \\
@@ -515,6 +477,7 @@
                   \end{cases}
                 </pre>
               </td>
+              <td></td>
               <td>
                 <pre class="math">
                   E[X] = \frac{1}{\lambda}
