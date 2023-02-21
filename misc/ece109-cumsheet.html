@@ -83,6 +83,9 @@
       .table {
         width: unset;
       }
+      .table-dark {
+        color: unset;
+      }
       .table td,
       .table th {
         padding: 0;
@@ -106,6 +109,9 @@
       }
       .week-5 {
         --heading: #c084fc;
+      }
+      .week-6 {
+        --heading: #a78bfa;
       }
     </style>
   </head>
@@ -306,7 +312,7 @@
       </section>
 
       <section class="week-5">
-        <h2>week 5</h2>
+        <h2>week 5: expected</h2>
         <table class="table table-dark">
           <thead>
             <tr>
@@ -366,6 +372,7 @@
               <th scope="col">pmf/pdf</th>
               <th scope="col">intuition</th>
               <th scope="col">mean</th>
+              <th scope="col">variance</th>
             </tr>
           </thead>
           <tbody>
@@ -379,6 +386,26 @@
               </td>
               <td></td>
               <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>
+                <p>binary rv</p>
+                <p>
+                  (deterministic rv when <code class="math">q = 0</code> or 1)
+                </p>
+              </td>
+              <td>
+                <pre class="math">p_X(0) = 1 - q</pre>
+                <pre class="math">p_X(1) = q</pre>
+              </td>
+              <td><p>flipping a biased coin</p></td>
+              <td>
+                <pre class="math">
+                  E[X] = q
+                </pre>
+              </td>
+              <td><pre class="math">\sigma_X^2 = q(1-q)</pre></td>
             </tr>
             <tr>
               <td><p>binomial rv</p></td>
@@ -386,6 +413,7 @@
                 <pre class="math">
                   p_X(k) = \binom{n}{k} p^k (1 - p)^{n-k}
                 </pre>
+                <p>for <code class="math">k = 0, 1, \dots, n</code></p>
               </td>
               <td>
                 <p>
@@ -398,6 +426,7 @@
                   E[X] = np
                 </pre>
               </td>
+              <td></td>
             </tr>
             <tr>
               <td><p>poisson rv</p></td>
@@ -405,6 +434,7 @@
                 <pre class="math">
                   p_X(k) = \dfrac{\lambda^k e^{-\lambda}}{k!}
                 </pre>
+                <p>for <code class="math">k = 0, 1, 2, \dots</code></p>
               </td>
               <td></td>
               <td>
@@ -412,6 +442,7 @@
                   E[X] = \lambda
                 </pre>
               </td>
+              <td></td>
             </tr>
             <tr>
               <td><p>geometric rv</p></td>
@@ -419,6 +450,7 @@
                 <pre class="math">
                   p_X(k) = p(1 - p)^{k - 1}
                 </pre>
+                <p>for <code class="math">k = 1, 2, \dots</code></p>
               </td>
               <td>number of biased coin flips until first head</td>
               <td>
@@ -426,6 +458,7 @@
                   E[X] = \frac{1}{p}
                 </pre>
               </td>
+              <td></td>
             </tr>
             <tr>
               <td>
@@ -436,7 +469,7 @@
               <td>
                 <pre class="math">
                   f_X(u) = \begin{cases}
-                    \frac{1}{b - a} & \text{if $a < u < b$} \\
+                    \dfrac{1}{b - a} & \text{if $a < u < b$} \\
                     0 & \text{else}
                   \end{cases}
                 </pre>
@@ -447,17 +480,22 @@
                   E[X] = \frac{a + b}{2}
                 </pre>
               </td>
+              <td>
+                <pre class="math">
+                  \sigma_X^2 = \frac{(a-b)^2}{12}
+                </pre>
+              </td>
             </tr>
             <tr>
               <td>
                 <p>gaussian/normal rv</p>
                 <pre class="math">
-                  X \sim \mathcal{N}(m, \sigma^2)
+                  X \sim \N(m, \sigma^2)
                 </pre>
               </td>
               <td>
                 <pre class="math">
-                  f_X(u) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{1}{2}}
+                  f_X(u) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\dfrac{1}{2}\left(\dfrac{u - m}{\sigma}\right)^2}
                 </pre>
               </td>
               <td></td>
@@ -466,6 +504,7 @@
                   E[X] = m
                 </pre>
               </td>
+              <td><pre class="math">\Var(X) = \sigma^2</pre></td>
             </tr>
             <tr>
               <td><p>exponential rv</p></td>
@@ -483,12 +522,101 @@
                   E[X] = \frac{1}{\lambda}
                 </pre>
               </td>
+              <td></td>
+              <td></td>
             </tr>
           </tbody>
         </table>
         <p>
           <strong>post-quiz</strong>: none of this was very useful, but desmos
           is!!
+        </p>
+      </section>
+
+      <section class="week-6">
+        <h2>week 6</h2>
+        <p>CDF for <code class="math">X \sim \N(0, 1)</code>:</p>
+        <pre class="math">
+          \Phi(u) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^u e^{-\frac{z^2}{2}} dz = \frac{1}{2} + \frac{1}{2}\erf\left(\frac{u}{\sqrt{2}}\right)
+        </pre>
+        <p>
+          for <code class="math">X \sim \N(m, \sigma^2)</code>,
+          <code class="math">
+            F_X(u) = \Phi\left(\dfrac{u-m}{\sigma}\right)
+          </code>
+        </p>
+        <p>i dont think i need to know this at all, but</p>
+        <pre class="math">
+          \erf(u) = \frac{2}{\sqrt{\pi}} \int_0^u e^{-t^2} dt
+        </pre>
+        <p>more expected value properties:</p>
+        <pre class="math">
+          E[g(X)] = \begin{cases}
+            \displaystyle\int_{-\infty}^\infty g(u) f_X(u) du & \text{continuous} \\
+            \displaystyle\sum_u g(u) p_X(u) & \text{discrete}
+          \end{cases}
+        </pre>
+        <pre class="math">E[g_1(X) + g_2(X)] = E[g_1(X)] + E[g_2(X)]</pre>
+        <p>
+          <code class="math">n</code>th moment:
+          <code class="math">E[X^n]</code>. first moment is mean
+        </p>
+        <p>
+          <code class="math">n</code>th central moment:
+          <code class="math">E[(X - E[X])^n]</code>. first central moment is
+          zero, second central moment is variance (sqrt is stddev)
+        </p>
+        <pre class="math">
+          \sigma_X^2 = \Var(X) = E[(X - E[X])^2] = E[X^2] - E[X]^2
+        </pre>
+        <p>for <code class="math">Y = aX + b</code>:</p>
+        <ul>
+          <li><pre class="math">E[aX + b] = aE[X] + b</pre></li>
+          <li>
+            <p>
+              pmf
+              <code class="math">p_Y(u) = p_X\left(\dfrac{u-b}{a}\right)</code>
+            </p>
+          </li>
+          <li>
+            <p>
+              variance <code class="math">\sigma_Y^2 = a^2 \sigma_X^2</code>
+            </p>
+          </li>
+          <li>
+            <p>
+              if <code class="math">X \sim \N(m, \sigma^2)</code>, then
+              <code class="math">Y \sim \N(am + b, a^2 \sigma^2)</code>
+            </p>
+          </li>
+        </ul>
+        <p>
+          to find pdf of <code class="math">Y</code> in terms of
+          <code class="math">p_X(u)</code> (pdf of <code class="math">X</code>)
+        </p>
+        <ol>
+          <li>
+            <p>
+              set up CDF of <code class="math">Y</code> (get
+              <code class="math">F_Y</code> in terms of
+              <code class="math">F_X</code>)
+            </p>
+          </li>
+          <li><p>differentiate</p></li>
+        </ol>
+        <pre class="math">
+          \frac{d}{du} \int_{h(u)}^{g(u)} f(z, u) dz = f(g(u), u) g'(u) - f(h(u), u) h'(u) + \int_{h(u)}^{g(u)} \left(\frac{\partial}{\partial u} f(z, u)\right) dz ~ \text{(leibniz rule)}
+        </pre>
+        <p>joint cumdfs probably not this week</p>
+        <p>
+          You can visually use the center of mass of the pdf/pmf for expected
+          value
+        </p>
+        <p>Variance is never negative</p>
+        <p>Use Wolfram Alpha!</p>
+        <p>
+          be prepared to complete the square and stuff to make things look like
+          a gaussian
         </p>
       </section>
     </main>
@@ -498,7 +626,12 @@
       for (const math of document.getElementsByClassName('math')) {
         katex.render(math.textContent, math, {
           throwOnError: true,
-          displayMode: math.tagName === 'PRE'
+          displayMode: math.tagName === 'PRE',
+          macros: {
+            '\\N': '\\mathcal{N}',
+            '\\erf': '\\operatorname{erf}',
+            '\\Var': '\\operatorname{Var}'
+          }
         })
       }
     </script>
