@@ -352,7 +352,7 @@
               <td>
                 <p>never negative, area under curve is 1</p>
                 <pre class="math">
-                  P(a < X \leq b) = \int_a^b f_X(u) du
+                  P(a < X \leq b) = \int\limits_a^b f_X(u) du
                 </pre>
               </td>
             </tr>
@@ -363,7 +363,7 @@
           E[X] = \sum_u u f_X(u)
         </pre>
         <pre class="math">
-          E[X] = \int^\infty_{-\infty} u f_X(u) du
+          E[X] = \int\limits^\infty_{-\infty} u f_X(u) du
         </pre>
         <table class="table table-dark">
           <thead>
@@ -534,10 +534,10 @@
       </section>
 
       <section class="week-6">
-        <h2>week 6</h2>
+        <h2>week 6: variance</h2>
         <p>CDF for <code class="math">X \sim \N(0, 1)</code>:</p>
         <pre class="math">
-          \Phi(u) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^u e^{-\frac{z^2}{2}} dz = \frac{1}{2} + \frac{1}{2}\erf\left(\frac{u}{\sqrt{2}}\right)
+          \Phi(u) = \frac{1}{\sqrt{2\pi}} \int\limits_{-\infty}^u e^{-\frac{z^2}{2}} dz = \frac{1}{2} + \frac{1}{2}\erf\left(\frac{u}{\sqrt{2}}\right)
         </pre>
         <p>
           for <code class="math">X \sim \N(m, \sigma^2)</code>,
@@ -547,12 +547,12 @@
         </p>
         <p>i dont think i need to know this at all, but</p>
         <pre class="math">
-          \erf(u) = \frac{2}{\sqrt{\pi}} \int_0^u e^{-t^2} dt
+          \erf(u) = \frac{2}{\sqrt{\pi}} \int\limits_0^u e^{-t^2} dt
         </pre>
         <p>more expected value properties:</p>
         <pre class="math">
           E[g(X)] = \begin{cases}
-            \displaystyle\int_{-\infty}^\infty g(u) f_X(u) du & \text{continuous} \\
+            \displaystyle\int\limits_{-\infty}^\infty g(u) f_X(u) du & \text{continuous} \\
             \displaystyle\sum_u g(u) p_X(u) & \text{discrete}
           \end{cases}
         </pre>
@@ -605,7 +605,7 @@
           <li><p>differentiate</p></li>
         </ol>
         <pre class="math">
-          \frac{d}{du} \int_{h(u)}^{g(u)} f(z, u) dz = f(g(u), u) g'(u) - f(h(u), u) h'(u) + \int_{h(u)}^{g(u)} \left(\frac{\partial}{\partial u} f(z, u)\right) dz ~ \text{(leibniz rule)}
+          \frac{d}{du} \int\limits_{h(u)}^{g(u)} f(z, u) dz = f(g(u), u) g'(u) - f(h(u), u) h'(u) + \int\limits_{h(u)}^{g(u)} \left(\frac{\partial}{\partial u} f(z, u)\right) dz ~ \text{(leibniz rule)}
         </pre>
         <p>joint cumdfs probably not this week</p>
         <p>
@@ -637,6 +637,104 @@
             because <code class="math">Y \neq 0</code>
           </li>
         </ul>
+      </section>
+
+      <section class="week-7">
+        <h2>week 7: joint</h2>
+        <table class="table table-dark">
+          <thead>
+            <tr>
+              <th scope="col"></th>
+              <th scope="col">joint</th>
+              <th scope="col">marginal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><p>cumDF</p></td>
+              <td>
+                <pre class="math">F_{X,Y}(u, v) = P(X \leq u, Y \leq v)</pre>
+              </td>
+              <td>
+                <pre class="math">F_X(u) = F_{X,Y}(u, \infty)</pre>
+                <pre class="math">F_Y(u) = F_{X,Y}(\infty, v)</pre>
+              </td>
+            </tr>
+            <tr>
+              <td><p>pmf</p></td>
+              <td>
+                <pre class="math">p_{X,Y}(u, v) = P(X = u, Y = v)</pre>
+                <p>
+                  to get a probability of a region, just add the probabilities
+                  in it
+                </p>
+                <pre class="math">
+                  P((X, Y) \in T) = \sum_{(u, v) \in T} p_{X,Y}(u, v)
+                </pre>
+                <p>
+                  the CDF is like an infinite rectangle with top right corner
+                  <code class="math">(a, b)</code>
+                </p>
+                <pre class="math">
+                  F_{X,Y}(a, b) = P((X, Y) \in \{(u, v) | u \leq a, v \leq b\})
+                </pre>
+                <pre class="math">
+                  \sum_{u, v} p_{X,Y}(u, v) = 1
+                </pre>
+              </td>
+              <td>
+                <pre class="math">p_X(u) = \sum_u p_{X,Y}(u, v)</pre>
+                <pre class="math">p_Y(v) = \sum_u p_{X,Y}(u, v)</pre>
+              </td>
+            </tr>
+            <tr>
+              <td><p>pdf</p></td>
+              <td>
+                <p>you can take a partial derivative in either order</p>
+                <pre class="math">
+                  f_{X,Y}(u, v) = \frac{\partial^2 F_{X,Y}(u, v)}{\partial u \, \partial v}
+                </pre>
+                <p>derived from</p>
+                <pre class="math">
+                  P((X, Y) \in T) = \iint\limits_T f_{X,Y}(u, v) \, du \, dv
+                </pre>
+                <p>pdf &DoubleRightArrow; CDF:</p>
+                <pre class="math">
+                  F_{X,Y}(u, v) = \int\limits_{-\infty}^v \int\limits_{-\infty}^u f_{X,Y}(s, t) \, ds \, dt
+                </pre>
+                <pre class="math">
+                  \int\limits_{-\infty}^\infty \int\limits_{-\infty}^\infty f_{X,Y}(u, v) \, du \, dv = 1
+                </pre>
+              </td>
+              <td>
+                <pre class="math">
+                  f_X(u) = \int\limits_{-\infty}^\infty f_{X,Y}(u, v) \, dv
+                </pre>
+                <pre class="math">
+                  f_Y(v) = \int\limits_{-\infty}^\infty f_{X,Y}(u, v) \, du
+                </pre>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>(from spencer vid) to find a probability from joint pdf:</p>
+        <ol>
+          <li>
+            <p>
+              figure out what region to integrate over depending on the event
+              given
+            </p>
+          </li>
+          <li><p>do integral. lmao</p></li>
+        </ol>
+        <p>
+          shortcut! if you know that a marginal pdf will be constant (eg when
+          finding marginal pdf of <code class="math">Y</code> where joint pdf
+          only dependent on <code class="math">u</code> (<code class="math"
+            >X</code
+          >)) you can just solve for <code class="math">C</code> by setting area
+          = 1
+        </p>
       </section>
     </main>
 
