@@ -166,7 +166,7 @@ function QuizStatistics ({ quiz, distribution }) {
 
   return h(
     'div',
-    { class: 'section' },
+    { class: 'section quiz-statistics' },
     h('h2', { class: 'heading' }, 'Quiz ', quiz, ' statistics'),
     h('p', null, 'Total students: ', h('strong', null, students)),
     h(
@@ -228,18 +228,14 @@ export function App ({ quizzes, histogram }) {
     null,
     h(Quizzes, { quizzes, quiz, onQuiz: setQuiz }),
     h(Histograms, { histogram, quiz }),
-    h(
-      'div',
-      { class: 'stat-column' },
-      h(EstimatedCurve, {
-        distribution:
-          histogram[quiz === null || quiz < 2 ? histogram.length - 1 : quiz - 2]
-      }),
-      quiz &&
-        h(QuizStatistics, {
-          quiz,
-          distribution: quizzes[quiz - 1]
-        })
-    )
+    h(EstimatedCurve, {
+      distribution:
+        histogram[quiz === null || quiz < 2 ? histogram.length - 1 : quiz - 2]
+    }),
+    quiz &&
+      h(QuizStatistics, {
+        quiz,
+        distribution: quizzes[quiz - 1]
+      })
   )
 }
