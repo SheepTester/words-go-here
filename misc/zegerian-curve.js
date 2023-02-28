@@ -98,6 +98,14 @@ function Histogram ({ scores, showingAll }) {
   const maxCount = Math.max(...scores)
   const colours = barGradient.colors(scores.length)
 
+  const cumStudentsArr = []
+  let cumStudents = 0
+  for (const count of scores) {
+    cumStudentsArr.push(cumStudents)
+    cumStudents += count
+  }
+  console.log(cumStudentsArr, cumStudents)
+
   return h(
     'div',
     { class: `histogram ${showingAll ? 'showing-all' : ''}` },
@@ -114,6 +122,11 @@ function Histogram ({ scores, showingAll }) {
         },
         h(
           'span',
+          { class: 'number percentage' },
+          `${Math.round((cumStudentsArr[score] / cumStudents) * 100)}%`
+        ),
+        h(
+          'span',
           {
             class: `number count-number ${
               count < maxCount * 0.1 ? 'low-count' : ''
@@ -121,7 +134,9 @@ function Histogram ({ scores, showingAll }) {
           },
           count
         ),
-        h('span', { class: 'number score-number' }, score)
+        h('span', { class: 'number score-number' }, score),
+        score === scores.length - 1 &&
+          h('span', { class: 'number percentage percent-100' }, '100%')
       )
     )
   )
