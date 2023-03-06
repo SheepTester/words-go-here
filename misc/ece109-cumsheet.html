@@ -113,6 +113,12 @@
       .week-6 {
         --heading: #a78bfa;
       }
+      .week-7 {
+        --heading: #818cf8;
+      }
+      .week-8 {
+        --heading: #60a5fa;
+      }
     </style>
   </head>
 
@@ -739,6 +745,112 @@
           <strong>post quiz.</strong> desmos is ideal for those double
           integrals. everything was just pdf stuff, so didnt use this cumsheet
           for the quiz
+        </p>
+      </section>
+
+      <section class="week-8">
+        <h2>week 8: independent rvs</h2>
+        <p>these are equivalent:</p>
+        <ul>
+          <li>
+            <p>
+              rvs <code class="math">X</code> and
+              <code class="math">Y</code> are <strong>independent</strong>
+            </p>
+          </li>
+          <li>
+            <pre class="math">
+              P(X \in A, Y \in B) = P(X \in A) \, P(Y \in B)
+            </pre>
+            <p>where <code class="math">A, B \in \mathbb{R}</code></p>
+          </li>
+          <li>
+            joint CDF factors:
+            <code class="math">F_{X,Y}(u, v) = F_X(u) \, F_Y(v)</code> for all
+            <code class="math">u, v</code>
+          </li>
+          <li>
+            joint pdf factors:
+            <code class="math">f_{X,Y}(u, v) = f_X(u) \, f_Y(v)</code> for all
+            <code class="math">u, v</code>
+          </li>
+          <li>
+            joint pmf factors:
+            <code class="math">p_{X,Y}(u, v) = p_X(u) \, p_Y(v)</code> for all
+            <code class="math">u, v</code>
+          </li>
+        </ul>
+        <p>
+          <strong>iid</strong> (independent, identically distributed) means same
+          pdf/pmf
+        </p>
+        <table class="table table-dark">
+          <thead>
+            <tr>
+              <th scope="col">rv</th>
+              <th scope="col">pdf</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><pre class="math">Z = X + Y</pre></td>
+              <td>
+                <pre class="math">
+                  \begin{aligned}
+                    f_e(w) &= \int\limits_{-\infty}^\infty f_{X,Y}(w - v, v) \, dv \\
+                    &= \int\limits_{-\infty}^\infty f_{X,Y}(u, w - u) \, du \\
+                    &= \int\limits_{-\infty}^\infty f_X(w - v) \, f_Y(v) \, dv ~ \text{(if independent; convolution integral)} \\
+                    &= \int\limits_{-\infty}^\infty f_X(u) \, f_Y(w - u) \, du
+                  \end{aligned}
+                </pre>
+              </td>
+            </tr>
+            <tr>
+              <td><pre class="math">Z = \max(X, Y)</pre></td>
+              <td>
+                <pre class="math">
+                  \begin{aligned}
+                    f_Z(w) &= \int\limits_{-\infty}^t f_{X,Y}(u, t) \, du + \int\limits_{-\infty}^t f_{X,Y}(t, v) \, dv \\
+                    &= F_X(t) \, f_Y(t) + f_X(t) \, F_Y(t) ~ \text{(if independent)} \\
+                    &= n \, F_X^{n-1}(t) \, f_{X_1}(t) ~ \text{(if $n$ iid rvs)} \\
+                    &= \begin{cases}
+                      nt^{n-1} ~ \text{if $t \in [0, 1]$} \\
+                      0 ~ \text{else}
+                    \end{cases} ~ \text{(if rvs uniform on $[0, 1]$)}
+                  \end{aligned}
+                </pre>
+              </td>
+            </tr>
+            <tr>
+              <td><pre class="math">Z = XY</pre></td>
+              <td>
+                <pre class="math">
+                  f_Z(a) = \int\limits_{-\infty}^\infty \frac{1}{|v|} f_{X,Y}\left(\frac{a}{v}, v\right) \, dv
+                </pre>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>from spencer:</p>
+        <ul>
+          <li>
+            <p>
+              <code class="math">
+                P(\max(X, Y) \geq 1) = 1 - P(\max(X, Y) < 1)
+              </code>
+              which is a bit more useful
+            </p>
+          </li>
+          <li>
+            <p>polar integration</p>
+            <pre class="math">
+              \iint f(r, \theta) r dr d\theta
+            </pre>
+          </li>
+        </ul>
+        <p>
+          when the quiz asks which of a bunch of joint pmf graphs are
+          independent, the rows/columns should be multiples of each other
         </p>
       </section>
     </main>
