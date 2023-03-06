@@ -1,6 +1,23 @@
 import chroma from 'chroma'
 import { h, Fragment } from 'preact'
-import { useState } from 'preact/hooks'
+import { useState, useMemo } from 'preact/hooks'
+
+const modes = {
+  quiz: {
+    item: 'Quiz',
+    plural: 'Quiz scores',
+    maxScore: 3,
+    range: [0, 1, 2, 3, 4],
+    colours: ['#ef4444', '#eab308', '#84cc16']
+  },
+  final: {
+    item: 'Part',
+    plural: 'Parts',
+    maxScore: 4,
+    range: [0, 1, 2, 3, 4],
+    colours: ['#ef4444', '#eab308', '#22c55e']
+  }
+}
 
 function analyze (distribution) {
   const total = distribution.reduce((a, b) => a + b)
@@ -34,7 +51,7 @@ function analyze (distribution) {
   }
 }
 
-function Quiz ({ name, scores, afterCurrent, onSelect }) {
+function Quiz ({ mode, name, scores, afterCurrent, onSelect }) {
   return h(
     'div',
     {
@@ -50,7 +67,7 @@ function Quiz ({ name, scores, afterCurrent, onSelect }) {
           'div',
           {
             class: `score score-${score}`,
-            title: `${score}/3`,
+            title: `${score}/${modes[mode].maxScore}`,
             style: { flexGrow: count }
           },
           h('span', { class: 'number' }, count)
@@ -60,15 +77,16 @@ function Quiz ({ name, scores, afterCurrent, onSelect }) {
   )
 }
 
-function Quizzes ({ quizzes, quiz, onQuiz }) {
+function Quizzes ({ mode, quizzes, quiz, onQuiz }) {
   return h(
     'div',
     { class: 'section quizzes', onMouseLeave: onQuiz && (() => onQuiz(null)) },
-    h('h2', { class: 'heading' }, 'Quiz scores'),
+    h('h2', { class: 'heading' }, modes[mode].plural),
     quizzes.map((scores, i) =>
       h(Quiz, {
+        mode,
         key: i,
-        name: `Quiz ${i + 1}`,
+        name: `${modes[mode].item} ${i + 1}`,
         scores,
         afterCurrent: quiz !== null && i + 1 > quiz,
         onSelect: onQuiz && (() => onQuiz(i + 1))
@@ -78,25 +96,26 @@ function Quizzes ({ quizzes, quiz, onQuiz }) {
       'div',
       { class: 'key' },
       h('h3', { class: 'key-heading' }, 'Key'),
-      [0, 1, 2, 3].map(score =>
+      modes[mode].range.map(score =>
         h(
           'div',
           { class: 'score-key', key: score },
           h('div', { class: `score-colour score-${score}` }),
           ' ',
           score,
-          '/3'
+          `/${modes[mode].maxScore}`
         )
       )
     )
   )
 }
 
-const barGradient = chroma.scale(['#ef4444', '#eab308', '#84cc16']).mode('lab')
-
-function Histogram ({ scores, showingAll }) {
+function Histogram ({ mode, scores, showingAll }) {
   const maxCount = Math.max(...scores)
-  const colours = barGradient.colors(scores.length)
+  const colours = useMemo(
+    () => chroma.scale(modes[mode].colours).mode('lab').colors(scores.length),
+    [mode, scores.length]
+  )
 
   const cumStudentsArr = []
   let cumStudents = 0
@@ -104,7 +123,6 @@ function Histogram ({ scores, showingAll }) {
     cumStudentsArr.push(cumStudents)
     cumStudents += count
   }
-  console.log(cumStudentsArr, cumStudents)
 
   return h(
     'div',
@@ -142,7 +160,7 @@ function Histogram ({ scores, showingAll }) {
   )
 }
 
-function Histograms ({ histogram, quiz }) {
+function Histograms ({ mode, quizzes, histogram, quiz }) {
   const showAll = quiz === null || quiz < 2
 
   return h(
@@ -151,8 +169,14 @@ function Histograms ({ histogram, quiz }) {
     h(
       'h2',
       { class: 'heading' },
-      'Histogram of overall scores',
-      h('span', { title: 'Lowest quiz score dropped' }, '*')
+      mode === 'quiz'
+        ? h(
+            Fragment,
+            null,
+            'Histogram of overall scores',
+            h('span', { title: 'Lowest quiz score dropped' }, '*')
+          )
+        : 'Score distribution'
     ),
     h(
       'div',
@@ -165,24 +189,26 @@ function Histograms ({ histogram, quiz }) {
       h(
         'div',
         { class: 'histogram-wrapper' },
-        histogram.map((scores, i) =>
-          showAll || i + 2 === quiz
-            ? h(Histogram, { scores, key: i, showingAll: showAll })
-            : null
-        )
+        mode === 'quiz'
+          ? histogram.map((scores, i) =>
+              showAll || i + 2 === quiz
+                ? h(Histogram, { mode, scores, key: i, showingAll: showAll })
+                : null
+            )
+          : h(Histogram, { mode, scores: quiz ? quizzes[quiz - 1] : histogram })
       )
     ),
     h('div', { class: 'graph-label graph-label-x' }, 'Score')
   )
 }
 
-function QuizStatistics ({ quiz, distribution }) {
+function QuizStatistics ({ mode, quiz, distribution }) {
   const { total: students, average, median, stddev } = analyze(distribution)
 
   return h(
     'div',
     { class: 'section quiz-statistics' },
-    h('h2', { class: 'heading' }, 'Quiz ', quiz, ' statistics'),
+    h('h2', { class: 'heading' }, `${modes[mode].item} `, quiz, ' statistics'),
     h('p', null, 'Total students: ', h('strong', null, students)),
     h(
       'p',
@@ -235,22 +261,29 @@ function EstimatedCurve ({ distribution }) {
   )
 }
 
-export function App ({ quizzes, histogram }) {
+export function App ({ mode = 'quiz', quizzes, histogram }) {
   const [quiz, setQuiz] = useState(null)
 
   return h(
     Fragment,
     null,
-    h(Quizzes, { quizzes, quiz, onQuiz: setQuiz }),
-    h(Histograms, { histogram, quiz }),
-    h(EstimatedCurve, {
-      distribution:
-        histogram[quiz === null || quiz < 2 ? histogram.length - 1 : quiz - 2]
-    }),
-    quiz &&
-      h(QuizStatistics, {
-        quiz,
-        distribution: quizzes[quiz - 1]
-      })
+    h(Quizzes, { mode, quizzes, quiz, onQuiz: setQuiz }),
+    h(Histograms, { mode, quizzes, histogram, quiz }),
+    mode === 'quiz'
+      ? h(
+          Fragment,
+          null,
+          h(EstimatedCurve, {
+            distribution:
+              histogram[
+                quiz === null || quiz < 2 ? histogram.length - 1 : quiz - 2
+              ]
+          }),
+          quiz &&
+            h(QuizStatistics, { mode, quiz, distribution: quizzes[quiz - 1] })
+        )
+      : quiz
+      ? h(QuizStatistics, { mode, quiz, distribution: quizzes[quiz - 1] })
+      : h(EstimatedCurve, { mode, distribution: histogram })
   )
 }

@@ -27,6 +27,12 @@ body {
   grid-template-columns: 300px 1fr max-content;
   grid-template-rows: min-content min-content 1fr;
 }
+.final-dist #root {
+  grid-template-areas:
+    'list histogram'
+    'stats histogram';
+  grid-template-columns: 300px 1fr;
+}
 @media (max-width: 1100px) {
   #root {
     grid-template-areas:
@@ -34,6 +40,12 @@ body {
       'histogram histogram histogram';
     grid-template-columns: 1fr max-content max-content;
     grid-template-rows: min-content 80vh;
+  }
+  .final-dist #root {
+    grid-template-areas:
+      'list stats'
+      'histogram histogram';
+    grid-template-columns: 1fr max-content;
   }
 }
 @media (max-width: 800px) {
@@ -45,6 +57,24 @@ body {
     grid-template-columns: max-content max-content 1fr;
     grid-template-rows: min-content 80vh min-content;
   }
+  .final-dist #root {
+    grid-template-areas:
+      'list stats'
+      'histogram histogram';
+    grid-template-columns: 1fr max-content;
+  }
+  .final-dist .bar .percentage {
+    display: none;
+  }
+  .final-dist .histogram {
+    gap: 2px;
+  }
+  .final-dist .histogram {
+    gap: 2px;
+  }
+  .final-dist .bar:not(:nth-child(6n + 1)) .score-number {
+    display: none;
+  }
 }
 @media (max-width: 500px) {
   #root {
@@ -54,6 +84,13 @@ body {
       'overall stats';
     grid-template-columns: 1fr 1fr;
     grid-template-rows: min-content 80vh min-content;
+  }
+  .final-dist #root {
+    grid-template-areas:
+      'list'
+      'histogram'
+      'stats';
+    grid-template-columns: 1fr;
   }
 }
 
@@ -112,6 +149,9 @@ body {
 }
 .score-3 {
   background-color: #84cc16;
+}
+.score-4 {
+  background-color: #22c55e;
 }
 .number {
   position: absolute;
@@ -232,6 +272,9 @@ body {
 
 .estimated-curve {
   grid-area: overall;
+}
+.final-dist .estimated-curve {
+  grid-area: stats;
 }
 .quiz-statistics {
   grid-area: stats;
