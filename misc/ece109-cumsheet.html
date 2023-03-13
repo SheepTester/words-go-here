@@ -946,6 +946,29 @@
           \end{aligned}
         </pre>
         <p>just for gaussians, independence &leftrightarrow; uncorrelated</p>
+        <p>
+          don't mix up stddev and variance!! make sure to sqrt variance for
+          <code class="math">\sigma_X</code> for correlation coefficient, but
+          when the problem asks to sum variances leave it as
+          <code class="math">\sigma_X^2</code>
+        </p>
+        <p>
+          maybe the infinite integral of <code class="math">e^{-ax}</code> might
+          be nice to have
+        </p>
+        <pre class="math">
+          \begin{aligned}
+            \int\limits_0^\infty e^{-ax} dx &= -\frac{1}{a} e^{-ax} \bigg\rvert_0^\infty \\
+            &= -\frac{1}{a} e^{-a\infty} + \frac{1}{a} e^0 \\
+            &= -\frac{1}{a} \cdot 0 + \frac{1}{a} \cdot 1 \\
+            &= \boxed{\frac{1}{a}}
+          \end{aligned}
+        </pre>
+        <p>actually this seems incredibly limited i would just use desmos</p>
+        <p>
+          at least for fall '21 #2 apparently it is better to use the gaussian
+          pdf not the joint gaussian
+        </p>
       </section>
     </main>
 
