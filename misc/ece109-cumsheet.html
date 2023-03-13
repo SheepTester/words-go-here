@@ -119,6 +119,9 @@
       .week-8 {
         --heading: #60a5fa;
       }
+      .week-9 {
+        --heading: #22d3ee;
+      }
     </style>
   </head>
 
@@ -857,6 +860,93 @@
           independent uniform rvs, their joint pdf/pmf will be a rectangle
         </p>
       </section>
+
+      <section class="week-9">
+        <h2>week 9: covariance</h2>
+        <pre class="math">
+          f_{X + Y, X - Y}(a, b) = \frac{1}{2} f_{X,Y}\left(\frac{a + b}{2}, \frac{a - b}{2}\right)
+        </pre>
+        <pre class="math">
+          \begin{aligned}
+            E[Z = g(X_1, \dots, X_n)] &= \int\limits_{-\infty}^\infty \int\limits_{-\infty}^\infty \dots \int\limits_{-\infty}^\infty g(u_1, \dots, u_n) \, f_{X_1, \dots, X_n}(u_1, \dots, u_n) \, du_1 \dots du_n \\
+            E[g(X, Y)] &= \int\limits_{-\infty}^\infty \int\limits_{-\infty}^\infty g(u, v) \, f_{X, Y}(u, v) \, du dv & \text{(continuous)} \\
+            &= \sum_v \sum_u g(u, v) \, p_{X, Y}(u, v) & \text{(discrete)}
+          \end{aligned}
+        </pre>
+        <pre class="math">
+          E[X + Y] = E[X] + E[Y] ~ \text{They don't need to be independent}
+        </pre>
+        <p>covariance</p>
+        <pre class="math">
+          \begin{aligned}
+            \Cov(X, Y) &= E[(X - E[X])(Y - E[Y])] \\
+            &= E[XY] - E[X] \, E[Y] \\
+            \Cov(X, X) &= \Var(X) \\
+            \Cov(X, Y + Z) &= \Cov(X, Y) + \Cov(X, Z) \\
+            \Cov(aX, bY) &= ab \Cov(X, Y) \\
+            \Var(X \pm Y) &= \Var(X) + \Var(Y) \pm 2 \Cov(X, Y) \\
+            &= \Var(X) + \Var(Y) ~ \text{if uncorrelated}
+          \end{aligned}
+        </pre>
+        <p>
+          for independent rvs,
+          <code class="math">
+            \Var(X_1 \pm \dots \pm X_n) = \Var(X_1) \pm \dots \pm \Var(X_n)
+          </code>
+        </p>
+        <p>correlation coefficient</p>
+        <pre class="math">
+          \begin{aligned}
+            \rho_{X, Y} &= \frac{\Cov(X, Y)}{\sigma_X \sigma_Y} \\
+            &= E\left[\left(\frac{X - E[X]}{\sigma_X}\right)\left(\frac{Y - E[Y]}{\sigma_Y}\right)\right] \\
+            |\rho_{X, Y}| &\leq 1
+          \end{aligned}
+        </pre>
+        <p>
+          independence &rightarrow; (uncorrelated &leftrightarrow;
+          <code class="math">E[XY] = E[X] \, E[Y]</code>)
+        </p>
+        <p>
+          then zeger went on to talk about estimation.. which spencer DID
+          mention , so 😱😱😱
+        </p>
+        <p>
+          mean squared error = <code class="math">E[(X - \hat{X})^2]</code> with
+          error <code class="math">e</code>, true value
+          <code class="math">X</code>, estimate
+          <code class="math">\hat{X}</code>
+        </p>
+        <p>best linear estimate</p>
+        <pre class="math">
+          \begin{aligned}
+            \hat{X} &= \frac{E[XY]}{E[Y^2]} \cdot Y \\
+            &= \rho_{X, Y} Y ~ \text{if $\sigma_X = \sigma_Y = 1$, $E[X] = E[Y] = 0$}
+          \end{aligned}
+        </pre>
+        <p>
+          joint gaussian
+          <img
+            src="https://cdn.discordapp.com/emojis/1023337389336305815.webp?size=56&quality=lossless"
+            alt=":bervous: emoji"
+            width="16"
+          />
+        </p>
+        <pre class="math">
+          \begin{aligned}
+            f_{X,Y}(u, v) &=
+              \frac{1}{2\pi\sigma_X\sigma_Y\sqrt{1-\rho^2}} ~
+              e^{\displaystyle -\frac{1}{2(1 - \rho^2)} \left(
+                \left(\frac{u - m_X}{\sigma_X}\right)^2
+                + \left(\frac{v - m_Y}{\sigma_Y}\right)^2
+                - 2\rho\left(\frac{u - m_X}{\sigma_X}\right)\left(\frac{v - m_Y}{\sigma_Y}\right)
+              \right)} ~ \text{where $\rho$ is the correlation coeff} \\
+            &= \frac{1}{2\pi\sqrt{1-\rho^2}} ~
+              e^{\displaystyle -\frac{1}{2(1 - \rho^2)}
+              (u^2 + v^2 - 2\rho uv)} ~ \text{if $m_X = m_Y = 0$, $\sigma_X = \sigma_Y = 1$} \\
+          \end{aligned}
+        </pre>
+        <p>just for gaussians, independence &leftrightarrow; uncorrelated</p>
+      </section>
     </main>
 
     <script type="module" type="text/javascript">
@@ -868,7 +958,8 @@
           macros: {
             '\\N': '\\mathcal{N}',
             '\\erf': '\\operatorname{erf}',
-            '\\Var': '\\operatorname{Var}'
+            '\\Var': '\\operatorname{Var}',
+            '\\Cov': '\\operatorname{Cov}'
           }
         })
       }
