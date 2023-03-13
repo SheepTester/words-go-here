@@ -16,16 +16,29 @@
     <script src="/sheep3.js" charset="utf-8"></script>
 
     <style>
+      :root {
+        --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji',
+          'Segoe UI Emoji', 'Segoe UI Symbol';
+      }
       html,
       body {
         height: 100%;
       }
       body {
         margin: 0;
-        display: flex;
+        display: grid;
+        font-family: var(--font);
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        grid-template-areas:
+          'day-1 day-1 day-2 day-2 day-3 day-3 day-4 day-4 day-5 day-5'
+          'day-0 day-0 day-0 day-0 day-0 day-6 day-6 day-6 day-6 day-6';
+      }
+      text {
+        font-family: var(--font);
       }
       .graph-wrapper {
-        flex: 1 0 0;
         position: relative;
       }
       .graph {
@@ -35,15 +48,27 @@
         fill: none;
       }
       .line {
-        stroke: black;
+        stroke-width: 2;
+      }
+      .day-heading {
+        text-align: center;
+        dominant-baseline: hanging;
+        fill: currentColor;
+        /* font-weight: bold; */
+        y: 10px;
       }
       @media (max-width: 1300px) {
         body {
-          flex-direction: column;
-        }
-        .graph-wrapper {
-          flex: none;
-          height: 70vh;
+          grid-template-columns: 1fr;
+          grid-template-rows: repeat(7, 70vh);
+          grid-template-areas:
+            'day-0'
+            'day-1'
+            'day-2'
+            'day-3'
+            'day-4'
+            'day-5'
+            'day-6';
         }
       }
     </style>
@@ -73,15 +98,31 @@
         weekend: [utcTime(8), utcTime(23)]
       }
       const CSV_URL =
-        'https://gist.githubusercontent.com/SheepTester/b0129842a02b52c1cee5e277d69849ab/raw/4c8c6d03a49d0231647828fdd3c3bb5383387f82/rimac_activity_data.csv'
-      const START = Date.UTC(2023, 0, 8) // Sunday before quarter starts
+        'https://gist.githubusercontent.com/SheepTester/b0129842a02b52c1cee5e277d69849ab/raw/f7c86689b98c0e6718000c34a2545031b4cb6787/rimac_activity_data.csv'
+      /** Sunday before quarter starts */
+      const START = Date.UTC(2023, 0, 8)
+      const RIMAC_TIME_ZONE = 'America/Los_Angeles'
+      /** Etienne hard-coded the time zone offset in the CSV :bervous: */
+      const CSV_TZ_OFFSET = '-08:00'
 
+      // https://stackoverflow.com/a/30640791
+      const formatter = new Intl.DateTimeFormat(['en-US'], {
+        timeZone: RIMAC_TIME_ZONE,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hourCycle: 'h23'
+      })
       const data = d3
         .csvParse(await fetch(CSV_URL).then(r => r.text()))
+        // .filter(({ isOpen }) => isOpen === 'true')
         .map(({ datetime, people }) => {
-          const [dateString, time] = datetime.split(' ')
-          const [year, month, date] = dateString.split('-')
-          const [hour, minute] = time.split(':')
+          const [, month, date, year, hour, minute] = formatter
+            .format(new Date(datetime.replace(' ', 'T') + '-08:00'))
+            .match(/(\d+)\/(\d+)\/(\d+), (\d+):(\d+):\d+/)
           const dateObj = new Date(Date.UTC(+year, +month - 1, +date))
           return {
             week: Math.floor((dateObj.getTime() - START) / MS_PER_WEEK),
@@ -95,18 +136,25 @@
         (cum, curr) => Math.max(cum, curr.people),
         0
       )
+      const maxWeek = data.reduce((cum, curr) => Math.max(cum, curr.week), 0)
+      const weekScale = d3.quantize(
+        d3.interpolateHcl('#2A4858', '#fafa6e'),
+        maxWeek + 1
+      )
 
       for (let day = 0; day < 7; day++) {
         const wrapper = Object.assign(document.createElement('div'), {
           className: 'graph-wrapper'
         })
+        wrapper.style.gridArea = `day-${day}`
         document.body.append(wrapper)
 
-        const hours = day === 0 || day === 6 ? HOURS.weekend : HOURS.weekday
+        const weekend = day === 0 || day === 6
+        const hours = weekend ? HOURS.weekend : HOURS.weekday
         const weeks = partition(
-          dataByDay[day] /*.filter(
-            ({ time }) => hours[0] >= time && hours[1] <= time
-          )*/,
+          dataByDay[day].filter(
+            ({ time }) => time >= hours[0] && time <= hours[1]
+          ),
           ({ week }) => week
         )
 
@@ -125,9 +173,26 @@
           .append('g')
           .attr('class', 'lines')
           .selectAll('path')
-          .data(Object.entries(weeks))
+          .data(Object.entries(weeks).sort((a, b) => +b[0] - +a[0]))
           .join('path')
           .attr('class', 'line')
+          .attr('stroke', week => weekScale[week[0]])
+
+        const heading = svg
+          .append('text')
+          .attr('class', 'day-heading')
+          .attr('y', MARGIN.top)
+          .text(
+            [
+              'Sunday',
+              'Monday',
+              'Tuesday',
+              'Wednesday',
+              'Thursday',
+              'Friday',
+              'Saturday'
+            ][day]
+          )
 
         const observer = new ResizeObserver(([{ borderBoxSize }]) => {
           const [{ blockSize: height, inlineSize: width }] = borderBoxSize
@@ -143,9 +208,8 @@
           yAxis
             .attr('transform', `translate(${MARGIN.left}, 0)`)
             .call(d3.axisLeft(yScale))
-          lines
-            .attr('d', week => line(week[1]))
-            .attr('stroke-opacity', week => 1 - week[0] * 0.2)
+          lines.attr('d', week => line(week[1]))
+          heading.attr('x', width / 2)
         })
         observer.observe(wrapper)
       }

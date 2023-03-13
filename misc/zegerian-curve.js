@@ -7,7 +7,7 @@ const modes = {
     item: 'Quiz',
     plural: 'Quiz scores',
     maxScore: 3,
-    range: [0, 1, 2, 3, 4],
+    range: [0, 1, 2, 3],
     colours: ['#ef4444', '#eab308', '#84cc16']
   },
   final: {
