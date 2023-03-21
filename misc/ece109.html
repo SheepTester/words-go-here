@@ -85,9 +85,18 @@
         font-size: 1rem;
         font-family: var(--font);
       }
+      .print-only {
+        display: none;
+      }
       @media print {
         sheep-btn {
           display: none;
+        }
+        .yeah .screen-only {
+          display: none;
+        }
+        .yeah .print-only {
+          display: unset;
         }
       }
       .rvs td:first-child {
@@ -95,16 +104,27 @@
       }
       .cols {
         display: flex;
+        gap: 5px;
+      }
+      .joint-gaussian {
+        position: fixed;
+        bottom: 0.5in;
+        right: 0.5in;
+        transform-origin: bottom right;
+        transform: rotate(90deg) translateY(100%);
       }
     </style>
   </head>
 
-  <body>
+  <body class="yeah">
     <div class="cols">
       <div class="col">
         <h2>given (conditional)</h2>
-        <pre class="math">
+        <pre class="math screen-only">
           P(A | B) = \frac{P(AB)}{P(B)}
+        </pre>
+        <pre class="math print-only">
+          P(A | B) = \frac{P(AB)}{P(A)}
         </pre>
         <pre class="math">
           \begin{aligned}
@@ -119,10 +139,10 @@
         </pre>
         <p>if independent given <code class="math">C</code>,</p>
         <pre class="math">
-          P(AB|C)=P(A|C)P(B|C)
+          P(AB|C) = P(A|C) \, P(B|C)
         </pre>
         <pre class="math">
-          P(A|BC)=P(A|C)
+          P(A|BC) = P(A|C)
         </pre>
         <p>independent RVs</p>
         <pre class="math">
@@ -134,7 +154,7 @@
           E[g(X)] = \int_{-\infty}^\infty g(u) \, f_X(u) \, du
         </pre>
         <pre class="math">
-          E[g(X, Y)] = \int_{-\infty}^\infty \int_{-\infty}^\infty g(u, v) \, f_{X, Y}(u, v) \, du \, dv
+          E[g(X, Y)] = \int\limits_{-\infty}^\infty \int\limits_{-\infty}^\infty g(u, v) \, f_{X, Y}(u, v) \, du \, dv
         </pre>
         <pre class="math">
           E[aX + g(Y) + b] = aE[X] + E[g(Y)] + b
@@ -146,12 +166,8 @@
         <pre class="math">
           \begin{aligned}
           P(B) &= P(BA) + P(BA^C) \\
-          &= P(B | A) \, P(A) + P(B | A^C) \, P(A^C)
-          \end{aligned}
-        </pre>
-        <pre class="math">
-          \begin{aligned}
-          P(A | E) &= P(A | B E) \, P(B | E) + P(B | C E) \, P(C | E)
+          &= P(B | A) \, P(A) + P(B | A^C) \, P(A^C) \\
+          P(A | E) &= P(A | B E) \, P(B | E) + P(A | C E) \, P(C | E)
           \end{aligned}
         </pre>
 
@@ -166,7 +182,7 @@
           \Var(X \pm Y) = \Var(X) + \Var(Y) \pm 2\Cov(X, Y)
         </pre>
         <pre class="math">
-          aX + b \sim N(am + b, a^2 \sigma^2)
+          (aX + b) \sim N(am + b, a^2 \sigma^2)
         </pre>
         <pre class="math">
           p_{aX + b}(u) = p_X \left(\frac{u - b}{a}\right)
@@ -179,11 +195,11 @@
           &= E[(X - E[X])(Y - E[Y])]
           \end{aligned}
         </pre>
-        <pre class="math">\Cov(aX, bY) = ab \Cov(X, Y)</pre>
+        <pre class="math">\Cov(aX + c, bY + d) = ab \Cov(X, Y)</pre>
+        <p>if independent then uncorrelated:</p>
         <p>
-          if independent then uncorrelated:
-          <code class="math">\Cov(X, Y) = 0</code>,
-          <code class="math">E[XY] = E[X] \, E[Y]</code>
+          <code class="math">E[XY] = E[X] \, E[Y]</code> so
+          <code class="math">\Cov(X, Y) = 0</code>
         </p>
         <pre class="math">
           \rho_{X, Y} = \frac{\Cov(X, Y)}{\sigma_X \sigma_Y}
@@ -308,14 +324,17 @@
       </tr>
       <tr>
         <td>
-          <p>Gaussian</p>
+          <p>gaussian</p>
           <pre class="math">
             X \sim \N(m, \sigma^2)
           </pre>
         </td>
         <td>
-          <pre class="math">
+          <pre class="math screen-only">
             f_X(u) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\dfrac{(u - m)^2}{2\sigma^2}}
+          </pre>
+          <pre class="math print-only">
+            f_X(u) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\dfrac{(u - m)^2}{\sigma^2}}
           </pre>
         </td>
         <td><pre class="math">m</pre></td>
@@ -340,6 +359,25 @@
     <pre class="math">
       \frac{d}{du} \int_{h(u)}^{g(u)} f(z, u) dz = f(g(u), u) \, g'(u) - f(h(u), u) \, h'(u) + \int_{h(u)}^{g(u)} \left(\frac{\partial}{\partial u} f(z, u)\right) dz
     </pre>
+
+    <div class="joint-gaussian">
+      <h2>joint gaussian</h2>
+      <pre class="math">
+        \begin{aligned}
+          f_{X,Y}(u, v) &=
+            \frac{1}{2\pi\sigma_X\sigma_Y\sqrt{1-\rho^2}} ~
+            e^{\displaystyle -\frac{1}{2(1 - \rho^2)} \left(
+              \left(\frac{u - m_X}{\sigma_X}\right)^2
+              + \left(\frac{v - m_Y}{\sigma_Y}\right)^2
+              - 2\rho\left(\frac{u - m_X}{\sigma_X}\right)\left(\frac{v - m_Y}{\sigma_Y}\right)
+            \right)} \\
+          &= \frac{1}{2\pi\sqrt{1-\rho^2}} ~
+            e^{\displaystyle -\frac{1}{2(1 - \rho^2)}
+            (u^2 + v^2 - 2\rho uv)} ~ \text{if $m_X = m_Y = 0$, $\sigma_X = \sigma_Y = 1$} \\
+        \end{aligned}
+      </pre>
+    </div>
+
     <script type="module" type="text/javascript">
       import katex from 'https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.mjs'
       for (const math of document.getElementsByClassName('math')) {
@@ -353,6 +391,10 @@
             '\\Cov': '\\operatorname{Cov}'
           }
         })
+      }
+
+      if (new URL(window.location.href).searchParams.get('wow') === 'meow') {
+        document.body.classList.remove('yeah')
       }
     </script>
   </body>
