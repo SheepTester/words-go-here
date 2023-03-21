@@ -137,7 +137,10 @@
         <pre class="math">
           P(A | B) = P(A)
         </pre>
-        <p>if independent given <code class="math">C</code>,</p>
+        <p>
+          if independent given <code class="math">C</code>,<br />
+          complements also independent
+        </p>
         <pre class="math">
           P(AB|C) = P(A|C) \, P(B|C)
         </pre>
@@ -165,9 +168,9 @@
         <h2>splitting into cases</h2>
         <pre class="math">
           \begin{aligned}
-          P(B) &= P(BA) + P(BA^C) \\
-          &= P(B | A) \, P(A) + P(B | A^C) \, P(A^C) \\
-          P(A | E) &= P(A | B E) \, P(B | E) + P(A | C E) \, P(C | E)
+          P(A) &= P(AB) + P(AB^C) \\
+          &= P(A | B) \, P(B) + P(A | B^C) \, P(B^C) \\
+          P(A | E) &= P(A | B E) \, P(B | E) + P(A | B^C E) \, P(B^C | E)
           \end{aligned}
         </pre>
 
@@ -196,8 +199,8 @@
           \end{aligned}
         </pre>
         <pre class="math">\Cov(aX + c, bY + d) = ab \Cov(X, Y)</pre>
-        <p>if independent then uncorrelated:</p>
         <p>
+          if independent then uncorrelated:<br />
           <code class="math">E[XY] = E[X] \, E[Y]</code> so
           <code class="math">\Cov(X, Y) = 0</code>
         </p>
