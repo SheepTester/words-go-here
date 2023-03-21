@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>ECE 109 cheat sheet</title>
+    <meta
+      name="description"
+      content="cumulative cheat sheet for ece 109 (for the final)"
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto+Condensed&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css"
+      integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X"
+      crossorigin="anonymous"
+    />
+
+    <style>
+      :root {
+        font-size: 14px;
+        --font: 'Roboto Condensed', 'Helvetica Neue', Helvetica, Arial,
+          sans-serif;
+      }
+      body {
+        font-family: var(--font);
+        margin: 0.5in;
+        line-height: 1;
+      }
+      @page {
+        margin: 0;
+      }
+      h2 {
+        font-size: 1em;
+        break-after: avoid;
+      }
+      h2,
+      th {
+        margin: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+      }
+      p {
+        margin: 0;
+      }
+      th {
+        text-align: left;
+      }
+      table {
+        border-collapse: collapse;
+        margin-bottom: 5px;
+      }
+      th,
+      td {
+        border: 1px solid black;
+        vertical-align: top;
+      }
+      .math {
+        margin: -10px 0;
+        font: inherit;
+        font-family: monospace;
+        white-space: pre-wrap;
+      }
+      pre.math {
+        max-width: 100%;
+      }
+      .katex {
+        font-size: 1em;
+      }
+      .katex-display,
+      .katex-display > .katex {
+        text-align: left;
+      }
+      .katex .text {
+        font-size: 1rem;
+        font-family: var(--font);
+      }
+      @media print {
+        sheep-btn {
+          display: none;
+        }
+      }
+      .rvs td:first-child {
+        max-width: 150px;
+      }
+      .cols {
+        display: flex;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="cols">
+      <div class="col">
+        <h2>given (conditional)</h2>
+        <pre class="math">
+          P(A | B) = \frac{P(AB)}{P(B)}
+        </pre>
+        <pre class="math">
+          \begin{aligned}
+          P(AB) &= P(A) \, P(B | A) \\
+          &= P(A) \, P(B) ~ \text{if independent}
+          \end{aligned}
+        </pre>
+
+        <h2>independence</h2>
+        <pre class="math">
+          P(A | B) = P(A)
+        </pre>
+        <p>if independent given <code class="math">C</code>,</p>
+        <pre class="math">
+          P(AB|C)=P(A|C)P(B|C)
+        </pre>
+        <pre class="math">
+          P(A|BC)=P(A|C)
+        </pre>
+        <p>independent RVs</p>
+        <pre class="math">
+          P(X = a, Y = b) = P(X = a) \, P(Y = b)
+        </pre>
+
+        <h2>expected value</h2>
+        <pre class="math">
+          E[g(X)] = \int_{-\infty}^\infty g(u) \, f_X(u) \, du
+        </pre>
+        <pre class="math">
+          E[g(X, Y)] = \int_{-\infty}^\infty \int_{-\infty}^\infty g(u, v) \, f_{X, Y}(u, v) \, du \, dv
+        </pre>
+        <pre class="math">
+          E[aX + g(Y) + b] = aE[X] + E[g(Y)] + b
+        </pre>
+      </div>
+
+      <div class="col">
+        <h2>splitting into cases</h2>
+        <pre class="math">
+          \begin{aligned}
+          P(B) &= P(BA) + P(BA^C) \\
+          &= P(B | A) \, P(A) + P(B | A^C) \, P(A^C)
+          \end{aligned}
+        </pre>
+        <pre class="math">
+          \begin{aligned}
+          P(A | E) &= P(A | B E) \, P(B | E) + P(B | C E) \, P(C | E)
+          \end{aligned}
+        </pre>
+
+        <h2>variance</h2>
+        <pre class="math">
+          \Var(X) = E[X^2] - E[X]^2 = E[(X - E[X])^2]
+        </pre>
+        <pre class="math">
+          \Var(aX) = a^2 \Var(X)
+        </pre>
+        <pre class="math">
+          \Var(X \pm Y) = \Var(X) + \Var(Y) \pm 2\Cov(X, Y)
+        </pre>
+        <pre class="math">
+          aX + b \sim N(am + b, a^2 \sigma^2)
+        </pre>
+        <pre class="math">
+          p_{aX + b}(u) = p_X \left(\frac{u - b}{a}\right)
+        </pre>
+
+        <h2>covariance</h2>
+        <pre class="math">
+          \begin{aligned}
+          \Cov(X, Y) &= E[XY] - E[X] \, E[Y] \\
+          &= E[(X - E[X])(Y - E[Y])]
+          \end{aligned}
+        </pre>
+        <pre class="math">\Cov(aX, bY) = ab \Cov(X, Y)</pre>
+        <p>
+          if independent then uncorrelated:
+          <code class="math">\Cov(X, Y) = 0</code>,
+          <code class="math">E[XY] = E[X] \, E[Y]</code>
+        </p>
+        <pre class="math">
+          \rho_{X, Y} = \frac{\Cov(X, Y)}{\sigma_X \sigma_Y}
+        </pre>
+      </div>
+
+      <div class="col">
+        <h2>marginal</h2>
+        <pre class="math">
+          f_X(u) = \int_{-\infty}^\infty f_{X,Y}(u, v) \, dv
+        </pre>
+
+        <h2>math</h2>
+        <pre class="math">
+          \binom{n}{k} = \frac{n!}{k! \, (n - k)!}
+        </pre>
+        <pre class="math">
+          \int ue^{au} = \frac{1}{a} ue^{au} - \frac{1}{a^2} e^{au}
+        </pre>
+        <pre class="math">
+          \int ue^{au^2} = \frac{1}{2a} e^{au^2}
+        </pre>
+        <pre class="math">
+          \iint f(r, \theta) \, r \, dr \, d\theta
+        </pre>
+        <pre class="math">\sin 2x = 2 \sin x \cos x</pre>
+        <pre class="math">\cos 2x = \cos^2 x - \sin^2 x</pre>
+        <pre class="math">\log A - \log B = \log \left(\frac{A}{B}\right)</pre>
+        <pre class="math">n \log A = \log A^n</pre>
+      </div>
+    </div>
+
+    <table class="rvs">
+      <tr>
+        <th>RV</th>
+        <th>pmf/pdf</th>
+        <th>mean</th>
+        <th>variance</th>
+      </tr>
+      <tr>
+        <td><p>uniform (discrete)</p></td>
+        <td>
+          <p>
+            <code class="math">n</code> equally spaced rvs of probability
+            <code class="math">\frac{1}{n}</code>
+          </p>
+        </td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>
+          <p>binary RV</p>
+          <p><em>flipping a biased coin</em></p>
+        </td>
+        <td>
+          <pre class="math">p_X(0) = 1 - q</pre>
+          <pre class="math">p_X(1) = q</pre>
+        </td>
+        <td><pre class="math">q</pre></td>
+        <td><pre class="math">q(1-q)</pre></td>
+      </tr>
+      <tr>
+        <td>
+          <p>binomial</p>
+          <p>
+            <em>
+              number of heads from flipping biased coin
+              <code class="math">n</code> times
+            </em>
+          </p>
+        </td>
+        <td>
+          <pre class="math">
+            p_X(k) = \binom{n}{k} p^k (1 - p)^{n-k}
+          </pre>
+          <p>for <code class="math">k = 0, 1, \dots, n</code></p>
+        </td>
+        <td><pre class="math">np</pre></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><p>poisson</p></td>
+        <td>
+          <pre class="math">
+              p_X(k) = \dfrac{\lambda^k e^{-\lambda}}{k!}
+            </pre
+          >
+          <p>for <code class="math">k = 0, 1, 2, \dots</code></p>
+        </td>
+        <td><pre class="math">\lambda</pre></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>
+          <p>geometric</p>
+          <p><em>number of biased coin flips until first head</em></p>
+        </td>
+        <td>
+          <pre class="math">
+            p_X(k) = p(1 - p)^{k - 1}
+          </pre>
+          <p>for <code class="math">k = 1, 2, 3, \dots</code></p>
+        </td>
+        <td><pre class="math">\frac{1}{p}</pre></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>
+          <p>uniformly distributed on <code class="math">[a, b]</code></p>
+        </td>
+        <td>
+          <pre class="math">
+            f_X(u) = \begin{cases}
+              \dfrac{1}{b - a} & \text{if $a < u < b$} \\
+              0 & \text{else}
+            \end{cases}
+          </pre>
+        </td>
+        <td><pre class="math">\frac{a + b}{2}</pre></td>
+        <td><pre class="math">\frac{(a-b)^2}{12}</pre></td>
+      </tr>
+      <tr>
+        <td>
+          <p>Gaussian</p>
+          <pre class="math">
+            X \sim \N(m, \sigma^2)
+          </pre>
+        </td>
+        <td>
+          <pre class="math">
+            f_X(u) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\dfrac{(u - m)^2}{2\sigma^2}}
+          </pre>
+        </td>
+        <td><pre class="math">m</pre></td>
+        <td><pre class="math">\sigma^2</pre></td>
+      </tr>
+      <tr>
+        <td><p>exponential</p></td>
+        <td>
+          <pre class="math">
+            f_X(u) = \begin{cases}
+              \lambda e^{-\lambda u} & \text{if $u > 0$} \\
+              0 & \text{else}
+            \end{cases}
+          </pre>
+        </td>
+        <td><pre class="math">\frac{1}{\lambda}</pre></td>
+        <td></td>
+      </tr>
+    </table>
+
+    <h2>leibniz</h2>
+    <pre class="math">
+      \frac{d}{du} \int_{h(u)}^{g(u)} f(z, u) dz = f(g(u), u) \, g'(u) - f(h(u), u) \, h'(u) + \int_{h(u)}^{g(u)} \left(\frac{\partial}{\partial u} f(z, u)\right) dz
+    </pre>
+    <script type="module" type="text/javascript">
+      import katex from 'https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.mjs'
+      for (const math of document.getElementsByClassName('math')) {
+        katex.render(math.textContent, math, {
+          throwOnError: true,
+          displayMode: math.tagName === 'PRE',
+          macros: {
+            '\\N': '\\mathcal{N}',
+            '\\erf': '\\operatorname{erf}',
+            '\\Var': '\\operatorname{Var}',
+            '\\Cov': '\\operatorname{Cov}'
+          }
+        })
+      }
+    </script>
+  </body>
+</html>
