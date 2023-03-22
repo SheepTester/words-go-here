@@ -127,6 +127,10 @@ body {
   padding: 10px;
   flex: none;
 }
+.no-scores {
+  width: unset;
+  flex: auto;
+}
 .scores {
   display: flex;
   flex: auto;

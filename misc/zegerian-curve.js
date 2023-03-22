@@ -58,26 +58,28 @@ function Quiz ({ mode, name, scores, afterCurrent, onSelect }) {
       class: `quiz ${afterCurrent ? 'after' : ''}`,
       onMouseEnter: onSelect
     },
-    h('h3', { class: 'quiz-name' }, name),
-    h(
-      'div',
-      { class: 'scores' },
-      scores.map((count, score) =>
-        h(
-          'div',
-          {
-            class: `score score-${score}`,
-            title: `${score}/${modes[mode].maxScore}`,
-            style: { flexGrow: count }
-          },
-          h('span', { class: 'number' }, count)
+    h('h3', { class: `quiz-name ${scores ? '' : 'no-scores'}` }, name),
+    scores &&
+      h(
+        'div',
+        { class: 'scores' },
+        scores.map((count, score) =>
+          h(
+            'div',
+            {
+              class: `score score-${score}`,
+              title: `${score}/${modes[mode].maxScore}`,
+              style: { flexGrow: count }
+            },
+            h('span', { class: 'number' }, count)
+          )
         )
       )
-    )
   )
 }
 
 function Quizzes ({ mode, quizzes, quiz, onQuiz }) {
+  const showPartScores = !(quizzes[0].length > modes[mode].maxScore + 1)
   return h(
     'div',
     { class: 'section quizzes', onMouseLeave: onQuiz && (() => onQuiz(null)) },
@@ -87,26 +89,28 @@ function Quizzes ({ mode, quizzes, quiz, onQuiz }) {
         mode,
         key: i,
         name: `${modes[mode].item} ${i + 1}`,
-        scores,
-        afterCurrent: quiz !== null && i + 1 > quiz,
+        scores: showPartScores && scores,
+        afterCurrent:
+          quiz !== null && (mode === 'final' ? i + 1 !== quiz : i + 1 > quiz),
         onSelect: onQuiz && (() => onQuiz(i + 1))
       })
     ),
-    h(
-      'div',
-      { class: 'key' },
-      h('h3', { class: 'key-heading' }, 'Key'),
-      modes[mode].range.map(score =>
-        h(
-          'div',
-          { class: 'score-key', key: score },
-          h('div', { class: `score-colour score-${score}` }),
-          ' ',
-          score,
-          `/${modes[mode].maxScore}`
+    showPartScores &&
+      h(
+        'div',
+        { class: 'key' },
+        h('h3', { class: 'key-heading' }, 'Key'),
+        modes[mode].range.map(score =>
+          h(
+            'div',
+            { class: 'score-key', key: score },
+            h('div', { class: `score-colour score-${score}` }),
+            ' ',
+            score,
+            `/${modes[mode].maxScore}`
+          )
         )
       )
-    )
   )
 }
 
