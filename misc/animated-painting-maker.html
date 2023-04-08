@@ -38,7 +38,8 @@
     <p><label><input type="checkbox" id="transparent"> Is the GIF transparent?</label> Note that <a href="https://bugs.mojang.com/browse/MC-164001">paintings might not support transparency</a>.</p>
     <h2>Preview</h2>
     <canvas id="preview"></canvas>
-    <h2><code>TEXTURE_NAME.png</code></h2>
+    <!-- Safari doesn't let you right click > Save image on canvases -->
+    <h2><code>TEXTURE_NAME.png</code> <button id="download">download</button></h2>
     <canvas id="output"></canvas>
     <h2><code>TEXTURE_NAME.png.mcmeta</code></h2>
     <textarea id="frametime" rows="5" cols="20" readonly></textarea>
@@ -172,6 +173,7 @@ const pc = preview.getContext('2d');
 const output = document.getElementById('output');
 const oc = output.getContext('2d');
 const frameTime = document.getElementById('frametime');
+const downloadBtn = document.getElementById('download');
 Object.values(options).forEach(input => input.addEventListener('change', update));
 gifSelector.addEventListener('change', e => {
   loadFile(gifSelector.files[0]);
@@ -181,6 +183,18 @@ document.addEventListener('paste', e => {
 });
 isTransparent.addEventListener('change', e => {
   loadFrames();
+});
+downloadBtn.addEventListener('click', e => {
+  output.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = 'TEXTURE_NAME.png';
+    link.href = url;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  });
 });
     </script>
   </body>
