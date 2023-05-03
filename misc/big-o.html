@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Asymptotic class notation (order of growth)</title>
+    <meta
+      name="description"
+      content="I keep forgetting what big theta and little o are, so I'm making this cheat sheet for myself."
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.css"
+      integrity="sha384-3UiQGuEI4TTMaFmGIZumfRPtfKQ3trwQE2JgosJxCnGmQpL/lJdjpcHkaaFwHlcI"
+      crossorigin="anonymous"
+    />
+    <style>
+      html {
+        height: 100%;
+      }
+      body {
+        min-height: 100%;
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(4, 340px);
+        align-items: center;
+        justify-content: space-evenly;
+        background-color: #f4f4f4;
+        font-family: 'Montserrat', sans-serif;
+        text-align: center;
+        color: rgba(0, 0, 0, 0.8);
+      }
+      @media (max-width: 1360px) {
+        body {
+          grid-template-columns: repeat(2, 340px);
+        }
+      }
+      @media (max-width: 680px) {
+        body {
+          grid-template-columns: 1fr;
+        }
+      }
+      .class {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        --accent: black;
+      }
+      .name {
+        font-size: 1rem;
+        text-transform: uppercase;
+        margin: 0;
+        color: rgba(0, 0, 0, 0.3);
+      }
+      .notation,
+      .description {
+        margin: 0;
+        font-size: 3rem;
+        font-family: Katex_Main, 'Times New Roman', serif;
+      }
+      .variable,
+      .function-name {
+        font-style: italic;
+        font-family: Katex_Math, serif;
+      }
+      .paren-class,
+      .paren-function {
+        font-family: Katex_Math, serif;
+      }
+      .f {
+        margin-right: 0.1076em;
+      }
+      .class-function,
+      .paren-class,
+      .comparison {
+        color: var(--accent);
+      }
+      .paren-class {
+        font-size: 1.2em;
+      }
+      .comparison {
+        font-weight: bold;
+      }
+      .in {
+        color: rgba(0, 0, 0, 0.5);
+      }
+      .description {
+        font-size: 2.5rem;
+      }
+      .note {
+        font-weight: normal;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: rgba(0, 0, 0, 0.3);
+        font-size: 1rem;
+        margin: 20px 0;
+      }
+
+      #little-o {
+        --accent: #14b8a6;
+      }
+      #big-o {
+        --accent: #0ea5e9;
+      }
+      #big-theta {
+        --accent: #a855f7;
+      }
+      #big-omega {
+        --accent: #ec4899;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="note">Smaller is faster and better.</h1>
+    <article class="class" id="little-o">
+      <h2 class="name">Little o</h2>
+      <p class="notation">
+        <span class="variable f">f</span><span class="paren-function">(</span
+        ><span class="variable">n</span><span class="paren-function">)</span>
+        <span class="in">&in;</span> <span class="class-function">o</span
+        ><span class="paren-class">(</span><span class="variable">g</span
+        ><span class="paren-function">(</span><span class="variable">n</span
+        ><span class="paren-function">)</span><span class="paren-class">)</span>
+      </p>
+      <p class="description">
+        <span class="function-name">f</span>
+        <span class="comparison">&lt;</span>
+        <span class="function-name">g</span>
+      </p>
+    </article>
+    <article class="class" id="big-o">
+      <h2 class="name">Big O</h2>
+      <p class="notation">
+        <span class="variable f">f</span><span class="paren-function">(</span
+        ><span class="variable">n</span><span class="paren-function">)</span>
+        <span class="in">&in;</span> <span class="class-function">O</span
+        ><span class="paren-class">(</span><span class="variable">g</span
+        ><span class="paren-function">(</span><span class="variable">n</span
+        ><span class="paren-function">)</span><span class="paren-class">)</span>
+      </p>
+      <p class="description">
+        <span class="function-name">f</span>
+        <span class="comparison">&le;</span>
+        <span class="function-name">g</span>
+      </p>
+    </article>
+    <article class="class" id="big-theta">
+      <h2 class="name">Big Theta</h2>
+      <p class="notation">
+        <span class="variable f">f</span><span class="paren-function">(</span
+        ><span class="variable">n</span><span class="paren-function">)</span>
+        <span class="in">&in;</span> <span class="class-function">&Theta;</span
+        ><span class="paren-class">(</span><span class="variable">g</span
+        ><span class="paren-function">(</span><span class="variable">n</span
+        ><span class="paren-function">)</span><span class="paren-class">)</span>
+      </p>
+      <p class="description">
+        <span class="function-name">f</span>
+        <span class="comparison">=</span>
+        <span class="function-name">g</span>
+      </p>
+    </article>
+    <article class="class" id="big-omega">
+      <h2 class="name">Big Omega</h2>
+      <p class="notation">
+        <span class="variable f">f</span><span class="paren-function">(</span
+        ><span class="variable">n</span><span class="paren-function">)</span>
+        <span class="in">&in;</span> <span class="class-function">&Omega;</span
+        ><span class="paren-class">(</span><span class="variable">g</span
+        ><span class="paren-function">(</span><span class="variable">n</span
+        ><span class="paren-function">)</span><span class="paren-class">)</span>
+      </p>
+      <p class="description">
+        <span class="function-name">f</span>
+        <span class="comparison">&ge;</span>
+        <span class="function-name">g</span>
+      </p>
+    </article>
+  </body>
+</html>
