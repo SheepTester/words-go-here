@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>better google calendar event creation screen</title>
+    <meta
+      name="description"
+      content="no animations, loads faster, more accessible, fewer clicks"
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <form action="https://calendar.google.com/calendar/render" method="GET">
+      <input type="hidden" name="action" value="TEMPLATE" />
+
+      <fieldset>
+        <legend>Create an event</legend>
+        <p>
+          <label>Summary: <input type="text" name="text" autofocus /></label>
+        </p>
+        <p>
+          <label>
+            Details: <br />
+            <textarea name="details" cols="80" rows="5"></textarea>
+          </label>
+        </p>
+        <p>
+          <label>Location: <input type="text" name="location" /></label>
+        </p>
+        <p>
+          <label>Date: <input type="date" id="date" /></label>
+        </p>
+        <p>
+          <label>Start: <input type="time" id="start" value="18:00" /></label>
+        </p>
+        <p>
+          <label>End: <input type="time" id="end" /></label>
+        </p>
+        <input type="hidden" name="dates" id="dates" />
+        <button>Create</button>
+      </fieldset>
+    </form>
+    <script>
+      const inputs = {
+        date: document.getElementById('date'),
+        start: document.getElementById('start'),
+        end: document.getElementById('end')
+      }
+      const dates = document.getElementById('dates')
+      let endSet = false
+
+      const today = new Date()
+      inputs.date.value = [
+        today.getFullYear(),
+        today.getMonth() + 1,
+        today.getDate()
+      ]
+        .map(n => n.toString().padStart(2, '0'))
+        .join('-')
+
+      inputs.end.addEventListener(
+        'input',
+        () => {
+          endSet = true
+        },
+        { once: true }
+      )
+
+      function update () {
+        const dateStr = inputs.date.value.replaceAll('-', '')
+        if (!endSet) {
+          const [hour, minute] = inputs.start.value.split(':').map(Number)
+          inputs.end.value = `${(hour + 1).toString().padStart(2, '0')}:${minute
+            .toString()
+            .padStart(2, '0')}`
+        }
+        dates.value = `${dateStr}T${start.value.replace(
+          ':',
+          ''
+        )}00/${dateStr}T${end.value.replace(':', '')}00`
+      }
+      update()
+      for (const input of Object.values(inputs)) {
+        input.addEventListener('input', update)
+      }
+    </script>
+  </body>
+</html>
