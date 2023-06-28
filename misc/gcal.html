@@ -28,16 +28,14 @@
             <textarea name="details" cols="80" rows="5"></textarea>
           </label>
         </p>
+        <!-- <div id="contenteditable" contenteditable></div>
+        <input type="hidden" name="details" id="details" /> -->
         <p>
           <label>Location: <input type="text" name="location" /></label>
         </p>
         <p>
           <label>Date: <input type="date" id="date" /></label>
-        </p>
-        <p>
           <label>Start: <input type="time" id="start" value="18:00" /></label>
-        </p>
-        <p>
           <label>End: <input type="time" id="end" /></label>
         </p>
         <input type="hidden" name="dates" id="dates" />
@@ -87,6 +85,12 @@
       for (const input of Object.values(inputs)) {
         input.addEventListener('input', update)
       }
+
+      // const contenteditable = document.getElementById('contenteditable')
+      // const details = document.getElementById('details')
+      // contenteditable.addEventListener('input', () => {
+      //   details.value = contenteditable.innerHTML
+      // })
     </script>
   </body>
 </html>

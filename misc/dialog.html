@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>html native dialog close animation?</title>
+    <meta
+      name="description"
+      content="since i found out visibility is pretty good for animating dialogs"
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      dialog {
+        position: fixed;
+        inset-block-start: 0px;
+        inset-block-end: 0px;
+        max-width: calc((100% - 6px) - 2em);
+        max-height: calc((100% - 6px) - 2em);
+        user-select: text;
+        visibility: visible;
+        overflow: auto;
+
+        display: block;
+        visibility: hidden;
+
+        opacity: 0;
+        transition: all 0.5s;
+      }
+      dialog[open] {
+        visibility: visible;
+
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <dialog>
+      <form method="dialog">
+        <p>Cool</p>
+        <button>Close</button>
+      </form>
+    </dialog>
+    <button id="open">Open dialog</button>
+    <script>
+      document.getElementById('open').addEventListener('click', () => {
+        document.querySelector('dialog').showModal()
+      })
+    </script>
+  </body>
+</html>
