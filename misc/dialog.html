@@ -34,12 +34,19 @@
         justify-content: center;
         align-items: center;
         background-color: rgba(19, 16, 49, 0.5);
+        /* It's black on iOS, even though the page text is white. */
+        color: white;
         opacity: 0;
+        pointer-events: none;
+        /* Remove text selection on close. Should be fine without though */
+        user-select: none;
         transition: all 0.5s;
       }
       dialog[open] {
         visibility: visible;
         opacity: 1;
+        pointer-events: unset;
+        user-select: text;
       }
       dialog:modal {
         max-width: unset;
@@ -69,7 +76,9 @@
         transform: none;
       }
       h1,
-      p {
+      h2,
+      p,
+      ul {
         margin: 0;
       }
       button {
@@ -95,12 +104,27 @@
           <button aria-label="Close">&times;</button>
         </div>
         <p>wassup</p>
+        <div class="row">
+          <button type="button" id="increment">Click me!</button>
+          <span id="count">0</span>
+        </div>
       </form>
     </dialog>
     <p><button id="open">Open dialog</button></p>
     <p>
       <label><input type="checkbox" id="slow" /> Slow animation</label>
     </p>
+    <h2>Browser notes</h2>
+    <ul>
+      <li>
+        In Chrome, while you can't tab to the buttons, clicking on them can
+        still give them focus.
+      </li>
+      <li>
+        In Firefox, the close button is still focusable by shift-tabbing before
+        the open button.
+      </li>
+    </ul>
     <script>
       document.getElementById('open').addEventListener('click', () => {
         document.querySelector('dialog').showModal()
@@ -119,6 +143,12 @@
         } else {
           document.body.classList.remove('slow')
         }
+      })
+
+      let count = 0
+      document.getElementById('increment').addEventListener('click', () => {
+        count++
+        document.getElementById('count').textContent = count
       })
     </script>
   </body>
