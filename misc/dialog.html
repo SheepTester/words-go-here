@@ -17,40 +17,108 @@
       :root {
         color-scheme: dark;
       }
+      body {
+        font-family: sans-serif;
+      }
       dialog {
-        position: fixed;
-        inset-block-start: 0px;
-        inset-block-end: 0px;
-        max-width: calc((100% - 6px) - 2em);
-        max-height: calc((100% - 6px) - 2em);
-        user-select: text;
-        visibility: visible;
-        overflow: auto;
-
         display: block;
         visibility: hidden;
-
+        border: none;
+        padding: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(19, 16, 49, 0.5);
         opacity: 0;
         transition: all 0.5s;
       }
       dialog[open] {
         visibility: visible;
-
         opacity: 1;
+      }
+      dialog:modal {
+        max-width: unset;
+        max-height: unset;
+      }
+      dialog::backdrop {
+        background: none;
+      }
+      form {
+        border-radius: 15px;
+        padding: 20px;
+        background-color: rgb(19, 16, 49);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        transform: scale(0.9);
+        transition: transform 0.5s;
+      }
+      .row {
+        display: flex;
+        gap: 20px;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      dialog[open] form {
+        transform: none;
+      }
+      h1,
+      p {
+        margin: 0;
+      }
+      button {
+        cursor: pointer;
+      }
+      .slow dialog,
+      .slow form {
+        transition-duration: 5s;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin: 20px;
       }
     </style>
   </head>
   <body>
     <dialog>
       <form method="dialog">
-        <p>Cool</p>
-        <button>Close</button>
+        <div class="row">
+          <h1>Hi, gamers</h1>
+          <button aria-label="Close">&times;</button>
+        </div>
+        <p>wassup</p>
       </form>
     </dialog>
-    <button id="open">Open dialog</button>
+    <p><button id="open">Open dialog</button></p>
+    <p>
+      <label><input type="checkbox" id="slow" /> Slow animation</label>
+    </p>
     <script>
       document.getElementById('open').addEventListener('click', () => {
         document.querySelector('dialog').showModal()
+      })
+
+      // Close modal when backdrop clicked
+      document.querySelector('dialog').addEventListener('click', e => {
+        if (e.target === e.currentTarget) {
+          e.currentTarget.close()
+        }
+      })
+
+      document.getElementById('slow').addEventListener('change', e => {
+        if (e.currentTarget.checked) {
+          document.body.classList.add('slow')
+        } else {
+          document.body.classList.remove('slow')
+        }
       })
     </script>
   </body>
