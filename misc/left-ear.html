@@ -5,68 +5,247 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>rip my left ear</title>
-    <meta name="description" content="pan left/right" />
+    <meta
+      name="description"
+      content="Figure out which earbud is which. Test your stereo speakers. Is one ear more deaf than the other?"
+    />
 
-    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
 
     <style>
-      /* TEMP */
+      :root {
+        --soft-bg: rgba(0, 0, 0, 0.05);
+        --secondary: rgba(0, 0, 0, 0.7);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          --soft-bg: rgba(255, 255, 255, 0.1);
+          --secondary: rgba(255, 255, 255, 0.5);
+        }
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        padding: 20px;
+        padding-bottom: 70px;
+        box-sizing: border-box;
+        gap: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji',
+          'Segoe UI Emoji', 'Segoe UI Symbol';
+        word-break: break-word;
+      }
+      .column {
+        display: flex;
+        flex-direction: column;
+      }
+      h2,
+      p {
+        margin: 0;
+      }
+      a {
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .instruction {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .number {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex: none;
+        width: 1.5em;
+        height: 1.5em;
+        border-radius: 50%;
+        background-color: var(--soft-bg);
+        font-size: 24px;
+        font-weight: bold;
+      }
+      .wide-wrapper {
+        gap: 5px;
+        width: 100%;
+        align-items: center;
+      }
+      .audio {
+        width: 100%;
+      }
+      .note {
+        font-size: 0.8em;
+        color: var(--secondary);
+      }
+      .track {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: var(--soft-bg);
+        height: 40px;
+        touch-action: none;
+        border-radius: 10px;
+        cursor: crosshair;
+        position: relative;
+        overflow: hidden;
+      }
+      .track::before {
+        content: '';
+        position: absolute;
+        background-color: var(--soft-bg);
+        width: var(--pan);
+        top: 0;
+        bottom: 0;
+      }
+      .pan-left::before {
+        right: 50%;
+      }
+      .pan-right::before {
+        left: 50%;
+      }
+      .ears {
+        flex: auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+      }
+      .ears .column {
+        flex: 1 0 0;
+      }
+      .right-ear {
+        align-items: flex-end;
+        text-align: right;
+      }
     </style>
   </head>
-  <body>
-    <p>Press play, then move your mouse/finger left/right</p>
-    <audio src="/platformre/a/waterflame_glorious_morning.mp3" id="audio" autoplay loop controls></audio>
-    <p>Music: <a href="https://www.newgrounds.com/audio/listen/91476">Glorious morning</a> by Waterflame</p>
-    <textarea id="output" rows="8" cols="80" readonly></textarea>
-    <script>
-      const audio = document.getElementById('audio')
-      const output = document.getElementById('output')
-
+  <body class="column">
+    <p class="instruction">
+      <span class="number">1</span>
+      Press play.
+    </p>
+    <div class="wide-wrapper column">
+      <audio
+        src="/platformre/a/waterflame_glorious_morning.mp3"
+        class="audio"
+        id="audio"
+        autoplay
+        loop
+        controls
+      ></audio>
+      <p class="note">
+        <a href="https://www.newgrounds.com/audio/listen/91476"
+          >Glorious morning</a
+        >
+        by Waterflame
+      </p>
+    </div>
+    <p class="instruction">
+      <span class="number">2</span>
+      Slide your mouse/finger left and right in the track below.
+    </p>
+    <div class="wide-wrapper column">
+      <div class="track" id="pan"></div>
+      <p class="note">Scratch pan value</p>
+    </div>
+    <div class="ears">
+      <section class="column">
+        <h2>Left ear</h2>
+        <p>Gain: <span id="left-gain">0.0000</span>%</p>
+        <p>Hears <span id="left-hears">0.0000</span>% of right ear.</p>
+      </section>
+      <section class="column right-ear">
+        <h2>Right ear</h2>
+        <p>Gain: <span id="right-gain">0.0000</span>%</p>
+        <p>Hears <span id="right-hears">0.0000</span>% of left ear.</p>
+      </section>
+    </div>
+    <script type="module">
+      const MARGIN = 20
       // https://github.com/LLK/scratch-audio/blob/develop/src/AudioEngine.js#L112
       const DECAY_WAIT = 0.05
       const DECAY_DURATION = 0.025
 
-      let audioContext
-      audio.addEventListener('play', e => {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      const audio = document.getElementById('audio')
+      const output = {
+        pan: document.getElementById('pan'),
+        leftGain: document.getElementById('left-gain'),
+        leftHears: document.getElementById('left-hears'),
+        rightGain: document.getElementById('right-gain'),
+        rightHears: document.getElementById('right-hears')
+      }
 
-        const audioSource = audioContext.createMediaElementSource(audio)
+      await new Promise(resolve => {
+        audio.addEventListener('play', resolve, { once: true })
+      })
+
+      output.pan.textContent = '0.0000'
+
+      const audioContext = new AudioContext()
+      const audioSource = audioContext.createMediaElementSource(audio)
+      // https://github.com/LLK/scratch-audio/blob/develop/src/effects/PanEffect.js
+      const inputNode = audioContext.createGain()
+      const leftGain = audioContext.createGain()
+      const rightGain = audioContext.createGain()
+      const channelMerger = audioContext.createChannelMerger(2)
+
+      audioSource.connect(inputNode)
+      inputNode.connect(leftGain)
+      inputNode.connect(rightGain)
+      leftGain.connect(channelMerger, 0, 0)
+      rightGain.connect(channelMerger, 0, 1)
+      channelMerger.connect(audioContext.destination)
+
+      function handlePointer (event) {
+        const pan = Math.min(
+          Math.max(
+            (event.clientX - MARGIN) / (window.innerWidth - MARGIN * 2),
+            0
+          ),
+          1
+        )
+
         // https://github.com/LLK/scratch-audio/blob/develop/src/effects/PanEffect.js
-        const inputNode = audioContext.createGain()
-        const leftGain = audioContext.createGain()
-        const rightGain = audioContext.createGain()
-        const channelMerger = audioContext.createChannelMerger(2)
+        // Use trig functions for equal-loudness panning
+        // See e.g. https://docs.cycling74.com/max7/tutorials/13_panningchapter01
+        const leftVal = Math.cos((pan * Math.PI) / 2)
+        const rightVal = Math.sin((pan * Math.PI) / 2)
 
-        audioSource.connect(inputNode)
-        inputNode.connect(leftGain)
-        inputNode.connect(rightGain)
-        leftGain.connect(channelMerger, 0, 0)
-        rightGain.connect(channelMerger, 0, 1)
-        channelMerger.connect(audioContext.destination)
+        const currentTime = audioContext.currentTime
+        leftGain.gain.setTargetAtTime(
+          leftVal,
+          currentTime + DECAY_WAIT,
+          DECAY_DURATION
+        )
+        rightGain.gain.setTargetAtTime(
+          rightVal,
+          currentTime + DECAY_WAIT,
+          DECAY_DURATION
+        )
 
-        window.addEventListener('pointermove', e => {
-          const pan = e.clientX / window.innerWidth
-
-          // https://github.com/LLK/scratch-audio/blob/develop/src/effects/PanEffect.js
-          // Use trig functions for equal-loudness panning
-          // See e.g. https://docs.cycling74.com/max7/tutorials/13_panningchapter01
-          const leftVal = Math.cos(pan * Math.PI / 2)
-          const rightVal = Math.sin(pan * Math.PI / 2)
-
-          const currentTime = audioContext.currentTime
-          leftGain.gain.setTargetAtTime(leftVal, currentTime + DECAY_WAIT, DECAY_DURATION)
-          rightGain.gain.setTargetAtTime(rightVal, currentTime + DECAY_WAIT, DECAY_DURATION)
-
-          output.value = [
-            `Scratch pan value = ${(pan - 0.5) * 200}`,
-            `left gain = ${(leftVal * 100).toFixed(4)}%`,
-            `right gain = ${(rightVal * 100).toFixed(4)}%`,
-            `left is ${(leftVal / rightVal * 100).toFixed(4)}% of right`,
-            `left hears ${(rightVal / leftVal * 100).toFixed(4)}% of what right hears (reciprocal)`
-          ].join('\n')
-        })
-      }, { once: true })
+        output.pan.textContent = ((pan - 0.5) * 200).toFixed(4)
+        output.pan.style.setProperty('--pan', Math.abs((pan - 0.5) * 100) + '%')
+        if (pan < 0.5) {
+          output.pan.classList.add('pan-left')
+          output.pan.classList.remove('pan-right')
+        } else {
+          output.pan.classList.add('pan-right')
+          output.pan.classList.remove('pan-left')
+        }
+        output.leftGain.textContent = (leftVal * 100).toFixed(4)
+        output.rightGain.textContent = (rightVal * 100).toFixed(4)
+        output.leftHears.textContent = ((leftVal / rightVal) * 100).toFixed(4)
+        output.rightHears.textContent = ((rightVal / leftVal) * 100).toFixed(4)
+      }
+      window.addEventListener('pointerdown', handlePointer)
+      window.addEventListener('pointermove', handlePointer)
     </script>
   </body>
 </html>
