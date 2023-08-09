@@ -33,6 +33,23 @@
         min-height: 100%;
         background-color: Khaki;
         line-height: 1;
+        /* https://www.instagram.com/p/Crrua_or1WF/ */
+        background-image: url('./gato.webp');
+        background-position: bottom right;
+        background-repeat: no-repeat;
+        background-size: 300px 300px;
+        background-attachment: fixed;
+        animation: squish 0.1s linear infinite alternate;
+      }
+      @keyframes squish {
+        from {
+          background-size: 200px 200px;
+          background-position: bottom right 10px;
+        }
+        to {
+          background-size: 220px 150px;
+          background-position: bottom right 0;
+        }
       }
       input {
         font: inherit;
@@ -247,6 +264,7 @@
       let audioOk = false
       let timeoutId
       Notification.requestPermission().then(() => {
+        console.log('start', new Date().toLocaleTimeString())
         timeoutId = setTimeout(ask, TIME)
       })
       document.addEventListener(
@@ -264,6 +282,7 @@
           addEvent({ type: 'doing', note: form.elements.doing.value })
           clearTimeout(timeoutId)
           timeoutId = setTimeout(ask, TIME)
+          console.log('reset', new Date().toLocaleTimeString())
         }
       })
     </script>
