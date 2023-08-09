@@ -217,19 +217,19 @@
             day = newDay
           }
 
-          const note = Object.assign(document.createElement('div'), {
+          event.elem = Object.assign(document.createElement('div'), {
             className: `event ${event.type}`,
             textContent: event.note
           })
-          note.style.top = `${minutes * TIME_SCALE}px`
-          note.append(
+          event.elem.style.top = `${minutes * TIME_SCALE}px`
+          event.elem.append(
             '\n',
             Object.assign(document.createElement('span'), {
               className: 'time',
               textContent: time.toLocaleTimeString()
             })
           )
-          day.content.append(note)
+          day.content.append(event.elem)
         }
       }
       render()
@@ -283,6 +283,7 @@
           clearTimeout(timeoutId)
           timeoutId = setTimeout(ask, TIME)
           console.log('reset', new Date().toLocaleTimeString())
+          form.reset()
         }
       })
     </script>
