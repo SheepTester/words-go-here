@@ -278,7 +278,7 @@
       }
       render()
       /** reminder period. every 15 min */
-      const TIME = 15 * 60 * 1000
+      const TIME = 5000 //15 * 60 * 1000
       /** resend notification period. every 5 min */
       const RESEND_TIME = 5 * 60 * 1000
       let lastNotif = null
@@ -366,6 +366,10 @@
           nextTime = Date.now() + TIME
           // console.log('reset', new Date().toLocaleTimeString())
           form.reset()
+          if (lastNotif) {
+            lastNotif.notif.close()
+            lastNotif = null
+          }
         }
       })
     </script>
