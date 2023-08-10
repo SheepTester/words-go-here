@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>
-      every 15 minutes, i ask: what are you doing?? (time tracking app poc)
+      🕒 every 15 minutes, ❓ i ask: ⚠️ what are you doing?? ⚠️ (time tracking
+      ⌚ app poc 🤨)
     </title>
     <meta
       name="description"
-      content="wtf it's been two hours already?? &lt;- this is unacceptable"
+      content="⁉️ wtf it's been two 2️⃣✌️🐫 hours already?? 😵😖😕 👈 this is unacceptable 😤"
     />
 
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
@@ -17,7 +18,7 @@
 
     <style>
       :root {
-        --form-height: 60px;
+        --form-height: 80px;
       }
       * {
         box-sizing: border-box;
@@ -57,11 +58,18 @@
         border: 3px solid DarkOliveGreen;
         color: RoyalBlue;
       }
+      input:focus {
+        outline: 3px solid DeepPink;
+        border-color: Aquamarine;
+        background-color: white;
+      }
       .no-sound::after {
-        content: 'no sound!! pls click on page to enable osund';
+        content: 'no sound!! 😢🔇😔 pls click on page to enable osund';
         color: red;
+        text-shadow: 0 0 10px Turquoise;
         position: fixed;
-        top: 0;
+        top: var(--form-height);
+        margin-top: -40px;
         right: 0;
         font-size: 40px;
         z-index: 100;
@@ -80,7 +88,8 @@
         display: flex;
         flex-direction: column;
         flex: auto;
-        padding: 5px;
+        padding: 10px;
+        gap: 10px;
       }
       #form input {
         flex: auto;
@@ -124,6 +133,36 @@
       .doing {
         border-top-width: 2px;
       }
+      #status {
+        position: fixed;
+        z-index: 3;
+      }
+      .countdown {
+        color: CornflowerBlue;
+        bottom: 0;
+        right: 200px;
+      }
+      .answer-now {
+        top: var(--form-height);
+        left: 10px;
+        text-shadow: 0 1px red, 0 2px red, 0 0 10px white, 0 0 10px white,
+          0 0 10px white;
+        font-size: larger;
+      }
+      .answer-now::after,
+      .answer-now::before {
+        content: '☝️⬆️👆⤴️';
+        animation: squiggle 0.2s linear infinite alternate;
+        display: inline-block;
+      }
+      @keyframes squiggle {
+        from {
+          transform: translateY(10px);
+        }
+        to {
+          transform: translateY(-10px);
+        }
+      }
     </style>
   </head>
   <body class="no-sound">
@@ -133,16 +172,18 @@
         <input type="text" name="doing" autofocus />
       </label>
     </form>
+    <p id="status"></p>
     <div id="days"></div>
     <script>
       const KEY = '[wgh.15min] events'
       const events = JSON.parse(localStorage[KEY] || '[]')
       function addEvent (event) {
-        events.push({ ...event, time: Date.now() })
+        event.time = Date.now()
+        events.push(event)
         localStorage[KEY] = JSON.stringify(
           events.map(({ type, note, time }) => ({ type, note, time }))
         )
-        render()
+        renderEvent(event)
       }
       const daysWrapper = document.getElementById('days')
       const days = []
@@ -156,104 +197,117 @@
         '--day-height',
         `${TIME_SCALE * 24 * 60}px`
       )
+      function renderEvent (event) {
+        if (event.elem) {
+          return
+        }
+
+        const time = new Date(event.time)
+        const minutes =
+          time.getHours() * 60 +
+          time.getMinutes() +
+          (time.getSeconds() + time.getMilliseconds() / 1000) / 60
+        const eventDay = getLocalDay(time)
+        let day = days.find(day => day.day >= eventDay)
+        if (day?.day !== eventDay) {
+          const newDay = {
+            day: eventDay,
+            elem: Object.assign(document.createElement('div'), {
+              className: 'day'
+            }),
+            content: Object.assign(document.createElement('div'), {
+              className: 'timeline'
+            })
+          }
+          const startTime = new Date(
+            time.getFullYear(),
+            time.getMonth(),
+            time.getDate()
+          ).getTime()
+          for (let time = 0; time <= 24; time++) {
+            const add = time * 60
+            const wow = new Date(startTime + add * 60 * 1000)
+            const marker = Object.assign(document.createElement('div'), {
+              className: `event hour`,
+              textContent: wow.toLocaleTimeString()
+            })
+            marker.style.top = `${add * TIME_SCALE}px`
+            newDay.content.append(marker)
+          }
+          newDay.elem.append(
+            Object.assign(document.createElement('h2'), {
+              className: 'day-heading',
+              textContent: time.toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                weekday: 'short'
+              })
+            }),
+            newDay.content
+          )
+          if (day) {
+            // event day is after day
+            day.elem.before(newDay.elem)
+            days.splice(days.indexOf(day), 0, newDay)
+          } else {
+            // the day is very future
+            daysWrapper.prepend(newDay.elem)
+            days.push(newDay)
+          }
+          day = newDay
+        }
+
+        event.elem = Object.assign(document.createElement('div'), {
+          className: `event ${event.type}`,
+          textContent: event.note
+        })
+        event.elem.style.top = `${minutes * TIME_SCALE}px`
+        event.elem.append(
+          '\n',
+          Object.assign(document.createElement('span'), {
+            className: 'time',
+            textContent: time.toLocaleTimeString()
+          })
+        )
+        day.content.append(event.elem)
+      }
       function render () {
         for (const event of events) {
-          if (event.elem) {
-            continue
-          }
-
-          const time = new Date(event.time)
-          const minutes =
-            time.getHours() * 60 +
-            time.getMinutes() +
-            (time.getSeconds() + time.getMilliseconds() / 1000) / 60
-          const eventDay = getLocalDay(time)
-          let day = days.find(day => day.day >= eventDay)
-          if (day?.day !== eventDay) {
-            const newDay = {
-              day: eventDay,
-              elem: Object.assign(document.createElement('div'), {
-                className: 'day'
-              }),
-              content: Object.assign(document.createElement('div'), {
-                className: 'timeline'
-              })
-            }
-            const startTime = new Date(
-              time.getFullYear(),
-              time.getMonth(),
-              time.getDate()
-            ).getTime()
-            for (let time = 0; time <= 24; time++) {
-              const add = time * 60
-              const wow = new Date(startTime + add * 60 * 1000)
-              const marker = Object.assign(document.createElement('div'), {
-                className: `event hour`,
-                textContent: wow.toLocaleTimeString()
-              })
-              marker.style.top = `${add * TIME_SCALE}px`
-              newDay.content.append(marker)
-            }
-            newDay.elem.append(
-              Object.assign(document.createElement('h2'), {
-                className: 'day-heading',
-                textContent: time.toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                  weekday: 'short'
-                })
-              }),
-              newDay.content
-            )
-            if (day) {
-              // event day is after day
-              day.elem.before(newDay.elem)
-              days.splice(days.indexOf(day), 0, newDay)
-            } else {
-              // the day is very future
-              daysWrapper.prepend(newDay.elem)
-              days.push(newDay)
-            }
-            day = newDay
-          }
-
-          event.elem = Object.assign(document.createElement('div'), {
-            className: `event ${event.type}`,
-            textContent: event.note
-          })
-          event.elem.style.top = `${minutes * TIME_SCALE}px`
-          event.elem.append(
-            '\n',
-            Object.assign(document.createElement('span'), {
-              className: 'time',
-              textContent: time.toLocaleTimeString()
-            })
-          )
-          day.content.append(event.elem)
+          renderEvent(event)
         }
       }
       render()
-      /** every 15 min */
+      /** reminder period. every 15 min */
       const TIME = 15 * 60 * 1000
-      function ask () {
-        addEvent({ type: 'reminder', note: 'sent reminder' })
-        const notif = new Notification('what u doin', {
+      /** resend notification period. every 5 min */
+      const RESEND_TIME = 5 * 60 * 1000
+      let lastNotif = null
+      function createNotif () {
+        const notif = new Notification('🚨 what u doin 🚨', {
           body: 'click to respond',
           requireInteraction: true
         })
-        let clicked = false
+        lastNotif = { notif, time: Date.now() }
         notif.addEventListener('click', () => {
-          clicked = true
           window.focus()
-          form.elements.doing.focus()
+          window.requestAnimationFrame(() => {
+            form.elements.doing.focus()
+          })
+          lastNotif = null
           notif.close()
-          addEvent({ type: 'reminder', note: 'reminder acknowledged' })
+          addEvent({ type: 'reminder', note: '🔔➡️✅ reminder acknowledged' })
         })
         notif.addEventListener('close', () => {
-          if (!clicked) {
-            addEvent({ type: 'reminder', note: 'reminder ignored >:(' })
+          if (lastNotif?.notif === notif) {
+            addEvent({ type: 'reminder', note: '🔔➡️❌ reminder ignored >:(' })
+            lastNotif = null
           }
         })
+      }
+      function ask () {
+        addEvent({ type: 'reminder', note: '❓🔔 reminder sent' })
+        clicked = false
+        createNotif()
         // vine boom from youtube _vBVGjFdwk4
         if (audioOk) {
           const audio = new Audio('./vine-boom.m4a')
@@ -262,10 +316,39 @@
         }
       }
       let audioOk = false
-      let timeoutId
+      let nextTime = null
+      const status = document.getElementById('status')
+      setInterval(() => {
+        if (nextTime !== null && Date.now() >= nextTime) {
+          ask()
+          nextTime = null
+        }
+        if (lastNotif && Date.now() >= lastNotif.time + RESEND_TIME) {
+          lastNotif.notif.close()
+          createNotif()
+          // console.log('try again!')
+          addEvent({ type: 'reminder', note: '🤷 try again!' })
+        }
+        if (document.visibilityState === 'visible') {
+          if (nextTime !== null) {
+            const until = nextTime - Date.now()
+            status.textContent = `i will ask for an update in ${Math.floor(
+              until / 60_000
+            )
+              .toString()
+              .padStart(2, '0')}:${Math.floor((until / 1000) % 60)
+              .toString()
+              .padStart(2, '0')}`
+            status.className = 'countdown'
+          } else {
+            status.textContent = 'ANSWER IMMEDIATELY. what are you doing NOW??'
+            status.className = 'answer-now'
+          }
+        }
+      }, 1000)
       Notification.requestPermission().then(() => {
-        console.log('start', new Date().toLocaleTimeString())
-        timeoutId = setTimeout(ask, TIME)
+        // console.log('start', new Date().toLocaleTimeString())
+        // nextTime = Date.now() + TIME
       })
       document.addEventListener(
         'click',
@@ -280,9 +363,8 @@
       form.addEventListener('submit', () => {
         if (form.elements.doing.value) {
           addEvent({ type: 'doing', note: form.elements.doing.value })
-          clearTimeout(timeoutId)
-          timeoutId = setTimeout(ask, TIME)
-          console.log('reset', new Date().toLocaleTimeString())
+          nextTime = Date.now() + TIME
+          // console.log('reset', new Date().toLocaleTimeString())
           form.reset()
         }
       })
