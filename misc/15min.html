@@ -278,7 +278,7 @@
       }
       render()
       /** reminder period. every 15 min */
-      const TIME = 5000 //15 * 60 * 1000
+      const TIME = 15 * 60 * 1000
       /** resend notification period. every 5 min */
       const RESEND_TIME = 5 * 60 * 1000
       let lastNotif = null
@@ -289,8 +289,11 @@
         })
         lastNotif = { notif, time: Date.now() }
         notif.addEventListener('click', () => {
+          // Click on notification -> bring to tab
           window.focus()
           window.requestAnimationFrame(() => {
+            // After focused on tab, focus on input (a bit finicky but waiting a
+            // frame seems to do the job)
             form.elements.doing.focus()
           })
           lastNotif = null
@@ -298,6 +301,9 @@
           addEvent({ type: 'reminder', note: '🔔➡️✅ reminder acknowledged' })
         })
         notif.addEventListener('close', () => {
+          // Don't post event if the notification was closed to send a new one
+          // (lastNotif.notif won't be the same as notif) or the notification
+          // was clicked (lastNotif will be null)
           if (lastNotif?.notif === notif) {
             addEvent({ type: 'reminder', note: '🔔➡️❌ reminder ignored >:(' })
             lastNotif = null
@@ -306,10 +312,9 @@
       }
       function ask () {
         addEvent({ type: 'reminder', note: '❓🔔 reminder sent' })
-        clicked = false
         createNotif()
-        // vine boom from youtube _vBVGjFdwk4
         if (audioOk) {
+          // vine boom from youtube _vBVGjFdwk4
           const audio = new Audio('./vine-boom.m4a')
           audio.volume = 0.5
           audio.play()
@@ -318,15 +323,17 @@
       let audioOk = false
       let nextTime = null
       const status = document.getElementById('status')
+      // Check every 1s because setTimeout pauses when the computer sleeps
       setInterval(() => {
         if (nextTime !== null && Date.now() >= nextTime) {
           ask()
           nextTime = null
         }
+        // Close and resend notification every 5 min in case I was away and
+        // return and Windows already dismissed the notification for me
         if (lastNotif && Date.now() >= lastNotif.time + RESEND_TIME) {
           lastNotif.notif.close()
           createNotif()
-          // console.log('try again!')
           addEvent({ type: 'reminder', note: '🤷 try again!' })
         }
         if (document.visibilityState === 'visible') {
@@ -346,10 +353,7 @@
           }
         }
       }, 1000)
-      Notification.requestPermission().then(() => {
-        // console.log('start', new Date().toLocaleTimeString())
-        // nextTime = Date.now() + TIME
-      })
+      Notification.requestPermission()
       document.addEventListener(
         'click',
         () => {
@@ -364,8 +368,9 @@
         if (form.elements.doing.value) {
           addEvent({ type: 'doing', note: form.elements.doing.value })
           nextTime = Date.now() + TIME
-          // console.log('reset', new Date().toLocaleTimeString())
+          // Clear input
           form.reset()
+          // Close notification after submitting form
           if (lastNotif) {
             lastNotif.notif.close()
             lastNotif = null
