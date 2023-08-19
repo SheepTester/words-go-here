@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>There are no prerequisites for</title>
+    <meta
+      name="description"
+      content="Make UCSD's website say whatever you want."
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      body {
+        text-align: center;
+      }
+      [contenteditable] {
+        background-color: rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 0.1em 0.2em;
+        border-radius: 0.2em;
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>
+      There are no prerequisites for
+      <span id="course" contenteditable autofocus>enabling JavaScript</span>,
+      <span id="term" contenteditable
+        >so you're just a paranoid NoScript user.</span
+      >
+    </h1>
+    <hr />
+    <button type="button" id="copy">Copy link</button>
+    <button type="button" id="view">View live</button>
+    <script>
+      const encoder = new TextEncoder()
+      const encode = string =>
+        Array.from(
+          encoder.encode(string),
+          byte => `%${byte.toString(16).padStart(2, '0').toUpperCase()}`
+        ).join('')
+
+      const elems = {
+        term: document.getElementById('term'),
+        course: document.getElementById('course'),
+        copy: document.getElementById('copy'),
+        view: document.getElementById('view')
+      }
+
+      const params = new URL(window.location.href).searchParams
+      elems.course.innerText = params.get('courseId') ?? 'shutting up'
+      elems.term.innerText =
+        params.get('termCode') ??
+        'so next time wait until you have something actually funny to say.'
+
+      const BASE =
+        'https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesPreReq.htm'
+      let url = ''
+      function updateUrl () {
+        url = `${BASE}?${encode('termCode')}=${encode(
+          elems.term.innerText
+        )}&${encode('courseId')}=${encode(elems.course.innerText)}`
+        params.set('termCode', elems.term.innerText)
+        params.set('courseId', elems.course.innerText)
+        window.history.replaceState({}, '', '?' + params)
+        elems.copy.title = `Copy ${url}`
+        elems.view.title = `Go to ${url}`
+      }
+      document.addEventListener('input', updateUrl)
+      updateUrl()
+
+      elems.copy.addEventListener('click', () => {
+        navigator.clipboard.writeText(url)
+      })
+      elems.view.addEventListener('click', () => {
+        window.location = url
+      })
+    </script>
+  </body>
+</html>
