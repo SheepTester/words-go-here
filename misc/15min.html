@@ -38,9 +38,9 @@
         background-image: url('./gato.webp');
         background-position: bottom right;
         background-repeat: no-repeat;
-        background-size: 300px 300px;
+        background-size: 200px 200px;
         background-attachment: fixed;
-        animation: squish 0.1s linear infinite alternate;
+        /* animation: squish 0.1s linear infinite alternate; */
       }
       @keyframes squish {
         from {
@@ -78,6 +78,7 @@
       #form {
         position: sticky;
         top: 0;
+        left: 0;
         height: var(--form-height);
         display: flex;
         background-color: LightSalmon;
@@ -106,7 +107,8 @@
       .day {
         display: flex;
         flex-direction: column;
-        width: 400px;
+        width: 200px;
+        flex: none;
       }
       .timeline {
         position: relative;
@@ -124,7 +126,7 @@
         text-align: right;
       }
       .reminder {
-        color: rgba(0, 0, 0, 0.1);
+        color: rgba(0, 0, 0, 0.2);
         font-size: smaller;
       }
       .time {
@@ -168,7 +170,7 @@
   <body class="no-sound">
     <form action="javascript:" id="form">
       <label>
-        <span>what are you up to NOW??</span>
+        <span>what did u JUST do??</span>
         <input type="text" name="doing" autofocus />
       </label>
     </form>
@@ -184,6 +186,11 @@
           events.map(({ type, note, time }) => ({ type, note, time }))
         )
         renderEvent(event)
+      }
+      // NOTE: currently not used
+      function editEvent (event, newNote) {
+        event.note = newNote
+        event.elem.textContent = newNote
       }
       const daysWrapper = document.getElementById('days')
       const days = []
@@ -279,8 +286,8 @@
       render()
       /** reminder period. every 15 min */
       const TIME = 15 * 60 * 1000
-      /** resend notification period. every 5 min */
-      const RESEND_TIME = 5 * 60 * 1000
+      /** resend notification period. every 2 min */
+      const RESEND_TIME = 2 * 60 * 1000
       let lastNotif = null
       function createNotif () {
         const notif = new Notification('🚨 what u doin 🚨', {
@@ -288,6 +295,8 @@
           requireInteraction: true
         })
         lastNotif = { notif, time: Date.now() }
+        // Continue sending secondary reminders in case I dismiss and then
+        // forget
         notif.addEventListener('click', () => {
           // Click on notification -> bring to tab
           window.focus()
@@ -296,7 +305,6 @@
             // frame seems to do the job)
             form.elements.doing.focus()
           })
-          lastNotif = null
           notif.close()
           addEvent({ type: 'reminder', note: '🔔➡️✅ reminder acknowledged' })
         })
@@ -306,7 +314,6 @@
           // was clicked (lastNotif will be null)
           if (lastNotif?.notif === notif) {
             addEvent({ type: 'reminder', note: '🔔➡️❌ reminder ignored >:(' })
-            lastNotif = null
           }
         })
       }
@@ -321,10 +328,13 @@
         }
       }
       let audioOk = false
-      let nextTime = null
+      // Don't expect a response immediately if the user just reloaded
+      let nextTime =
+        Date.now() - events.at(-1)?.time < TIME
+          ? events.at(-1).time + TIME
+          : null
       const status = document.getElementById('status')
-      // Check every 1s because setTimeout pauses when the computer sleeps
-      setInterval(() => {
+      function check () {
         if (nextTime !== null && Date.now() >= nextTime) {
           ask()
           nextTime = null
@@ -348,11 +358,16 @@
               .padStart(2, '0')}`
             status.className = 'countdown'
           } else {
-            status.textContent = 'ANSWER IMMEDIATELY. what are you doing NOW??'
+            // More helpful to ask about what was done than what is planned if
+            // I'm transitioning tasks or about to stop procrastinating
+            status.textContent =
+              'ANSWER IMMEDIATELY. what were you JUST up to??'
             status.className = 'answer-now'
           }
         }
-      }, 1000)
+      }
+      // Check every 1s because setTimeout pauses when the computer sleeps
+      setInterval(check, 1000)
       Notification.requestPermission()
       document.addEventListener(
         'click',
@@ -362,6 +377,8 @@
         },
         { once: true }
       )
+      // Immediately update when the user returns to the page
+      window.addEventListener('focus', check)
 
       const form = document.getElementById('form')
       form.addEventListener('submit', () => {
@@ -375,6 +392,8 @@
             lastNotif.notif.close()
             lastNotif = null
           }
+          // Immediately update after the user responds
+          check()
         }
       })
     </script>
