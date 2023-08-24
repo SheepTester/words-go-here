@@ -307,6 +307,7 @@
           })
           notif.close()
           addEvent({ type: 'reminder', note: '🔔➡️✅ reminder acknowledged' })
+          lastNotif.notif = null
         })
         notif.addEventListener('close', () => {
           // Don't post event if the notification was closed to send a new one
@@ -342,7 +343,7 @@
         // Close and resend notification every 5 min in case I was away and
         // return and Windows already dismissed the notification for me
         if (lastNotif && Date.now() >= lastNotif.time + RESEND_TIME) {
-          lastNotif.notif.close()
+          lastNotif.notif?.close()
           createNotif()
           addEvent({ type: 'reminder', note: '🤷 try again!' })
         }
