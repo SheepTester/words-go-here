@@ -390,7 +390,7 @@
           form.reset()
           // Close notification after submitting form
           if (lastNotif) {
-            lastNotif.notif.close()
+            lastNotif.notif?.close()
             lastNotif = null
           }
           // Immediately update after the user responds
