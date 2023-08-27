@@ -32,12 +32,15 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
         {
           // Bytes between the start of each vertex datum
           arrayStride: 4 * 4,
+          // Change attribute per instance rather than vertex
+          stepMode: 'instance',
           attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x4' }]
         }
       ]
     },
     // targets[0] corresponds to @location(0) in fragment_main's return value
-    fragment: { module, entryPoint: 'fragment_main', targets: [{ format }] }
+    fragment: { module, entryPoint: 'fragment_main', targets: [{ format }] },
+    primitive: { cullMode: 'back' }
   })
 
   const vertexData = new Float32Array([
@@ -84,7 +87,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
       pass.setPipeline(pipeline)
       pass.setVertexBuffer(0, vertices)
       pass.setBindGroup(0, group)
-      pass.draw(3, 6)
+      pass.draw(6, 3)
       pass.end()
       // finish() returns a command buffer
       device.queue.submit([encoder.finish()])

@@ -24,6 +24,7 @@ async function init(format) {
             buffers: [
                 {
                     arrayStride: 4 * 4,
+                    stepMode: 'instance',
                     attributes: [
                         {
                             shaderLocation: 0,
@@ -42,6 +43,9 @@ async function init(format) {
                     format
                 }
             ]
+        },
+        primitive: {
+            cullMode: 'back'
         }
     });
     const vertexData = new Float32Array([
@@ -108,7 +112,7 @@ async function init(format) {
             pass.setPipeline(pipeline);
             pass.setVertexBuffer(0, vertices);
             pass.setBindGroup(0, group);
-            pass.draw(3, 6);
+            pass.draw(6, 3);
             pass.end();
             device.queue.submit([
                 encoder.finish()

@@ -5,12 +5,12 @@ struct VertexOutput {
 
 @vertex
 fn vertex_main(
-    @builtin(instance_index) index: u32,
+    @builtin(vertex_index) index: u32,
     @location(0) position: vec4<f32>,
 ) -> VertexOutput {
     const pos = array(
-        vec2(0, 0), vec2(1, 0), vec2(0.1, 0.5),
-        vec2(0, 0), vec2(1, 0), vec2(0.1, -0.5),
+        vec2(0, 0), vec2(1, 0), vec2(1, 1),
+        vec2(1, 1), vec2(0, 1), vec2(0, 0.0),
     );
     var result: VertexOutput;
     result.position = vec4(pos[index] + position.xy, 0, 1);
