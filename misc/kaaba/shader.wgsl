@@ -9,10 +9,10 @@ var<uniform> transform: mat4x4<f32>;
 
 @vertex
 fn vertex_main(
-    @builtin(vertex_index) index: u32,
+    @builtin(instance_index) index: u32,
     @location(0) position: vec4<u8>,
     @location(1) textureId: u8,
-) -> ... {
+) -> VertexOutput {
     var result: VertexOutput;
     result.tex_coord = tex_coord;
     result.position = transform * vec4(position.xyz, 1.0);

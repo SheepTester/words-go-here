@@ -1,6 +1,7 @@
 {
   "imports": {
-    "@webgpu/types": "https://esm.sh/@webgpu/types@0.1.34"
+    "@webgpu/types": "https://esm.sh/@webgpu/types@0.1.34",
+    "wgpu-matrix": "https://esm.sh/wgpu-matrix@2.5.0"
   },
   "tasks": {
     "kaaba:build": "deno bundle misc/kaaba/index.ts misc/kaaba/index.js",

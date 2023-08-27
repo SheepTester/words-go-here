@@ -19,4 +19,5 @@ if (!navigator.gpu) {
 const format = navigator.gpu.getPreferredCanvasFormat()
 const { device, render } = await init(format)
 context.configure({ device, format })
+// The view contains the size of the canvas
 render(context.getCurrentTexture().createView())

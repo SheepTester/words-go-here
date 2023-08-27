@@ -23,12 +23,12 @@ async function init(format) {
             entryPoint: 'vertex_main',
             buffers: [
                 {
-                    arrayStride: 2 * 4,
+                    arrayStride: 4 * 4,
                     attributes: [
                         {
                             shaderLocation: 0,
                             offset: 0,
-                            format: 'float32x2'
+                            format: 'float32x4'
                         }
                     ]
                 }
@@ -49,8 +49,14 @@ async function init(format) {
         0,
         1,
         0,
+        -0.1,
+        -0.5,
+        0.5,
+        0.5,
+        -0.5,
         0,
-        0.5
+        0,
+        0
     ]);
     const vertices = device.createBuffer({
         label: 'vertex buffer vertices',
@@ -102,7 +108,7 @@ async function init(format) {
             pass.setPipeline(pipeline);
             pass.setVertexBuffer(0, vertices);
             pass.setBindGroup(0, group);
-            pass.draw(3);
+            pass.draw(3, 6);
             pass.end();
             device.queue.submit([
                 encoder.finish()
