@@ -1,9 +1,35 @@
+// _ @deno-types="npm:wgpu-matrix"
+import { mat4 } from 'wgpu-matrix'
 import { Block } from './blocks.ts'
 import { Chunk, SIZE } from './Chunk.ts'
 
+class Uniform {
+  #device: GPUDevice
+  #buffer: GPUBuffer
+  #binding: number
+
+  constructor (device: GPUDevice, binding: number, size: number) {
+    this.#device = device
+    this.#buffer = device.createBuffer({
+      label: `uniform @binding(${binding})`,
+      size,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+    this.#binding = binding
+  }
+
+  get entry (): GPUBindGroupEntry {
+    return { binding: this.#binding, resource: { buffer: this.#buffer } }
+  }
+
+  data (data: BufferSource | SharedArrayBuffer, offset = 0): void {
+    this.#device.queue.writeBuffer(this.#buffer, offset, data)
+  }
+}
+
 export type Device = {
   device: GPUDevice
-  render: (view: GPUTextureView) => void
+  render: (view: GPUTextureView, aspectRatio: number) => void
 }
 
 export async function init (format: GPUTextureFormat): Promise<Device> {
@@ -44,7 +70,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
   })
 
   const vertexData = new Float32Array([
-    0, 0, 1, 0, -0.1, -0.5, 0.5, 0.5, -0.5, 0, 0, 0
+    0, 0, 0.5, 1, -0.1, -0.5, 0.5, 0.5, -0.5, 0, 0.1, 0
   ])
   const vertices = device.createBuffer({
     label: 'vertex buffer vertices',
@@ -53,22 +79,24 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
   })
   device.queue.writeBuffer(vertices, 0, vertexData)
 
-  const uniform = device.createBuffer({
-    label: 'Xx uniform buffer xX',
-    size: 1 * 4,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-  })
+  const red = new Uniform(device, 0, 1 * 4)
+  const perspective = new Uniform(device, 1, 4 * 4 * 4)
+  const camera = new Uniform(device, 2, 4 * 4 * 4)
   // Bind groups have shared resources across all invocations of the shaders (eg
   // uniforms, textures, but not attributes)
   const group = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
-    entries: [{ binding: 0, resource: { buffer: uniform } }]
+    entries: [red.entry, perspective.entry, camera.entry]
   })
 
   return {
     device,
-    render: view => {
-      device.queue.writeBuffer(uniform, 0, new Float32Array([0.4]))
+    render: (view, aspectRatio) => {
+      red.data(new Float32Array([0.1]))
+      perspective.data(
+        new Float32Array(mat4.perspective(75, aspectRatio, 0.1, 1000))
+      )
+      camera.data(new Float32Array(mat4.rotationZ(Date.now() / 100)))
 
       // Encodes commands
       const encoder = device.createCommandEncoder({ label: 'Xx encoder xX ' })
