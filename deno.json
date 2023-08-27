@@ -1,0 +1,9 @@
+{
+  "imports": {
+    "@webgpu/types": "https://esm.sh/@webgpu/types@0.1.34"
+  },
+  "tasks": {
+    "kaaba:build": "deno bundle misc/kaaba/index.ts misc/kaaba/index.js",
+    "kaaba:watch": "deno bundle --watch misc/kaaba/index.ts misc/kaaba/index.js & http-server .. -c-1 -s"
+  }
+}
