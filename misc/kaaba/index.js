@@ -1183,9 +1183,17 @@ var Block;
 (function(Block) {
     Block[Block["AIR"] = 0] = "AIR";
     Block[Block["STONE"] = 1] = "STONE";
+    Block[Block["GLASS"] = 2] = "GLASS";
 })(Block || (Block = {}));
-function isSolid(block) {
+const textures = {
+    [1]: 1,
+    [2]: 2
+};
+function isOpaque(block) {
     return block === 1;
+}
+function getTexture(block) {
+    return block !== null ? textures[block] ?? null : null;
 }
 var FaceDirection;
 (function(FaceDirection) {
@@ -1196,9 +1204,15 @@ var FaceDirection;
     FaceDirection[FaceDirection["BOTTOM"] = 4] = "BOTTOM";
     FaceDirection[FaceDirection["TOP"] = 5] = "TOP";
 })(FaceDirection || (FaceDirection = {}));
+function showFace(block, neighbor) {
+    return block !== neighbor && !isOpaque(neighbor);
+}
 class Chunk {
     #data = new Uint8Array(32 * 32 * 32);
     block(x, y, z, block) {
+        if (x < 0 || y < 0 || z < 0 || x >= 32 || y >= 32 || z >= 32) {
+            return null;
+        }
         const index = (x * 32 + y) * 32 + z;
         if (block !== undefined) {
             this.#data[index] = block;
@@ -1207,14 +1221,37 @@ class Chunk {
             return this.#data[index];
         }
     }
-    faces() {
-        const faces = [];
-        for (const [i, block] of this.#data.entries()){
-            if (!isSolid(block)) {
-                continue;
+    faces(target = []) {
+        for(let x = 0; x < 32; x++){
+            for(let y = 0; y < 32; y++){
+                for(let z = 0; z < 32; z++){
+                    const block = this.block(x, y, z);
+                    const texture = getTexture(block);
+                    if (block === null || texture === null) {
+                        continue;
+                    }
+                    if (showFace(block, this.block(x - 1, y, z))) {
+                        target.push(x, y, z, 2, texture, 0, 0, 0);
+                    }
+                    if (showFace(block, this.block(x + 1, y, z))) {
+                        target.push(x, y, z, 3, texture, 0, 0, 0);
+                    }
+                    if (showFace(block, this.block(x, y - 1, z))) {
+                        target.push(x, y, z, 4, texture, 0, 0, 0);
+                    }
+                    if (showFace(block, this.block(x, y + 1, z))) {
+                        target.push(x, y, z, 5, texture, 0, 0, 0);
+                    }
+                    if (showFace(block, this.block(x, y, z - 1))) {
+                        target.push(x, y, z, 0, texture, 0, 0, 0);
+                    }
+                    if (showFace(block, this.block(x, y, z + 1))) {
+                        target.push(x, y, z, 1, texture, 0, 0, 0);
+                    }
+                }
             }
         }
-        return faces;
+        return target;
     }
 }
 class Uniform {
@@ -1286,42 +1323,26 @@ async function init(format) {
         },
         primitive: {
             cullMode: 'back'
+        },
+        depthStencil: {
+            depthWriteEnabled: true,
+            depthCompare: 'less',
+            format: 'depth24plus'
         }
     });
-    const vertexData = new Uint8Array([
-        0,
-        -1,
-        0,
-        FaceDirection.FRONT,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        FaceDirection.BACK,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        FaceDirection.RIGHT,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        FaceDirection.LEFT,
-        1,
-        0,
-        0,
-        0
-    ]);
+    const chunk = new Chunk();
+    for(let y = 0; y < 32; y++){
+        for(let x = 0; x < 32; x++){
+            for(let z = 0; z < 32; z++){
+                if (Math.random() < (32 - y) / 32) {
+                    chunk.block(x, y, z, Block.STONE);
+                }
+            }
+        }
+    }
+    const faces = chunk.faces();
+    const faceCount = faces.length / 8;
+    const vertexData = new Uint8Array(faces);
     const vertices = device.createBuffer({
         label: 'vertex buffer vertices',
         size: vertexData.byteLength,
@@ -1337,15 +1358,31 @@ async function init(format) {
             camera.entry
         ]
     });
+    let depthTexture = null;
     return {
         device,
-        render: (view, aspectRatio)=>{
-            perspective.data(new Float32Array(ce.perspective(75, aspectRatio, 0.1, 1000)));
-            camera.data(new Float32Array(ce.rotateY(ce.translation([
+        render: (canvasTexture)=>{
+            perspective.data(new Float32Array(ce.perspective(75, canvasTexture.width / canvasTexture.height, 0.1, 1000)));
+            camera.data(new Float32Array(ce.translate(ce.rotateY(ce.rotateX(ce.translation([
                 0,
+                1,
+                -100
+            ]), -0.5), Date.now() / 2000), [
+                -16,
                 0,
-                -10
-            ]), Date.now() / 500)));
+                -16
+            ])));
+            if (depthTexture?.width !== canvasTexture.width || depthTexture.height !== canvasTexture.height) {
+                depthTexture?.destroy();
+                depthTexture = device.createTexture({
+                    size: [
+                        canvasTexture.width,
+                        canvasTexture.height
+                    ],
+                    format: 'depth24plus',
+                    usage: GPUTextureUsage.RENDER_ATTACHMENT
+                });
+            }
             const encoder = device.createCommandEncoder({
                 label: 'Xx encoder xX '
             });
@@ -1353,7 +1390,7 @@ async function init(format) {
                 label: 'Xx render pass xX',
                 colorAttachments: [
                     {
-                        view,
+                        view: canvasTexture.createView(),
                         clearValue: [
                             0,
                             0,
@@ -1363,12 +1400,18 @@ async function init(format) {
                         loadOp: 'clear',
                         storeOp: 'store'
                     }
-                ]
+                ],
+                depthStencilAttachment: {
+                    view: depthTexture.createView(),
+                    depthClearValue: 1.0,
+                    depthLoadOp: 'clear',
+                    depthStoreOp: 'store'
+                }
             });
             pass.setPipeline(pipeline);
             pass.setVertexBuffer(0, vertices);
             pass.setBindGroup(0, group);
-            pass.draw(6, 4);
+            pass.draw(6, faceCount);
             pass.end();
             device.queue.submit([
                 encoder.finish()
@@ -1399,11 +1442,11 @@ new ResizeObserver(([{ contentBoxSize  }])=>{
     canvas.width = inlineSize;
     canvas.height = blockSize;
     aspectRatio = inlineSize / blockSize;
-    render(context.getCurrentTexture().createView(), aspectRatio);
+    render(context.getCurrentTexture());
 }).observe(canvas);
 function paint() {
     if (aspectRatio) {
-        render(context.getCurrentTexture().createView(), aspectRatio);
+        render(context.getCurrentTexture());
     }
     requestAnimationFrame(paint);
 }

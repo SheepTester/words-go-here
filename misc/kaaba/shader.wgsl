@@ -54,9 +54,6 @@ fn vertex_main(
     );
     var result: VertexOutput;
     result.position = perspective * camera * vec4(vec3<f32>(rotated + position.xyz), 1.0);
-    // result.position = vec4(vec3<f32>(rotated + position.xyz) / 2, 1.0);
-    _ = perspective * camera;
-    // result.position = vec4(vec2<f32>(square_vertices[index]), 0, 1);
     result.color = vec3(
         select(0.0, 1.0, position.x % 2 != 0),
         select(0.0, 1.0, position.y % 2 != 0),

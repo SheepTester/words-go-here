@@ -29,7 +29,7 @@ class Uniform {
 
 export type Device = {
   device: GPUDevice
-  render: (view: GPUTextureView, aspectRatio: number) => void
+  render: (view: GPUTexture) => void
 }
 
 export async function init (format: GPUTextureFormat): Promise<Device> {
@@ -66,48 +66,30 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
     },
     // targets[0] corresponds to @location(0) in fragment_main's return value
     fragment: { module, entryPoint: 'fragment_main', targets: [{ format }] },
-    primitive: { cullMode: 'back' }
+    primitive: { cullMode: 'back' },
+    depthStencil: {
+      depthWriteEnabled: true,
+      depthCompare: 'less',
+      format: 'depth24plus'
+    }
   })
 
+  const chunk = new Chunk()
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      for (let z = 0; z < SIZE; z++) {
+        // Decreasing probability as you go up
+        if (Math.random() < (SIZE - y) / SIZE) {
+          chunk.block(x, y, z, Block.STONE)
+        }
+      }
+    }
+  }
+  const faces = chunk.faces()
+  const faceCount = faces.length / 8
+
   // WebGPU is little-endian, so the first byte has the smaller 8 bits of a u32
-  const vertexData = new Uint8Array([
-    // Face 1
-    0,
-    -1,
-    0,
-    FaceDirection.FRONT,
-    0,
-    0,
-    0,
-    0,
-    // Face 2
-    0,
-    1,
-    0,
-    FaceDirection.BACK,
-    1,
-    0,
-    0,
-    0,
-    // Face 3
-    0,
-    0,
-    0,
-    FaceDirection.RIGHT,
-    1,
-    0,
-    0,
-    0,
-    // Face 4
-    0,
-    0,
-    0,
-    FaceDirection.LEFT,
-    1,
-    0,
-    0,
-    0
-  ])
+  const vertexData = new Uint8Array(faces)
   const vertices = device.createBuffer({
     label: 'vertex buffer vertices',
     size: vertexData.byteLength,
@@ -124,19 +106,46 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
     entries: [perspective.entry, camera.entry]
   })
 
+  let depthTexture: GPUTexture | null = null
+
   return {
     device,
-    render: (view, aspectRatio) => {
+    render: canvasTexture => {
       perspective.data(
-        new Float32Array(mat4.perspective(75, aspectRatio, 0.1, 1000))
+        new Float32Array(
+          mat4.perspective(
+            75,
+            canvasTexture.width / canvasTexture.height,
+            0.1,
+            1000
+          )
+        )
       )
-      // camera.data(new Float32Array(mat4.identity()))
+      // camera.data(new Float32Array(mat4.rotationY(Math.PI)))
       // camera.data(new Float32Array(mat4.translation([0, 0, -5])))
       camera.data(
         new Float32Array(
-          mat4.rotateY(mat4.translation([0, 0, -10]), Date.now() / 500)
+          mat4.translate(
+            mat4.rotateY(
+              mat4.rotateX(mat4.translation([0, 1, -100]), -0.5),
+              Date.now() / 2000
+            ),
+            [-16, 0, -16]
+          )
         )
       )
+
+      if (
+        depthTexture?.width !== canvasTexture.width ||
+        depthTexture.height !== canvasTexture.height
+      ) {
+        depthTexture?.destroy()
+        depthTexture = device.createTexture({
+          size: [canvasTexture.width, canvasTexture.height],
+          format: 'depth24plus',
+          usage: GPUTextureUsage.RENDER_ATTACHMENT
+        })
+      }
 
       // Encodes commands
       const encoder = device.createCommandEncoder({ label: 'Xx encoder xX ' })
@@ -145,34 +154,26 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
         label: 'Xx render pass xX',
         colorAttachments: [
           {
-            view,
+            view: canvasTexture.createView(),
             clearValue: [0, 0, 0.4, 1],
             loadOp: 'clear',
             storeOp: 'store'
           }
-        ]
+        ],
+        depthStencilAttachment: {
+          view: depthTexture.createView(),
+          depthClearValue: 1.0,
+          depthLoadOp: 'clear',
+          depthStoreOp: 'store'
+        }
       })
       pass.setPipeline(pipeline)
       pass.setVertexBuffer(0, vertices)
       pass.setBindGroup(0, group)
-      pass.draw(6, 4)
+      pass.draw(6, faceCount)
       pass.end()
       // finish() returns a command buffer
       device.queue.submit([encoder.finish()])
     }
   }
 }
-
-// const chunk = new Chunk()
-// for (let y = 0; y < SIZE; y++) {
-//   for (let x = 0; x < SIZE; x++) {
-//     for (let z = 0; z < SIZE; z++) {
-//       // Decreasing probability as you go up
-//       if (Math.random() < (SIZE - y) / SIZE) {
-//         chunk.block(x, y, z, Block.STONE)
-//       }
-//     }
-//   }
-// }
-
-// const faces = chunk.faces()

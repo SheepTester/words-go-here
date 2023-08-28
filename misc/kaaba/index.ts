@@ -29,12 +29,12 @@ new ResizeObserver(([{ contentBoxSize }]) => {
   canvas.width = inlineSize
   canvas.height = blockSize
   aspectRatio = inlineSize / blockSize
-  render(context.getCurrentTexture().createView(), aspectRatio)
+  render(context.getCurrentTexture())
 }).observe(canvas)
 
 function paint () {
   if (aspectRatio) {
-    render(context.getCurrentTexture().createView(), aspectRatio)
+    render(context.getCurrentTexture())
   }
   requestAnimationFrame(paint)
 }
