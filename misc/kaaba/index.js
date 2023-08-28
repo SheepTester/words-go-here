@@ -1362,12 +1362,12 @@ async function init(format) {
     return {
         device,
         render: (canvasTexture)=>{
-            perspective.data(new Float32Array(ce.perspective(75, canvasTexture.width / canvasTexture.height, 0.1, 1000)));
+            perspective.data(new Float32Array(ce.perspective(Math.PI / 4, canvasTexture.width / canvasTexture.height, 0.1, 1000)));
             camera.data(new Float32Array(ce.translate(ce.rotateY(ce.rotateX(ce.translation([
                 0,
                 1,
                 -100
-            ]), -0.5), Date.now() / 2000), [
+            ]), -0.5), Math.sin(Date.now() / 200) * 0.4), [
                 -16,
                 0,
                 -16

@@ -114,7 +114,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
       perspective.data(
         new Float32Array(
           mat4.perspective(
-            75,
+            Math.PI / 4,
             canvasTexture.width / canvasTexture.height,
             0.1,
             1000
@@ -122,13 +122,13 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
         )
       )
       // camera.data(new Float32Array(mat4.rotationY(Math.PI)))
-      // camera.data(new Float32Array(mat4.translation([0, 0, -5])))
+      // camera.data(new Float32Array(mat4.translation([0, 0, -100])))
       camera.data(
         new Float32Array(
           mat4.translate(
             mat4.rotateY(
               mat4.rotateX(mat4.translation([0, 1, -100]), -0.5),
-              Date.now() / 2000
+              Math.sin(Date.now() / 200) * 0.4
             ),
             [-16, 0, -16]
           )
