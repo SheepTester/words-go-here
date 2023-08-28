@@ -60,9 +60,9 @@ canvas.addEventListener('mousemove', e => {
 })
 
 /** In m/s^2. */
-const MOVE_ACCEL = 25
-/** In m/s^2. */
-const FRICTION_ACCEL = 15
+const MOVE_ACCEL = 50
+/** In 1/s. F = kv. */
+const FRICTION_COEFF = -5
 const player = {
   x: 0,
   xv: 0,
@@ -104,9 +104,7 @@ function paint () {
   // Move against direction of velocity
   const velocity = new Vector2(player.xv, player.zv)
   const acceleration =
-    velocity.lengthSquared > 0
-      ? velocity.unit().scale(-FRICTION_ACCEL)
-      : new Vector2()
+    velocity.lengthSquared > 0 ? velocity.scale(FRICTION_COEFF) : new Vector2()
 
   const direction = new Vector2(0, 0)
   if (keys.a || keys.arrowleft) {
@@ -125,7 +123,7 @@ function paint () {
   if (moving) {
     acceleration.add(direction.unit().scale(MOVE_ACCEL).rotate(player.yaw))
   }
-  let yAccel = -Math.sign(player.yv) * FRICTION_ACCEL
+  let yAccel = player.yv * FRICTION_COEFF
   if (keys[' ']) {
     yAccel += MOVE_ACCEL
   }

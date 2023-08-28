@@ -52,13 +52,26 @@ fn vertex_main(
         vec3(flipped.x, flipped.z, !flipped.y),
         (face & 4) != 0
     );
+
+    let normal_dir = select(-1.0, 1.0, (face & 1) != 0);
+    let normal = select(
+        select(
+            vec3(0, 0, normal_dir),
+            vec3(normal_dir, 0, 0),
+            (face & 2) != 0
+        ),
+        vec3(0, normal_dir, 0),
+        (face & 4) != 0
+    );
+    const LIGHT = normalize(vec3(0.1, -1, -0.5));
+
     var result: VertexOutput;
     result.position = perspective * camera * vec4((vec3<f32>(rotated) + position.xyz), 1.0);
     result.color = vec3(
-        select(0.0, 1.0, position.x % 2 != 0),
-        select(0.0, 1.0, position.y % 2 != 0),
-        select(0.0, 1.0, position.z % 2 != 0),
-    );
+        select(0.1, 1.0, position.x % 2 != 0),
+        select(0.1, 1.0, position.y % 2 != 0),
+        select(0.1, 1.0, position.z % 2 != 0),
+    ) * (dot(normal, -LIGHT) / 4 + 0.75);
     return result;
 }
 

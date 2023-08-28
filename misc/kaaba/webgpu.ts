@@ -46,6 +46,11 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
     label: '😎 shaders 😎',
     code: await fetch('./shader.wgsl').then(r => r.text())
   })
+  const { messages } = await module.getCompilationInfo()
+  if (messages.some(message => message.type === 'error')) {
+    console.log(messages)
+    throw new SyntaxError('Shader failed to compile.')
+  }
   // Pipeline is like WebGL program; contains the shaders
   const pipeline = device.createRenderPipeline({
     label: '✨ pipeline ✨',

@@ -1381,6 +1381,11 @@ async function init(format) {
         label: '😎 shaders 😎',
         code: await fetch('./shader.wgsl').then((r)=>r.text())
     });
+    const { messages  } = await module.getCompilationInfo();
+    if (messages.some((message)=>message.type === 'error')) {
+        console.log(messages);
+        throw new SyntaxError('Shader failed to compile.');
+    }
     const pipeline = device.createRenderPipeline({
         label: '✨ pipeline ✨',
         layout: 'auto',
@@ -1547,7 +1552,8 @@ canvas.addEventListener('mousemove', (e)=>{
     player.yaw += e.movementX / 500;
     player.pitch += e.movementY / 500;
 });
-const MOVE_ACCEL = 25;
+const MOVE_ACCEL = 50;
+const FRICTION_COEFF = -5;
 const player = {
     x: 0,
     xv: 0,
@@ -1573,7 +1579,7 @@ function paint() {
     const elapsed = Math.min(now - lastTime, 100) / 1000;
     lastTime = now;
     const velocity = new Vector2(player.xv, player.zv);
-    const acceleration = velocity.lengthSquared > 0 ? velocity.unit().scale(-15) : new Vector2();
+    const acceleration = velocity.lengthSquared > 0 ? velocity.scale(FRICTION_COEFF) : new Vector2();
     const direction = new Vector2(0, 0);
     if (keys.a || keys.arrowleft) {
         direction.add({
@@ -1597,9 +1603,9 @@ function paint() {
     }
     const moving = direction.lengthSquared > 0;
     if (moving) {
-        acceleration.add(direction.unit().scale(25).rotate(player.yaw));
+        acceleration.add(direction.unit().scale(50).rotate(player.yaw));
     }
-    let yAccel = -Math.sign(player.yv) * 15;
+    let yAccel = player.yv * FRICTION_COEFF;
     if (keys[' ']) {
         yAccel += MOVE_ACCEL;
     }
