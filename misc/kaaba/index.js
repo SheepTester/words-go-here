@@ -2,6 +2,95 @@
 // deno-lint-ignore-file
 // This code was bundled using `deno bundle` and it's not recommended to edit it manually
 
+class Vector2 {
+    constructor(x = 0, y = 0){
+        this.set({
+            x,
+            y
+        });
+    }
+    get length() {
+        return Math.hypot(this.x, this.y);
+    }
+    get lengthSquared() {
+        return this.x * this.x + this.y * this.y;
+    }
+    get angle() {
+        return Math.atan2(this.y, this.x);
+    }
+    set({ x =this.x , y =this.y  }) {
+        this.x = x;
+        this.y = y;
+        return this;
+    }
+    add({ x =0 , y =0  }) {
+        this.x += x;
+        this.y += y;
+        return this;
+    }
+    sub({ x =0 , y =0  }) {
+        this.x -= x;
+        this.y -= y;
+        return this;
+    }
+    scale(factor = 1) {
+        this.x *= factor;
+        this.y *= factor;
+        return this;
+    }
+    unit() {
+        return this.scale(1 / this.length);
+    }
+    rotate(angle = 0) {
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const { x , y  } = this;
+        this.x = x * cos - y * sin;
+        this.y = x * sin + y * cos;
+        return this;
+    }
+    equals({ x =0 , y =0  }) {
+        return this.x === x && this.y === y;
+    }
+    bounded({ min =null , max =null  }) {
+        if (min && (this.x < min.x || this.y < min.y)) {
+            return false;
+        }
+        if (max && (this.x > max.x || this.y > max.y)) {
+            return false;
+        }
+        return true;
+    }
+    map(fn) {
+        this.x = fn(this.x);
+        this.y = fn(this.y);
+        return this;
+    }
+    affix({ prefix ='' , suffix =''  }) {
+        this.x = prefix + this.x + suffix;
+        this.y = prefix + this.y + suffix;
+        return this;
+    }
+    clone() {
+        return new Vector2(this.x, this.y);
+    }
+    *[Symbol.iterator]() {
+        yield this.x;
+        yield this.y;
+    }
+    toString() {
+        return `<${this.x}, ${this.y}>`;
+    }
+    static fromMouseEvent({ clientX , clientY  }) {
+        return new Vector2(clientX, clientY);
+    }
+    static fromRectPos({ left , top  }) {
+        return new Vector2(left, top);
+    }
+    static fromRectSize({ width , height  }) {
+        return new Vector2(width, height);
+    }
+}
 var x = 1e-6;
 function A1(o) {
     let n = x;
@@ -1361,17 +1450,9 @@ async function init(format) {
     let depthTexture = null;
     return {
         device,
-        render: (canvasTexture)=>{
+        render: (canvasTexture, cameraTransform)=>{
             perspective.data(new Float32Array(ce.perspective(Math.PI / 4, canvasTexture.width / canvasTexture.height, 0.1, 1000)));
-            camera.data(new Float32Array(ce.translate(ce.rotateY(ce.rotateX(ce.translation([
-                0,
-                1,
-                -100
-            ]), -0.5), Math.sin(Date.now() / 200) * 0.4), [
-                -16,
-                0,
-                -16
-            ])));
+            camera.data(new Float32Array(cameraTransform));
             if (depthTexture?.width !== canvasTexture.width || depthTexture.height !== canvasTexture.height) {
                 depthTexture?.destroy();
                 depthTexture = device.createTexture({
@@ -1442,11 +1523,98 @@ new ResizeObserver(([{ contentBoxSize  }])=>{
     canvas.width = inlineSize;
     canvas.height = blockSize;
     aspectRatio = inlineSize / blockSize;
-    render(context.getCurrentTexture());
 }).observe(canvas);
+const keys = {};
+document.addEventListener('keydown', (e)=>{
+    if (e.target !== document && e.target !== document.body) {
+        return;
+    }
+    keys[e.key.toLowerCase()] = true;
+    if (document.pointerLockElement !== canvas) {
+        e.preventDefault();
+    }
+});
+document.addEventListener('keyup', (e)=>{
+    keys[e.key.toLowerCase()] = false;
+});
+canvas.addEventListener('click', ()=>{
+    canvas.requestPointerLock();
+});
+canvas.addEventListener('mousemove', (e)=>{
+    if (document.pointerLockElement !== canvas) {
+        return;
+    }
+    player.yaw += e.movementX / 500;
+    player.pitch += e.movementY / 500;
+});
+const MOVE_ACCEL = 25;
+const player = {
+    x: 0,
+    xv: 0,
+    y: 32,
+    yv: 0,
+    z: 16,
+    zv: 0,
+    yaw: 0,
+    pitch: 0,
+    roll: 0
+};
+function moveAxis(axis, acceleration, time, userMoving) {
+    let endVel = player[`${axis}v`] + acceleration * time;
+    if (!userMoving && Math.sign(player[`${axis}v`]) !== Math.sign(endVel)) {
+        endVel = 0;
+    }
+    player[axis] += (player[`${axis}v`] + endVel) / 2 * time;
+    player[`${axis}v`] = endVel;
+}
+let lastTime = Date.now();
 function paint() {
+    const now = Date.now();
+    const elapsed = Math.min(now - lastTime, 100) / 1000;
+    lastTime = now;
+    const velocity = new Vector2(player.xv, player.zv);
+    const acceleration = velocity.lengthSquared > 0 ? velocity.unit().scale(-15) : new Vector2();
+    const direction = new Vector2(0, 0);
+    if (keys.a || keys.arrowleft) {
+        direction.add({
+            x: -1
+        });
+    }
+    if (keys.d || keys.arrowright) {
+        direction.add({
+            x: 1
+        });
+    }
+    if (keys.w || keys.arrowup) {
+        direction.add({
+            y: -1
+        });
+    }
+    if (keys.s || keys.arrowdown) {
+        direction.add({
+            y: 1
+        });
+    }
+    const moving = direction.lengthSquared > 0;
+    if (moving) {
+        acceleration.add(direction.unit().scale(25).rotate(player.yaw));
+    }
+    let yAccel = -Math.sign(player.yv) * 15;
+    if (keys[' ']) {
+        yAccel += MOVE_ACCEL;
+    }
+    if (keys.shift) {
+        yAccel -= MOVE_ACCEL;
+    }
+    moveAxis('x', acceleration.x, elapsed, moving);
+    moveAxis('z', acceleration.y, elapsed, moving);
+    moveAxis('y', yAccel, elapsed, keys[' '] || keys.shift);
     if (aspectRatio) {
-        render(context.getCurrentTexture());
+        render(context.getCurrentTexture(), ce.translate(ce.rotateY(ce.rotateX(ce.rotationZ(player.roll), player.pitch), player.yaw), [
+            -player.x,
+            -player.y,
+            -player.z
+        ]));
     }
     requestAnimationFrame(paint);
 }

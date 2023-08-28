@@ -1,5 +1,5 @@
 // _ @deno-types="npm:wgpu-matrix"
-import { mat4, vec3 } from 'wgpu-matrix'
+import { mat4 } from 'wgpu-matrix'
 import { Block } from './blocks.ts'
 import { Chunk, FaceDirection, SIZE } from './Chunk.ts'
 
@@ -29,7 +29,7 @@ class Uniform {
 
 export type Device = {
   device: GPUDevice
-  render: (view: GPUTexture) => void
+  render: (view: GPUTexture, camera: ReturnType<typeof mat4.clone>) => void
 }
 
 export async function init (format: GPUTextureFormat): Promise<Device> {
@@ -110,7 +110,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
 
   return {
     device,
-    render: canvasTexture => {
+    render: (canvasTexture, cameraTransform) => {
       perspective.data(
         new Float32Array(
           mat4.perspective(
@@ -121,19 +121,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
           )
         )
       )
-      // camera.data(new Float32Array(mat4.rotationY(Math.PI)))
-      // camera.data(new Float32Array(mat4.translation([0, 0, -100])))
-      camera.data(
-        new Float32Array(
-          mat4.translate(
-            mat4.rotateY(
-              mat4.rotateX(mat4.translation([0, 1, -100]), -0.5),
-              Math.sin(Date.now() / 200) * 0.4
-            ),
-            [-16, 0, -16]
-          )
-        )
-      )
+      camera.data(new Float32Array(cameraTransform))
 
       if (
         depthTexture?.width !== canvasTexture.width ||
