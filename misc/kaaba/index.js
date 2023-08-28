@@ -1179,6 +1179,44 @@ Object.freeze({
     zero: mc,
     transformMat4: bc
 });
+var Block;
+(function(Block) {
+    Block[Block["AIR"] = 0] = "AIR";
+    Block[Block["STONE"] = 1] = "STONE";
+})(Block || (Block = {}));
+function isSolid(block) {
+    return block === 1;
+}
+var FaceDirection;
+(function(FaceDirection) {
+    FaceDirection[FaceDirection["BACK"] = 0] = "BACK";
+    FaceDirection[FaceDirection["FRONT"] = 1] = "FRONT";
+    FaceDirection[FaceDirection["LEFT"] = 2] = "LEFT";
+    FaceDirection[FaceDirection["RIGHT"] = 3] = "RIGHT";
+    FaceDirection[FaceDirection["BOTTOM"] = 4] = "BOTTOM";
+    FaceDirection[FaceDirection["TOP"] = 5] = "TOP";
+})(FaceDirection || (FaceDirection = {}));
+class Chunk {
+    #data = new Uint8Array(32 * 32 * 32);
+    block(x, y, z, block) {
+        const index = (x * 32 + y) * 32 + z;
+        if (block !== undefined) {
+            this.#data[index] = block;
+            return block;
+        } else {
+            return this.#data[index];
+        }
+    }
+    faces() {
+        const faces = [];
+        for (const [i, block] of this.#data.entries()){
+            if (!isSolid(block)) {
+                continue;
+            }
+        }
+        return faces;
+    }
+}
 class Uniform {
     #device;
     #buffer;
@@ -1215,7 +1253,7 @@ async function init(format) {
     });
     const module = device.createShaderModule({
         label: '😎 shaders 😎',
-        code: await fetch('./shader-test.wgsl').then((r)=>r.text())
+        code: await fetch('./shader.wgsl').then((r)=>r.text())
     });
     const pipeline = device.createRenderPipeline({
         label: '✨ pipeline ✨',
@@ -1250,18 +1288,22 @@ async function init(format) {
             cullMode: 'back'
         }
     });
-    const vertexData = new Float32Array([
+    const vertexData = new Uint8Array([
         0,
         0,
-        0.5,
+        5,
+        FaceDirection.FRONT,
+        0,
+        0,
+        0,
+        0,
+        0,
         1,
-        -0.1,
-        -0.5,
-        0.5,
-        0.5,
-        -0.5,
+        5,
+        FaceDirection.FRONT,
+        1,
         0,
-        0.1,
+        0,
         0
     ]);
     const vertices = device.createBuffer({
@@ -1288,7 +1330,7 @@ async function init(format) {
                 0.1
             ]));
             perspective.data(new Float32Array(ce.perspective(75, aspectRatio, 0.1, 1000)));
-            camera.data(new Float32Array(ce.rotationZ(Date.now() / 100)));
+            camera.data(new Float32Array(ce.identity()));
             const encoder = device.createCommandEncoder({
                 label: 'Xx encoder xX '
             });
@@ -1311,7 +1353,7 @@ async function init(format) {
             pass.setPipeline(pipeline);
             pass.setVertexBuffer(0, vertices);
             pass.setBindGroup(0, group);
-            pass.draw(6, 3);
+            pass.draw(6, 2);
             pass.end();
             device.queue.submit([
                 encoder.finish()
@@ -1344,10 +1386,3 @@ new ResizeObserver(([{ contentBoxSize  }])=>{
     aspectRatio = inlineSize / blockSize;
     render(context.getCurrentTexture().createView(), aspectRatio);
 }).observe(canvas);
-function paint() {
-    if (aspectRatio) {
-        render(context.getCurrentTexture().createView(), aspectRatio);
-    }
-    requestAnimationFrame(paint);
-}
-paint();

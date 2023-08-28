@@ -1,7 +1,7 @@
 // _ @deno-types="npm:wgpu-matrix"
 import { mat4 } from 'wgpu-matrix'
 import { Block } from './blocks.ts'
-import { Chunk, SIZE } from './Chunk.ts'
+import { Chunk, FaceDirection, SIZE } from './Chunk.ts'
 
 class Uniform {
   #device: GPUDevice
@@ -44,7 +44,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
 
   const module = device.createShaderModule({
     label: '😎 shaders 😎',
-    code: await fetch('./shader-test.wgsl').then(r => r.text())
+    code: await fetch('./shader.wgsl').then(r => r.text())
   })
   // Pipeline is like WebGL program; contains the shaders
   const pipeline = device.createRenderPipeline({
@@ -69,8 +69,26 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
     primitive: { cullMode: 'back' }
   })
 
-  const vertexData = new Float32Array([
-    0, 0, 0.5, 1, -0.1, -0.5, 0.5, 0.5, -0.5, 0, 0.1, 0
+  // WebGPU is little-endian, so the first byte has the smaller 8 bits of a u32
+  const vertexData = new Uint8Array([
+    // Face 1
+    0,
+    0,
+    5,
+    FaceDirection.FRONT,
+    0,
+    0,
+    0,
+    0,
+    // Face 2
+    0,
+    1,
+    5,
+    FaceDirection.FRONT,
+    1,
+    0,
+    0,
+    0
   ])
   const vertices = device.createBuffer({
     label: 'vertex buffer vertices',
@@ -96,7 +114,8 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
       perspective.data(
         new Float32Array(mat4.perspective(75, aspectRatio, 0.1, 1000))
       )
-      camera.data(new Float32Array(mat4.rotationZ(Date.now() / 100)))
+      camera.data(new Float32Array(mat4.identity()))
+      // camera.data(new Float32Array(mat4.rotationZ(Date.now() / 100)))
 
       // Encodes commands
       const encoder = device.createCommandEncoder({ label: 'Xx encoder xX ' })
@@ -115,7 +134,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
       pass.setPipeline(pipeline)
       pass.setVertexBuffer(0, vertices)
       pass.setBindGroup(0, group)
-      pass.draw(6, 3)
+      pass.draw(6, 2)
       pass.end()
       // finish() returns a command buffer
       device.queue.submit([encoder.finish()])

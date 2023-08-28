@@ -3,12 +3,12 @@ import { BlockId, isSolid } from './blocks.ts'
 export const SIZE = 32
 
 export const enum FaceDirection {
-  TOP = 0,
-  BOTTOM = 1,
+  BACK = 0,
+  FRONT = 1,
   LEFT = 2,
   RIGHT = 3,
-  BACK = 4,
-  FRONT = 5
+  BOTTOM = 4,
+  TOP = 5
 }
 
 export type Face = [

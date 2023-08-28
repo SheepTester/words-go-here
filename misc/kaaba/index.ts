@@ -38,4 +38,4 @@ function paint () {
   }
   requestAnimationFrame(paint)
 }
-paint()
+// paint()
