@@ -1,5 +1,5 @@
 // _ @deno-types="npm:wgpu-matrix"
-import { mat4 } from 'wgpu-matrix'
+import { mat4, vec3 } from 'wgpu-matrix'
 import { Block } from './blocks.ts'
 import { Chunk, FaceDirection, SIZE } from './Chunk.ts'
 
@@ -57,10 +57,10 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
         // vertex buffer
         {
           // Bytes between the start of each vertex datum
-          arrayStride: 4 * 4,
+          arrayStride: 8,
           // Change attribute per instance rather than vertex
           stepMode: 'instance',
-          attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x4' }]
+          attributes: [{ shaderLocation: 0, offset: 0, format: 'uint32x2' }]
         }
       ]
     },
@@ -73,8 +73,8 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
   const vertexData = new Uint8Array([
     // Face 1
     0,
+    -1,
     0,
-    5,
     FaceDirection.FRONT,
     0,
     0,
@@ -83,8 +83,8 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
     // Face 2
     0,
     1,
-    5,
-    FaceDirection.FRONT,
+    0,
+    FaceDirection.BACK,
     1,
     0,
     0,
@@ -97,25 +97,28 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
   })
   device.queue.writeBuffer(vertices, 0, vertexData)
 
-  const red = new Uniform(device, 0, 1 * 4)
-  const perspective = new Uniform(device, 1, 4 * 4 * 4)
-  const camera = new Uniform(device, 2, 4 * 4 * 4)
+  const perspective = new Uniform(device, 0, 4 * 4 * 4)
+  const camera = new Uniform(device, 1, 4 * 4 * 4)
   // Bind groups have shared resources across all invocations of the shaders (eg
   // uniforms, textures, but not attributes)
   const group = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
-    entries: [red.entry, perspective.entry, camera.entry]
+    entries: [perspective.entry, camera.entry]
   })
 
   return {
     device,
     render: (view, aspectRatio) => {
-      red.data(new Float32Array([0.1]))
       perspective.data(
         new Float32Array(mat4.perspective(75, aspectRatio, 0.1, 1000))
       )
-      camera.data(new Float32Array(mat4.identity()))
-      // camera.data(new Float32Array(mat4.rotationZ(Date.now() / 100)))
+      // camera.data(new Float32Array(mat4.identity()))
+      // camera.data(new Float32Array(mat4.translation([0, 0, -5])))
+      camera.data(
+        new Float32Array(
+          mat4.rotateY(mat4.translation([0, 0, -10]), Date.now() / 500)
+        )
+      )
 
       // Encodes commands
       const encoder = device.createCommandEncoder({ label: 'Xx encoder xX ' })

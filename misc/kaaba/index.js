@@ -1263,13 +1263,13 @@ async function init(format) {
             entryPoint: 'vertex_main',
             buffers: [
                 {
-                    arrayStride: 4 * 4,
+                    arrayStride: 8,
                     stepMode: 'instance',
                     attributes: [
                         {
                             shaderLocation: 0,
                             offset: 0,
-                            format: 'float32x4'
+                            format: 'uint32x2'
                         }
                     ]
                 }
@@ -1290,8 +1290,8 @@ async function init(format) {
     });
     const vertexData = new Uint8Array([
         0,
+        -1,
         0,
-        5,
         FaceDirection.FRONT,
         0,
         0,
@@ -1299,8 +1299,8 @@ async function init(format) {
         0,
         0,
         1,
-        5,
-        FaceDirection.FRONT,
+        0,
+        FaceDirection.BACK,
         1,
         0,
         0,
@@ -1312,13 +1312,11 @@ async function init(format) {
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
     });
     device.queue.writeBuffer(vertices, 0, vertexData);
-    const red = new Uniform(device, 0, 1 * 4);
-    const perspective = new Uniform(device, 1, 4 * 4 * 4);
-    const camera = new Uniform(device, 2, 4 * 4 * 4);
+    const perspective = new Uniform(device, 0, 4 * 4 * 4);
+    const camera = new Uniform(device, 1, 4 * 4 * 4);
     const group = device.createBindGroup({
         layout: pipeline.getBindGroupLayout(0),
         entries: [
-            red.entry,
             perspective.entry,
             camera.entry
         ]
@@ -1326,11 +1324,12 @@ async function init(format) {
     return {
         device,
         render: (view, aspectRatio)=>{
-            red.data(new Float32Array([
-                0.1
-            ]));
             perspective.data(new Float32Array(ce.perspective(75, aspectRatio, 0.1, 1000)));
-            camera.data(new Float32Array(ce.identity()));
+            camera.data(new Float32Array(ce.rotateY(ce.translation([
+                0,
+                0,
+                -10
+            ]), Date.now() / 500)));
             const encoder = device.createCommandEncoder({
                 label: 'Xx encoder xX '
             });
@@ -1386,3 +1385,10 @@ new ResizeObserver(([{ contentBoxSize  }])=>{
     aspectRatio = inlineSize / blockSize;
     render(context.getCurrentTexture().createView(), aspectRatio);
 }).observe(canvas);
+function paint() {
+    if (aspectRatio) {
+        render(context.getCurrentTexture().createView(), aspectRatio);
+    }
+    requestAnimationFrame(paint);
+}
+paint();
