@@ -1,7 +1,7 @@
 // _ @deno-types="npm:wgpu-matrix"
 import { mat4 } from 'wgpu-matrix'
 import { Block } from './blocks.ts'
-import { Chunk, FaceDirection, SIZE } from './Chunk.ts'
+import { Chunk, SIZE } from './Chunk.ts'
 
 class Uniform {
   #device: GPUDevice
@@ -102,6 +102,27 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
   })
   device.queue.writeBuffer(vertices, 0, vertexData)
 
+  const chunk2 = new Chunk()
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      for (let z = 0; z < SIZE; z++) {
+        // Decreasing probability as you go down
+        if (Math.random() < (y + 1) / SIZE) {
+          chunk2.block(x, y, z, Block.STONE)
+        }
+      }
+    }
+  }
+  const faces2 = chunk2.faces()
+  const faceCount2 = faces2.length / 8
+  const vertexData2 = new Uint8Array(faces2)
+  const vertices2 = device.createBuffer({
+    label: 'vertex buffer vertices (chunk 2)',
+    size: vertexData2.byteLength,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+  })
+  device.queue.writeBuffer(vertices2, 0, vertexData2)
+
   const perspective = new Uniform(device, 0, 4 * 4 * 4)
   const camera = new Uniform(device, 1, 4 * 4 * 4)
   // Bind groups have shared resources across all invocations of the shaders (eg
@@ -109,6 +130,17 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
   const group = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [perspective.entry, camera.entry]
+  })
+
+  const transform1 = new Uniform(device, 0, 4 * 4 * 4)
+  const chunk1Group = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(1),
+    entries: [transform1.entry]
+  })
+  const transform2 = new Uniform(device, 0, 4 * 4 * 4)
+  const chunk2Group = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(1),
+    entries: [transform2.entry]
   })
 
   let depthTexture: GPUTexture | null = null
@@ -127,6 +159,8 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
         )
       )
       camera.data(new Float32Array(cameraTransform))
+      transform1.data(mat4.identity())
+      transform2.data(mat4.translation([-SIZE, 0, 0]))
 
       if (
         depthTexture?.width !== canvasTexture.width ||
@@ -161,9 +195,13 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
         }
       })
       pass.setPipeline(pipeline)
-      pass.setVertexBuffer(0, vertices)
       pass.setBindGroup(0, group)
+      pass.setBindGroup(1, chunk1Group)
+      pass.setVertexBuffer(0, vertices)
       pass.draw(6, faceCount)
+      pass.setBindGroup(1, chunk2Group)
+      pass.setVertexBuffer(0, vertices2)
+      pass.draw(6, faceCount2)
       pass.end()
       // finish() returns a command buffer
       device.queue.submit([encoder.finish()])

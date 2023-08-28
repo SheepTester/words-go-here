@@ -7,6 +7,7 @@ import '@webgpu/types'
 // _ @deno-types="npm:wgpu-matrix"
 import { mat4 } from 'wgpu-matrix'
 import { init } from './webgpu.ts'
+import { SIZE } from './Chunk.ts'
 
 function fail (error: Error): never {
   throw error
@@ -66,7 +67,7 @@ const FRICTION_COEFF = -5
 const player = {
   x: 0,
   xv: 0,
-  y: 32,
+  y: SIZE + 1.5,
   yv: 0,
   z: 16,
   zv: 0,

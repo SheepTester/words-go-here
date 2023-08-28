@@ -11,6 +11,10 @@ var<uniform> perspective: mat4x4<f32>;
 @binding(1)
 var<uniform> camera: mat4x4<f32>;
 
+@group(1)
+@binding(0)
+var<uniform> transform: mat4x4<f32>;
+
 fn to_i8(byte: u32) -> i32 {
     return i32(select(byte, byte - 256, byte >> 7 != 0));
 }
@@ -66,7 +70,7 @@ fn vertex_main(
     const LIGHT = normalize(vec3(0.1, -1, -0.5));
 
     var result: VertexOutput;
-    result.position = perspective * camera * vec4((vec3<f32>(rotated) + position.xyz), 1.0);
+    result.position = perspective * camera * transform * vec4((vec3<f32>(rotated) + position.xyz), 1.0);
     result.color = vec3(
         select(0.1, 1.0, position.x % 2 != 0),
         select(0.1, 1.0, position.y % 2 != 0),

@@ -1443,6 +1443,25 @@ async function init(format) {
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
     });
     device.queue.writeBuffer(vertices, 0, vertexData);
+    const chunk2 = new Chunk();
+    for(let y = 0; y < 32; y++){
+        for(let x = 0; x < 32; x++){
+            for(let z = 0; z < 32; z++){
+                if (Math.random() < (y + 1) / 32) {
+                    chunk2.block(x, y, z, Block.STONE);
+                }
+            }
+        }
+    }
+    const faces2 = chunk2.faces();
+    const faceCount2 = faces2.length / 8;
+    const vertexData2 = new Uint8Array(faces2);
+    const vertices2 = device.createBuffer({
+        label: 'vertex buffer vertices (chunk 2)',
+        size: vertexData2.byteLength,
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    });
+    device.queue.writeBuffer(vertices2, 0, vertexData2);
     const perspective = new Uniform(device, 0, 4 * 4 * 4);
     const camera = new Uniform(device, 1, 4 * 4 * 4);
     const group = device.createBindGroup({
@@ -1452,12 +1471,32 @@ async function init(format) {
             camera.entry
         ]
     });
+    const transform1 = new Uniform(device, 0, 4 * 4 * 4);
+    const chunk1Group = device.createBindGroup({
+        layout: pipeline.getBindGroupLayout(1),
+        entries: [
+            transform1.entry
+        ]
+    });
+    const transform2 = new Uniform(device, 0, 4 * 4 * 4);
+    const chunk2Group = device.createBindGroup({
+        layout: pipeline.getBindGroupLayout(1),
+        entries: [
+            transform2.entry
+        ]
+    });
     let depthTexture = null;
     return {
         device,
         render: (canvasTexture, cameraTransform)=>{
             perspective.data(new Float32Array(ce.perspective(Math.PI / 4, canvasTexture.width / canvasTexture.height, 0.1, 1000)));
             camera.data(new Float32Array(cameraTransform));
+            transform1.data(ce.identity());
+            transform2.data(ce.translation([
+                -32,
+                0,
+                0
+            ]));
             if (depthTexture?.width !== canvasTexture.width || depthTexture.height !== canvasTexture.height) {
                 depthTexture?.destroy();
                 depthTexture = device.createTexture({
@@ -1495,9 +1534,13 @@ async function init(format) {
                 }
             });
             pass.setPipeline(pipeline);
-            pass.setVertexBuffer(0, vertices);
             pass.setBindGroup(0, group);
+            pass.setBindGroup(1, chunk1Group);
+            pass.setVertexBuffer(0, vertices);
             pass.draw(6, faceCount);
+            pass.setBindGroup(1, chunk2Group);
+            pass.setVertexBuffer(0, vertices2);
+            pass.draw(6, faceCount2);
             pass.end();
             device.queue.submit([
                 encoder.finish()
@@ -1557,7 +1600,7 @@ const FRICTION_COEFF = -5;
 const player = {
     x: 0,
     xv: 0,
-    y: 32,
+    y: 32 + 1.5,
     yv: 0,
     z: 16,
     zv: 0,
