@@ -58,9 +58,9 @@ fn vertex_main(
     _ = perspective * camera;
     // result.position = vec4(vec2<f32>(square_vertices[index]), 0, 1);
     result.color = vec3(
-        select(0.0, 1.0, position.x % 2 == 1),
-        select(0.0, 1.0, position.y % 2 == 1),
-        select(0.0, 1.0, position.z % 2 == 1),
+        select(0.0, 1.0, position.x % 2 != 0),
+        select(0.0, 1.0, position.y % 2 != 0),
+        select(0.0, 1.0, position.z % 2 != 0),
     );
     return result;
 }

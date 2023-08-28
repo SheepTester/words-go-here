@@ -88,6 +88,24 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
     1,
     0,
     0,
+    0,
+    // Face 3
+    0,
+    0,
+    0,
+    FaceDirection.RIGHT,
+    1,
+    0,
+    0,
+    0,
+    // Face 4
+    0,
+    0,
+    0,
+    FaceDirection.LEFT,
+    1,
+    0,
+    0,
     0
   ])
   const vertices = device.createBuffer({
@@ -137,7 +155,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
       pass.setPipeline(pipeline)
       pass.setVertexBuffer(0, vertices)
       pass.setBindGroup(0, group)
-      pass.draw(6, 2)
+      pass.draw(6, 4)
       pass.end()
       // finish() returns a command buffer
       device.queue.submit([encoder.finish()])

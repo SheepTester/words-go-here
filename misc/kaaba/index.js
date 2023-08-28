@@ -1304,6 +1304,22 @@ async function init(format) {
         1,
         0,
         0,
+        0,
+        0,
+        0,
+        0,
+        FaceDirection.RIGHT,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        FaceDirection.LEFT,
+        1,
+        0,
+        0,
         0
     ]);
     const vertices = device.createBuffer({
@@ -1352,7 +1368,7 @@ async function init(format) {
             pass.setPipeline(pipeline);
             pass.setVertexBuffer(0, vertices);
             pass.setBindGroup(0, group);
-            pass.draw(6, 2);
+            pass.draw(6, 4);
             pass.end();
             device.queue.submit([
                 encoder.finish()
