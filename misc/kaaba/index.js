@@ -1284,65 +1284,6 @@ function isOpaque(block) {
 function getTexture(block) {
     return block !== null ? textures[block] ?? null : null;
 }
-var FaceDirection;
-(function(FaceDirection) {
-    FaceDirection[FaceDirection["BACK"] = 0] = "BACK";
-    FaceDirection[FaceDirection["FRONT"] = 1] = "FRONT";
-    FaceDirection[FaceDirection["LEFT"] = 2] = "LEFT";
-    FaceDirection[FaceDirection["RIGHT"] = 3] = "RIGHT";
-    FaceDirection[FaceDirection["BOTTOM"] = 4] = "BOTTOM";
-    FaceDirection[FaceDirection["TOP"] = 5] = "TOP";
-})(FaceDirection || (FaceDirection = {}));
-function showFace(block, neighbor) {
-    return block !== neighbor && !isOpaque(neighbor);
-}
-class Chunk {
-    #data = new Uint8Array(32 * 32 * 32);
-    block(x, y, z, block) {
-        if (x < 0 || y < 0 || z < 0 || x >= 32 || y >= 32 || z >= 32) {
-            return null;
-        }
-        const index = (x * 32 + y) * 32 + z;
-        if (block !== undefined) {
-            this.#data[index] = block;
-            return block;
-        } else {
-            return this.#data[index];
-        }
-    }
-    faces(target = []) {
-        for(let x = 0; x < 32; x++){
-            for(let y = 0; y < 32; y++){
-                for(let z = 0; z < 32; z++){
-                    const block = this.block(x, y, z);
-                    const texture = getTexture(block);
-                    if (block === null || texture === null) {
-                        continue;
-                    }
-                    if (showFace(block, this.block(x - 1, y, z))) {
-                        target.push(x, y, z, 2, texture, 0, 0, 0);
-                    }
-                    if (showFace(block, this.block(x + 1, y, z))) {
-                        target.push(x, y, z, 3, texture, 0, 0, 0);
-                    }
-                    if (showFace(block, this.block(x, y - 1, z))) {
-                        target.push(x, y, z, 4, texture, 0, 0, 0);
-                    }
-                    if (showFace(block, this.block(x, y + 1, z))) {
-                        target.push(x, y, z, 5, texture, 0, 0, 0);
-                    }
-                    if (showFace(block, this.block(x, y, z - 1))) {
-                        target.push(x, y, z, 0, texture, 0, 0, 0);
-                    }
-                    if (showFace(block, this.block(x, y, z + 1))) {
-                        target.push(x, y, z, 1, texture, 0, 0, 0);
-                    }
-                }
-            }
-        }
-        return target;
-    }
-}
 class Uniform {
     #device;
     #buffer;
@@ -1366,6 +1307,96 @@ class Uniform {
     }
     data(data, offset = 0) {
         this.#device.queue.writeBuffer(this.#buffer, offset, data);
+    }
+}
+class Group {
+    group;
+    uniforms;
+    constructor(device, pipeline, groupId, uniforms){
+        this.group = device.createBindGroup({
+            layout: pipeline.getBindGroupLayout(groupId),
+            entries: Object.values(uniforms).map((uniform)=>uniform.entry)
+        });
+        this.uniforms = uniforms;
+    }
+}
+var FaceDirection;
+(function(FaceDirection) {
+    FaceDirection[FaceDirection["BACK"] = 0] = "BACK";
+    FaceDirection[FaceDirection["FRONT"] = 1] = "FRONT";
+    FaceDirection[FaceDirection["LEFT"] = 2] = "LEFT";
+    FaceDirection[FaceDirection["RIGHT"] = 3] = "RIGHT";
+    FaceDirection[FaceDirection["BOTTOM"] = 4] = "BOTTOM";
+    FaceDirection[FaceDirection["TOP"] = 5] = "TOP";
+})(FaceDirection || (FaceDirection = {}));
+function showFace(block, neighbor) {
+    return block !== neighbor && !isOpaque(neighbor);
+}
+class Chunk {
+    #data = new Uint8Array(32 * 32 * 32);
+    position;
+    constructor(position){
+        this.position = position;
+    }
+    block(x, y, z, block) {
+        if (x < 0 || y < 0 || z < 0 || x >= 32 || y >= 32 || z >= 32) {
+            return null;
+        }
+        const index = (x * 32 + y) * 32 + z;
+        if (block !== undefined) {
+            this.#data[index] = block;
+            return block;
+        } else {
+            return this.#data[index];
+        }
+    }
+    mesh(device, pipeline) {
+        const faces = [];
+        for(let x = 0; x < 32; x++){
+            for(let y = 0; y < 32; y++){
+                for(let z = 0; z < 32; z++){
+                    const block = this.block(x, y, z);
+                    const texture = getTexture(block);
+                    if (block === null || texture === null) {
+                        continue;
+                    }
+                    if (showFace(block, this.block(x - 1, y, z))) {
+                        faces.push(x, y, z, 2, texture, 0, 0, 0);
+                    }
+                    if (showFace(block, this.block(x + 1, y, z))) {
+                        faces.push(x, y, z, 3, texture, 0, 0, 0);
+                    }
+                    if (showFace(block, this.block(x, y - 1, z))) {
+                        faces.push(x, y, z, 4, texture, 0, 0, 0);
+                    }
+                    if (showFace(block, this.block(x, y + 1, z))) {
+                        faces.push(x, y, z, 5, texture, 0, 0, 0);
+                    }
+                    if (showFace(block, this.block(x, y, z - 1))) {
+                        faces.push(x, y, z, 0, texture, 0, 0, 0);
+                    }
+                    if (showFace(block, this.block(x, y, z + 1))) {
+                        faces.push(x, y, z, 1, texture, 0, 0, 0);
+                    }
+                }
+            }
+        }
+        const vertexData = new Uint8Array(faces);
+        const vertices = device.createBuffer({
+            label: `chunk (${this.position.join(', ')}) vertex buffer vertices`,
+            size: vertexData.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+        });
+        device.queue.writeBuffer(vertices, 0, vertexData);
+        const chunkGroup = new Group(device, pipeline, 1, {
+            transform: new Uniform(device, 0, 4 * 4 * 4)
+        });
+        chunkGroup.uniforms.transform.data(ce.translation(this.position.map((pos)=>pos * 32)));
+        return (pass)=>{
+            pass.setBindGroup(1, chunkGroup.group);
+            pass.setVertexBuffer(0, vertices);
+            pass.draw(6, faces.length / 8);
+        };
     }
 }
 async function init(format) {
@@ -1424,79 +1455,39 @@ async function init(format) {
             format: 'depth24plus'
         }
     });
-    const chunk = new Chunk();
-    for(let y = 0; y < 32; y++){
-        for(let x = 0; x < 32; x++){
-            for(let z = 0; z < 32; z++){
-                if (Math.random() < (32 - y) / 32) {
-                    chunk.block(x, y, z, Block.STONE);
+    function generateChunk(position) {
+        const chunk = new Chunk(position);
+        for(let y = 0; y < 32; y++){
+            for(let x = 0; x < 32; x++){
+                for(let z = 0; z < 32; z++){
+                    if (Math.random() < (32 - y) / 32) {
+                        chunk.block(x, y, z, Block.STONE);
+                    }
                 }
             }
         }
+        return chunk.mesh(device, pipeline);
     }
-    const faces = chunk.faces();
-    const faceCount = faces.length / 8;
-    const vertexData = new Uint8Array(faces);
-    const vertices = device.createBuffer({
-        label: 'vertex buffer vertices',
-        size: vertexData.byteLength,
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-    });
-    device.queue.writeBuffer(vertices, 0, vertexData);
-    const chunk2 = new Chunk();
-    for(let y = 0; y < 32; y++){
-        for(let x = 0; x < 32; x++){
-            for(let z = 0; z < 32; z++){
-                if (Math.random() < (y + 1) / 32) {
-                    chunk2.block(x, y, z, Block.STONE);
-                }
-            }
+    const chunks = [];
+    for(let x = -5; x <= 5; x++){
+        for(let z = -5; z <= 5; z++){
+            chunks.push(generateChunk([
+                x,
+                0,
+                z
+            ]));
         }
     }
-    const faces2 = chunk2.faces();
-    const faceCount2 = faces2.length / 8;
-    const vertexData2 = new Uint8Array(faces2);
-    const vertices2 = device.createBuffer({
-        label: 'vertex buffer vertices (chunk 2)',
-        size: vertexData2.byteLength,
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-    });
-    device.queue.writeBuffer(vertices2, 0, vertexData2);
-    const perspective = new Uniform(device, 0, 4 * 4 * 4);
-    const camera = new Uniform(device, 1, 4 * 4 * 4);
-    const group = device.createBindGroup({
-        layout: pipeline.getBindGroupLayout(0),
-        entries: [
-            perspective.entry,
-            camera.entry
-        ]
-    });
-    const transform1 = new Uniform(device, 0, 4 * 4 * 4);
-    const chunk1Group = device.createBindGroup({
-        layout: pipeline.getBindGroupLayout(1),
-        entries: [
-            transform1.entry
-        ]
-    });
-    const transform2 = new Uniform(device, 0, 4 * 4 * 4);
-    const chunk2Group = device.createBindGroup({
-        layout: pipeline.getBindGroupLayout(1),
-        entries: [
-            transform2.entry
-        ]
+    const common = new Group(device, pipeline, 0, {
+        perspective: new Uniform(device, 0, 4 * 4 * 4),
+        camera: new Uniform(device, 1, 4 * 4 * 4)
     });
     let depthTexture = null;
     return {
         device,
         render: (canvasTexture, cameraTransform)=>{
-            perspective.data(new Float32Array(ce.perspective(Math.PI / 4, canvasTexture.width / canvasTexture.height, 0.1, 1000)));
-            camera.data(new Float32Array(cameraTransform));
-            transform1.data(ce.identity());
-            transform2.data(ce.translation([
-                -32,
-                0,
-                0
-            ]));
+            common.uniforms.perspective.data(new Float32Array(ce.perspective(Math.PI / 2, canvasTexture.width / canvasTexture.height, 0.1, 1000)));
+            common.uniforms.camera.data(new Float32Array(cameraTransform));
             if (depthTexture?.width !== canvasTexture.width || depthTexture.height !== canvasTexture.height) {
                 depthTexture?.destroy();
                 depthTexture = device.createTexture({
@@ -1534,13 +1525,10 @@ async function init(format) {
                 }
             });
             pass.setPipeline(pipeline);
-            pass.setBindGroup(0, group);
-            pass.setBindGroup(1, chunk1Group);
-            pass.setVertexBuffer(0, vertices);
-            pass.draw(6, faceCount);
-            pass.setBindGroup(1, chunk2Group);
-            pass.setVertexBuffer(0, vertices2);
-            pass.draw(6, faceCount2);
+            pass.setBindGroup(0, common.group);
+            for (const chunk of chunks){
+                chunk(pass);
+            }
             pass.end();
             device.queue.submit([
                 encoder.finish()

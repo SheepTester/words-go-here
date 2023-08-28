@@ -1,4 +1,6 @@
+import { mat4 } from 'wgpu-matrix'
 import { Block, getTexture, isOpaque } from './blocks.ts'
+import { Group, Uniform } from './webgpu.ts'
 
 export const SIZE = 32
 
@@ -15,8 +17,16 @@ function showFace (block: Block, neighbor: Block | null): boolean {
   return block !== neighbor && !isOpaque(neighbor)
 }
 
+export type ChunkPosition = [x: number, y: number, z: number]
+export type ChunkRenderer = (pass: GPURenderPassEncoder) => void
+
 export class Chunk {
   #data: Uint8Array = new Uint8Array(SIZE * SIZE * SIZE)
+  position: ChunkPosition
+
+  constructor (position: ChunkPosition) {
+    this.position = position
+  }
 
   /**
    * Gets the block at the given coordinates. If `block` is specified, it sets
@@ -35,7 +45,8 @@ export class Chunk {
     }
   }
 
-  faces (target: number[] = []): number[] {
+  mesh (device: GPUDevice, pipeline: GPURenderPipeline): ChunkRenderer {
+    const faces: number[] = []
     for (let x = 0; x < SIZE; x++) {
       for (let y = 0; y < SIZE; y++) {
         for (let z = 0; z < SIZE; z++) {
@@ -45,26 +56,47 @@ export class Chunk {
             continue
           }
           if (showFace(block, this.block(x - 1, y, z))) {
-            target.push(x, y, z, FaceDirection.LEFT, texture, 0, 0, 0)
+            faces.push(x, y, z, FaceDirection.LEFT, texture, 0, 0, 0)
           }
           if (showFace(block, this.block(x + 1, y, z))) {
-            target.push(x, y, z, FaceDirection.RIGHT, texture, 0, 0, 0)
+            faces.push(x, y, z, FaceDirection.RIGHT, texture, 0, 0, 0)
           }
           if (showFace(block, this.block(x, y - 1, z))) {
-            target.push(x, y, z, FaceDirection.BOTTOM, texture, 0, 0, 0)
+            faces.push(x, y, z, FaceDirection.BOTTOM, texture, 0, 0, 0)
           }
           if (showFace(block, this.block(x, y + 1, z))) {
-            target.push(x, y, z, FaceDirection.TOP, texture, 0, 0, 0)
+            faces.push(x, y, z, FaceDirection.TOP, texture, 0, 0, 0)
           }
           if (showFace(block, this.block(x, y, z - 1))) {
-            target.push(x, y, z, FaceDirection.BACK, texture, 0, 0, 0)
+            faces.push(x, y, z, FaceDirection.BACK, texture, 0, 0, 0)
           }
           if (showFace(block, this.block(x, y, z + 1))) {
-            target.push(x, y, z, FaceDirection.FRONT, texture, 0, 0, 0)
+            faces.push(x, y, z, FaceDirection.FRONT, texture, 0, 0, 0)
           }
         }
       }
     }
-    return target
+    // WebGPU is little-endian, so the first byte has the smaller 8 bits of a
+    // u32
+    const vertexData = new Uint8Array(faces)
+    const vertices = device.createBuffer({
+      label: `chunk (${this.position.join(', ')}) vertex buffer vertices`,
+      size: vertexData.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    })
+    device.queue.writeBuffer(vertices, 0, vertexData)
+
+    const chunkGroup = new Group(device, pipeline, 1, {
+      transform: new Uniform(device, 0, 4 * 4 * 4)
+    })
+    chunkGroup.uniforms.transform.data(
+      mat4.translation(this.position.map(pos => pos * SIZE))
+    )
+
+    return pass => {
+      pass.setBindGroup(1, chunkGroup.group)
+      pass.setVertexBuffer(0, vertices)
+      pass.draw(6, faces.length / 8)
+    }
   }
 }

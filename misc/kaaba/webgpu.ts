@@ -1,9 +1,9 @@
 // _ @deno-types="npm:wgpu-matrix"
 import { mat4 } from 'wgpu-matrix'
 import { Block } from './blocks.ts'
-import { Chunk, SIZE } from './Chunk.ts'
+import { Chunk, ChunkPosition, ChunkRenderer, SIZE } from './Chunk.ts'
 
-class Uniform {
+export class Uniform {
   #device: GPUDevice
   #buffer: GPUBuffer
   #binding: number
@@ -24,6 +24,28 @@ class Uniform {
 
   data (data: BufferSource | SharedArrayBuffer, offset = 0): void {
     this.#device.queue.writeBuffer(this.#buffer, offset, data)
+  }
+}
+
+/**
+ * Bind groups have shared resources across all invocations of the shaders (eg
+ * uniforms, textures, but not attributes).
+ */
+export class Group<U extends Record<string, Uniform>> {
+  group: GPUBindGroup
+  uniforms: U
+
+  constructor (
+    device: GPUDevice,
+    pipeline: GPURenderPipeline,
+    groupId: number,
+    uniforms: U
+  ) {
+    this.group = device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(groupId),
+      entries: Object.values(uniforms).map(uniform => uniform.entry)
+    })
+    this.uniforms = uniforms
   }
 }
 
@@ -79,68 +101,31 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
     }
   })
 
-  const chunk = new Chunk()
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
-      for (let z = 0; z < SIZE; z++) {
-        // Decreasing probability as you go up
-        if (Math.random() < (SIZE - y) / SIZE) {
-          chunk.block(x, y, z, Block.STONE)
+  function generateChunk (position: ChunkPosition): ChunkRenderer {
+    const chunk = new Chunk(position)
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        for (let z = 0; z < SIZE; z++) {
+          // Decreasing probability as you go up
+          if (Math.random() < (SIZE - y) / SIZE) {
+            chunk.block(x, y, z, Block.STONE)
+          }
         }
       }
     }
+    return chunk.mesh(device, pipeline)
   }
-  const faces = chunk.faces()
-  const faceCount = faces.length / 8
 
-  // WebGPU is little-endian, so the first byte has the smaller 8 bits of a u32
-  const vertexData = new Uint8Array(faces)
-  const vertices = device.createBuffer({
-    label: 'vertex buffer vertices',
-    size: vertexData.byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-  })
-  device.queue.writeBuffer(vertices, 0, vertexData)
-
-  const chunk2 = new Chunk()
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
-      for (let z = 0; z < SIZE; z++) {
-        // Decreasing probability as you go down
-        if (Math.random() < (y + 1) / SIZE) {
-          chunk2.block(x, y, z, Block.STONE)
-        }
-      }
+  const chunks: ChunkRenderer[] = []
+  for (let x = -5; x <= 5; x++) {
+    for (let z = -5; z <= 5; z++) {
+      chunks.push(generateChunk([x, 0, z]))
     }
   }
-  const faces2 = chunk2.faces()
-  const faceCount2 = faces2.length / 8
-  const vertexData2 = new Uint8Array(faces2)
-  const vertices2 = device.createBuffer({
-    label: 'vertex buffer vertices (chunk 2)',
-    size: vertexData2.byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-  })
-  device.queue.writeBuffer(vertices2, 0, vertexData2)
 
-  const perspective = new Uniform(device, 0, 4 * 4 * 4)
-  const camera = new Uniform(device, 1, 4 * 4 * 4)
-  // Bind groups have shared resources across all invocations of the shaders (eg
-  // uniforms, textures, but not attributes)
-  const group = device.createBindGroup({
-    layout: pipeline.getBindGroupLayout(0),
-    entries: [perspective.entry, camera.entry]
-  })
-
-  const transform1 = new Uniform(device, 0, 4 * 4 * 4)
-  const chunk1Group = device.createBindGroup({
-    layout: pipeline.getBindGroupLayout(1),
-    entries: [transform1.entry]
-  })
-  const transform2 = new Uniform(device, 0, 4 * 4 * 4)
-  const chunk2Group = device.createBindGroup({
-    layout: pipeline.getBindGroupLayout(1),
-    entries: [transform2.entry]
+  const common = new Group(device, pipeline, 0, {
+    perspective: new Uniform(device, 0, 4 * 4 * 4),
+    camera: new Uniform(device, 1, 4 * 4 * 4)
   })
 
   let depthTexture: GPUTexture | null = null
@@ -148,19 +133,17 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
   return {
     device,
     render: (canvasTexture, cameraTransform) => {
-      perspective.data(
+      common.uniforms.perspective.data(
         new Float32Array(
           mat4.perspective(
-            Math.PI / 4,
+            Math.PI / 2,
             canvasTexture.width / canvasTexture.height,
             0.1,
             1000
           )
         )
       )
-      camera.data(new Float32Array(cameraTransform))
-      transform1.data(mat4.identity())
-      transform2.data(mat4.translation([-SIZE, 0, 0]))
+      common.uniforms.camera.data(new Float32Array(cameraTransform))
 
       if (
         depthTexture?.width !== canvasTexture.width ||
@@ -195,13 +178,10 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
         }
       })
       pass.setPipeline(pipeline)
-      pass.setBindGroup(0, group)
-      pass.setBindGroup(1, chunk1Group)
-      pass.setVertexBuffer(0, vertices)
-      pass.draw(6, faceCount)
-      pass.setBindGroup(1, chunk2Group)
-      pass.setVertexBuffer(0, vertices2)
-      pass.draw(6, faceCount2)
+      pass.setBindGroup(0, common.group)
+      for (const chunk of chunks) {
+        chunk(pass)
+      }
       pass.end()
       // finish() returns a command buffer
       device.queue.submit([encoder.finish()])
