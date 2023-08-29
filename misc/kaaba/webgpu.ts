@@ -53,6 +53,7 @@ export class Group<U extends Record<string, Uniform | GPUBindGroupEntry>> {
 
 export type Device = {
   device: GPUDevice
+  resize: (width: number, height: number) => void
   render: (view: GPUTexture, camera: ReturnType<typeof mat4.clone>) => void
 }
 
@@ -117,6 +118,26 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
       depthWriteEnabled: true,
       depthCompare: 'less',
       format: 'depth24plus'
+    }
+  })
+
+  const modulePp = device.createShaderModule({
+    label: '😮 post processing shader 😮',
+    code: await fetch('./post-processing.wgsl').then(r => r.text())
+  })
+  const { messages: messagesPp } = await modulePp.getCompilationInfo()
+  if (messagesPp.some(message => message.type === 'error')) {
+    console.log(messagesPp)
+    throw new SyntaxError('Post-processing shader failed to compile.')
+  }
+  const pipelinePp = device.createRenderPipeline({
+    label: '✨ pipeline ✨',
+    layout: 'auto',
+    vertex: { module: modulePp, entryPoint: 'vertex_main' },
+    fragment: {
+      module: modulePp,
+      entryPoint: 'fragment_main',
+      targets: [{ format }]
     }
   })
 
@@ -201,61 +222,99 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
     new Float32Array([source.width / 16, source.height / 16])
   )
 
+  const commonPp = new Group(device, pipelinePp, 0, {
+    canvasSize: new Uniform(device, 0, 4 * 2),
+    sampler: { binding: 1, resource: sampler }
+  })
+
   let depthTexture: GPUTexture | null = null
+  let screenTexture: GPUTexture | null = null
 
   return {
     device,
-    render: (canvasTexture, cameraTransform) => {
+    resize: (width, height) => {
       common.uniforms.perspective.data(
         new Float32Array(
-          mat4.perspective(
-            Math.PI / 2,
-            canvasTexture.width / canvasTexture.height,
-            0.1,
-            1000
-          )
+          mat4.perspective(Math.PI / 2, width / height, 0.1, 1000)
         )
       )
-      common.uniforms.camera.data(new Float32Array(cameraTransform))
+      commonPp.uniforms.canvasSize.data(new Float32Array([width, height]))
 
-      if (
-        depthTexture?.width !== canvasTexture.width ||
-        depthTexture.height !== canvasTexture.height
-      ) {
-        depthTexture?.destroy()
-        depthTexture = device.createTexture({
-          size: [canvasTexture.width, canvasTexture.height],
-          format: 'depth24plus',
-          usage: GPUTextureUsage.RENDER_ATTACHMENT
-        })
+      depthTexture?.destroy()
+      depthTexture = device.createTexture({
+        size: [width, height],
+        format: 'depth24plus',
+        usage: GPUTextureUsage.RENDER_ATTACHMENT
+      })
+
+      screenTexture?.destroy()
+      screenTexture = device.createTexture({
+        size: [width, height],
+        format,
+        usage:
+          GPUTextureUsage.TEXTURE_BINDING |
+          GPUTextureUsage.COPY_DST |
+          GPUTextureUsage.RENDER_ATTACHMENT
+      })
+    },
+    render: (canvasTexture, cameraTransform) => {
+      if (!depthTexture || !screenTexture) {
+        throw new Error('Attempted render before resize() was called.')
       }
+
+      common.uniforms.camera.data(new Float32Array(cameraTransform))
 
       // Encodes commands
       const encoder = device.createCommandEncoder({ label: 'Xx encoder xX ' })
-      // You can run multiple render passes
-      const pass = encoder.beginRenderPass({
-        label: 'Xx render pass xX',
-        colorAttachments: [
-          {
-            view: canvasTexture.createView(),
-            clearValue: [0.75, 0.85, 1, 1],
-            loadOp: 'clear',
-            storeOp: 'store'
+      {
+        // You can run multiple render passes
+        const pass = encoder.beginRenderPass({
+          label: 'Xx render pass xX',
+          colorAttachments: [
+            {
+              view: screenTexture.createView(),
+              clearValue: [0.75, 0.85, 1, 1],
+              loadOp: 'clear',
+              storeOp: 'store'
+            }
+          ],
+          depthStencilAttachment: {
+            view: depthTexture.createView(),
+            depthClearValue: 1.0,
+            depthLoadOp: 'clear',
+            depthStoreOp: 'store'
           }
-        ],
-        depthStencilAttachment: {
-          view: depthTexture.createView(),
-          depthClearValue: 1.0,
-          depthLoadOp: 'clear',
-          depthStoreOp: 'store'
+        })
+        pass.setPipeline(pipeline)
+        pass.setBindGroup(0, common.group)
+        for (const chunk of chunks) {
+          chunk(pass)
         }
-      })
-      pass.setPipeline(pipeline)
-      pass.setBindGroup(0, common.group)
-      for (const chunk of chunks) {
-        chunk(pass)
+        pass.end()
       }
-      pass.end()
+      {
+        const pass = encoder.beginRenderPass({
+          label: 'Xx post processing pass xX',
+          colorAttachments: [
+            {
+              view: canvasTexture.createView(),
+              clearValue: [1, 0, 1, 1],
+              loadOp: 'clear',
+              storeOp: 'store'
+            }
+          ]
+        })
+        pass.setPipeline(pipelinePp)
+        pass.setBindGroup(0, commonPp.group)
+        pass.setBindGroup(
+          1,
+          new Group(device, pipelinePp, 1, {
+            texture: { binding: 0, resource: screenTexture.createView() }
+          }).group
+        )
+        pass.draw(6)
+        pass.end()
+      }
       // finish() returns a command buffer
       device.queue.submit([encoder.finish()])
     }

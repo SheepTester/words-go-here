@@ -24,15 +24,17 @@ if (!navigator.gpu) {
   throw new TypeError('Client does not support WebGPU. Sad!')
 }
 const format = navigator.gpu.getPreferredCanvasFormat()
-const { device, render } = await init(format)
+const { device, resize, render } = await init(format)
 context.configure({ device, format })
-let aspectRatio: number | null = null
 // The view stores the size of the canvas
 new ResizeObserver(([{ contentBoxSize }]) => {
   const [{ blockSize, inlineSize }] = contentBoxSize
   canvas.width = inlineSize
   canvas.height = blockSize
-  aspectRatio = inlineSize / blockSize
+  resize(inlineSize, blockSize)
+  if (frameId === null) {
+    paint()
+  }
 }).observe(canvas)
 
 let keys: Record<string, boolean> = {}
@@ -99,6 +101,7 @@ function moveAxis<Axis extends 'x' | 'y' | 'z'> (
   player[`${axis}v`] = endVel
 }
 let lastTime = Date.now()
+let frameId: number | null = null
 function paint () {
   const now = Date.now()
   const elapsed = Math.min(now - lastTime, 100) / 1000
@@ -140,18 +143,15 @@ function paint () {
   moveAxis('z', acceleration.y, elapsed, moving)
   moveAxis('y', yAccel, elapsed, keys[' '] || keys.shift)
 
-  if (aspectRatio) {
-    render(
-      context.getCurrentTexture(),
-      mat4.translate(
-        mat4.rotateY(
-          mat4.rotateX(mat4.rotationZ(player.roll), player.pitch),
-          player.yaw
-        ),
-        [-player.x, -player.y, -player.z]
-      )
+  render(
+    context.getCurrentTexture(),
+    mat4.translate(
+      mat4.rotateY(
+        mat4.rotateX(mat4.rotationZ(player.roll), player.pitch),
+        player.yaw
+      ),
+      [-player.x, -player.y, -player.z]
     )
-  }
-  requestAnimationFrame(paint)
+  )
+  frameId = requestAnimationFrame(paint)
 }
-paint()

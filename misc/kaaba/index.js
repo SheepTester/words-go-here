@@ -1465,6 +1465,32 @@ async function init(format) {
             format: 'depth24plus'
         }
     });
+    const modulePp = device.createShaderModule({
+        label: '😮 post processing shader 😮',
+        code: await fetch('./post-processing.wgsl').then((r)=>r.text())
+    });
+    const { messages: messagesPp  } = await modulePp.getCompilationInfo();
+    if (messagesPp.some((message)=>message.type === 'error')) {
+        console.log(messagesPp);
+        throw new SyntaxError('Post-processing shader failed to compile.');
+    }
+    const pipelinePp = device.createRenderPipeline({
+        label: '✨ pipeline ✨',
+        layout: 'auto',
+        vertex: {
+            module: modulePp,
+            entryPoint: 'vertex_main'
+        },
+        fragment: {
+            module: modulePp,
+            entryPoint: 'fragment_main',
+            targets: [
+                {
+                    format
+                }
+            ]
+        }
+    });
     function generateChunk(position) {
         const chunk = new Chunk(position);
         for(let y = 0; y < 32; y++){
@@ -1548,54 +1574,108 @@ async function init(format) {
         source.width / 16,
         source.height / 16
     ]));
+    const commonPp = new Group(device, pipelinePp, 0, {
+        canvasSize: new Uniform(device, 0, 4 * 2),
+        sampler: {
+            binding: 1,
+            resource: sampler
+        }
+    });
     let depthTexture = null;
+    let screenTexture = null;
     return {
         device,
+        resize: (width, height)=>{
+            common.uniforms.perspective.data(new Float32Array(ce.perspective(Math.PI / 2, width / height, 0.1, 1000)));
+            commonPp.uniforms.canvasSize.data(new Float32Array([
+                width,
+                height
+            ]));
+            depthTexture?.destroy();
+            depthTexture = device.createTexture({
+                size: [
+                    width,
+                    height
+                ],
+                format: 'depth24plus',
+                usage: GPUTextureUsage.RENDER_ATTACHMENT
+            });
+            screenTexture?.destroy();
+            screenTexture = device.createTexture({
+                size: [
+                    width,
+                    height
+                ],
+                format,
+                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT
+            });
+        },
         render: (canvasTexture, cameraTransform)=>{
-            common.uniforms.perspective.data(new Float32Array(ce.perspective(Math.PI / 2, canvasTexture.width / canvasTexture.height, 0.1, 1000)));
-            common.uniforms.camera.data(new Float32Array(cameraTransform));
-            if (depthTexture?.width !== canvasTexture.width || depthTexture.height !== canvasTexture.height) {
-                depthTexture?.destroy();
-                depthTexture = device.createTexture({
-                    size: [
-                        canvasTexture.width,
-                        canvasTexture.height
-                    ],
-                    format: 'depth24plus',
-                    usage: GPUTextureUsage.RENDER_ATTACHMENT
-                });
+            if (!depthTexture || !screenTexture) {
+                throw new Error('Attempted render before resize() was called.');
             }
+            common.uniforms.camera.data(new Float32Array(cameraTransform));
             const encoder = device.createCommandEncoder({
                 label: 'Xx encoder xX '
             });
-            const pass = encoder.beginRenderPass({
-                label: 'Xx render pass xX',
-                colorAttachments: [
-                    {
-                        view: canvasTexture.createView(),
-                        clearValue: [
-                            0.75,
-                            0.85,
-                            1,
-                            1
-                        ],
-                        loadOp: 'clear',
-                        storeOp: 'store'
+            {
+                const pass = encoder.beginRenderPass({
+                    label: 'Xx render pass xX',
+                    colorAttachments: [
+                        {
+                            view: screenTexture.createView(),
+                            clearValue: [
+                                0.75,
+                                0.85,
+                                1,
+                                1
+                            ],
+                            loadOp: 'clear',
+                            storeOp: 'store'
+                        }
+                    ],
+                    depthStencilAttachment: {
+                        view: depthTexture.createView(),
+                        depthClearValue: 1.0,
+                        depthLoadOp: 'clear',
+                        depthStoreOp: 'store'
                     }
-                ],
-                depthStencilAttachment: {
-                    view: depthTexture.createView(),
-                    depthClearValue: 1.0,
-                    depthLoadOp: 'clear',
-                    depthStoreOp: 'store'
+                });
+                pass.setPipeline(pipeline);
+                pass.setBindGroup(0, common.group);
+                for (const chunk of chunks){
+                    chunk(pass);
                 }
-            });
-            pass.setPipeline(pipeline);
-            pass.setBindGroup(0, common.group);
-            for (const chunk of chunks){
-                chunk(pass);
+                pass.end();
             }
-            pass.end();
+            {
+                const pass = encoder.beginRenderPass({
+                    label: 'Xx post processing pass xX',
+                    colorAttachments: [
+                        {
+                            view: canvasTexture.createView(),
+                            clearValue: [
+                                1,
+                                0,
+                                1,
+                                1
+                            ],
+                            loadOp: 'clear',
+                            storeOp: 'store'
+                        }
+                    ]
+                });
+                pass.setPipeline(pipelinePp);
+                pass.setBindGroup(0, commonPp.group);
+                pass.setBindGroup(1, new Group(device, pipelinePp, 1, {
+                    texture: {
+                        binding: 0,
+                        resource: screenTexture.createView()
+                    }
+                }).group);
+                pass.draw(6);
+                pass.end();
+            }
             device.queue.submit([
                 encoder.finish()
             ]);
@@ -1614,17 +1694,19 @@ if (!navigator.gpu) {
     throw new TypeError('Client does not support WebGPU. Sad!');
 }
 const format = navigator.gpu.getPreferredCanvasFormat();
-const { device , render  } = await init(format);
+const { device , resize , render  } = await init(format);
 context.configure({
     device,
     format
 });
-let aspectRatio = null;
 new ResizeObserver(([{ contentBoxSize  }])=>{
     const [{ blockSize , inlineSize  }] = contentBoxSize;
     canvas.width = inlineSize;
     canvas.height = blockSize;
-    aspectRatio = inlineSize / blockSize;
+    resize(inlineSize, blockSize);
+    if (frameId === null) {
+        paint();
+    }
 }).observe(canvas);
 let keys = {};
 document.addEventListener('keydown', (e)=>{
@@ -1674,6 +1756,7 @@ function moveAxis(axis, acceleration, time, userMoving) {
     player[`${axis}v`] = endVel;
 }
 let lastTime = Date.now();
+let frameId = null;
 function paint() {
     const now = Date.now();
     const elapsed = Math.min(now - lastTime, 100) / 1000;
@@ -1715,13 +1798,10 @@ function paint() {
     moveAxis('x', acceleration.x, elapsed, moving);
     moveAxis('z', acceleration.y, elapsed, moving);
     moveAxis('y', yAccel, elapsed, keys[' '] || keys.shift);
-    if (aspectRatio) {
-        render(context.getCurrentTexture(), ce.translate(ce.rotateY(ce.rotateX(ce.rotationZ(player.roll), player.pitch), player.yaw), [
-            -player.x,
-            -player.y,
-            -player.z
-        ]));
-    }
-    requestAnimationFrame(paint);
+    render(context.getCurrentTexture(), ce.translate(ce.rotateY(ce.rotateX(ce.rotationZ(player.roll), player.pitch), player.yaw), [
+        -player.x,
+        -player.y,
+        -player.z
+    ]));
+    frameId = requestAnimationFrame(paint);
 }
-paint();
