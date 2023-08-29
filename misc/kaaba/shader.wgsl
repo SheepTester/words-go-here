@@ -25,7 +25,7 @@ fn vertex_main(
     let face = extractBits(data.x, 24, 3);
 
     const textures = array(
-        vec2(0.0, 1), vec2(1, 1)
+        vec2(0.0, 1), vec2(1, 1), vec2(2, 1),
     );
     let texture_id = extractBits(data.y, 0, 8);
 

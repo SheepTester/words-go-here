@@ -35,7 +35,7 @@ new ResizeObserver(([{ contentBoxSize }]) => {
   aspectRatio = inlineSize / blockSize
 }).observe(canvas)
 
-const keys: Record<string, boolean> = {}
+let keys: Record<string, boolean> = {}
 document.addEventListener('keydown', e => {
   if (e.target !== document && e.target !== document.body) {
     return
@@ -47,6 +47,10 @@ document.addEventListener('keydown', e => {
 })
 document.addEventListener('keyup', e => {
   keys[e.key.toLowerCase()] = false
+})
+// Prevent sticky keys when doing ctrl+shift+tab
+window.addEventListener('blur', () => {
+  keys = {}
 })
 
 canvas.addEventListener('click', () => {

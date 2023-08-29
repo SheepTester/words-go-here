@@ -1273,10 +1273,12 @@ var Block;
     Block[Block["AIR"] = 0] = "AIR";
     Block[Block["STONE"] = 1] = "STONE";
     Block[Block["GLASS"] = 2] = "GLASS";
+    Block[Block["WHITE"] = 3] = "WHITE";
 })(Block || (Block = {}));
 const textures = {
     [1]: 0,
-    [2]: 1
+    [2]: 1,
+    [3]: 2
 };
 function isOpaque(block) {
     return block === 1;
@@ -1486,6 +1488,27 @@ async function init(format) {
             ]));
         }
     }
+    const testChunk = new Chunk([
+        0,
+        1,
+        0
+    ]);
+    testChunk.block(1, 3, 6, Block.WHITE);
+    testChunk.block(1, 3, 3, Block.WHITE);
+    testChunk.block(2, 4, 2, Block.WHITE);
+    testChunk.block(5, 3, 3, Block.WHITE);
+    testChunk.block(5, 4, 2, Block.WHITE);
+    testChunk.block(9, 3, 3, Block.WHITE);
+    testChunk.block(9, 4, 2, Block.WHITE);
+    testChunk.block(10, 4, 2, Block.WHITE);
+    testChunk.block(5, 3, 6, Block.WHITE);
+    testChunk.block(5, 4, 7, Block.WHITE);
+    testChunk.block(6, 4, 6, Block.WHITE);
+    testChunk.block(9, 3, 6, Block.WHITE);
+    testChunk.block(9, 4, 7, Block.WHITE);
+    testChunk.block(10, 4, 6, Block.WHITE);
+    testChunk.block(10, 4, 7, Block.WHITE);
+    chunks.push(testChunk.mesh(device, pipeline));
     const source = await fetch('./textures.png').then((r)=>r.blob()).then((blob)=>createImageBitmap(blob, {
             colorSpaceConversion: 'none'
         }));
@@ -1603,7 +1626,7 @@ new ResizeObserver(([{ contentBoxSize  }])=>{
     canvas.height = blockSize;
     aspectRatio = inlineSize / blockSize;
 }).observe(canvas);
-const keys = {};
+let keys = {};
 document.addEventListener('keydown', (e)=>{
     if (e.target !== document && e.target !== document.body) {
         return;
@@ -1615,6 +1638,9 @@ document.addEventListener('keydown', (e)=>{
 });
 document.addEventListener('keyup', (e)=>{
     keys[e.key.toLowerCase()] = false;
+});
+window.addEventListener('blur', ()=>{
+    keys = {};
 });
 canvas.addEventListener('click', ()=>{
     canvas.requestPointerLock();
