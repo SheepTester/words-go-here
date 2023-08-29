@@ -1275,8 +1275,8 @@ var Block;
     Block[Block["GLASS"] = 2] = "GLASS";
 })(Block || (Block = {}));
 const textures = {
-    [1]: 1,
-    [2]: 2
+    [1]: 0,
+    [2]: 1
 };
 function isOpaque(block) {
     return block === 1;
@@ -1315,7 +1315,7 @@ class Group {
     constructor(device, pipeline, groupId, uniforms){
         this.group = device.createBindGroup({
             layout: pipeline.getBindGroupLayout(groupId),
-            entries: Object.values(uniforms).map((uniform)=>uniform.entry)
+            entries: Object.values(uniforms).map((entry)=>entry instanceof Uniform ? entry.entry : entry)
         });
         this.uniforms = uniforms;
     }
@@ -1461,7 +1461,7 @@ async function init(format) {
             for(let x = 0; x < 32; x++){
                 for(let z = 0; z < 32; z++){
                     if (Math.random() < (32 - y) / 32) {
-                        chunk.block(x, y, z, Block.STONE);
+                        chunk.block(x, y, z, (position[0] + position[2]) % 2 === 0 ? Block.STONE : Block.GLASS);
                     }
                 }
             }
@@ -1469,8 +1469,8 @@ async function init(format) {
         return chunk.mesh(device, pipeline);
     }
     const chunks = [];
-    for(let x = -5; x <= 5; x++){
-        for(let z = -5; z <= 5; z++){
+    for(let x = -1; x <= 1; x++){
+        for(let z = -1; z <= 1; z++){
             chunks.push(generateChunk([
                 x,
                 0,
@@ -1478,10 +1478,45 @@ async function init(format) {
             ]));
         }
     }
+    const source = await fetch('./textures.png').then((r)=>r.blob()).then((blob)=>createImageBitmap(blob, {
+            colorSpaceConversion: 'none'
+        }));
+    const texture = device.createTexture({
+        label: 'texture',
+        format: 'rgba8unorm',
+        size: [
+            source.width,
+            source.height
+        ],
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT
+    });
+    device.queue.copyExternalImageToTexture({
+        source,
+        flipY: true
+    }, {
+        texture
+    }, {
+        width: source.width,
+        height: source.height
+    });
+    const sampler = device.createSampler();
     const common = new Group(device, pipeline, 0, {
         perspective: new Uniform(device, 0, 4 * 4 * 4),
-        camera: new Uniform(device, 1, 4 * 4 * 4)
+        camera: new Uniform(device, 1, 4 * 4 * 4),
+        sampler: {
+            binding: 2,
+            resource: sampler
+        },
+        texture: {
+            binding: 3,
+            resource: texture.createView()
+        },
+        textureSize: new Uniform(device, 4, 4 * 2)
     });
+    common.uniforms.textureSize.data(new Float32Array([
+        source.width / 16,
+        source.height / 16
+    ]));
     let depthTexture = null;
     return {
         device,
@@ -1508,9 +1543,9 @@ async function init(format) {
                     {
                         view: canvasTexture.createView(),
                         clearValue: [
-                            0,
-                            0,
-                            0.4,
+                            0.75,
+                            0.85,
+                            1,
                             1
                         ],
                         loadOp: 'clear',
@@ -1566,7 +1601,7 @@ document.addEventListener('keydown', (e)=>{
         return;
     }
     keys[e.key.toLowerCase()] = true;
-    if (document.pointerLockElement !== canvas) {
+    if (document.pointerLockElement === canvas) {
         e.preventDefault();
     }
 });

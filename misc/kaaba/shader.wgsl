@@ -1,19 +1,12 @@
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
-    @location(0) color: vec3<f32>,
+    @location(0) tex_coord: vec2<f32>,
+    @location(1) darkness: f32,
 };
 
-@group(0)
-@binding(0)
-var<uniform> perspective: mat4x4<f32>;
-
-@group(0)
-@binding(1)
-var<uniform> camera: mat4x4<f32>;
-
-@group(1)
-@binding(0)
-var<uniform> transform: mat4x4<f32>;
+@group(0) @binding(0) var<uniform> perspective: mat4x4<f32>;
+@group(0) @binding(1) var<uniform> camera: mat4x4<f32>;
+@group(1) @binding(0) var<uniform> transform: mat4x4<f32>;
 
 fn to_i8(byte: u32) -> i32 {
     return i32(select(byte, byte - 256, byte >> 7 != 0));
@@ -30,6 +23,10 @@ fn vertex_main(
         to_i8(extractBits(data.x, 16, 8)),
     ));
     let face = extractBits(data.x, 24, 3);
+
+    const textures = array(
+        vec2(0, 0.5), vec2(0.25, 0.5)
+    );
     let texture_id = extractBits(data.y, 0, 8);
 
     // The back face (facing away from the camera)
@@ -71,15 +68,16 @@ fn vertex_main(
 
     var result: VertexOutput;
     result.position = perspective * camera * transform * vec4((vec3<f32>(rotated) + position.xyz), 1.0);
-    result.color = vec3(
-        select(0.1, 1.0, position.x % 2 != 0),
-        select(0.1, 1.0, position.y % 2 != 0),
-        select(0.1, 1.0, position.z % 2 != 0),
-    ) * (dot(normal, -LIGHT) / 4 + 0.75);
+    result.tex_coord = textures[texture_id] + vec2(1 - f32(square_vertices[index].x), f32(square_vertices[index].y)) / texture_size;
+    result.darkness = dot(normal, -LIGHT) / 8 + 0.875;
     return result;
 }
 
+@group(0) @binding(4) var<uniform> texture_size: vec2<f32>;
+@group(0) @binding(2) var texture_sampler: sampler;
+@group(0) @binding(3) var texture: texture_2d<f32>;
+
 @fragment
 fn fragment_main(vertex: VertexOutput) -> @location(0) vec4<f32> {
-    return vec4<f32>(vertex.color, 1.0);
+    return textureSample(texture, texture_sampler, vertex.tex_coord) * vertex.darkness;
 }

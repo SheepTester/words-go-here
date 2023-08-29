@@ -31,7 +31,7 @@ export class Uniform {
  * Bind groups have shared resources across all invocations of the shaders (eg
  * uniforms, textures, but not attributes).
  */
-export class Group<U extends Record<string, Uniform>> {
+export class Group<U extends Record<string, Uniform | GPUBindGroupEntry>> {
   group: GPUBindGroup
   uniforms: U
 
@@ -43,7 +43,9 @@ export class Group<U extends Record<string, Uniform>> {
   ) {
     this.group = device.createBindGroup({
       layout: pipeline.getBindGroupLayout(groupId),
-      entries: Object.values(uniforms).map(uniform => uniform.entry)
+      entries: Object.values(uniforms).map(entry =>
+        entry instanceof Uniform ? entry.entry : entry
+      )
     })
     this.uniforms = uniforms
   }
@@ -108,7 +110,12 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
         for (let z = 0; z < SIZE; z++) {
           // Decreasing probability as you go up
           if (Math.random() < (SIZE - y) / SIZE) {
-            chunk.block(x, y, z, Block.STONE)
+            chunk.block(
+              x,
+              y,
+              z,
+              (position[0] + position[2]) % 2 === 0 ? Block.STONE : Block.GLASS
+            )
           }
         }
       }
@@ -117,16 +124,41 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
   }
 
   const chunks: ChunkRenderer[] = []
-  for (let x = -5; x <= 5; x++) {
-    for (let z = -5; z <= 5; z++) {
+  for (let x = -1; x <= 1; x++) {
+    for (let z = -1; z <= 1; z++) {
       chunks.push(generateChunk([x, 0, z]))
     }
   }
 
+  const source = await fetch('./textures.png')
+    .then(r => r.blob())
+    .then(blob => createImageBitmap(blob, { colorSpaceConversion: 'none' }))
+  const texture = device.createTexture({
+    label: 'texture',
+    format: 'rgba8unorm',
+    size: [source.width, source.height],
+    usage:
+      GPUTextureUsage.TEXTURE_BINDING |
+      GPUTextureUsage.COPY_DST |
+      GPUTextureUsage.RENDER_ATTACHMENT
+  })
+  device.queue.copyExternalImageToTexture(
+    { source, flipY: true },
+    { texture },
+    { width: source.width, height: source.height }
+  )
+  const sampler = device.createSampler()
+
   const common = new Group(device, pipeline, 0, {
     perspective: new Uniform(device, 0, 4 * 4 * 4),
-    camera: new Uniform(device, 1, 4 * 4 * 4)
+    camera: new Uniform(device, 1, 4 * 4 * 4),
+    sampler: { binding: 2, resource: sampler },
+    texture: { binding: 3, resource: texture.createView() },
+    textureSize: new Uniform(device, 4, 4 * 2)
   })
+  common.uniforms.textureSize.data(
+    new Float32Array([source.width / 16, source.height / 16])
+  )
 
   let depthTexture: GPUTexture | null = null
 
@@ -165,7 +197,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
         colorAttachments: [
           {
             view: canvasTexture.createView(),
-            clearValue: [0, 0, 0.4, 1],
+            clearValue: [0.75, 0.85, 1, 1],
             loadOp: 'clear',
             storeOp: 'store'
           }

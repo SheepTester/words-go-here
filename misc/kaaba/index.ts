@@ -41,7 +41,7 @@ document.addEventListener('keydown', e => {
     return
   }
   keys[e.key.toLowerCase()] = true
-  if (document.pointerLockElement !== canvas) {
+  if (document.pointerLockElement === canvas) {
     e.preventDefault()
   }
 })

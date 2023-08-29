@@ -5,8 +5,8 @@ export const enum Block {
 }
 
 const textures: Partial<Record<Block, number>> = {
-  [Block.STONE]: 1,
-  [Block.GLASS]: 2
+  [Block.STONE]: 0,
+  [Block.GLASS]: 1
 }
 
 export function isOpaque (block: Block | null): boolean {
