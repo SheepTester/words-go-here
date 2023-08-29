@@ -94,7 +94,29 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
       ]
     },
     // targets[0] corresponds to @location(0) in fragment_main's return value
-    fragment: { module, entryPoint: 'fragment_main', targets: [{ format }] },
+    fragment: {
+      module,
+      entryPoint: 'fragment_main',
+      targets: [
+        {
+          format,
+          // https://stackoverflow.com/a/72682494
+          blend: {
+            color: {
+              operation: 'add',
+              srcFactor: 'src-alpha',
+              dstFactor: 'one-minus-src-alpha'
+            },
+            // https://docs.rs/wgpu/latest/wgpu/struct.BlendComponent.html#associatedconstant.OVER
+            alpha: {
+              operation: 'add',
+              srcFactor: 'one',
+              dstFactor: 'one-minus-src-alpha'
+            }
+          }
+        }
+      ]
+    },
     primitive: { cullMode: 'back' },
     depthStencil: {
       depthWriteEnabled: true,

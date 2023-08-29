@@ -79,5 +79,9 @@ fn vertex_main(
 
 @fragment
 fn fragment_main(vertex: VertexOutput) -> @location(0) vec4<f32> {
-    return textureSample(texture, texture_sampler, vertex.tex_coord) * vertex.darkness;
+    let sample = textureSample(texture, texture_sampler, vertex.tex_coord);
+    if (sample.a == 0) {
+        discard;
+    }
+    return vec4(sample.rgb * vertex.darkness, sample.a);
 }

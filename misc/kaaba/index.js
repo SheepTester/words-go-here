@@ -1442,7 +1442,19 @@ async function init(format) {
             entryPoint: 'fragment_main',
             targets: [
                 {
-                    format
+                    format,
+                    blend: {
+                        color: {
+                            operation: 'add',
+                            srcFactor: 'src-alpha',
+                            dstFactor: 'one-minus-src-alpha'
+                        },
+                        alpha: {
+                            operation: 'add',
+                            srcFactor: 'one',
+                            dstFactor: 'one-minus-src-alpha'
+                        }
+                    }
                 }
             ]
         },
