@@ -24,17 +24,21 @@ fn vertex_main(
 
 fn blur(center: vec2<f32>, axis: vec2<f32>) -> vec4<f32> {
     const samples = array(
-        0.036632845369194034,
-        0.11128075847888486,
-        0.21674532140370778,
-        0.27068214949642655,
-        0.21674532140370778,
-        0.11128075847888486,
-        0.036632845369194034,
+        0.022190548492442994,
+        0.04558899978527853,
+        0.079811408240092,
+        0.11906462996609923,
+        0.1513608096777361,
+        0.16396720767670223,
+        0.1513608096777361,
+        0.11906462996609923,
+        0.079811408240092,
+        0.04558899978527853,
+        0.022190548492442994,
     );
     var sum: vec4<f32> = vec4();
-    for (var x = -3; x <= 3; x++) {
-        sum += textureSample(texture, texture_sampler, center + axis * f32(x)) * samples[x + 3];
+    for (var x = -4; x <= 4; x++) {
+        sum += textureSample(texture, texture_sampler, center + axis * f32(x)) * samples[x + 4];
     }
     return sum;
 }
@@ -48,11 +52,11 @@ fn fragment_main(vertex: VertexOutput) -> @location(0) vec4<f32> {
     // A pixel towards the center of the screen
     let pixel = -normalize(coord) / texture_size;
     let aberration = pixel * (1 - pow(vignette, 0.5)) * 8;
-    let blur_spacing = pixel * (1 - pow(vignette, 0.5)) * 5;
+    let blur_spacing = pixel * (1 - pow(vignette, 0.5)) * 3;
     return vec4(
-        blur(vertex.tex_coord - aberration, blur_spacing).r,
+        blur(vertex.tex_coord + aberration, blur_spacing).r,
         blur(vertex.tex_coord, blur_spacing).g,
-        blur(vertex.tex_coord + aberration, blur_spacing).b,
+        blur(vertex.tex_coord - aberration, blur_spacing).b,
         1
     ) * (pow(vignette, 0.25) * 0.5 + 0.5);
 }
