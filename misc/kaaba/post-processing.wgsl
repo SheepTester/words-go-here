@@ -24,11 +24,12 @@ fn vertex_main(
 
 @fragment
 fn fragment_main(vertex: VertexOutput) -> @location(0) vec4<f32> {
+    let vignette = 16 * vertex.tex_coord.x * vertex.tex_coord.y * (1 - vertex.tex_coord.x) * (1 - vertex.tex_coord.y);
     let pixel = 1 / texture_size;
     return vec4(
-        textureSample(texture, texture_sampler, vertex.tex_coord - pixel * 2).r,
+        textureSample(texture, texture_sampler, vertex.tex_coord - pixel * (1 - vignette) * 5).r,
         textureSample(texture, texture_sampler, vertex.tex_coord).g,
-        textureSample(texture, texture_sampler, vertex.tex_coord + pixel * 2).b,
+        textureSample(texture, texture_sampler, vertex.tex_coord + pixel * (1 - vignette) * 5).b,
         1
-    );
+    ) * (pow(vignette, 0.25) * 0.5 + 0.5);
 }

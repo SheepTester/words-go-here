@@ -131,7 +131,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
     throw new SyntaxError('Post-processing shader failed to compile.')
   }
   const pipelinePp = device.createRenderPipeline({
-    label: '✨ pipeline ✨',
+    label: '🎨 post-processing pipeline 🎨',
     layout: 'auto',
     vertex: { module: modulePp, entryPoint: 'vertex_main' },
     fragment: {
