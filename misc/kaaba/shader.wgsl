@@ -25,7 +25,7 @@ fn vertex_main(
     let face = extractBits(data.x, 24, 3);
 
     const textures = array(
-        vec2(0, 0.5), vec2(0.25, 0.5)
+        vec2(0.0, 1), vec2(1, 1)
     );
     let texture_id = extractBits(data.y, 0, 8);
 
@@ -68,7 +68,7 @@ fn vertex_main(
 
     var result: VertexOutput;
     result.position = perspective * camera * transform * vec4((vec3<f32>(rotated) + position.xyz), 1.0);
-    result.tex_coord = textures[texture_id] + vec2(1 - f32(square_vertices[index].x), f32(square_vertices[index].y)) / texture_size;
+    result.tex_coord = textures[texture_id] + vec2(1 - f32(square_vertices[index].x), f32(square_vertices[index].y));
     result.darkness = dot(normal, -LIGHT) / 8 + 0.875;
     return result;
 }
@@ -79,7 +79,10 @@ fn vertex_main(
 
 @fragment
 fn fragment_main(vertex: VertexOutput) -> @location(0) vec4<f32> {
-    let sample = textureSample(texture, texture_sampler, vertex.tex_coord);
+    // Prevent texture atlas bleeding
+    let frac_whole = modf(vertex.tex_coord);
+    let coord = frac_whole.whole + clamp(frac_whole.fract, vec2(1/32.0, 1/32.0), vec2(31/32.0, 31/32.0));
+    let sample = textureSample(texture, texture_sampler, coord / texture_size);
     if (sample.a == 0) {
         discard;
     }

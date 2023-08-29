@@ -107,12 +107,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
               srcFactor: 'src-alpha',
               dstFactor: 'one-minus-src-alpha'
             },
-            // https://docs.rs/wgpu/latest/wgpu/struct.BlendComponent.html#associatedconstant.OVER
-            alpha: {
-              operation: 'add',
-              srcFactor: 'one',
-              dstFactor: 'one-minus-src-alpha'
-            }
+            alpha: {}
           }
         }
       ]
