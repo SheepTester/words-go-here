@@ -9,6 +9,28 @@ import { mat4 } from 'wgpu-matrix'
 import { init } from './webgpu.ts'
 import { SIZE } from './Chunk.ts'
 
+const errorMessages = document.getElementById('error')
+function handleError (error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+  // Unsure what the error looks like in other browsers, but also, only Chrome
+  // supports WebGPU rn
+  if (message.includes('exited the lock')) {
+    return
+  }
+  errorMessages?.append(
+    Object.assign(document.createElement('span'), {
+      textContent: message
+    })
+  )
+  errorMessages?.classList.remove('no-error')
+}
+window.addEventListener('error', e => {
+  handleError(e.error)
+})
+window.addEventListener('unhandledrejection', e => {
+  handleError(e.reason)
+})
+
 function fail (error: Error): never {
   throw error
 }
@@ -25,6 +47,11 @@ const context =
   fail(new TypeError('Failed to get WebGPU canvas context.'))
 const format = navigator.gpu.getPreferredCanvasFormat()
 const { device, resize, render } = await init(format)
+device.addEventListener('uncapturederror', e => {
+  if (e instanceof GPUUncapturedErrorEvent) {
+    handleError(e.error)
+  }
+})
 context.configure({ device, format })
 // The view stores the size of the canvas
 new ResizeObserver(([{ contentBoxSize }]) => {
@@ -161,25 +188,3 @@ function paint () {
   })
   frameId = requestAnimationFrame(paint)
 }
-
-const errorMessages = document.getElementById('error')
-function handleError (error: unknown) {
-  const message = error instanceof Error ? error.message : String(error)
-  // Unsure what the error looks like in other browsers, but also, only Chrome
-  // supports WebGPU rn
-  if (message.includes('exited the lock')) {
-    return
-  }
-  errorMessages?.append(
-    Object.assign(document.createElement('span'), {
-      textContent: message
-    })
-  )
-  errorMessages?.classList.remove('no-error')
-}
-window.addEventListener('error', e => {
-  handleError(e.error)
-})
-window.addEventListener('unhandledrejection', e => {
-  handleError(e.reason)
-})

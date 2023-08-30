@@ -1706,6 +1706,23 @@ async function init(format) {
         }
     };
 }
+const errorMessages = document.getElementById('error');
+function handleError(error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes('exited the lock')) {
+        return;
+    }
+    errorMessages?.append(Object.assign(document.createElement('span'), {
+        textContent: message
+    }));
+    errorMessages?.classList.remove('no-error');
+}
+window.addEventListener('error', (e)=>{
+    handleError(e.error);
+});
+window.addEventListener('unhandledrejection', (e)=>{
+    handleError(e.reason);
+});
 function fail(error) {
     throw error;
 }
@@ -1719,6 +1736,11 @@ if (!(canvas instanceof HTMLCanvasElement)) {
 const context = canvas.getContext('webgpu') ?? fail(new TypeError('Failed to get WebGPU canvas context.'));
 const format = navigator.gpu.getPreferredCanvasFormat();
 const { device , resize , render  } = await init(format);
+device.addEventListener('uncapturederror', (e)=>{
+    if (e instanceof GPUUncapturedErrorEvent) {
+        handleError(e.error);
+    }
+});
 context.configure({
     device,
     format
@@ -1835,20 +1857,3 @@ function paint() {
     });
     frameId = requestAnimationFrame(paint);
 }
-const errorMessages = document.getElementById('error');
-function handleError(error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (message.includes('exited the lock')) {
-        return;
-    }
-    errorMessages?.append(Object.assign(document.createElement('span'), {
-        textContent: message
-    }));
-    errorMessages?.classList.remove('no-error');
-}
-window.addEventListener('error', (e)=>{
-    handleError(e.error);
-});
-window.addEventListener('unhandledrejection', (e)=>{
-    handleError(e.reason);
-});
