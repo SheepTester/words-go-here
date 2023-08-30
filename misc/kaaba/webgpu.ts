@@ -11,7 +11,7 @@ export class Uniform {
   constructor (device: GPUDevice, binding: number, size: number) {
     this.#device = device
     this.#buffer = device.createBuffer({
-      label: `uniform @binding(${binding})`,
+      label: `🪙 uniform @binding(${binding})`,
       size,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
@@ -42,6 +42,7 @@ export class Group<U extends Record<string, Uniform | GPUBindGroupEntry>> {
     uniforms: U
   ) {
     this.group = device.createBindGroup({
+      label: `🌲 group(${groupId})`,
       layout: pipeline.getBindGroupLayout(groupId),
       entries: Object.values(uniforms).map(entry =>
         entry instanceof Uniform ? entry.entry : entry
@@ -51,10 +52,40 @@ export class Group<U extends Record<string, Uniform | GPUBindGroupEntry>> {
   }
 }
 
+function captureError (device: GPUDevice, stage: string): () => Promise<void> {
+  device.pushErrorScope('internal')
+  device.pushErrorScope('out-of-memory')
+  device.pushErrorScope('validation')
+
+  return async () => {
+    const validationError = await device.popErrorScope()
+    const memoryError = await device.popErrorScope()
+    const internalError = await device.popErrorScope()
+    if (validationError) {
+      throw new TypeError(
+        `WebGPU validation error during ${stage}.\n${validationError.message}`
+      )
+    }
+    if (memoryError) {
+      throw new TypeError(
+        `WebGPU out of memory error during ${stage}.\n${memoryError.message}`
+      )
+    }
+    if (internalError) {
+      throw new TypeError(
+        `WebGPU internal error during ${stage}.\n${internalError.message}`
+      )
+    }
+  }
+}
+
 export type Device = {
   device: GPUDevice
   resize: (width: number, height: number) => void
-  render: (view: GPUTexture, camera: ReturnType<typeof mat4.clone>) => void
+  render: (
+    view: GPUTexture,
+    camera: ReturnType<typeof mat4.clone>
+  ) => Promise<void>
 }
 
 export async function init (format: GPUTextureFormat): Promise<Device> {
@@ -66,6 +97,8 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
   device.lost.then(info => {
     console.warn('WebGPU device lost. :(', info.message, info)
   })
+
+  const check = captureError(device, 'initialization')
 
   const module = device.createShaderModule({
     label: '😎 shaders 😎',
@@ -230,6 +263,8 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
   let depthTexture: GPUTexture | null = null
   let screenTexture: GPUTexture | null = null
 
+  await check()
+
   return {
     device,
     resize: (width, height) => {
@@ -257,10 +292,12 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
           GPUTextureUsage.RENDER_ATTACHMENT
       })
     },
-    render: (canvasTexture, cameraTransform) => {
+    render: async (canvasTexture, cameraTransform) => {
       if (!depthTexture || !screenTexture) {
         throw new Error('Attempted render before resize() was called.')
       }
+
+      const check = captureError(device, 'render')
 
       common.uniforms.camera.data(new Float32Array(cameraTransform))
 
@@ -317,6 +354,8 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
       }
       // finish() returns a command buffer
       device.queue.submit([encoder.finish()])
+
+      await check()
     }
   }
 }

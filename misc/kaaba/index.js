@@ -1293,7 +1293,7 @@ class Uniform {
     constructor(device, binding, size){
         this.#device = device;
         this.#buffer = device.createBuffer({
-            label: `uniform @binding(${binding})`,
+            label: `🪙 uniform @binding(${binding})`,
             size,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
@@ -1316,11 +1316,31 @@ class Group {
     uniforms;
     constructor(device, pipeline, groupId, uniforms){
         this.group = device.createBindGroup({
+            label: `🌲 group(${groupId})`,
             layout: pipeline.getBindGroupLayout(groupId),
             entries: Object.values(uniforms).map((entry)=>entry instanceof Uniform ? entry.entry : entry)
         });
         this.uniforms = uniforms;
     }
+}
+function captureError(device, stage) {
+    device.pushErrorScope('internal');
+    device.pushErrorScope('out-of-memory');
+    device.pushErrorScope('validation');
+    return async ()=>{
+        const validationError = await device.popErrorScope();
+        const memoryError = await device.popErrorScope();
+        const internalError = await device.popErrorScope();
+        if (validationError) {
+            throw new TypeError(`WebGPU validation error during ${stage}.\n${validationError.message}`);
+        }
+        if (memoryError) {
+            throw new TypeError(`WebGPU out of memory error during ${stage}.\n${memoryError.message}`);
+        }
+        if (internalError) {
+            throw new TypeError(`WebGPU internal error during ${stage}.\n${internalError.message}`);
+        }
+    };
 }
 var FaceDirection;
 (function(FaceDirection) {
@@ -1410,6 +1430,7 @@ async function init(format) {
     device.lost.then((info)=>{
         console.warn('WebGPU device lost. :(', info.message, info);
     });
+    const check = captureError(device, 'initialization');
     const module = device.createShaderModule({
         label: '😎 shaders 😎',
         code: await fetch('./shader.wgsl').then((r)=>r.text())
@@ -1583,6 +1604,7 @@ async function init(format) {
     });
     let depthTexture = null;
     let screenTexture = null;
+    await check();
     return {
         device,
         resize: (width, height)=>{
@@ -1610,10 +1632,11 @@ async function init(format) {
                 usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT
             });
         },
-        render: (canvasTexture, cameraTransform)=>{
+        render: async (canvasTexture, cameraTransform)=>{
             if (!depthTexture || !screenTexture) {
                 throw new Error('Attempted render before resize() was called.');
             }
+            const check = captureError(device, 'render');
             common.uniforms.camera.data(new Float32Array(cameraTransform));
             const encoder = device.createCommandEncoder({
                 label: 'Xx encoder xX '
@@ -1679,20 +1702,21 @@ async function init(format) {
             device.queue.submit([
                 encoder.finish()
             ]);
+            await check();
         }
     };
 }
 function fail(error) {
     throw error;
 }
+if (!navigator.gpu) {
+    throw new TypeError('Your browser does not support WebGPU.');
+}
 const canvas = document.getElementById('canvas');
 if (!(canvas instanceof HTMLCanvasElement)) {
     throw new TypeError('Failed to find the canvas element.');
 }
 const context = canvas.getContext('webgpu') ?? fail(new TypeError('Failed to get WebGPU canvas context.'));
-if (!navigator.gpu) {
-    throw new TypeError('Client does not support WebGPU. Sad!');
-}
 const format = navigator.gpu.getPreferredCanvasFormat();
 const { device , resize , render  } = await init(format);
 context.configure({
@@ -1802,6 +1826,29 @@ function paint() {
         -player.x,
         -player.y,
         -player.z
-    ]));
+    ])).catch((error)=>{
+        if (frameId !== null) {
+            cancelAnimationFrame(frameId);
+            frameId = null;
+        }
+        return Promise.reject(error);
+    });
     frameId = requestAnimationFrame(paint);
 }
+const errorMessages = document.getElementById('error');
+function handleError(error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes('exited the lock')) {
+        return;
+    }
+    errorMessages?.append(Object.assign(document.createElement('span'), {
+        textContent: message
+    }));
+    errorMessages?.classList.remove('no-error');
+}
+window.addEventListener('error', (e)=>{
+    handleError(e.error);
+});
+window.addEventListener('unhandledrejection', (e)=>{
+    handleError(e.reason);
+});

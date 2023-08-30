@@ -13,6 +13,9 @@ function fail (error: Error): never {
   throw error
 }
 
+if (!navigator.gpu) {
+  throw new TypeError('Your browser does not support WebGPU.')
+}
 const canvas = document.getElementById('canvas')
 if (!(canvas instanceof HTMLCanvasElement)) {
   throw new TypeError('Failed to find the canvas element.')
@@ -20,9 +23,6 @@ if (!(canvas instanceof HTMLCanvasElement)) {
 const context =
   canvas.getContext('webgpu') ??
   fail(new TypeError('Failed to get WebGPU canvas context.'))
-if (!navigator.gpu) {
-  throw new TypeError('Client does not support WebGPU. Sad!')
-}
 const format = navigator.gpu.getPreferredCanvasFormat()
 const { device, resize, render } = await init(format)
 context.configure({ device, format })
@@ -152,6 +152,34 @@ function paint () {
       ),
       [-player.x, -player.y, -player.z]
     )
-  )
+  ).catch(error => {
+    if (frameId !== null) {
+      cancelAnimationFrame(frameId)
+      frameId = null
+    }
+    return Promise.reject(error)
+  })
   frameId = requestAnimationFrame(paint)
 }
+
+const errorMessages = document.getElementById('error')
+function handleError (error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+  // Unsure what the error looks like in other browsers, but also, only Chrome
+  // supports WebGPU rn
+  if (message.includes('exited the lock')) {
+    return
+  }
+  errorMessages?.append(
+    Object.assign(document.createElement('span'), {
+      textContent: message
+    })
+  )
+  errorMessages?.classList.remove('no-error')
+}
+window.addEventListener('error', e => {
+  handleError(e.error)
+})
+window.addEventListener('unhandledrejection', e => {
+  handleError(e.reason)
+})

@@ -11,10 +11,11 @@
     <script src="/sheep3.js" charset="utf-8"></script>
 
     <style>
-      @media (prefers-color-scheme: dark) {
-        :root {
-          color-scheme: dark;
-        }
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        background-color: black;
       }
 
       #canvas {
@@ -35,11 +36,42 @@
         border-radius: 50%;
         background-color: rgba(255, 255, 255, 0.5);
       }
+
+      #error {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: calc(100% - 40px);
+        max-width: 800px;
+        max-height: calc(100% - 40px);
+        box-sizing: border-box;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        z-index: 5;
+        border: 1px solid #f61e4d;
+        background-color: rgba(246, 30, 77, 0.2);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      #error span {
+        display: block;
+        flex: none;
+      }
+      #error.no-error {
+        display: none;
+      }
     </style>
   </head>
   <body>
     <canvas id="canvas"></canvas>
     <div class="center"></div>
+    <pre id="error" class="no-error"></pre>
     <script src="./index.js" type="module"></script>
   </body>
 </html>
