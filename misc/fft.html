@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>javascript built in fft</title>
+    <meta name="description" content="playing around with fft/analysernode" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      canvas {
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+    </style>
+  </head>
+  <body>
+    <button>click anywhere to start</button>
+    <canvas id="canvas"></canvas>
+    <canvas id="canvas2"></canvas>
+    <script type="module">
+      /** @type {HTMLCanvasElement} */
+      const canvas = document.getElementById('canvas')
+      const c = canvas.getContext('2d')
+      /** @type {HTMLCanvasElement} */
+      const canvas2 = document.getElementById('canvas2')
+      const c2 = canvas2.getContext('2d')
+
+      await new Promise(resolve =>
+        document.addEventListener('click', resolve, { once: true })
+      )
+
+      const context = new AudioContext()
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: false,
+        audio: true
+      })
+      const source = context.createMediaStreamSource(stream)
+
+      const analyser = context.createAnalyser()
+      source.connect(analyser)
+
+      const data = new Float32Array(analyser.frequencyBinCount)
+
+      const AMPLITUDE = 150
+      /** In frames. */
+      const HISTORY = 60 * 5
+      canvas.width = analyser.frequencyBinCount
+      canvas.height = AMPLITUDE * 2
+      canvas2.width = HISTORY
+      canvas2.height = analyser.frequencyBinCount
+
+      let time = 0
+
+      function render () {
+        analyser.getFloatFrequencyData(data)
+
+        c.clearRect(0, 0, canvas.width, canvas.height)
+        for (const [i, d] of data.entries()) {
+          const value = 255 / (1 + Math.exp(-d / 50))
+
+          c.fillStyle = `rgb(${value}, ${value}, ${255 - value})`
+          if (d > 0) {
+            c.fillRect(i, AMPLITUDE - d, 1, d)
+          } else if (d < 0) {
+            c.fillRect(i, AMPLITUDE, 1, -d)
+          }
+
+          c2.fillStyle = `rgb(${value}, ${value}, ${255 - value})`
+          c2.fillRect(time, data.length - 1 - i, 1, 1)
+        }
+
+        time = (time + 1) % HISTORY
+
+        window.requestAnimationFrame(render)
+      }
+      render()
+    </script>
+  </body>
+</html>
