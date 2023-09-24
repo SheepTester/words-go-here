@@ -11,6 +11,9 @@
     <script src="/sheep3.js" charset="utf-8"></script>
 
     <style>
+      aside {
+        display: inline-block;
+      }
       canvas {
         image-rendering: pixelated;
         image-rendering: crisp-edges;
@@ -18,8 +21,12 @@
     </style>
   </head>
   <body>
-    <button>click anywhere to start</button>
-    <canvas id="canvas"></canvas>
+    <aside>
+      <p><button>click anywhere to start</button></p>
+      <pre id="stats"></pre>
+      <p><button id="tone" disabled>play peak as sine tone</button></p>
+      <canvas id="canvas"></canvas>
+    </aside>
     <canvas id="canvas2"></canvas>
     <script type="module">
       /** @type {HTMLCanvasElement} */
@@ -29,11 +36,31 @@
       const canvas2 = document.getElementById('canvas2')
       const c2 = canvas2.getContext('2d')
 
+      const stats = document.getElementById('stats')
+      const tone = document.getElementById('tone')
+
       await new Promise(resolve =>
         document.addEventListener('click', resolve, { once: true })
       )
 
       const context = new AudioContext()
+
+      /** @type {OscillatorNode} */
+      let oscillator
+      tone.addEventListener('pointerdown', e => {
+        tone.setPointerCapture(e.pointerId)
+        oscillator = context.createOscillator()
+        oscillator.frequency.setValueAtTime(peakFreq, context.currentTime)
+        oscillator.connect(context.destination)
+        oscillator.start()
+      })
+      const handlePointerEnd = () => {
+        oscillator.disconnect()
+      }
+      tone.addEventListener('pointerup', handlePointerEnd)
+      tone.addEventListener('pointercancel', handlePointerEnd)
+      tone.disabled = false
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: false,
         audio: true
@@ -47,7 +74,7 @@
 
       const AMPLITUDE = 150
       /** In frames. */
-      const HISTORY = 60 * 5
+      const HISTORY = 60 * 10
       canvas.width = analyser.frequencyBinCount
       canvas.height = AMPLITUDE * 2
       canvas2.width = HISTORY
@@ -55,12 +82,13 @@
 
       let time = 0
 
+      let peakFreq
       function render () {
         analyser.getFloatFrequencyData(data)
 
         c.clearRect(0, 0, canvas.width, canvas.height)
         for (const [i, d] of data.entries()) {
-          const value = 255 / (1 + Math.exp(-d / 50))
+          const value = Math.min(800 / (1 + Math.exp(-d / 50)), 255)
 
           c.fillStyle = `rgb(${value}, ${value}, ${255 - value})`
           if (d > 0) {
@@ -72,6 +100,17 @@
           c2.fillStyle = `rgb(${value}, ${value}, ${255 - value})`
           c2.fillRect(time, data.length - 1 - i, 1, 1)
         }
+
+        const maxFreq = context.sampleRate / 2
+        const { index } = data.reduce(
+          (cum, curr, i) =>
+            curr > cum.value ? { value: curr, index: i } : cum,
+          { value: -Infinity, index: -1 }
+        )
+        peakFreq = (index / data.length) * maxFreq
+        stats.textContent = `Peak at ${peakFreq.toFixed(
+          3
+        )} Hz. Scale: frequencies (linear, 0 to ${maxFreq} Hz), intensity (linear, decibels)`
 
         time = (time + 1) % HISTORY
 
