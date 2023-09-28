@@ -17,6 +17,7 @@
       canvas {
         image-rendering: pixelated;
         image-rendering: crisp-edges;
+        border: 1px solid rgba(0, 0, 0, 0.1);
       }
     </style>
   </head>
@@ -110,6 +111,8 @@
         analyser.getFloatFrequencyData(data)
 
         c.clearRect(0, 0, canvas.width, canvas.height)
+        c2.fillStyle = 'black'
+        c2.fillRect(time + 1, 0, 1, data.length)
         for (const [i, d] of data.entries()) {
           const value = Math.min(800 / (1 + Math.exp(-d / 50)), 255)
 
