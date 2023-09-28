@@ -22,7 +22,14 @@
   </head>
   <body>
     <aside>
-      <p><button>click anywhere to start</button></p>
+      <p>
+        <button>click anywhere to start</button>
+        <label>
+          fft size:
+          <input type="range" min="5" max="15" id="fft-size" />
+          (2<sup id="fft-val">?</sup>)
+        </label>
+      </p>
       <pre id="stats"></pre>
       <p><button id="tone" disabled>play peak as sine tone</button></p>
       <canvas id="canvas"></canvas>
@@ -70,17 +77,33 @@
       const analyser = context.createAnalyser()
       source.connect(analyser)
 
-      const data = new Float32Array(analyser.frequencyBinCount)
+      const slider = document.getElementById('fft-size')
+      const sliderValue = document.getElementById('fft-val')
+      slider.addEventListener('input', () => {
+        sliderValue.textContent = slider.value
+        analyser.fftSize = 2 ** slider.valueAsNumber
+        setSize()
+      })
+      slider.value = Math.round(Math.log2(analyser.fftSize))
+      sliderValue.textContent = Math.round(Math.log2(analyser.fftSize))
+
+      let data
+      function setSize () {
+        data = new Float32Array(analyser.frequencyBinCount)
+        canvas.width = analyser.frequencyBinCount
+        canvas2.height = analyser.frequencyBinCount
+        time = 0
+      }
 
       const AMPLITUDE = 150
       /** In frames. */
       const HISTORY = 60 * 10
-      canvas.width = analyser.frequencyBinCount
       canvas.height = AMPLITUDE * 2
       canvas2.width = HISTORY
-      canvas2.height = analyser.frequencyBinCount
 
       let time = 0
+
+      setSize()
 
       let peakFreq
       function render () {
