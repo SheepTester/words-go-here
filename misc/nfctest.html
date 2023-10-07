@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>nfc??</title>
+    <meta name="description" content="test" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      #log {
+        width: 500px;
+        max-width: 100%;
+        height: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="log" readonly></textarea>
+    <p><button id="scan">scan</button></p>
+    <script>
+      const logger = document.getElementById('log')
+      function log (thing) {
+        logger.value += `${thing}\n`
+      }
+
+      window.onerror = (message, source, lineno, colno, error) => {
+        log(
+          `error: ${JSON.stringify({ message, source, lineno, colno, error })}`
+        )
+      }
+      window.onunhandledrejection = e => {
+        log(`rejection: ${e.reason.stack}`)
+      }
+
+      const reader = new NDEFReader()
+      reader.addEventListener('reading', e => {
+        log('event: reading')
+        log(`| event: ${e.constructor.name}`)
+        log(`| serialNumber: ${e.serialNumber}`)
+        log(`| message: ${e.message}`)
+        log(`| records: ${e.message.records.length}`)
+        for (const record of e.message.records) {
+          const { recordType, mediaType, id, data, encoding, lang } = record
+          log(
+            `| record: ${JSON.stringify({
+              recordType,
+              mediaType,
+              id,
+              data,
+              encoding,
+              lang
+            })}`
+          )
+          const d = /** @type {DataView} */ (data)
+          if (recordType === 'text') {
+            log(`| record text: ${new TextDecoder().decode(d.buffer)}`)
+          }
+
+          // log(`? ${record.toRecords()}`)
+        }
+      })
+      reader.addEventListener('readingerror', e => {
+        log('event: readingerror')
+        log(`| event: ${e.constructor.name} [${Object.keys(e)}]`)
+      })
+
+      document.getElementById('scan').addEventListener('click', async () => {
+        await reader.scan()
+        log('reader.scan resolved')
+      })
+    </script>
+  </body>
+</html>
