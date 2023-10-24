@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Bouncing DVD logo but it's ACM</title>
+    <meta
+      name="description"
+      content="Could be used as an idle animation to entertain people waiting for ACM Kickoff to start."
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      .container {
+        /* 1/sqrt(2) * 100vmin */
+        --container-size: 70.71067811865476vmin;
+        --logo-size: 100px;
+        --free: calc(var(--container-size) - var(--logo-size));
+        background-color: black;
+        width: var(--container-size);
+        height: var(--container-size);
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(45deg);
+      }
+      .logo {
+        width: var(--logo-size);
+        height: var(--logo-size);
+        background-color: hsl(var(--hue), 100%, 50%);
+        position: absolute;
+        left: calc(var(--x) * var(--free));
+        top: calc(var(--y) * var(--free));
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo"></div>
+    </div>
+    <script>
+      function getPosition (slope, x) {
+        const y = slope * x
+        const floorX = Math.floor(x)
+        const floorY = Math.floor(y)
+        const flipX = floorX % 2 !== 0
+        const flipY = floorY % 2 !== 0
+        const id = floorX + floorY
+        const remX = x - floorX
+        const remY = y - floorY
+        return { x: flipX ? 1 - remX : remX, y: flipY ? 1 - remY : remY, id }
+      }
+
+      const START = Date.now()
+      const SLOPE = Math.tan(0.9)
+
+      function frame () {
+        const { x, y, id } = getPosition(
+          SLOPE,
+          (Date.now() - START - 10000) / 5000
+        )
+        document.body.style.setProperty('--x', x)
+        document.body.style.setProperty('--y', y)
+        document.body.style.setProperty('--hue', `${(id * 100) % 360}`)
+        window.requestAnimationFrame(frame)
+      }
+      frame()
+    </script>
+  </body>
+</html>
