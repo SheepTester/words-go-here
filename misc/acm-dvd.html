@@ -13,33 +13,76 @@
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700&display=swap"
+      rel="stylesheet"
+    />
     <style>
+      body {
+        background-color: #1c1626;
+        font-family: 'DM Sans', sans-serif;
+      }
       .container {
         /* 1/sqrt(2) * 100vmin */
         --container-size: 70.71067811865476vmin;
-        --logo-size: 100px;
+        --logo-size: 69.98px;
         --free: calc(var(--container-size) - var(--logo-size));
-        background-color: black;
+        background-color: #15121a;
         width: var(--container-size);
         height: var(--container-size);
         position: fixed;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%) rotate(45deg);
+        transform: translate(-50%, -50%) rotate(135deg);
+        border-radius: 13.07px;
       }
       .logo {
+        display: flex;
         width: var(--logo-size);
         height: var(--logo-size);
         background-color: hsl(var(--hue), 100%, 50%);
         position: absolute;
         left: calc(var(--x) * var(--free));
         top: calc(var(--y) * var(--free));
+        background-image: conic-gradient(
+          #ff6d6d 0%,
+          #fda44e 17.1875%,
+          #ffdc24 34.8958%,
+          #38cf6b 52.6042%,
+          #62b0ff 71.3542%,
+          #816dff 87.5%,
+          #ff6d6d 100%
+        );
+        padding: 5.8px;
+        border-radius: 13.07px;
+        box-sizing: border-box;
+      }
+      .logo-inner {
+        flex: auto;
+        border-radius: 7.27px;
+        background-color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .text {
+        color: #333333;
+        display: block;
+        transform: rotate(-135deg);
+        font-size: 18px;
+        font-weight: bold;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <div class="logo"></div>
+      <div class="logo">
+        <div class="logo-inner">
+          <span class="text">acm</span>
+        </div>
+      </div>
     </div>
     <script>
       function getPosition (slope, x) {
@@ -51,7 +94,7 @@
         const id = floorX + floorY
         const remX = x - floorX
         const remY = y - floorY
-        return { x: flipX ? 1 - remX : remX, y: flipY ? 1 - remY : remY, id }
+        return { x: flipX ? 1 - remX : remX, y: flipY ? remY : 1 - remY, id }
       }
 
       const START = Date.now()
@@ -60,7 +103,7 @@
       function frame () {
         const { x, y, id } = getPosition(
           SLOPE,
-          (Date.now() - START - 10000) / 5000
+          (Date.now() - START - 5000) / 5000
         )
         document.body.style.setProperty('--x', x)
         document.body.style.setProperty('--y', y)
