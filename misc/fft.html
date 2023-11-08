@@ -19,6 +19,13 @@
         image-rendering: crisp-edges;
         border: 1px solid rgba(0, 0, 0, 0.1);
       }
+      #tooltip {
+        position: fixed;
+        margin: 0;
+        padding: 5px;
+        background-color: rgba(255, 255, 255, 0.5);
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
@@ -36,6 +43,7 @@
       <canvas id="canvas"></canvas>
     </aside>
     <canvas id="canvas2"></canvas>
+    <pre id="tooltip"></pre>
     <script type="module">
       /** @type {HTMLCanvasElement} */
       const canvas = document.getElementById('canvas')
@@ -43,6 +51,8 @@
       /** @type {HTMLCanvasElement} */
       const canvas2 = document.getElementById('canvas2')
       const c2 = canvas2.getContext('2d')
+
+      const tooltip = document.getElementById('tooltip')
 
       const stats = document.getElementById('stats')
       const tone = document.getElementById('tone')
@@ -88,8 +98,12 @@
       slider.value = Math.round(Math.log2(analyser.fftSize))
       sliderValue.textContent = Math.round(Math.log2(analyser.fftSize))
 
+      /** @type {Float32Array} */
       let data
+      /** @type {Float32Array} */
+      let history
       function setSize () {
+        history = new Float32Array(analyser.frequencyBinCount * HISTORY)
         data = new Float32Array(analyser.frequencyBinCount)
         canvas.width = analyser.frequencyBinCount
         canvas2.height = analyser.frequencyBinCount
@@ -109,6 +123,7 @@
       let peakFreq
       function render () {
         analyser.getFloatFrequencyData(data)
+        history.set(data, analyser.frequencyBinCount * time)
 
         c.clearRect(0, 0, canvas.width, canvas.height)
         c2.fillStyle = 'black'
@@ -143,6 +158,19 @@
         window.requestAnimationFrame(render)
       }
       render()
+
+      canvas2.addEventListener('pointermove', e => {
+        const { left, top } = canvas2.getBoundingClientRect()
+        const x = Math.floor(e.clientX - left)
+        const y = Math.floor(e.clientY - top)
+        const i = canvas2.height - 1 - y
+        tooltip.textContent = [
+          `${(i / analyser.frequencyBinCount) * (context.sampleRate / 2)} Hz`,
+          `Amplitude: ${history[i + x * analyser.frequencyBinCount]}dB`
+        ].join('\n')
+        tooltip.style.left = `${e.clientX}px`
+        tooltip.style.top = `${e.clientY}px`
+      })
     </script>
   </body>
 </html>

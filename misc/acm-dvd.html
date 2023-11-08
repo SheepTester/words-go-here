@@ -42,7 +42,8 @@
         display: flex;
         width: var(--logo-size);
         height: var(--logo-size);
-        background-color: hsl(var(--hue), 100%, 50%);
+        /* background-color: hsl(var(--hue), 100%, 50%); */
+        /* filter: hue-rotate(var(--hue)); */
         position: absolute;
         left: calc(var(--x) * var(--free));
         top: calc(var(--y) * var(--free));
@@ -107,7 +108,10 @@
         )
         document.body.style.setProperty('--x', x)
         document.body.style.setProperty('--y', y)
-        document.body.style.setProperty('--hue', `${(id * 100) % 360}`)
+        document.body.style.setProperty(
+          '--hue',
+          `${(id * Math.PI * 30) % 360}deg`
+        )
         window.requestAnimationFrame(frame)
       }
       frame()
