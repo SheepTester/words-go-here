@@ -85,7 +85,17 @@
       })
       const source = context.createMediaStreamSource(stream)
 
+      const filter = context.createBiquadFilter()
+      filter.type = 'bandpass'
+      filter.frequency.setValueAtTime(261, context.currentTime)
+      filter.Q.setValueAtTime(10000, context.currentTime)
+      console.log(filter)
+
       const analyser = context.createAnalyser()
+      analyser.smoothingTimeConstant = 0
+      console.log(analyser)
+      // source.connect(filter)
+      // filter.connect(analyser)
       source.connect(analyser)
 
       const slider = document.getElementById('fft-size')
