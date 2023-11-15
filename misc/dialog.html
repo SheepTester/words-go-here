@@ -41,16 +41,14 @@
         /* Remove text selection on close. Should be fine without though */
         user-select: none;
         transition: all 0.5s;
+        max-width: unset;
+        max-height: unset;
       }
       dialog[open] {
         visibility: visible;
         opacity: 1;
         pointer-events: unset;
         user-select: text;
-      }
-      dialog:modal {
-        max-width: unset;
-        max-height: unset;
       }
       dialog::backdrop {
         background: none;
@@ -123,6 +121,28 @@
       <li>
         In Firefox, the close button is still focusable by shift-tabbing before
         the open button.
+      </li>
+      <li>
+        Browsers add about 19px margins around dialogs when they're open. In
+        Chrome, it's implemented like this:
+        <pre>
+dialog:-internal-dialog-in-top-layer {
+  position: fixed;
+  inset-block-start: 0px;
+  inset-block-end: 0px;
+  max-width: calc((100% - 6px) - 2em);
+  max-height: calc((100% - 6px) - 2em);
+  user-select: text;
+  visibility: visible;
+  overflow: auto;
+}</pre
+        >
+        Setting <code>max-width</code> and <code>max-height</code> to
+        <code>unset</code> while the dialog is open (<code>dialog:modal</code>)
+        seems to work. However, in Chrome, as the dialog is transitioning
+        closed, the margin appears. It's a very glitchy because the margin is
+        left over from a past rule, and it disappears when the element is
+        modified again.
       </li>
     </ul>
     <script>
