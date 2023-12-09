@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>8-bit sound</title>
+    <meta name="description" content="compress audio into an 8-bit .wav file" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      li {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Turn your music into 8-bit music!</h1>
+    <p>
+      How does this work? This takes all of the samples (usually 16-bit) and
+      divides by 256, so only 0.4% of the quality is kept. The result? An
+      elegant arrangement of samples.
+    </p>
+    <p>
+      <label>
+        Select audio file:
+        <input id="audio" type="file" accept="audio/*,video/*" />
+      </label>
+    </p>
+    <div id="results"></div>
+    <script>
+      // https://sheeptester.github.io/javascripts/sstv-encoder.html
+      const encoder = new TextEncoder()
+      function header (byteCount, sampleRate, channelCount = 1) {
+        // https://isip.piconepress.com/projects/speech/software/tutorials/production/fundamentals/v1.0/section_02/s02_01_p05.html
+        // https://github.com/higuma/wav-audio-encoder-js/blob/master/lib/WavAudioEncoder.js
+        // wav files are little endian
+        const header = new DataView(new ArrayBuffer(44))
+        const byteView = new Uint8Array(header.buffer)
+        byteView.set(encoder.encode('RIFF'), 0)
+        header.setUint32(4, byteCount + 36, true)
+        byteView.set(encoder.encode('WAVE'), 8)
+        byteView.set(encoder.encode('fmt '), 12)
+        header.setUint32(16, 16, true)
+        header.setUint16(20, 1, true)
+        header.setUint16(22, channelCount, true)
+        header.setUint32(24, sampleRate, true)
+        header.setUint32(28, sampleRate * 2, true)
+        header.setUint16(32, channelCount, true)
+        header.setUint16(34, 8, true)
+        byteView.set(encoder.encode('data'), 36)
+        header.setUint32(40, byteCount, true)
+        return header
+      }
+
+      function removeFileExtension (name) {
+        const index = name.lastIndexOf('.')
+        return index === -1 ? name : name.slice(0, index)
+      }
+
+      /** @type {AudioContext} */
+      let context
+      document.getElementById('audio').addEventListener('change', async e => {
+        /** @type {File} */
+        const file = e.currentTarget.files[0]
+        if (!file) {
+          return
+        }
+        context ??= new AudioContext()
+        const buffer = await context.decodeAudioData(await file.arrayBuffer())
+        const floats = buffer.getChannelData(0)
+        // One byte per sample (usually it's two)
+        const view = new DataView(new ArrayBuffer(floats.length))
+        for (const [i, float] of floats.entries()) {
+          view.setInt8(i, Math.min(Math.max(float, -1), 1) * 0x7f)
+        }
+        const blob = new Blob(
+          [header(view.byteLength, buffer.sampleRate), view],
+          { type: 'audio/wav' }
+        )
+        const url = URL.createObjectURL(blob)
+        const li = document.createElement('li')
+        const audio = new Audio()
+        audio.src = url
+        audio.controls = true
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${removeFileExtension(file.name)} (8-bit version).wav`
+        link.textContent = 'Download'
+        li.append(audio, ' ', link)
+        document.getElementById('results').prepend(li)
+      })
+    </script>
+  </body>
+</html>

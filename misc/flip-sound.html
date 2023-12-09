@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Flip sound</title>
+    <meta
+      name="description"
+      content="if you multiplied sound by -1, then played it at the same time as the original, does it cancel each other out?"
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      li {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Flip your sound upside down!</h1>
+    <p>
+      This multiplies every sample in your sound by &minus;1, flipping it
+      upside-down. When you play it at the same time as the original,
+      (sometimes&mdash;it can take multiple tries) their samples cancel out, and
+      all you hear is silence.
+    </p>
+    <p>
+      <label>
+        Select audio file:
+        <input id="audio" type="file" accept="audio/*,video/*" />
+      </label>
+    </p>
+    <div id="results"></div>
+    <script>
+      // https://sheeptester.github.io/javascripts/sstv-encoder.html
+      const encoder = new TextEncoder()
+      function header (byteCount, sampleRate, channelCount = 1) {
+        // https://isip.piconepress.com/projects/speech/software/tutorials/production/fundamentals/v1.0/section_02/s02_01_p05.html
+        // https://github.com/higuma/wav-audio-encoder-js/blob/master/lib/WavAudioEncoder.js
+        // wav files are little endian
+        const header = new DataView(new ArrayBuffer(44))
+        const byteView = new Uint8Array(header.buffer)
+        byteView.set(encoder.encode('RIFF'), 0)
+        header.setUint32(4, byteCount + 36, true)
+        byteView.set(encoder.encode('WAVE'), 8)
+        byteView.set(encoder.encode('fmt '), 12)
+        header.setUint32(16, 16, true)
+        header.setUint16(20, 1, true)
+        header.setUint16(22, channelCount, true)
+        header.setUint32(24, sampleRate, true)
+        header.setUint32(28, sampleRate * 4, true)
+        header.setUint16(32, channelCount * 2, true)
+        header.setUint16(34, 16, true)
+        byteView.set(encoder.encode('data'), 36)
+        header.setUint32(40, byteCount, true)
+        return header
+      }
+
+      function removeFileExtension (name) {
+        const index = name.lastIndexOf('.')
+        return index === -1 ? name : name.slice(0, index)
+      }
+
+      /** @type {AudioContext} */
+      let context
+      document.getElementById('audio').addEventListener('change', async e => {
+        /** @type {File} */
+        const file = e.currentTarget.files[0]
+        if (!file) {
+          return
+        }
+        context ??= new AudioContext()
+        const buffer = await context.decodeAudioData(await file.arrayBuffer())
+        const floats = buffer.getChannelData(0)
+        const view = new DataView(new ArrayBuffer(floats.length * 2))
+        for (const [i, float] of floats.entries()) {
+          // Flip sample
+          view.setInt16(i * 2, Math.min(Math.max(-float, -1), 1) * 0x7fff, true)
+        }
+        const blob = new Blob(
+          [header(view.byteLength, buffer.sampleRate), view],
+          { type: 'audio/wav' }
+        )
+        const origUrl = URL.createObjectURL(file)
+        const url = URL.createObjectURL(blob)
+        const li = document.createElement('li')
+        const audioOrig = new Audio()
+        audioOrig.src = origUrl
+        audioOrig.controls = true
+        const audio = new Audio()
+        audio.src = url
+        audio.controls = true
+        const play = document.createElement('button')
+        play.type = 'button'
+        play.textContent = 'Play both synched'
+        play.addEventListener('click', async () => {
+          if (!audioOrig.paused || !audio.paused) {
+            audioOrig.pause()
+            audio.pause()
+            await new Promise(resolve => setTimeout(resolve, 100))
+          }
+          audio.currentTime = audioOrig.currentTime
+          if (audio.readyState < 2) {
+            await new Promise(resolve =>
+              audio.addEventListener('canplay', resolve, { once: true })
+            )
+          }
+          audioOrig.play()
+          audio.play()
+        })
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${removeFileExtension(file.name)} (flipped).wav`
+        link.textContent = 'Download flipped'
+        li.append(audioOrig, ' ', audio, ' ', play, ' ', link)
+        document.getElementById('results').prepend(li)
+      })
+    </script>
+  </body>
+</html>
