@@ -6,90 +6,121 @@
 
     <title>Get UCSD map tiles</title>
     <meta name="description" content="Into a single image" />
+    <meta name="theme-color" content="#4fa1a7" />
 
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
-
-    <style>
-      p:first-of-type {
-        margin-top: 0;
-      }
-      p:last-of-type {
-        margin-bottom: 0;
-      }
-    </style>
   </head>
   <body>
-    <fieldset>
-      <legend>Map settings</legend>
-      <p>
-        <label>
-          Tileset:
-          <select id="tileset">
-            <option value="UCSD_MasterUpdated-03-28-2019">
-              UCSD_MasterUpdated-03-28-2019
-            </option>
-            <option value="1005_Main_Map-07-01-2021">
-              1005_Main_Map-07-01-2021
-            </option>
-            <option value="1005_Main_Map-07-09-2021">
-              1005_Main_Map-07-09-2021
-            </option>
-            <option value="1005_Main_Map-07-29-2021">
-              1005_Main_Map-07-29-2021
-            </option>
-            <option value="1005_Main_Map-08-10-2021">
-              1005_Main_Map-08-10-2021
-            </option>
-            <option value="1005_Map">1005_Map</option>
-            <option value="1005_Map_1">1005_Map_1</option>
-            <option value="1005_Map_2">1005_Map_2</option>
-            <option value="1005_Map_3">1005_Map_3</option>
-            <option value="1005_Map_4*">1005_Map_4 (HD)</option>
-            <option value="1005_Map_5">1005_Map_5</option>
-            <option value="1005_Map_6">1005_Map_6</option>
-            <option value="1005_Map_7*">1005_Map_7 (HD)</option>
-            <option value="1005_Map_8*">1005_Map_8 (HD)</option>
-            <option value="1005_Map_9*">1005_Map_9 (HD)</option>
-            <option value="1005_Maps">1005_Maps</option>
-            <option value="1005_Maps_1*">1005_Maps_1 (HD)</option>
-            <option value="1005_Maps_2">1005_Maps_2</option>
-            <option value="1005_Maps_3">1005_Maps_3</option>
-            <option value="1005_Maps_4">1005_Maps_4</option>
-            <option value="1005_Maps_5">1005_Maps_5</option>
-            <option value="1005_Map_10*" selected>1005_Map_10 (HD)</option>
-          </select>
+    <form class="main" role="main">
+      <h1>Export UCSD map</h1>
+
+      <div class="col-io col-output reform:io">
+        <div class="image-content output-content">
+          <canvas
+            id="output"
+            data-deps="tileset zoom minX maxX minY maxY"
+          ></canvas>
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            data-output="output"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            data-output="output"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+
+      <label class="field-label">
+        <span class="label-primary">Tileset</span>
+        <select name="tileset">
+          <option value="UCSD_MasterUpdated-03-28-2019">
+            UCSD_MasterUpdated-03-28-2019
+          </option>
+          <option value="1005_Main_Map-07-01-2021">
+            1005_Main_Map-07-01-2021
+          </option>
+          <option value="1005_Main_Map-07-09-2021">
+            1005_Main_Map-07-09-2021
+          </option>
+          <option value="1005_Main_Map-07-29-2021">
+            1005_Main_Map-07-29-2021
+          </option>
+          <option value="1005_Main_Map-08-10-2021">
+            1005_Main_Map-08-10-2021
+          </option>
+          <option value="1005_Map">1005_Map</option>
+          <option value="1005_Map_1">1005_Map_1</option>
+          <option value="1005_Map_2">1005_Map_2</option>
+          <option value="1005_Map_3">1005_Map_3</option>
+          <option value="1005_Map_4*">1005_Map_4 (HD)</option>
+          <option value="1005_Map_5">1005_Map_5</option>
+          <option value="1005_Map_6">1005_Map_6</option>
+          <option value="1005_Map_7*">1005_Map_7 (HD)</option>
+          <option value="1005_Map_8*">1005_Map_8 (HD)</option>
+          <option value="1005_Map_9*">1005_Map_9 (HD)</option>
+          <option value="1005_Maps">1005_Maps</option>
+          <option value="1005_Maps_1*">1005_Maps_1 (HD)</option>
+          <option value="1005_Maps_2">1005_Maps_2</option>
+          <option value="1005_Maps_3">1005_Maps_3</option>
+          <option value="1005_Maps_4">1005_Maps_4</option>
+          <option value="1005_Maps_5">1005_Maps_5</option>
+          <option value="1005_Map_10*">1005_Map_10 (HD)</option>
+          <option value="1005_Map_11*" selected>1005_Map_11 (HD)</option>
+        </select>
+      </label>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Zoom</span>
+          <input type="range" name="zoom" min="11" max="20" value="18" />
         </label>
-      </p>
-      <p>
-        <label>
-          Zoom:
-          <input type="range" id="zoom" min="11" max="20" value="18" />
+        <input
+          type="number"
+          name="zoom"
+          min="11"
+          max="20"
+          value="18"
+          aria-label="Zoom value"
+        />
+      </div>
+      <div class="cols">
+        <label class="field-label">
+          <span class="label-primary">Min X</span>
+          <input type="number" name="minX" value="-1" />
         </label>
-      </p>
-      <p>
-        <label>
-          Min X
-          <input type="number" id="min-x" value="-1" />
+        <label class="field-label">
+          <span class="label-primary">Max X</span>
+          <input type="number" name="maxX" value="1" />
         </label>
-        <label>
-          Max X
-          <input type="number" id="max-x" value="1" />
+      </div>
+      <div class="cols">
+        <label class="field-label">
+          <span class="label-primary">Min Y</span>
+          <input type="number" name="minY" value="-1" />
         </label>
-      </p>
-      <p>
-        <label>
-          Min Y
-          <input type="number" id="min-y" value="-1" />
+        <label class="field-label">
+          <span class="label-primary">Max Y</span>
+          <input type="number" name="maxY" value="1" />
         </label>
-        <label>
-          Max Y
-          <input type="number" id="max-y" value="1" />
-        </label>
-      </p>
-    </fieldset>
-    <canvas id="output"></canvas>
-    <script>
+      </div>
+    </form>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+
       const RADIUS = 6378137
       /** CSS pixel size of tile */
       const TILE_SIZE = 256
@@ -112,45 +143,41 @@
         }
       }
 
-      const canvas = document.getElementById('output')
-      const c = canvas.getContext('2d')
-      function render () {
-        const tileSet = inputs.tileSet.value.replace('*', '')
-        /** Image size */
-        const tileSize = inputs.tileSet.value.endsWith('*') ? 512 : 256
-        const zoom = +inputs.zoom.value
-        const minX = +inputs.minX.value
-        const minY = +inputs.minY.value
-        const maxX = +inputs.maxX.value
-        const maxY = +inputs.maxY.value
+      on(
+        'output',
+        async (context, { tileset, zoom, minX, maxX, minY, maxY }) => {
+          const tileSet = tileset.replace('*', '')
+          /** Image size */
+          const tileSize = tileset.endsWith('*') ? 512 : 256
 
-        const centre = latLngToTile(32.877341347399, -117.23531663418, zoom)
-        canvas.width = tileSize * (maxX - minX + 1)
-        canvas.height = tileSize * (maxY - minY + 1)
-        canvas.style.width = `${canvas.width * (TILE_SIZE / tileSize)}px`
-        for (let x = 0; x <= maxX - minX; x++) {
-          for (let y = 0; y <= maxY - minY; y++) {
-            const image = new Image()
-            image.addEventListener('load', () => {
-              c.drawImage(image, x * tileSize, y * tileSize)
-            })
-            image.src = `https://assets.concept3d.com/assets/1005/${tileSet}/${zoom}/${
-              centre.x + minX + x
-            }/${centre.y + maxY - y}`
+          const centre = latLngToTile(32.877341347399, -117.23531663418, zoom)
+          const width = tileSize * (maxX - minX + 1)
+          const height = tileSize * (maxY - minY + 1)
+          if (context.canvas.width !== width) {
+            context.canvas.width = width
           }
-        }
-      }
+          if (context.canvas.height !== height) {
+            context.canvas.height = height
+          }
+          context.canvas.style.width = `${width * (TILE_SIZE / tileSize)}px`
+          for (let x = 0; x <= maxX - minX; x++) {
+            for (let y = 0; y <= maxY - minY; y++) {
+              const image = new Image()
+              image.addEventListener('load', () => {
+                context.drawImage(image, x * tileSize, y * tileSize)
+              })
+              image.src = `https://assets.concept3d.com/assets/1005/${tileSet}/${zoom}/${
+                centre.x + minX + x
+              }/${centre.y + maxY - y}`
+            }
+          }
 
-      const inputs = {
-        tileSet: document.getElementById('tileset'),
-        zoom: document.getElementById('zoom'),
-        minX: document.getElementById('min-x'),
-        minY: document.getElementById('min-y'),
-        maxX: document.getElementById('max-x'),
-        maxY: document.getElementById('max-y')
-      }
-      document.addEventListener('change', render)
-      render()
+          const blob = await new Promise(resolve =>
+            context.canvas.toBlob(resolve)
+          )
+          return new File([blob], 'ucsd-map.png', { type: blob.type })
+        }
+      )
     </script>
   </body>
 </html>
