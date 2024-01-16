@@ -1,91 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Bitmap to SVG</title>
-    <meta name="description" content="Every pixel becomes a square path"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <link rel="stylesheet" type="text/css" href="../../sheep3.css">
-    <script src="../../sheep3.js" charset="utf-8"></script>
+    <meta name="description" content="Every pixel becomes a square path" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
   </head>
   <body>
-    <p><label>image to svgify: <input type="file" id="image" accept="image/*"></label>(you can also paste in an image)</p>
-    <svg xmlns="http://www.w3.org/2000/svg" id="svg"></svg>
-    <p><button id="download" disabled>download</button></p>
-    <p>all pixels of the same colour become part of a single path for minimum file size</p>
-    <p>inspired by <a href="https://twitter.com/JasperBoerstra/status/1146043959153778688">tweet by jappa</a></p>
-    <script>
-const SCALE = 5;
-const image = document.getElementById('image');
-const output = document.getElementById('svg');
-const download = document.getElementById('download');
-const svgNS = 'http://www.w3.org/2000/svg';
-const canvas = document.createElement('canvas');
-const c = canvas.getContext('2d');
-function loadImg(file) {
-  if (!file) return;
-  createImageBitmap(file).then(bitmap => {
-    while (output.firstChild) output.removeChild(output.firstChild);
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    output.setAttributeNS(null, 'width', bitmap.width);
-    output.setAttributeNS(null, 'height', bitmap.height);
-    output.setAttributeNS(null, 'viewBox', `0 0 ${bitmap.width} ${bitmap.height}`);
-    output.style.width = bitmap.width * SCALE + 'px';
-    output.style.height = bitmap.height * SCALE + 'px';
-    c.drawImage(bitmap, 0, 0);
-    const {data, width} = c.getImageData(0, 0, bitmap.width, bitmap.height);
-    const colours = {};
-    const paths = {};
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i + 3] === 0) continue;
-      const x = i / 4 % width;
-      const y = Math.floor(i / 4 / width);
-      const colour = data[i + 3] === 255
-        ? '#' + ('0' + data[i].toString(16)).slice(-2)
-          + ('0' + data[i + 1].toString(16)).slice(-2)
-          + ('0' + data[i + 2].toString(16)).slice(-2)
-        : `rgba(${data[i]},${data[i + 1]},${data[i + 2]},${Math.round(data[i + 3] * 100 / 255) / 100})`;
-      if (!colours[colour]) {
-        colours[colour] = document.createElementNS(svgNS, 'path');
-        colours[colour].setAttributeNS(null, 'fill', colour);
-        output.appendChild(colours[colour]);
-        paths[colour] = '';
-      }
-      paths[colour] += `M${x} ${y}h1v1h-1z`;
-      colours[colour].setAttributeNS(null, 'd', paths[colour]);
-    }
-    download.disabled = false;
-  }).catch(err => {
-    console.dir(err);
-  });
-}
-image.addEventListener('change', e => {
-  loadImg(image.files[0]);
-});
-document.addEventListener('paste', e => {
-  loadImg(e.clipboardData.files[0]);
-});
-download.addEventListener('click', e => {
-  const saveLink = document.createElement('a');
-  document.body.appendChild(saveLink);
+    <form class="main" role="main">
+      <h1>Make each pixel a vector square</h1>
+      <p>
+        Smaller images are recommended. Large numbers of pixels may cause
+        performance issues.
+      </p>
+      <p>
+        All pixels of the same colour become part of a single path for minimum
+        file size.
+      </p>
+      <div class="two-col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="image"
+            accept="image/*"
+            class="hidden-accessible reform:image-input reform:paste-target"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">Choose, drop, or paste an image</span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <div class="image-content input-content"><canvas></canvas></div>
+        <div class="image-content output-content">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            id="output"
+            data-deps="image"
+          ></svg>
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            data-output="output"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            data-output="output"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+      <p>
+        Inspired by
+        <a
+          class="link"
+          href="https://twitter.com/JasperBoerstra/status/1146043959153778688"
+          >this tweet by JAPPA</a
+        >.
+      </p>
+    </form>
 
-  const filename = 'pixels.svg';
-  const content = new Blob([output.outerHTML], {type: 'image/svg+xml'})
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
 
-  // Use special ms version if available to get it working on Edge.
-  if (navigator.msSaveOrOpenBlob) {
-    navigator.msSaveOrOpenBlob(content, filename);
-    return;
-  }
+      const SCALE = 5
+      const svgNS = 'http://www.w3.org/2000/svg'
 
-  const url = window.URL.createObjectURL(content);
-  saveLink.href = url;
-  saveLink.download = filename;
-  saveLink.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(saveLink);
-});
+      on('output', async (output, { image: bitmap }) => {
+        while (output.firstChild) output.removeChild(output.firstChild)
+        output.setAttributeNS(null, 'width', bitmap.width)
+        output.setAttributeNS(null, 'height', bitmap.height)
+        const { data, width } = bitmap
+          .getContext('2d')
+          .getImageData(0, 0, bitmap.width, bitmap.height)
+        const colours = {}
+        const paths = {}
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i + 3] === 0) continue
+          const x = (i / 4) % width
+          const y = Math.floor(i / 4 / width)
+          const colour =
+            data[i + 3] === 255
+              ? '#' +
+                ('0' + data[i].toString(16)).slice(-2) +
+                ('0' + data[i + 1].toString(16)).slice(-2) +
+                ('0' + data[i + 2].toString(16)).slice(-2)
+              : `rgba(${data[i]},${data[i + 1]},${data[i + 2]},${
+                  Math.round((data[i + 3] * 100) / 255) / 100
+                })`
+          if (!colours[colour]) {
+            colours[colour] = document.createElementNS(svgNS, 'path')
+            colours[colour].setAttributeNS(null, 'fill', colour)
+            output.appendChild(colours[colour])
+            paths[colour] = ''
+          }
+          paths[colour] += `M${x} ${y}h1v1h-1z`
+          colours[colour].setAttributeNS(null, 'd', paths[colour])
+        }
+
+        return new File([output.outerHTML], 'pixels.svg', {
+          type: 'image/svg+xml'
+        })
+      })
     </script>
   </body>
 </html>

@@ -2,88 +2,239 @@
 <html>
   <head>
     <title>Simplex noise test</title>
-    <meta charset="UTF-8">
-    <meta name="description" content="simplex noise"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <link rel="stylesheet" type="text/css" href="../../sheep2.css">
-    <script src="../../sheep2.js" charset="utf-8"></script>
-    <script src="0uglysettings.js" charset="utf-8"></script>
+    <meta charset="UTF-8" />
+    <meta name="description" content="simplex noise" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
   </head>
   <body>
-    <p>credit to <a href="https://scratch.mit.edu/projects/2516786/">nXIII</a> on scratch</p>
-    <div id="settings"></div>
-    <p><button type="button" id="run">run</button></p>
-    <canvas id="canvas" width="480" height="360"></canvas>
+    <form class="main" role="main">
+      <h1>Export UCSD map</h1>
+      <p>
+        Credit to
+        <a class="link" href="https://scratch.mit.edu/projects/2516786/"
+          >nXIII</a
+        >
+        on Scratch.
+      </p>
 
-    <script>
-const xScaleSetting = new UglySetting("x scale (screen x per simplex x)", 100, {type: "number"}),
-yScaleSetting = new UglySetting("y scale (screen y per simplex y)", 100, {type: "number"}),
-penSizeSetting = new UglySetting("pixel size", 3, {type: "number"}),
-tblSizeSetting = new UglySetting("table size", 256, {type: "number"}),
-leftSetting = new UglySetting("left X value", -240, {type: "number"}),
-topSetting = new UglySetting("top Y value", -180, {type: "number"}),
-hueSetting = new UglySetting("hue", 202, {type: "number"}),
-satSetting = new UglySetting("saturation", 100, {type: "number"}),
-adjustColourSetting = new UglySetting("adjust colour?", true, {type: "boolean"}),
-runBtn = document.querySelector("#run"),
-canvas = document.querySelector("#canvas"),
-c = canvas.getContext("2d");
+      <div class="col-io col-output reform:io">
+        <div class="image-content output-content">
+          <canvas
+            id="canvas"
+            width="480"
+            height="360"
+            data-deps="scaleX scaleY pixelSize tableSize offsetX offsetY hue sat adjustColours"
+          ></canvas>
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            data-output="output"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            data-output="output"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+      <div class="cols">
+        <label class="field-label">
+          <span class="label-primary">X scale</span>
+          <span class="label-secondary">Screen X per simplex X</span>
+          <input type="number" name="scaleX" value="100" />
+        </label>
+        <label class="field-label">
+          <span class="label-primary">Y scale</span>
+          <span class="label-secondary">Screen Y per simplex Y</span>
+          <input type="number" name="scaleY" value="100" />
+        </label>
+      </div>
+      <label class="field-label">
+        <span class="label-primary">Pixel size</span>
+        <input type="number" name="pixelSize" value="3" />
+      </label>
+      <label class="field-label">
+        <span class="label-primary">Table size</span>
+        <input type="number" name="tableSize" value="256" />
+      </label>
+      <div class="cols">
+        <label class="field-label">
+          <span class="label-primary">Left X value</span>
+          <input type="number" name="offsetX" value="-240" />
+        </label>
+        <label class="field-label">
+          <span class="label-primary">Top Y value</span>
+          <input type="number" name="offsetY" value="-180" />
+        </label>
+      </div>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Hue</span>
+          <input type="range" name="hue" min="0" max="360" value="202" />
+        </label>
+        <input
+          type="number"
+          name="hue"
+          min="0"
+          max="360"
+          value="202"
+          aria-label="Hue value"
+        />
+      </div>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Saturation</span>
+          <input type="range" name="sat" min="0" max="100" value="100" />
+        </label>
+        <input
+          type="number"
+          name="sat"
+          min="0"
+          max="360"
+          value="202"
+          aria-label="Saturation value"
+        />
+      </div>
+      <label class="radio-label">
+        <input
+          type="checkbox"
+          name="adjustColours"
+          class="hidden-accessible"
+          checked
+        />
+        <span class="radio-button"></span>
+        <span class="label-primary">Adjust color?</span>
+        <span class="label-secondary">
+          Squares the lightness value of every pixel so the light and dark
+          pixels of the overall image appears balanced.
+        </span>
+      </label>
+    </form>
 
-const sqrt3 = Math.sqrt(3);
-const skew = sqrt3 / 2 - 0.5;
-const unskew = 0.5 - sqrt3 / 6;
-const magicUnskew = 1 - unskew * 2;
-const gradientA = [1, 1, 0, -1, -1, -1, 0, 1];
-const gradientB = [0, 1, 1, 1, 0, -1, -1, -1];
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
 
-function simplexNoise(tbl, x, y) {
-  let mu = (x + y) * skew,
-  a = Math.floor(x + mu),
-  b = Math.floor(y + mu);
-  mu = (a + b) * unskew;
+      const sqrt3 = Math.sqrt(3)
+      const skew = sqrt3 / 2 - 0.5
+      const unskew = 0.5 - sqrt3 / 6
+      const magicUnskew = 1 - unskew * 2
+      const gradientA = [1, 1, 0, -1, -1, -1, 0, 1]
+      const gradientB = [0, 1, 1, 1, 0, -1, -1, -1]
 
-  let offsetA = x - a + mu,
-  offsetB = y - b + mu;
+      function simplexNoise (tbl, x, y) {
+        let mu = (x + y) * skew,
+          a = Math.floor(x + mu),
+          b = Math.floor(y + mu)
+        mu = (a + b) * unskew
 
-  let transversalA = offsetA > offsetB ? 1 : 0,
-  transversalB = offsetA > offsetB ? 0 : 1;
+        let offsetA = x - a + mu,
+          offsetB = y - b + mu
 
-  return simplexNoise.calcValue(tbl, a, b, offsetA, offsetB)
-       + simplexNoise.calcValue(tbl, a, b, offsetA - transversalA + unskew, offsetB - transversalB + unskew, transversalA, transversalB)
-       + simplexNoise.calcValue(tbl, a, b, offsetA - magicUnskew, offsetB - magicUnskew, 1, 1);
-}
-simplexNoise.wrap = (a, arr) => (a % arr.length + arr.length) % arr.length;
-simplexNoise.calcValue = function(tbl, a, b, thingA, thingB, offA = 0, offB = 0) {
-  let v = 0.5 - thingA * thingA - thingB * thingB;
-  if (v > 0) {
-    let index = tbl[simplexNoise.wrap(a + offA + tbl[simplexNoise.wrap(b + offB, tbl)], tbl)] % gradientA.length;
-    return v ** 4 * (thingA * gradientA[index] + thingB * gradientB[index]);
-  } else return 0;
-};
+        let transversalA = offsetA > offsetB ? 1 : 0,
+          transversalB = offsetA > offsetB ? 0 : 1
 
-runBtn.addEventListener("click", run, false);
-function run() {
-  const tableSize = tblSizeSetting.getValue();
-  let table = [];
-  for (let i = tableSize; i--;) table[i] = Math.floor(Math.random() * tableSize);
-  c.clearRect(0, 0, canvas.width, canvas.height);
-  let pixelSize = penSizeSetting.getValue(),
-  offsetX = leftSetting.getValue(),
-  offsetY = topSetting.getValue(),
-  scaleX = xScaleSetting.getValue(),
-  scaleY = yScaleSetting.getValue(),
-  hue = hueSetting.getValue(),
-  sat = satSetting.getValue(),
-  adjustColours = adjustColourSetting.getValue();
-  for (let x = 0; x < canvas.width; x += pixelSize) {
-    for (let y = 0; y < canvas.height; y += pixelSize) {
-      let value = simplexNoise(table, (x + offsetX) / scaleX, (y + offsetY) / scaleY) * 32.5 + 0.5;
-      if (adjustColours) value *= value;
-      c.fillStyle = `hsl(${hue}, ${sat}%, ${Math.round(value * 100)}%)`;
-      c.fillRect(x, y, pixelSize, pixelSize);
-    }
-  }
-}
+        return (
+          simplexNoise.calcValue(tbl, a, b, offsetA, offsetB) +
+          simplexNoise.calcValue(
+            tbl,
+            a,
+            b,
+            offsetA - transversalA + unskew,
+            offsetB - transversalB + unskew,
+            transversalA,
+            transversalB
+          ) +
+          simplexNoise.calcValue(
+            tbl,
+            a,
+            b,
+            offsetA - magicUnskew,
+            offsetB - magicUnskew,
+            1,
+            1
+          )
+        )
+      }
+      simplexNoise.wrap = (a, arr) =>
+        ((a % arr.length) + arr.length) % arr.length
+      simplexNoise.calcValue = function (
+        tbl,
+        a,
+        b,
+        thingA,
+        thingB,
+        offA = 0,
+        offB = 0
+      ) {
+        let v = 0.5 - thingA * thingA - thingB * thingB
+        if (v > 0) {
+          let index =
+            tbl[
+              simplexNoise.wrap(
+                a + offA + tbl[simplexNoise.wrap(b + offB, tbl)],
+                tbl
+              )
+            ] % gradientA.length
+          return (
+            v ** 4 * (thingA * gradientA[index] + thingB * gradientB[index])
+          )
+        } else return 0
+      }
+
+      on('canvas', async (context, inputs) => {
+        const {
+          scaleX,
+          scaleY,
+          pixelSize,
+          tableSize,
+          offsetX,
+          offsetY,
+          hue,
+          sat,
+          adjustColours
+        } = inputs
+        let table = []
+        for (let i = tableSize; i--; ) {
+          table[i] = Math.floor(Math.random() * tableSize)
+        }
+        context.clearRect(0, 0, canvas.width, canvas.height)
+        for (let x = 0; x < canvas.width; x += pixelSize) {
+          for (let y = 0; y < canvas.height; y += pixelSize) {
+            let value =
+              simplexNoise(
+                table,
+                (x + offsetX) / scaleX,
+                (y + offsetY) / scaleY
+              ) *
+                32.5 +
+              0.5
+            if (adjustColours) value *= value
+            context.fillStyle = `hsl(${hue}, ${sat}%, ${Math.round(
+              value * 100
+            )}%)`
+            context.fillRect(x, y, pixelSize, pixelSize)
+          }
+        }
+
+        const blob = await new Promise(resolve =>
+          context.canvas.toBlob(resolve)
+        )
+        return new File([blob], 'simplex-noise.png', { type: blob.type })
+      })
     </script>
   </body>
   <!-- MADE BY SEAN -->

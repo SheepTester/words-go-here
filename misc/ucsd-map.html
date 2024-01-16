@@ -143,41 +143,56 @@
         }
       }
 
-      on(
-        'output',
-        async (context, { tileset, zoom, minX, maxX, minY, maxY }) => {
-          const tileSet = tileset.replace('*', '')
-          /** Image size */
-          const tileSize = tileset.endsWith('*') ? 512 : 256
+      on('output', async (context, inputs) => {
+        const { tileset, zoom, minX, maxX, minY, maxY } = inputs
+        const tileSet = tileset.replace('*', '')
+        /** Image size */
+        const tileSize = tileset.endsWith('*') ? 512 : 256
 
-          const centre = latLngToTile(32.877341347399, -117.23531663418, zoom)
-          const width = tileSize * (maxX - minX + 1)
-          const height = tileSize * (maxY - minY + 1)
-          if (context.canvas.width !== width) {
-            context.canvas.width = width
-          }
-          if (context.canvas.height !== height) {
-            context.canvas.height = height
-          }
-          context.canvas.style.width = `${width * (TILE_SIZE / tileSize)}px`
-          for (let x = 0; x <= maxX - minX; x++) {
-            for (let y = 0; y <= maxY - minY; y++) {
-              const image = new Image()
-              image.addEventListener('load', () => {
-                context.drawImage(image, x * tileSize, y * tileSize)
-              })
-              image.src = `https://assets.concept3d.com/assets/1005/${tileSet}/${zoom}/${
-                centre.x + minX + x
-              }/${centre.y + maxY - y}`
-            }
-          }
-
-          const blob = await new Promise(resolve =>
-            context.canvas.toBlob(resolve)
-          )
-          return new File([blob], 'ucsd-map.png', { type: blob.type })
+        const centre = latLngToTile(32.877341347399, -117.23531663418, zoom)
+        const width = tileSize * (maxX - minX + 1)
+        const height = tileSize * (maxY - minY + 1)
+        if (context.canvas.width !== width) {
+          context.canvas.width = width
         }
-      )
+        if (context.canvas.height !== height) {
+          context.canvas.height = height
+        }
+        context.canvas.style.maxWidth = `min(${
+          width * (TILE_SIZE / tileSize)
+        }px, 100%)`
+        const promises = []
+        for (let x = 0; x <= maxX - minX; x++) {
+          for (let y = 0; y <= maxY - minY; y++) {
+            promises.push(
+              new Promise((resolve, reject) => {
+                const image = new Image()
+                image.addEventListener('load', () => {
+                  context.clearRect(
+                    x * tileSize,
+                    y * tileSize,
+                    tileSize,
+                    tileSize
+                  )
+                  context.drawImage(image, x * tileSize, y * tileSize)
+                  resolve()
+                })
+                image.addEventListener('error', reject)
+                image.crossOrigin = 'anonymous'
+                image.src = `https://assets.concept3d.com/assets/1005/${tileSet}/${zoom}/${
+                  centre.x + minX + x
+                }/${centre.y + maxY - y}`
+              })
+            )
+          }
+        }
+
+        await Promise.all(promises)
+        const blob = await new Promise(resolve =>
+          context.canvas.toBlob(resolve)
+        )
+        return new File([blob], 'ucsd-map.png', { type: blob.type })
+      })
     </script>
   </body>
 </html>
