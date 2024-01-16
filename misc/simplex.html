@@ -26,9 +26,7 @@
         <div class="image-content output-content">
           <canvas
             id="canvas"
-            width="480"
-            height="360"
-            data-deps="scaleX scaleY pixelSize tableSize offsetX offsetY hue sat adjustColours"
+            data-deps="scaleX scaleY width height pixelSize tableSize offsetX offsetY hue sat adjustColours regenerateTable"
           ></canvas>
         </div>
         <div class="output-controls">
@@ -63,12 +61,29 @@
           <input type="number" name="scaleY" value="100" />
         </label>
       </div>
+      <div class="cols">
+        <label class="field-label">
+          <span class="label-primary">Width</span>
+          <input type="number" name="width" value="480" />
+        </label>
+        <label class="field-label">
+          <span class="label-primary">Height</span>
+          <input type="number" name="height" value="360" />
+        </label>
+      </div>
       <label class="field-label">
         <span class="label-primary">Pixel size</span>
+        <span class="label-secondary">
+          This represents the resolution of the final image. Smaller pixel sizes
+          will take longer to compute.
+        </span>
         <input type="number" name="pixelSize" value="3" />
       </label>
       <label class="field-label">
         <span class="label-primary">Table size</span>
+        <span class="label-secondary">
+          The table stores the random values seeding the noise.
+        </span>
         <input type="number" name="tableSize" value="256" />
       </label>
       <div class="cols">
@@ -121,6 +136,19 @@
         <span class="label-secondary">
           Squares the lightness value of every pixel so the light and dark
           pixels of the overall image appears balanced.
+        </span>
+      </label>
+      <label class="radio-label">
+        <input
+          type="checkbox"
+          name="regenerateTable"
+          class="hidden-accessible"
+        />
+        <span class="radio-button"></span>
+        <span class="label-primary">Regenerate table on every rerender?</span>
+        <span class="label-secondary">
+          Leave unchecked while adjusting the settings so the noise does not
+          change.
         </span>
       </label>
     </form>
@@ -195,25 +223,31 @@
         } else return 0
       }
 
+      const commonTable = []
       on('canvas', async (context, inputs) => {
         const {
           scaleX,
           scaleY,
+          width,
+          height,
           pixelSize,
           tableSize,
           offsetX,
           offsetY,
           hue,
           sat,
-          adjustColours
+          adjustColours,
+          regenerateTable
         } = inputs
-        let table = []
+        let table = regenerateTable ? [] : commonTable
         for (let i = tableSize; i--; ) {
-          table[i] = Math.floor(Math.random() * tableSize)
+          table[i] ??= Math.floor(Math.random() * tableSize)
         }
-        context.clearRect(0, 0, canvas.width, canvas.height)
-        for (let x = 0; x < canvas.width; x += pixelSize) {
-          for (let y = 0; y < canvas.height; y += pixelSize) {
+        table = table.slice(0, tableSize)
+        context.canvas.width = width
+        context.canvas.height = height
+        for (let x = 0; x < context.canvas.width; x += pixelSize) {
+          for (let y = 0; y < context.canvas.height; y += pixelSize) {
             let value =
               simplexNoise(
                 table,
