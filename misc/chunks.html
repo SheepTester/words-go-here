@@ -74,7 +74,7 @@
         }
       }
 
-      on('output', async (context, { image, chunk }) => {
+      on('output', async (context, { image: { canvas: image }, chunk }) => {
         const chunkSize = Math.max(Math.floor(chunk), 1) || 50
         const width = Math.floor(image.width / chunkSize)
         const height = Math.floor(image.height / chunkSize)

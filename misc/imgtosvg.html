@@ -78,13 +78,16 @@
       const SCALE = 5
       const svgNS = 'http://www.w3.org/2000/svg'
 
-      on('output', async (output, { image: bitmap }) => {
+      on('output', async (output, { image }) => {
         while (output.firstChild) output.removeChild(output.firstChild)
-        output.setAttributeNS(null, 'width', bitmap.width)
-        output.setAttributeNS(null, 'height', bitmap.height)
-        const { data, width } = bitmap
-          .getContext('2d')
-          .getImageData(0, 0, bitmap.width, bitmap.height)
+        output.setAttributeNS(null, 'width', image.canvas.width)
+        output.setAttributeNS(null, 'height', image.canvas.height)
+        const { data, width } = image.getImageData(
+          0,
+          0,
+          image.canvas.width,
+          image.canvas.height
+        )
         const colours = {}
         const paths = {}
         for (let i = 0; i < data.length; i += 4) {
