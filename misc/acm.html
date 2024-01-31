@@ -74,58 +74,31 @@
         const [blackText, setBlackText] = useState(false)
         const canvas = useRef(null)
 
+        const SIZE = 96
+        const HALF = SIZE / 2
+        const QUARTER = SIZE / 4
+        /** The border radius is 1/8 the side length of the square. */
+        const RADIUS = (HALF * Math.SQRT2) / 8
         useEffect(() => {
           if (canvas.current) {
             canvas.current.width = +size
             canvas.current.height = +size
+            /** @type {CanvasRenderingContext2D} */
             const c = canvas.current.getContext('2d')
-            c.scale(+size / 60, +size / 60)
-            // From https://acmucsd.com/_next/static/media/acm-ai.4b66d604.svg
+            c.scale(+size / SIZE, +size / SIZE)
             c.beginPath()
-            c.moveTo(3.73715, 33.7371)
-            c.bezierCurveTo(
-              1.67318,
-              31.6732,
-              1.67318,
-              28.3268,
-              3.73715,
-              26.2628
-            )
-            c.lineTo(26.2629, 3.73712)
-            c.bezierCurveTo(
-              28.3268,
-              1.67315,
-              31.6732,
-              1.67315,
-              33.7371,
-              3.73712
-            )
-            c.lineTo(56.2629, 26.2628)
-            c.bezierCurveTo(
-              58.3268,
-              28.3268,
-              58.3268,
-              31.6732,
-              56.2629,
-              33.7371
-            )
-            c.lineTo(33.7371, 56.2628)
-            c.bezierCurveTo(
-              31.6732,
-              58.3268,
-              28.3268,
-              58.3268,
-              26.2629,
-              56.2628
-            )
-            c.lineTo(3.73715, 33.7371)
+            c.moveTo(QUARTER, QUARTER)
+            c.arcTo(HALF, 0, SIZE - QUARTER, QUARTER, RADIUS)
+            c.arcTo(SIZE, HALF, SIZE - QUARTER, SIZE - QUARTER, RADIUS)
+            c.arcTo(HALF, SIZE, QUARTER, SIZE - QUARTER, RADIUS)
+            c.arcTo(0, HALF, QUARTER, QUARTER, RADIUS)
             c.fillStyle = colour
             c.fill()
             c.fillStyle = blackText ? 'black' : 'white'
-            c.font = '700 15px "DM Sans", sans-serif'
+            c.font = '700 18px "DM Sans", sans-serif'
             c.textAlign = 'center'
             c.textBaseline = 'middle'
-            c.fillText(label, 30, 30)
+            c.fillText(label, HALF, HALF)
           }
         }, [size, label, colour, blackText, canvas.current])
 
@@ -180,7 +153,7 @@
             ' Use black text?'
           ),
           h('img', {
-            src: 'https://acmucsd.com/_next/static/media/acm-hack.9849538b.svg',
+            src: 'https://v2.members.acmucsd.com/_next/static/media/hack.faa89b5d.png',
             class: 'reference'
           }),
           h('canvas', { ref: canvas }),
