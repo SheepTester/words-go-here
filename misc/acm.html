@@ -98,7 +98,13 @@
             c.font = '700 18px "DM Sans", sans-serif'
             c.textAlign = 'center'
             c.textBaseline = 'middle'
-            c.fillText(label, HALF, HALF)
+            const { fontBoundingBoxDescent, fontBoundingBoxAscent } =
+              c.measureText('')
+            c.fillText(
+              label,
+              HALF,
+              HALF - (fontBoundingBoxDescent - fontBoundingBoxAscent) / 2
+            )
           }
         }, [size, label, colour, blackText, canvas.current])
 
