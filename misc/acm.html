@@ -6,187 +6,195 @@
 
     <title>ACM Bug</title>
     <meta name="description" content="Introducing ACM's newest community" />
+    <meta name="theme-color" content="#4fa1a7" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
-
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
 
     <style>
-      body {
+      .communities button {
         font-family: 'DM Sans', sans-serif;
-      }
-      button,
-      input {
-        font: inherit;
-      }
-      button:not(:disabled),
-      input[type='color']:not(:disabled) {
-        cursor: pointer;
-      }
-      .community {
+        font-weight: 700;
         color: white;
-      }
-      .reference {
-        position: absolute;
-        z-index: 1;
-        opacity: 0.3;
-        width: 512px;
-        display: none;
       }
     </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="importmap">
-      {
-        "imports": {
-          "preact": "https://unpkg.com/preact@10.7.1/dist/preact.module.js",
-          "preact/hooks": "https://unpkg.com/preact@10.7.1/hooks/dist/hooks.module.js"
-        }
-      }
-    </script>
+    <form class="main" role="main">
+      <h1>ACM community logo creator</h1>
+
+      <div class="col-io col-output reform:io">
+        <div class="image-content output-content">
+          <canvas id="canvas" data-deps="size label colour textColour"></canvas>
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            data-output="output"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            data-output="output"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+
+      <label class="field-label">
+        <span class="label-primary">Text</span>
+        <input type="text" name="label" value="bug" data-deps="community" />
+      </label>
+      <label class="field-label">
+        <span class="label-primary">Color</span>
+        <input
+          type="color"
+          name="colour"
+          value="#6BC774"
+          data-deps="community"
+        />
+      </label>
+
+      <fieldset class="radio-set">
+        <legend class="label-primary">Text color</legend>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="textColour"
+            value="white"
+            class="hidden-accessible"
+            data-deps="community"
+            checked
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">White</span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="textColour"
+            value="black"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">Black</span>
+        </label>
+      </fieldset>
+
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Resolution</span>
+          <input type="range" name="size" min="1" max="1000" value="256" />
+        </label>
+        <input
+          type="number"
+          name="size"
+          min="1"
+          max="1000"
+          value="256"
+          aria-label="Resolution in pixels"
+        />
+      </div>
+
+      <p>Or start with an existing ACM logo:</p>
+      <div class="button-row communities" id="community">
+        <button type="button" class="button" style="background-color: #ff6f6f">
+          ai
+        </button>
+        <button type="button" class="button" style="background-color: #f9a857">
+          hack
+        </button>
+        <button type="button" class="button" style="background-color: #469b68">
+          reach
+        </button>
+        <button type="button" class="button" style="background-color: #51c0c0">
+          cybr
+        </button>
+        <button type="button" class="button" style="background-color: #62b0ff">
+          devs
+        </button>
+        <button type="button" class="button" style="background-color: #816dff">
+          invt
+        </button>
+        <button type="button" class="button" style="background-color: #e981a0">
+          dsgn
+        </button>
+      </div>
+    </form>
+
     <script type="module">
-      import { h, Fragment, render } from 'preact'
-      import { useEffect, useState, useRef } from 'preact/hooks'
+      import { on } from '/reform/v1/index.js'
 
-      // https://acmucsd.com/communities
-      const communities = [
-        { name: 'ai', colour: '#ff6f6f' },
-        { name: 'cybr', colour: '#51c0c0' },
-        { name: 'hack', colour: '#f9a857' },
-        { name: 'invt', colour: '#816dff' },
-        { name: 'dsgn', colour: '#e981a0' }
-      ]
-
-      function Label ({ children }) {
-        return h('p', null, h('label', null, children))
-      }
-      function App () {
-        const [size, setSize] = useState('512')
-        const [label, setLabel] = useState('bug')
-        const [colour, setColour] = useState('#00ff00')
-        const [blackText, setBlackText] = useState(false)
-        const canvas = useRef(null)
-
-        const SIZE = 96
-        const HALF = SIZE / 2
-        const QUARTER = SIZE / 4
-        /** The border radius is 1/8 the side length of the square. */
-        const RADIUS = (HALF * Math.SQRT2) / 8
-        useEffect(() => {
-          if (canvas.current) {
-            canvas.current.width = +size
-            canvas.current.height = +size
-            /** @type {CanvasRenderingContext2D} */
-            const c = canvas.current.getContext('2d')
-            c.scale(+size / SIZE, +size / SIZE)
-            c.beginPath()
-            c.moveTo(QUARTER, QUARTER)
-            c.arcTo(HALF, 0, SIZE - QUARTER, QUARTER, RADIUS)
-            c.arcTo(SIZE, HALF, SIZE - QUARTER, SIZE - QUARTER, RADIUS)
-            c.arcTo(HALF, SIZE, QUARTER, SIZE - QUARTER, RADIUS)
-            c.arcTo(0, HALF, QUARTER, QUARTER, RADIUS)
-            c.fillStyle = colour
-            c.fill()
-            c.fillStyle = blackText ? 'black' : 'white'
-            c.font = '700 18px "DM Sans", sans-serif'
-            c.textAlign = 'center'
-            c.textBaseline = 'middle'
-            const { fontBoundingBoxDescent, fontBoundingBoxAscent } =
-              c.measureText('')
-            c.fillText(
-              label,
-              HALF,
-              HALF - (fontBoundingBoxDescent - fontBoundingBoxAscent) / 2
-            )
-          }
-        }, [size, label, colour, blackText, canvas.current])
-
-        return h(
-          Fragment,
-          null,
-          h(
-            Label,
-            null,
-            'Size: ',
-            h('input', {
-              type: 'range',
-              min: 1,
-              max: 1000,
-              value: size,
-              onInput: e => setSize(e.currentTarget.value)
-            }),
-            h('input', {
-              type: 'number',
-              value: size,
-              onInput: e => setSize(e.currentTarget.value)
-            })
-          ),
-          h(
-            Label,
-            null,
-            'Text: ',
-            h('input', {
-              type: 'text',
-              value: label,
-              onInput: e => setLabel(e.currentTarget.value)
-            })
-          ),
-          h(
-            Label,
-            null,
-            'Colour: ',
-            h('input', {
-              type: 'color',
-              value: colour,
-              onInput: e => setColour(e.currentTarget.value)
-            })
-          ),
-          h(
-            Label,
-            null,
-            h('input', {
-              type: 'checkbox',
-              value: blackText,
-              onInput: e => setBlackText(e.currentTarget.checked)
-            }),
-            ' Use black text?'
-          ),
-          h('img', {
-            src: 'https://v2.members.acmucsd.com/_next/static/media/hack.faa89b5d.png',
-            class: 'reference'
-          }),
-          h('canvas', { ref: canvas }),
-          h(
-            'p',
-            null,
-            communities.map(({ name, colour }) =>
-              h(
-                'button',
-                {
-                  class: 'community',
-                  style: { backgroundColor: colour },
-                  onClick: () => {
-                    setLabel(name)
-                    setColour(colour)
-                    setBlackText(false)
-                  },
-                  key: name
-                },
-                name
-              )
-            )
-          )
+      const SIZE = 96
+      const HALF = SIZE / 2
+      const QUARTER = SIZE / 4
+      /** The border radius is 1/8 the side length of the square. */
+      const RADIUS = (HALF * Math.SQRT2) / 8
+      on('canvas', async (c, { size, label, colour, textColour }) => {
+        await document.fonts.ready
+        c.canvas.width = +size
+        c.canvas.height = +size
+        c.scale(+size / SIZE, +size / SIZE)
+        c.beginPath()
+        c.moveTo(QUARTER, QUARTER)
+        c.arcTo(HALF, 0, SIZE - QUARTER, QUARTER, RADIUS)
+        c.arcTo(SIZE, HALF, SIZE - QUARTER, SIZE - QUARTER, RADIUS)
+        c.arcTo(HALF, SIZE, QUARTER, SIZE - QUARTER, RADIUS)
+        c.arcTo(0, HALF, QUARTER, QUARTER, RADIUS)
+        c.fillStyle = colour
+        c.fill()
+        c.fillStyle = textColour
+        c.font = '700 18px "DM Sans", sans-serif'
+        c.textAlign = 'center'
+        c.textBaseline = 'middle'
+        const { fontBoundingBoxDescent, fontBoundingBoxAscent } =
+          c.measureText('')
+        c.fillText(
+          label,
+          HALF,
+          HALF - (fontBoundingBoxDescent - fontBoundingBoxAscent) / 2
         )
-      }
 
-      render(h(App), document.getElementById('root'))
+        const blob = await new Promise(resolve => c.canvas.toBlob(resolve))
+        return new File([blob], `acm-${label}.png`, { type: blob.type })
+      })
+
+      on('community', (div, { callback }) => {
+        div.addEventListener('click', e => {
+          const btn = e.target.closest('.button')
+          if (!btn) {
+            return
+          }
+          callback({
+            label: btn.textContent.trim(),
+            colour:
+              '#' +
+              Array.from(btn.style.backgroundColor.matchAll(/\d+/g), channel =>
+                (+channel).toString(16).padStart(2, '0')
+              ).join('')
+          })
+        })
+      })
+      on('label', (input, { community: { label } }) => (input.value = label))
+      on('colour', (input, { community: { colour } }) => (input.value = colour))
+      on('textColour', radio => {
+        radio.checked = true
+        return 'white'
+      })
     </script>
   </body>
 </html>
