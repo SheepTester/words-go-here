@@ -14,12 +14,12 @@
     <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
     <style>
-      #previewDiv {
+      #selectedRegion {
         cursor: crosshair;
         touch-action: none;
         position: relative;
       }
-      #highContrast {
+      #grid {
         position: absolute;
         inset: 0;
         border-color: transparent;
@@ -31,8 +31,21 @@
   <body>
     <form class="main" role="main">
       <h1>Queens solver</h1>
-
-      <div class="col-io reform:io">
+      <p>
+        Upload or paste a screenshot of the game, then drag to select the region
+        containing the grid. This will then scan the pixel colors to determine
+        the puzzle grid from your screenshot. The puzzle size can differ each
+        day, so be sure to adjust the "Board size" setting at the bottom of the
+        page.
+      </p>
+      <p>
+        Sometimes, if the sampled pixels fall next to an outline or a marker, it
+        will find an anti-aliased pixel whose color is blended between the grid
+        color and the black pixel. Just re-select the region and keep an eye on
+        the little dots to make sure they don't get too close to the black
+        pixels.
+      </p>
+      <div class="two-col-io reform:io">
         <label class="input-controls file">
           <input
             type="file"
@@ -46,18 +59,67 @@
           <span class="file-name">No file selected</span>
         </label>
         <div class="image-content input-content">
-          <div id="previewDiv" data-deps="image &highContrast">
+          <div id="selectedRegion" data-deps="image &grid">
             <canvas data-will-read-frequently="true"></canvas>
-            <canvas id="highContrast" data-deps="image previewDiv"></canvas>
+            <canvas id="grid" data-deps="image selectedRegion size"></canvas>
           </div>
         </div>
+        <div class="image-content output-content">
+          <canvas id="output" data-deps="grid size"></canvas>
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            data-output="output"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            data-output="output"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+
+      <p>
+        To solve the puzzle, it tries to put a queen in every cell in the
+        smallest region and eliminates cells from all the other regions. Then,
+        it recursively tries a queen in the cells of the next smallest region,
+        and so on.
+      </p>
+      <p>
+        Surprisingly, this naïve brute-force approach seems to work most of the
+        time, even while you get invalid boards while selecting your region. I
+        think it's because my algorithm works on the smallest region first, and
+        the board size is relatively small so there aren't too many potential
+        cells.
+      </p>
+
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Board size</span>
+          <input type="range" name="size" min="1" max="16" value="9" />
+        </label>
+        <input
+          type="number"
+          name="size"
+          value="9"
+          aria-label="Board size value"
+        />
       </div>
     </form>
     <script type="module">
       import { on } from '/reform/v1/index.js'
 
       let cleanup
-      on('previewDiv', (div, { image: { canvas }, callback }) => {
+      on('selectedRegion', (div, { image: { canvas }, callback }) => {
         cleanup?.()
 
         let regionSetter
@@ -131,16 +193,23 @@
       })
 
       const colors = [
-        { hex: 0xee8168, name: 'red' },
-        { hex: 0xf7cb9a, name: 'orange' },
-        { hex: 0xe8f395, name: 'yellow' },
-        { hex: 0xbcdea6, name: 'green' },
-        { hex: 0xadd1d7, name: 'cyan' },
-        { hex: 0x9ebdfa, name: 'blue' },
-        { hex: 0xb7a4de, name: 'purple' },
-        { hex: 0xd6a3be, name: 'pink' },
-        { hex: 0xdfdfdf, name: 'grey' }
-      ]
+        { name: '--queens-board-color16', hex: 0xffe04b },
+        { name: '--queens-board-color15', hex: 0xc387e0 },
+        { name: '--queens-board-color14', hex: 0x729aec },
+        { name: '--queens-board-color13', hex: 0x8acc6d },
+        { name: '--queens-board-color12', hex: 0xff93f3 },
+        { name: '--queens-board-color11', hex: 0x62efea },
+        { name: '--queens-board-color10', hex: 0xb9b29e },
+        { name: '--queens-board-color9', hex: 0xe6f388 },
+        { name: '--queens-board-color8', hex: 0xff7b60 },
+        { name: '--queens-board-color7', hex: 0xa3d2d8 },
+        { name: '--queens-board-color6', hex: 0xdfa0bf },
+        { name: '--queens-board-color5', hex: 0xdfdfdf },
+        { name: '--queens-board-color4', hex: 0xb3dfa0 },
+        { name: '--queens-board-color3', hex: 0x96beff },
+        { name: '--queens-board-color2', hex: 0xffc992 },
+        { name: '--queens-board-color1', hex: 0xbba3e2 }
+      ].reverse()
       const colorChannels = colors.map(({ hex, name }) => ({
         channels: [hex >> 16, (hex >> 8) & 0xff, hex & 0xff],
         name
@@ -152,8 +221,8 @@
         ])
       )
 
-      function getColor ([r, g, b]) {
-        return colorChannels.reduce(
+      function getColor ([r, g, b], max) {
+        return colorChannels.slice(0, max).reduce(
           (cum, { channels, name }) => {
             const distance = Math.hypot(
               r - channels[0],
@@ -170,10 +239,8 @@
         ).name
       }
 
-      const size = 9
-
-      on('highContrast', (context, { method, image, previewDiv }) => {
-        const { left, top, width, height } = previewDiv
+      on('grid', (context, { method, image, selectedRegion, size }) => {
+        const { left, top, width, height } = selectedRegion
 
         const grid = Array.from({ length: size }, () =>
           Array.from({ length: size }, () => 'black')
@@ -206,7 +273,8 @@
               imageData.data.slice(
                 (sourceX + sourceY * imageData.width) * 4,
                 (sourceX + sourceY * imageData.width) * 4 + 3
-              )
+              ),
+              size
             )
             if (color === 'black') {
               const sourceY = Math.floor(top + (height / size) * (y + 0.3))
@@ -215,7 +283,8 @@
                 imageData.data.slice(
                   (sourceX + sourceY * imageData.width) * 4,
                   (sourceX + sourceY * imageData.width) * 4 + 3
-                )
+                ),
+                size
               )
             }
 
@@ -233,6 +302,105 @@
         }
 
         return grid
+      })
+
+      function solve (grid) {
+        // Partition the cells by color, so it maps color -> list of coordinates
+        const regionCoords = {}
+        for (const [y, row] of grid.entries()) {
+          for (const [x, color] of row.entries()) {
+            regionCoords[color] ??= []
+            regionCoords[color].push({ x, y })
+          }
+        }
+        function * tryRegion (regions) {
+          // Sort colors by list size
+          regions.sort((a, b) => a.length - b.length)
+          const [smallest, ...remaining] = regions
+          if (remaining.length === 0) {
+            // Base case: all coords in region are solutions
+            for (const coord of smallest) {
+              yield [coord]
+            }
+          } else {
+            // Smallest region first, try every cell
+            for (const coord of smallest) {
+              // Eliminate invalid queen locations from all other regions
+              const filtered = remaining.map(coords =>
+                coords.filter(
+                  ({ x, y }) =>
+                    x !== coord.x &&
+                    y !== coord.y &&
+                    (Math.abs(x - coord.x) > 1 || Math.abs(y - coord.y) > 1)
+                )
+              )
+              // If one of the regions has no available cells, then this route
+              // has no solutions
+              if (filtered.some(region => region.length === 0)) {
+                continue
+              }
+              // Recurse on remaining regions
+              for (const solution of tryRegion(filtered)) {
+                yield [coord, ...solution]
+              }
+            }
+          }
+        }
+        return tryRegion(Object.values(regionCoords))
+      }
+
+      const CELL_SIZE = 40
+      const GAP = 1
+      on('output', async (context, { grid, size }) => {
+        if (grid.length !== size) {
+          return
+        }
+
+        context.canvas.width = size * (CELL_SIZE + GAP) + GAP
+        context.canvas.height = size * (CELL_SIZE + GAP) + GAP
+        context.fillStyle = 'black'
+        context.fillRect(0, 0, context.canvas.width, context.canvas.height)
+
+        for (let x = 0; x < size; x++) {
+          for (let y = 0; y < size; y++) {
+            context.fillStyle = colorsByName[grid[y][x]]
+            context.fillRect(
+              GAP + x * (CELL_SIZE + GAP),
+              GAP + y * (CELL_SIZE + GAP),
+              CELL_SIZE,
+              CELL_SIZE
+            )
+          }
+        }
+
+        const solutions = Array.from(solve(grid))
+        context.font = `${CELL_SIZE * 0.8}px system-ui, sans-serif`
+        context.fillStyle = 'black'
+        if (solutions.length > 0) {
+          if (solutions.length > 1) {
+            context.fillText(
+              `${solutions.length} solutions found`,
+              0,
+              context.canvas.height
+            )
+          }
+          context.textAlign = 'center'
+          context.textBaseline = 'middle'
+          for (const { x, y } of solutions[0]) {
+            context.fillText(
+              '👑',
+              x * (CELL_SIZE + GAP) + CELL_SIZE / 2,
+              y * (CELL_SIZE + GAP) + CELL_SIZE / 2
+            )
+          }
+        } else {
+          context.fillText(`No solutions found :(`, 0, context.canvas.height)
+        }
+
+        const blob = await new Promise(resolve =>
+          context.canvas.toBlob(resolve)
+        )
+        return new File([blob], 'queens-solution.png', blob)
       })
     </script>
   </body>
