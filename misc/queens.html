@@ -30,14 +30,35 @@
   </head>
   <body>
     <form class="main" role="main">
-      <h1>Queens solver</h1>
+      <h1>LinkedIn <em>Queens</em> solver</h1>
+      <p>
+        Solves LinkedIn's game
+        <a href="https://www.linkedin.com/games/queens/" class="link"
+          ><em>Queens</em></a
+        >
+        using brute force.
+      </p>
       <p>
         Upload or paste a screenshot of the game, then drag to select the region
         containing the grid. This will then scan the pixel colors to determine
-        the puzzle grid from your screenshot. The puzzle size can differ each
-        day, so be sure to adjust the "Board size" setting at the bottom of the
-        page.
+        the puzzle grid from your screenshot.
       </p>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Board size</span>
+          <span class="label-secondary"
+            >The puzzle size can differ each day, so make sure the size is
+            correct.</span
+          >
+          <input type="range" name="size" min="1" max="16" value="9" />
+        </label>
+        <input
+          type="number"
+          name="size"
+          value="9"
+          aria-label="Board size value"
+        />
+      </div>
       <p>
         Sometimes, if the sampled pixels fall next to an outline or a marker, it
         will find an anti-aliased pixel whose color is blended between the grid
@@ -101,19 +122,6 @@
         the board size is relatively small so there aren't too many potential
         cells.
       </p>
-
-      <div class="field-label range-wrapper">
-        <label class="range-label">
-          <span class="label-primary">Board size</span>
-          <input type="range" name="size" min="1" max="16" value="9" />
-        </label>
-        <input
-          type="number"
-          name="size"
-          value="9"
-          aria-label="Board size value"
-        />
-      </div>
     </form>
     <script type="module">
       import { on } from '/reform/v1/index.js'
@@ -373,11 +381,19 @@
           }
         }
 
-        const solutions = Array.from(solve(grid))
+        const solutions = []
+        for (const solution of solve(grid)) {
+          solutions.push(solution)
+          if (solutions.length > 1000) {
+            break
+          }
+        }
         context.font = `${CELL_SIZE * 0.8}px system-ui, sans-serif`
         context.fillStyle = 'black'
         if (solutions.length > 0) {
-          if (solutions.length > 1) {
+          if (solutions.length > 1000) {
+            context.fillText(`1000+ solutions found`, 0, context.canvas.height)
+          } else if (solutions.length > 1) {
             context.fillText(
               `${solutions.length} solutions found`,
               0,
