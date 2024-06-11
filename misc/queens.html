@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>LinkedIn Queens solver</title>
+    <meta
+      name="description"
+      content="Ruin the fun(?) and mental challenge from LinkedIn's sudoku-like game Queens."
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+    <style>
+      #previewDiv {
+        cursor: crosshair;
+        touch-action: none;
+        position: relative;
+      }
+      #highContrast {
+        position: absolute;
+        inset: 0;
+        border-color: transparent;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="main" role="main">
+      <h1>Queens solver</h1>
+
+      <div class="col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="image"
+            accept="image/*"
+            class="hidden-accessible reform:image-input reform:paste-target"
+            data-default="./queens-default.png"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">Choose, drop, or paste an image</span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <div class="image-content input-content">
+          <div id="previewDiv" data-deps="image &highContrast">
+            <canvas data-will-read-frequently="true"></canvas>
+            <canvas id="highContrast" data-deps="image previewDiv"></canvas>
+          </div>
+        </div>
+      </div>
+    </form>
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+
+      let cleanup
+      on('previewDiv', (div, { image: { canvas }, callback }) => {
+        cleanup?.()
+
+        let regionSetter
+        const handlePointerDown = e => {
+          if (!regionSetter && e.which === 1) {
+            const rect = canvas.getBoundingClientRect()
+            const scale = canvas.height / rect.height
+            regionSetter = {
+              pointer: e.pointerId,
+              initX: Math.floor((e.clientX - rect.left) * scale),
+              initY: Math.floor((e.clientY - rect.top) * scale),
+              dragging: false,
+              rect,
+              scale
+            }
+            div.setPointerCapture(e.pointerId)
+          }
+        }
+        const handlePointerMove = e => {
+          if (regionSetter?.pointer === e.pointerId) {
+            regionSetter.dragging = true
+            const { initX, initY, rect, scale } = regionSetter
+            const mouseX = Math.floor(
+              Math.max(
+                Math.min(
+                  e.clientX - regionSetter.rect.left,
+                  regionSetter.rect.width
+                ),
+                0
+              ) * regionSetter.scale
+            )
+            const mouseY = Math.floor(
+              Math.max(
+                Math.min(
+                  e.clientY - regionSetter.rect.top,
+                  regionSetter.rect.height
+                ),
+                0
+              ) * regionSetter.scale
+            )
+            const minX = Math.min(initX, mouseX)
+            const minY = Math.min(initY, mouseY)
+            callback({
+              left: minX,
+              top: minY,
+              width: Math.max(Math.max(initX, mouseX) - minX, 1),
+              height: Math.max(Math.max(initY, mouseY) - minY, 1)
+            })
+          }
+        }
+        const handlePointerEnd = e => {
+          if (regionSetter?.pointer === e.pointerId) {
+            regionSetter = null
+          }
+        }
+        div.addEventListener('pointerdown', handlePointerDown)
+        div.addEventListener('pointermove', handlePointerMove)
+        div.addEventListener('pointerup', handlePointerEnd)
+        div.addEventListener('pointercancel', handlePointerEnd)
+
+        if (!cleanup) {
+          callback({ left: 15, top: 40, width: 419, height: 420 })
+        }
+
+        cleanup = () => {
+          div.removeEventListener('pointerdown', handlePointerDown)
+          div.removeEventListener('pointermove', handlePointerMove)
+          div.removeEventListener('pointerup', handlePointerEnd)
+          div.removeEventListener('pointercancel', handlePointerEnd)
+        }
+      })
+
+      const colors = [
+        { hex: 0xee8168, name: 'red' },
+        { hex: 0xf7cb9a, name: 'orange' },
+        { hex: 0xe8f395, name: 'yellow' },
+        { hex: 0xbcdea6, name: 'green' },
+        { hex: 0xadd1d7, name: 'cyan' },
+        { hex: 0x9ebdfa, name: 'blue' },
+        { hex: 0xb7a4de, name: 'purple' },
+        { hex: 0xd6a3be, name: 'pink' },
+        { hex: 0xdfdfdf, name: 'grey' }
+      ]
+      const colorChannels = colors.map(({ hex, name }) => ({
+        channels: [hex >> 16, (hex >> 8) & 0xff, hex & 0xff],
+        name
+      }))
+      const colorsByName = Object.fromEntries(
+        colors.map(({ hex, name }) => [
+          name,
+          `#${hex.toString(16).padStart(6, '0')}`
+        ])
+      )
+
+      function getColor ([r, g, b]) {
+        return colorChannels.reduce(
+          (cum, { channels, name }) => {
+            const distance = Math.hypot(
+              r - channels[0],
+              g - channels[1],
+              b - channels[2]
+            )
+            if (distance < cum.distance) {
+              return { distance, name }
+            } else {
+              return cum
+            }
+          },
+          { distance: Math.hypot(r, g, b), name: 'black' }
+        ).name
+      }
+
+      const size = 9
+
+      on('highContrast', (context, { method, image, previewDiv }) => {
+        const { left, top, width, height } = previewDiv
+
+        const grid = Array.from({ length: size }, () =>
+          Array.from({ length: size }, () => 'black')
+        )
+        const imageData = image.getImageData(
+          0,
+          0,
+          image.canvas.width,
+          image.canvas.height
+        )
+
+        context.canvas.width = image.canvas.width
+        context.canvas.height = image.canvas.height
+        context.translate(0.5, 0.5)
+        for (let x = 0; x < size; x++) {
+          for (let y = 0; y < size; y++) {
+            context.lineWidth = 1
+            context.strokeStyle = 'black'
+            context.strokeRect(
+              Math.floor(left + (width / size) * x),
+              Math.floor(top + (height / size) * y),
+              Math.ceil(width / size),
+              Math.ceil(height / size)
+            )
+
+            const sourceX = Math.floor(left + (width / size) * (x + 0.5))
+            const sourceY = Math.floor(top + (height / size) * (y + 0.8))
+            context.strokeRect(sourceX - 1, sourceY - 1, 2, 2)
+            let color = getColor(
+              imageData.data.slice(
+                (sourceX + sourceY * imageData.width) * 4,
+                (sourceX + sourceY * imageData.width) * 4 + 3
+              )
+            )
+            if (color === 'black') {
+              const sourceY = Math.floor(top + (height / size) * (y + 0.3))
+              context.strokeRect(sourceX - 1, sourceY - 1, 2, 2)
+              color = getColor(
+                imageData.data.slice(
+                  (sourceX + sourceY * imageData.width) * 4,
+                  (sourceX + sourceY * imageData.width) * 4 + 3
+                )
+              )
+            }
+
+            grid[y][x] = color
+
+            context.lineWidth = 10
+            context.strokeStyle = colorsByName[color] + 'aa'
+            context.strokeRect(
+              Math.floor(left + (width / size) * x) + 5,
+              Math.floor(top + (height / size) * y) + 5,
+              Math.ceil(width / size) - 10,
+              Math.ceil(height / size) - 10
+            )
+          }
+        }
+
+        return grid
+      })
+    </script>
+  </body>
+</html>
