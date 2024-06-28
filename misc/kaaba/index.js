@@ -18,17 +18,17 @@ class Vector2 {
     get angle() {
         return Math.atan2(this.y, this.x);
     }
-    set({ x =this.x , y =this.y  }) {
+    set({ x = this.x, y = this.y }) {
         this.x = x;
         this.y = y;
         return this;
     }
-    add({ x =0 , y =0  }) {
+    add({ x = 0, y = 0 }) {
         this.x += x;
         this.y += y;
         return this;
     }
-    sub({ x =0 , y =0  }) {
+    sub({ x = 0, y = 0 }) {
         this.x -= x;
         this.y -= y;
         return this;
@@ -44,15 +44,15 @@ class Vector2 {
     rotate(angle = 0) {
         const cos = Math.cos(angle);
         const sin = Math.sin(angle);
-        const { x , y  } = this;
+        const { x, y } = this;
         this.x = x * cos - y * sin;
         this.y = x * sin + y * cos;
         return this;
     }
-    equals({ x =0 , y =0  }) {
+    equals({ x = 0, y = 0 }) {
         return this.x === x && this.y === y;
     }
-    bounded({ min =null , max =null  }) {
+    bounded({ min = null, max = null }) {
         if (min && (this.x < min.x || this.y < min.y)) {
             return false;
         }
@@ -66,7 +66,7 @@ class Vector2 {
         this.y = fn(this.y);
         return this;
     }
-    affix({ prefix ='' , suffix =''  }) {
+    affix({ prefix = '', suffix = '' }) {
         this.x = prefix + this.x + suffix;
         this.y = prefix + this.y + suffix;
         return this;
@@ -81,13 +81,13 @@ class Vector2 {
     toString() {
         return `<${this.x}, ${this.y}>`;
     }
-    static fromMouseEvent({ clientX , clientY  }) {
+    static fromMouseEvent({ clientX, clientY }) {
         return new Vector2(clientX, clientY);
     }
-    static fromRectPos({ left , top  }) {
+    static fromRectPos({ left, top }) {
         return new Vector2(left, top);
     }
-    static fromRectSize({ width , height  }) {
+    static fromRectSize({ width, height }) {
         return new Vector2(width, height);
     }
 }
@@ -1281,7 +1281,10 @@ const textures = {
     [3]: 2
 };
 function isOpaque(block) {
-    return block === 1;
+    return block === 1 || block === 3;
+}
+function isSolid(block) {
+    return block !== 0;
 }
 function getTexture(block) {
     return block !== null ? textures[block] ?? null : null;
@@ -1435,7 +1438,7 @@ async function init(format) {
         label: '😎 shaders 😎',
         code: await fetch('./shader.wgsl').then((r)=>r.text())
     });
-    const { messages  } = await module.getCompilationInfo();
+    const { messages } = await module.getCompilationInfo();
     if (messages.some((message)=>message.type === 'error')) {
         console.log(messages);
         throw new SyntaxError('Shader failed to compile.');
@@ -1490,7 +1493,7 @@ async function init(format) {
         label: '😮 post processing shader 😮',
         code: await fetch('./post-processing.wgsl').then((r)=>r.text())
     });
-    const { messages: messagesPp  } = await modulePp.getCompilationInfo();
+    const { messages: messagesPp } = await modulePp.getCompilationInfo();
     if (messagesPp.some((message)=>message.type === 'error')) {
         console.log(messagesPp);
         throw new SyntaxError('Post-processing shader failed to compile.');
@@ -1512,8 +1515,10 @@ async function init(format) {
             ]
         }
     });
+    const chunkMap = {};
     function generateChunk(position) {
         const chunk = new Chunk(position);
+        chunkMap[`${position[0]},${position[1]},${position[2]}`] = chunk;
         for(let y = 0; y < 32; y++){
             for(let x = 0; x < 32; x++){
                 for(let z = 0; z < 32; z++){
@@ -1555,6 +1560,7 @@ async function init(format) {
     testChunk.block(9, 4, 7, Block.WHITE);
     testChunk.block(10, 4, 6, Block.WHITE);
     testChunk.block(10, 4, 7, Block.WHITE);
+    chunkMap['0,1,0'] = testChunk;
     chunks.push(testChunk.mesh(device, pipeline));
     const source = await fetch('./textures.png').then((r)=>r.blob()).then((blob)=>createImageBitmap(blob, {
             colorSpaceConversion: 'none'
@@ -1703,6 +1709,16 @@ async function init(format) {
                 encoder.finish()
             ]);
             await check();
+        },
+        getBlock: (x, y, z)=>{
+            const chunkX = Math.floor(x / 32);
+            const chunkY = Math.floor(y / 32);
+            const chunkZ = Math.floor(z / 32);
+            const chunk = chunkMap[`${chunkX},${chunkY},${chunkZ}`];
+            if (!chunk) {
+                return Block.AIR;
+            }
+            return chunk.block(x - chunkX * 32, y - chunkY * 32, z - chunkZ * 32) ?? Block.AIR;
         }
     };
 }
@@ -1735,7 +1751,7 @@ if (!(canvas instanceof HTMLCanvasElement)) {
 }
 const context = canvas.getContext('webgpu') ?? fail(new TypeError('Failed to get WebGPU canvas context.'));
 const format = navigator.gpu.getPreferredCanvasFormat();
-const { device , resize , render  } = await init(format);
+const { device, resize, render, getBlock } = await init(format);
 device.addEventListener('uncapturederror', (e)=>{
     if (e instanceof GPUUncapturedErrorEvent) {
         handleError(e.error);
@@ -1745,8 +1761,8 @@ context.configure({
     device,
     format
 });
-new ResizeObserver(([{ contentBoxSize  }])=>{
-    const [{ blockSize , inlineSize  }] = contentBoxSize;
+new ResizeObserver(([{ contentBoxSize }])=>{
+    const [{ blockSize, inlineSize }] = contentBoxSize;
     canvas.width = inlineSize;
     canvas.height = blockSize;
     resize(inlineSize, blockSize);
@@ -1798,7 +1814,52 @@ function moveAxis(axis, acceleration, time, userMoving) {
     if (!userMoving && Math.sign(player[`${axis}v`]) !== Math.sign(endVel)) {
         endVel = 0;
     }
-    player[axis] += (player[`${axis}v`] + endVel) / 2 * time;
+    const avgSpeed = (player[`${axis}v`] + endVel) / 2;
+    let displacement = avgSpeed * time;
+    const base = {
+        x: [
+            Math.floor(player.x - 0.4 + 0.01),
+            Math.floor(player.x + 0.4 - 0.01)
+        ],
+        y: [
+            Math.floor(player.y - 1.4 + 0.01),
+            Math.floor(player.y + 0.2 - 0.01)
+        ],
+        z: [
+            Math.floor(player.z - 0.4 + 0.01),
+            Math.floor(player.z + 0.4 - 0.01)
+        ]
+    };
+    const offset = axis === 'y' ? displacement > 0 ? 0.2 : 1.4 : 0.4;
+    let block = displacement > 0 ? Math.floor(player[axis] + offset) : Math.floor(player[axis] - offset);
+    checkCollide: while(displacement > 0 ? block <= player[axis] + offset + displacement : block >= Math.floor(player[axis] - offset + displacement)){
+        const range = {
+            ...base,
+            [axis]: [
+                block,
+                block
+            ]
+        };
+        for(let x = range.x[0]; x <= range.x[1]; x++){
+            for(let y = range.y[0]; y <= range.y[1]; y++){
+                for(let z = range.z[0]; z <= range.z[1]; z++){
+                    if (isSolid(getBlock(x, y, z))) {
+                        if (displacement > 0 && endVel > 0 || displacement < 0 && endVel < 0) {
+                            endVel = 0;
+                        }
+                        displacement = (displacement > 0 ? Math.max(block - offset, player[axis]) : Math.min(block + 1 + offset, player[axis])) - player[axis];
+                        break checkCollide;
+                    }
+                }
+            }
+        }
+        if (displacement > 0) {
+            block++;
+        } else {
+            block--;
+        }
+    }
+    player[axis] += displacement;
     player[`${axis}v`] = endVel;
 }
 let lastTime = Date.now();

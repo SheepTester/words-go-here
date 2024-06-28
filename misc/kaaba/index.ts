@@ -8,6 +8,7 @@ import '@webgpu/types'
 import { mat4 } from 'wgpu-matrix'
 import { init } from './webgpu.ts'
 import { SIZE } from './Chunk.ts'
+import { isSolid } from './blocks.ts'
 
 const errorMessages = document.getElementById('error')
 function handleError (error: unknown) {
@@ -46,7 +47,7 @@ const context =
   canvas.getContext('webgpu') ??
   fail(new TypeError('Failed to get WebGPU canvas context.'))
 const format = navigator.gpu.getPreferredCanvasFormat()
-const { device, resize, render } = await init(format)
+const { device, resize, render, getBlock } = await init(format)
 device.addEventListener('uncapturederror', e => {
   if (e instanceof GPUUncapturedErrorEvent) {
     handleError(e.error)
@@ -97,6 +98,17 @@ canvas.addEventListener('mousemove', e => {
 const MOVE_ACCEL = 50
 /** In 1/s. F = kv. */
 const FRICTION_COEFF = -5
+/** In m. */
+const PLAYER_RADIUS = 0.4
+/** In m. Distance below the camera. */
+const PLAYER_FEET = 1.4
+/** In m. Distance above the camera. */
+const PLAYER_HEAD = 0.2
+/**
+ * In m. Length to shrink player by when considering other axes (to avoid
+ * colliding with block boundaries due to rounding issues).
+ */
+const WIGGLE_ROOM = 0.01
 const player = {
   x: 0,
   xv: 0,
@@ -111,7 +123,9 @@ const player = {
   /** Tilt (rotate about z-axis) */
   roll: 0
 }
-/** Accelerates and updates player position along the specified axis. */
+/**
+ * Accelerates and updates player position along the specified axis.
+ */
 function moveAxis<Axis extends 'x' | 'y' | 'z'> (
   axis: Axis,
   acceleration: number,
@@ -124,7 +138,67 @@ function moveAxis<Axis extends 'x' | 'y' | 'z'> (
     endVel = 0
   }
   // displacement = average speed * time
-  player[axis] += ((player[`${axis}v`] + endVel) / 2) * time
+  const avgSpeed = (player[`${axis}v`] + endVel) / 2
+  let displacement = avgSpeed * time
+  /** Inclusive ranges. */
+  const base: Record<'x' | 'y' | 'z', [number, number]> = {
+    x: [
+      Math.floor(player.x - PLAYER_RADIUS + WIGGLE_ROOM),
+      Math.floor(player.x + PLAYER_RADIUS - WIGGLE_ROOM)
+    ],
+    y: [
+      Math.floor(player.y - PLAYER_FEET + WIGGLE_ROOM),
+      Math.floor(player.y + PLAYER_HEAD - WIGGLE_ROOM)
+    ],
+    z: [
+      Math.floor(player.z - PLAYER_RADIUS + WIGGLE_ROOM),
+      Math.floor(player.z + PLAYER_RADIUS - WIGGLE_ROOM)
+    ]
+  }
+  const offset =
+    axis === 'y'
+      ? displacement > 0
+        ? PLAYER_HEAD
+        : PLAYER_FEET
+      : PLAYER_RADIUS
+  let block =
+    displacement > 0
+      ? Math.floor(player[axis] + offset)
+      : Math.floor(player[axis] - offset)
+  checkCollide: while (
+    displacement > 0
+      ? block <= player[axis] + offset + displacement
+      : block >= Math.floor(player[axis] - offset + displacement)
+  ) {
+    const range = { ...base, [axis]: [block, block] }
+    // if (displacement !== 0) console.log(axis, 'checking', range)
+    for (let x = range.x[0]; x <= range.x[1]; x++) {
+      for (let y = range.y[0]; y <= range.y[1]; y++) {
+        for (let z = range.z[0]; z <= range.z[1]; z++) {
+          if (isSolid(getBlock(x, y, z))) {
+            // console.log('collision', x, y, z, player)
+            if (
+              (displacement > 0 && endVel > 0) ||
+              (displacement < 0 && endVel < 0)
+            ) {
+              endVel = 0
+            }
+            displacement =
+              (displacement > 0
+                ? Math.max(block - offset, player[axis])
+                : Math.min(block + 1 + offset, player[axis])) - player[axis]
+            break checkCollide
+          }
+        }
+      }
+    }
+    if (displacement > 0) {
+      block++
+    } else {
+      block--
+    }
+  }
+  player[axis] += displacement
   player[`${axis}v`] = endVel
 }
 let lastTime = Date.now()

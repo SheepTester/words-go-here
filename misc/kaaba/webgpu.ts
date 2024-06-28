@@ -86,6 +86,7 @@ export type Device = {
     view: GPUTexture,
     camera: ReturnType<typeof mat4.clone>
   ) => Promise<void>
+  getBlock: (x: number, y: number, z: number) => Block
 }
 
 export async function init (format: GPUTextureFormat): Promise<Device> {
@@ -174,8 +175,11 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
     }
   })
 
+  const chunkMap: Record<`${number},${number},${number}`, Chunk> = {}
+
   function generateChunk (position: ChunkPosition): ChunkRenderer {
     const chunk = new Chunk(position)
+    chunkMap[`${position[0]},${position[1]},${position[2]}`] = chunk
     for (let y = 0; y < SIZE; y++) {
       for (let x = 0; x < SIZE; x++) {
         for (let z = 0; z < SIZE; z++) {
@@ -223,6 +227,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
   testChunk.block(9, 4, 7, Block.WHITE)
   testChunk.block(10, 4, 6, Block.WHITE)
   testChunk.block(10, 4, 7, Block.WHITE)
+  chunkMap['0,1,0'] = testChunk
   chunks.push(testChunk.mesh(device, pipeline))
 
   const source = await fetch('./textures.png')
@@ -356,6 +361,19 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
       device.queue.submit([encoder.finish()])
 
       await check()
+    },
+    getBlock: (x, y, z) => {
+      const chunkX = Math.floor(x / SIZE)
+      const chunkY = Math.floor(y / SIZE)
+      const chunkZ = Math.floor(z / SIZE)
+      const chunk = chunkMap[`${chunkX},${chunkY},${chunkZ}`]
+      if (!chunk) {
+        return Block.AIR
+      }
+      return (
+        chunk.block(x - chunkX * SIZE, y - chunkY * SIZE, z - chunkZ * SIZE) ??
+        Block.AIR
+      )
     }
   }
 }
