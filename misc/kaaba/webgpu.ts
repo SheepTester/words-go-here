@@ -189,7 +189,9 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
               x,
               y,
               z,
-              (position[0] + position[2]) % 2 === 0 ? Block.STONE : Block.GLASS
+              (Math.floor(position[0] / 2) + position[2]) % 2 === 0
+                ? Block.STONE
+                : Block.GLASS
             )
           }
         }

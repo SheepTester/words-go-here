@@ -1523,7 +1523,7 @@ async function init(format) {
             for(let x = 0; x < 32; x++){
                 for(let z = 0; z < 32; z++){
                     if (Math.random() < (32 - y) / 32) {
-                        chunk.block(x, y, z, (position[0] + position[2]) % 2 === 0 ? Block.STONE : Block.GLASS);
+                        chunk.block(x, y, z, (Math.floor(position[0] / 2) + position[2]) % 2 === 0 ? Block.STONE : Block.GLASS);
                     }
                 }
             }
@@ -1776,6 +1776,12 @@ document.addEventListener('keydown', (e)=>{
         return;
     }
     keys[e.key.toLowerCase()] = true;
+    if (e.key === 'c') {
+        collisions = !collisions;
+    }
+    if (e.key === 'f') {
+        gravity = !gravity;
+    }
     if (document.pointerLockElement === canvas) {
         e.preventDefault();
     }
@@ -1797,6 +1803,8 @@ canvas.addEventListener('mousemove', (e)=>{
     player.pitch += e.movementY / 500;
 });
 const MOVE_ACCEL = 50;
+const GRAVITY = 20;
+const JUMP_VEL = 15;
 const FRICTION_COEFF = -5;
 const player = {
     x: 0,
@@ -1809,54 +1817,58 @@ const player = {
     pitch: 0,
     roll: 0
 };
+let collisions = true;
+let gravity = true;
 function moveAxis(axis, acceleration, time, userMoving) {
     let endVel = player[`${axis}v`] + acceleration * time;
-    if (!userMoving && Math.sign(player[`${axis}v`]) !== Math.sign(endVel)) {
+    if (!userMoving && Math.sign(player[`${axis}v`]) !== Math.sign(endVel) && !(gravity && axis === 'y')) {
         endVel = 0;
     }
     const avgSpeed = (player[`${axis}v`] + endVel) / 2;
     let displacement = avgSpeed * time;
-    const base = {
-        x: [
-            Math.floor(player.x - 0.4 + 0.01),
-            Math.floor(player.x + 0.4 - 0.01)
-        ],
-        y: [
-            Math.floor(player.y - 1.4 + 0.01),
-            Math.floor(player.y + 0.2 - 0.01)
-        ],
-        z: [
-            Math.floor(player.z - 0.4 + 0.01),
-            Math.floor(player.z + 0.4 - 0.01)
-        ]
-    };
-    const offset = axis === 'y' ? displacement > 0 ? 0.2 : 1.4 : 0.4;
-    let block = displacement > 0 ? Math.floor(player[axis] + offset) : Math.floor(player[axis] - offset);
-    checkCollide: while(displacement > 0 ? block <= player[axis] + offset + displacement : block >= Math.floor(player[axis] - offset + displacement)){
-        const range = {
-            ...base,
-            [axis]: [
-                block,
-                block
+    if (collisions) {
+        const base = {
+            x: [
+                Math.floor(player.x - 0.4 + 0.01),
+                Math.floor(player.x + 0.4 - 0.01)
+            ],
+            y: [
+                Math.floor(player.y - 1.4 + 0.01),
+                Math.floor(player.y + 0.2 - 0.01)
+            ],
+            z: [
+                Math.floor(player.z - 0.4 + 0.01),
+                Math.floor(player.z + 0.4 - 0.01)
             ]
         };
-        for(let x = range.x[0]; x <= range.x[1]; x++){
-            for(let y = range.y[0]; y <= range.y[1]; y++){
-                for(let z = range.z[0]; z <= range.z[1]; z++){
-                    if (isSolid(getBlock(x, y, z))) {
-                        if (displacement > 0 && endVel > 0 || displacement < 0 && endVel < 0) {
-                            endVel = 0;
+        const offset = axis === 'y' ? displacement > 0 ? 0.2 : 1.4 : 0.4;
+        let block = displacement > 0 ? Math.floor(player[axis] + offset) : Math.floor(player[axis] - offset);
+        checkCollide: while(displacement > 0 ? block <= player[axis] + offset + displacement : block >= Math.floor(player[axis] - offset + displacement)){
+            const range = {
+                ...base,
+                [axis]: [
+                    block,
+                    block
+                ]
+            };
+            for(let x = range.x[0]; x <= range.x[1]; x++){
+                for(let y = range.y[0]; y <= range.y[1]; y++){
+                    for(let z = range.z[0]; z <= range.z[1]; z++){
+                        if (isSolid(getBlock(x, y, z))) {
+                            if (displacement > 0 && endVel > 0 || displacement < 0 && endVel < 0) {
+                                endVel = 0;
+                            }
+                            displacement = (displacement > 0 ? Math.max(block - offset, player[axis]) : Math.min(block + 1 + offset, player[axis])) - player[axis];
+                            break checkCollide;
                         }
-                        displacement = (displacement > 0 ? Math.max(block - offset, player[axis]) : Math.min(block + 1 + offset, player[axis])) - player[axis];
-                        break checkCollide;
                     }
                 }
             }
-        }
-        if (displacement > 0) {
-            block++;
-        } else {
-            block--;
+            if (displacement > 0) {
+                block++;
+            } else {
+                block--;
+            }
         }
     }
     player[axis] += displacement;
@@ -1895,12 +1907,28 @@ function paint() {
     if (moving) {
         acceleration.add(direction.unit().scale(50).rotate(player.yaw));
     }
-    let yAccel = player.yv * FRICTION_COEFF;
-    if (keys[' ']) {
-        yAccel += MOVE_ACCEL;
-    }
-    if (keys.shift) {
-        yAccel -= MOVE_ACCEL;
+    let yAccel = player.yv;
+    if (gravity) {
+        yAccel = -GRAVITY;
+        if (keys[' ']) {
+            const y = Math.floor(player.y - 1.4 - 0.01);
+            checkGround: for(let x = Math.floor(player.x - 0.4 + 0.01); x <= Math.floor(player.x + 0.4 - 0.01); x++){
+                for(let z = Math.floor(player.z - 0.4 + 0.01); z <= Math.floor(player.z + 0.4 - 0.01); z++){
+                    if (isSolid(getBlock(x, y, z))) {
+                        player.yv = JUMP_VEL;
+                        break checkGround;
+                    }
+                }
+            }
+        }
+    } else {
+        yAccel *= FRICTION_COEFF;
+        if (keys[' ']) {
+            yAccel += MOVE_ACCEL;
+        }
+        if (keys.shift) {
+            yAccel -= MOVE_ACCEL;
+        }
     }
     moveAxis('x', acceleration.x, elapsed, moving);
     moveAxis('z', acceleration.y, elapsed, moving);
