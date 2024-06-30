@@ -5,11 +5,12 @@
 import '@webgpu/types'
 import { Vector2 } from 'https://sheeptester.github.io/javascripts/Vector2.js'
 // _ @deno-types="npm:wgpu-matrix"
-import { mat4, vec3, vec4 } from 'wgpu-matrix'
-import { ChunkPosition, SIZE } from './Chunk.ts'
+import { mat4, vec3 } from 'wgpu-matrix'
+import { SIZE } from './Chunk.ts'
 import { Block, isSolid } from './blocks.ts'
-import { traceRay_impl } from './raycast.ts'
+import { raycast } from './raycast.ts'
 import { init } from './webgpu.ts'
+import { RaycastResult } from './raycast.ts'
 
 const errorMessages = document.getElementById('error')
 function handleError (error: unknown) {
@@ -309,10 +310,7 @@ function paint () {
   frameId = requestAnimationFrame(paint)
 }
 
-function raycast () {
-  const hit_position: ChunkPosition = [0, 20, 0]
-  const hit_normal: ChunkPosition = [0, 20, 0]
-
+function doRaycast (): RaycastResult | null {
   const [dx, dy, dz] = vec3.transformMat4Upper3x3(
     [0, 0, -1],
     mat4.rotateZ(
@@ -321,41 +319,36 @@ function raycast () {
     )
   )
   const length = Math.hypot(dx, dy, dz)
-
-  console.log('dir', dx / length, dy / length, dz / length)
-  const result = traceRay_impl(
-    (x, y, z) => {
-      console.log('getblock', x, y, z, getBlock(x, y, z))
-      return isSolid(getBlock(x, y, z))
-    },
-    player.x,
-    player.y,
-    player.z,
-    dx / length,
-    dy / length,
-    dz / length,
-    10,
-    hit_position,
-    hit_normal
-  )
-  if (result) {
-    return { hit_position, hit_normal }
-  } else {
-    return null
-  }
+  const result = raycast(
+    (x, y, z) => isSolid(getBlock(x, y, z)),
+    [player.x, player.y, player.z],
+    [dx / length, dy / length, dz / length],
+    64
+  ).next()
+  return result.done ? null : result.value
 }
 
 canvas.addEventListener('mousedown', e => {
-  if (e.button === 0) {
-    const result = raycast()
-    console.log(result)
-    if (result) {
-      setBlock(
-        Math.floor(result.hit_position[0]),
-        Math.floor(result.hit_position[1]),
-        Math.floor(result.hit_position[2]),
-        Block.WHITE
-      )
+  const result = doRaycast()
+  if (result) {
+    switch (e.button) {
+      case 0: {
+        setBlock(...result.block, Block.AIR)
+        break
+      }
+      case 1: {
+        console.log(getBlock(...result.block))
+        break
+      }
+      case 2: {
+        const target = vec3.add(result.block, result.normal)
+        if (getBlock(target[0], target[1], target[2]) === Block.AIR) {
+          setBlock(target[0], target[1], target[2], Block.WHITE)
+        }
+        break
+      }
     }
+  }
+  if (e.button === 0) {
   }
 })

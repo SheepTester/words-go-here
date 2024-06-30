@@ -1756,59 +1756,65 @@ async function init(format) {
         }
     };
 }
-function traceRay_impl(getVoxel, px, py, pz, dx, dy, dz, max_d = 64, hit_pos, hit_norm) {
-    var t = 0.0, floor = Math.floor, ix = floor(px) | 0, iy = floor(py) | 0, iz = floor(pz) | 0, stepx = dx > 0 ? 1 : -1, stepy = dy > 0 ? 1 : -1, stepz = dz > 0 ? 1 : -1, txDelta = Math.abs(1 / dx), tyDelta = Math.abs(1 / dy), tzDelta = Math.abs(1 / dz), xdist = stepx > 0 ? ix + 1 - px : px - ix, ydist = stepy > 0 ? iy + 1 - py : py - iy, zdist = stepz > 0 ? iz + 1 - pz : pz - iz, txMax = txDelta < Infinity ? txDelta * xdist : Infinity, tyMax = tyDelta < Infinity ? tyDelta * ydist : Infinity, tzMax = tzDelta < Infinity ? tzDelta * zdist : Infinity, steppedIndex = -1;
-    while(t <= max_d){
-        var b = getVoxel(ix, iy, iz);
+function* raycast(getVoxel, [px, py, pz], [dx, dy, dz], maxDistance = 64) {
+    let t = 0;
+    let ix = Math.floor(px);
+    let iy = Math.floor(py);
+    let iz = Math.floor(pz);
+    const stepx = Math.sign(dx);
+    const stepy = Math.sign(dy);
+    const stepz = Math.sign(dz);
+    const txDelta = Math.abs(1 / dx);
+    const tyDelta = Math.abs(1 / dy);
+    const tzDelta = Math.abs(1 / dz);
+    let txMax = txDelta < Infinity ? txDelta * (stepx > 0 ? ix + 1 - px : px - ix) : Infinity;
+    let tyMax = tyDelta < Infinity ? tyDelta * (stepy > 0 ? iy + 1 - py : py - iy) : Infinity;
+    let tzMax = tzDelta < Infinity ? tzDelta * (stepz > 0 ? iz + 1 - pz : pz - iz) : Infinity;
+    let steppedIndex = null;
+    while(t <= maxDistance){
+        const b = getVoxel(ix, iy, iz);
         if (b) {
-            if (hit_pos) {
-                hit_pos[0] = px + t * dx;
-                hit_pos[1] = py + t * dy;
-                hit_pos[2] = pz + t * dz;
-            }
-            if (hit_norm) {
-                hit_norm[0] = hit_norm[1] = hit_norm[2] = 0;
-                if (steppedIndex === 0) hit_norm[0] = -stepx;
-                if (steppedIndex === 1) hit_norm[1] = -stepy;
-                if (steppedIndex === 2) hit_norm[2] = -stepz;
-            }
-            return b;
+            yield {
+                block: [
+                    ix,
+                    iy,
+                    iz
+                ],
+                position: [
+                    px + t * dx,
+                    py + t * dy,
+                    pz + t * dz
+                ],
+                normal: [
+                    steppedIndex === 'x' ? -stepx : 0,
+                    steppedIndex === 'y' ? -stepy : 0,
+                    steppedIndex === 'z' ? -stepz : 0
+                ]
+            };
         }
-        if (txMax < tyMax) {
-            if (txMax < tzMax) {
+        switch(Math.min(txMax, tyMax, tzMax)){
+            case txMax:
                 ix += stepx;
                 t = txMax;
                 txMax += txDelta;
-                steppedIndex = 0;
-            } else {
-                iz += stepz;
-                t = tzMax;
-                tzMax += tzDelta;
-                steppedIndex = 2;
-            }
-        } else {
-            if (tyMax < tzMax) {
+                steppedIndex = 'x';
+                break;
+            case tyMax:
                 iy += stepy;
                 t = tyMax;
                 tyMax += tyDelta;
-                steppedIndex = 1;
-            } else {
+                steppedIndex = 'y';
+                break;
+            case tzMax:
                 iz += stepz;
                 t = tzMax;
                 tzMax += tzDelta;
-                steppedIndex = 2;
-            }
+                steppedIndex = 'z';
+                break;
+            default:
+                throw new Error('The minimum is none of these. ??');
         }
     }
-    if (hit_pos) {
-        hit_pos[0] = px + t * dx;
-        hit_pos[1] = py + t * dy;
-        hit_pos[2] = pz + t * dz;
-    }
-    if (hit_norm) {
-        hit_norm[0] = hit_norm[1] = hit_norm[2] = 0;
-    }
-    return 0;
 }
 const errorMessages = document.getElementById('error');
 function handleError(error) {
@@ -2039,43 +2045,47 @@ function paint() {
     });
     frameId = requestAnimationFrame(paint);
 }
-function raycast() {
-    const hit_position = [
-        0,
-        20,
-        0
-    ];
-    const hit_normal = [
-        0,
-        20,
-        0
-    ];
+function doRaycast() {
     const [dx, dy, dz] = oe.transformMat4Upper3x3([
         0,
         0,
         -1
     ], ce.rotateZ(ce.rotateX(ce.rotationY(-player.yaw), -player.pitch), -player.roll));
     const length = Math.hypot(dx, dy, dz);
-    console.log('dir', dx / length, dy / length, dz / length);
-    const result = traceRay_impl((x, y, z)=>{
-        console.log('getblock', x, y, z, getBlock(x, y, z));
-        return isSolid(getBlock(x, y, z));
-    }, player.x, player.y, player.z, dx / length, dy / length, dz / length, 10, hit_position, hit_normal);
-    if (result) {
-        return {
-            hit_position,
-            hit_normal
-        };
-    } else {
-        return null;
-    }
+    const result = raycast((x, y, z)=>isSolid(getBlock(x, y, z)), [
+        player.x,
+        player.y,
+        player.z
+    ], [
+        dx / length,
+        dy / length,
+        dz / length
+    ], 64).next();
+    return result.done ? null : result.value;
 }
 canvas.addEventListener('mousedown', (e)=>{
-    if (e.button === 0) {
-        const result = raycast();
-        console.log(result);
-        if (result) {
-            setBlock(Math.floor(result.hit_position[0]), Math.floor(result.hit_position[1]), Math.floor(result.hit_position[2]), Block.WHITE);
+    const result = doRaycast();
+    if (result) {
+        switch(e.button){
+            case 0:
+                {
+                    setBlock(...result.block, Block.AIR);
+                    break;
+                }
+            case 1:
+                {
+                    console.log(getBlock(...result.block));
+                    break;
+                }
+            case 2:
+                {
+                    const target = oe.add(result.block, result.normal);
+                    if (getBlock(target[0], target[1], target[2]) === Block.AIR) {
+                        setBlock(target[0], target[1], target[2], Block.WHITE);
+                    }
+                    break;
+                }
         }
     }
+    if (e.button === 0) {}
 });

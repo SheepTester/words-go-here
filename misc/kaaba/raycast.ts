@@ -1,102 +1,88 @@
 // https://github.com/fenomas/fast-voxel-raycast/blob/master/index.js
+
+export type Vector3 = [x: number, y: number, z: number]
+
+export type RaycastResult = {
+  block: Vector3
+  position: Vector3
+  /** May be [0, 0, 0] if the starting position is inside a block */
+  normal: Vector3
+}
+
 /**
- * `dx`, `dy`, and `dz` should represent a normalized vector
+ * @param direction Should be normalized.
+ * @param maxDistance Defaults to 64.
  */
-export function traceRay_impl<T> (
+export function * raycast<T> (
   getVoxel: (x: number, y: number, z: number) => T,
-  px: number,
-  py: number,
-  pz: number,
-  dx: number,
-  dy: number,
-  dz: number,
-  max_d = 64,
-  hit_pos?: [x: number, y: number, z: number],
-  hit_norm?: [x: number, y: number, z: number]
-): T | 0 {
-  // consider raycast vector to be parametrized by t
-  //   vec = [px,py,pz] + t * [dx,dy,dz]
-
-  // algo below is as described by this paper:
-  // http://www.cse.chalmers.se/edu/year/2010/course/TDA361/grid.pdf
-
-  var t = 0.0,
-    floor = Math.floor,
-    ix = floor(px) | 0,
-    iy = floor(py) | 0,
-    iz = floor(pz) | 0,
-    stepx = dx > 0 ? 1 : -1,
-    stepy = dy > 0 ? 1 : -1,
-    stepz = dz > 0 ? 1 : -1,
-    // dx,dy,dz are already normalized
-    txDelta = Math.abs(1 / dx),
-    tyDelta = Math.abs(1 / dy),
-    tzDelta = Math.abs(1 / dz),
-    xdist = stepx > 0 ? ix + 1 - px : px - ix,
-    ydist = stepy > 0 ? iy + 1 - py : py - iy,
-    zdist = stepz > 0 ? iz + 1 - pz : pz - iz,
-    // location of nearest voxel boundary, in units of t
-    txMax = txDelta < Infinity ? txDelta * xdist : Infinity,
-    tyMax = tyDelta < Infinity ? tyDelta * ydist : Infinity,
-    tzMax = tzDelta < Infinity ? tzDelta * zdist : Infinity,
-    steppedIndex = -1
+  [px, py, pz]: Vector3,
+  [dx, dy, dz]: Vector3,
+  maxDistance = 64
+): Generator<RaycastResult> {
+  let t = 0
+  let ix = Math.floor(px)
+  let iy = Math.floor(py)
+  let iz = Math.floor(pz)
+  const stepx = Math.sign(dx)
+  const stepy = Math.sign(dy)
+  const stepz = Math.sign(dz)
+  // dx, dy, dz are already normalized
+  const txDelta = Math.abs(1 / dx)
+  const tyDelta = Math.abs(1 / dy)
+  const tzDelta = Math.abs(1 / dz)
+  // location of nearest voxel boundary, in units of t
+  let txMax =
+    txDelta < Infinity
+      ? txDelta * (stepx > 0 ? ix + 1 - px : px - ix)
+      : Infinity
+  let tyMax =
+    tyDelta < Infinity
+      ? tyDelta * (stepy > 0 ? iy + 1 - py : py - iy)
+      : Infinity
+  let tzMax =
+    tzDelta < Infinity
+      ? tzDelta * (stepz > 0 ? iz + 1 - pz : pz - iz)
+      : Infinity
+  let steppedIndex: 'x' | 'y' | 'z' | null = null
 
   // main loop along raycast vector
-  while (t <= max_d) {
+  while (t <= maxDistance) {
     // exit check
-    var b = getVoxel(ix, iy, iz)
+    const b = getVoxel(ix, iy, iz)
     if (b) {
-      if (hit_pos) {
-        hit_pos[0] = px + t * dx
-        hit_pos[1] = py + t * dy
-        hit_pos[2] = pz + t * dz
+      yield {
+        block: [ix, iy, iz],
+        position: [px + t * dx, py + t * dy, pz + t * dz],
+        normal: [
+          steppedIndex === 'x' ? -stepx : 0,
+          steppedIndex === 'y' ? -stepy : 0,
+          steppedIndex === 'z' ? -stepz : 0
+        ]
       }
-      if (hit_norm) {
-        hit_norm[0] = hit_norm[1] = hit_norm[2] = 0
-        if (steppedIndex === 0) hit_norm[0] = -stepx
-        if (steppedIndex === 1) hit_norm[1] = -stepy
-        if (steppedIndex === 2) hit_norm[2] = -stepz
-      }
-      return b
     }
 
     // advance t to next nearest voxel boundary
-    if (txMax < tyMax) {
-      if (txMax < tzMax) {
+    switch (Math.min(txMax, tyMax, tzMax)) {
+      case txMax:
         ix += stepx
         t = txMax
         txMax += txDelta
-        steppedIndex = 0
-      } else {
-        iz += stepz
-        t = tzMax
-        tzMax += tzDelta
-        steppedIndex = 2
-      }
-    } else {
-      if (tyMax < tzMax) {
+        steppedIndex = 'x'
+        break
+      case tyMax:
         iy += stepy
         t = tyMax
         tyMax += tyDelta
-        steppedIndex = 1
-      } else {
+        steppedIndex = 'y'
+        break
+      case tzMax:
         iz += stepz
         t = tzMax
         tzMax += tzDelta
-        steppedIndex = 2
-      }
+        steppedIndex = 'z'
+        break
+      default:
+        throw new Error('The minimum is none of these. ??')
     }
   }
-
-  // no voxel hit found
-  if (hit_pos) {
-    hit_pos[0] = px + t * dx
-    hit_pos[1] = py + t * dy
-    hit_pos[2] = pz + t * dz
-  }
-  if (hit_norm) {
-    hit_norm[0] = hit_norm[1] = hit_norm[2] = 0
-  }
-
-  return 0
 }
