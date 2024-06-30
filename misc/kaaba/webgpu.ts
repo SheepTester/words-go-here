@@ -395,11 +395,15 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
       const chunkX = Math.floor(x / SIZE)
       const chunkY = Math.floor(y / SIZE)
       const chunkZ = Math.floor(z / SIZE)
-      chunkMap[`${chunkX},${chunkY},${chunkZ}`] ??= new ChunkRenderer(
-        new Chunk([chunkX, chunkY, chunkZ]),
-        device,
-        pipeline
-      )
+      if (!chunkMap[`${chunkX},${chunkY},${chunkZ}`]) {
+        const renderer = new ChunkRenderer(
+          new Chunk([chunkX, chunkY, chunkZ]),
+          device,
+          pipeline
+        )
+        chunkMap[`${chunkX},${chunkY},${chunkZ}`] = renderer
+        chunks.push(renderer)
+      }
       const renderer = chunkMap[`${chunkX},${chunkY},${chunkZ}`]
       renderer.chunk.block(
         x - chunkX * SIZE,

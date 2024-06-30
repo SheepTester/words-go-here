@@ -1314,37 +1314,6 @@ class Uniform {
         this.#device.queue.writeBuffer(this.#buffer, offset, data);
     }
 }
-class Group {
-    group;
-    uniforms;
-    constructor(device, pipeline, groupId, uniforms){
-        this.group = device.createBindGroup({
-            label: `🌲 group(${groupId})`,
-            layout: pipeline.getBindGroupLayout(groupId),
-            entries: Object.values(uniforms).map((entry)=>entry instanceof Uniform ? entry.entry : entry)
-        });
-        this.uniforms = uniforms;
-    }
-}
-function captureError(device, stage) {
-    device.pushErrorScope('internal');
-    device.pushErrorScope('out-of-memory');
-    device.pushErrorScope('validation');
-    return async ()=>{
-        const validationError = await device.popErrorScope();
-        const memoryError = await device.popErrorScope();
-        const internalError = await device.popErrorScope();
-        if (validationError) {
-            throw new TypeError(`WebGPU validation error during ${stage}.\n${validationError.message}`);
-        }
-        if (memoryError) {
-            throw new TypeError(`WebGPU out of memory error during ${stage}.\n${memoryError.message}`);
-        }
-        if (internalError) {
-            throw new TypeError(`WebGPU internal error during ${stage}.\n${internalError.message}`);
-        }
-    };
-}
 var FaceDirection;
 (function(FaceDirection) {
     FaceDirection[FaceDirection["BACK"] = 0] = "BACK";
@@ -1416,6 +1385,18 @@ class Chunk {
         return vertices;
     }
 }
+class Group {
+    group;
+    uniforms;
+    constructor(device, pipeline, groupId, uniforms){
+        this.group = device.createBindGroup({
+            label: `🌲 group(${groupId})`,
+            layout: pipeline.getBindGroupLayout(groupId),
+            entries: Object.values(uniforms).map((entry)=>entry instanceof Uniform ? entry.entry : entry)
+        });
+        this.uniforms = uniforms;
+    }
+}
 class ChunkRenderer {
     chunk;
     device;
@@ -1439,6 +1420,25 @@ class ChunkRenderer {
         pass.setVertexBuffer(0, this.vertices);
         pass.draw(6, this.vertices.size / 8);
     }
+}
+function captureError(device, stage) {
+    device.pushErrorScope('internal');
+    device.pushErrorScope('out-of-memory');
+    device.pushErrorScope('validation');
+    return async ()=>{
+        const validationError = await device.popErrorScope();
+        const memoryError = await device.popErrorScope();
+        const internalError = await device.popErrorScope();
+        if (validationError) {
+            throw new TypeError(`WebGPU validation error during ${stage}.\n${validationError.message}`);
+        }
+        if (memoryError) {
+            throw new TypeError(`WebGPU out of memory error during ${stage}.\n${memoryError.message}`);
+        }
+        if (internalError) {
+            throw new TypeError(`WebGPU internal error during ${stage}.\n${internalError.message}`);
+        }
+    };
 }
 async function init(format) {
     const adapter = await navigator.gpu.requestAdapter();
@@ -1741,16 +1741,74 @@ async function init(format) {
             const chunkX = Math.floor(x / 32);
             const chunkY = Math.floor(y / 32);
             const chunkZ = Math.floor(z / 32);
-            chunkMap[`${chunkX},${chunkY},${chunkZ}`] ??= new ChunkRenderer(new Chunk([
-                chunkX,
-                chunkY,
-                chunkZ
-            ]), device, pipeline);
+            if (!chunkMap[`${chunkX},${chunkY},${chunkZ}`]) {
+                const renderer = new ChunkRenderer(new Chunk([
+                    chunkX,
+                    chunkY,
+                    chunkZ
+                ]), device, pipeline);
+                chunkMap[`${chunkX},${chunkY},${chunkZ}`] = renderer;
+                chunks.push(renderer);
+            }
             const renderer = chunkMap[`${chunkX},${chunkY},${chunkZ}`];
             renderer.chunk.block(x - chunkX * 32, y - chunkY * 32, z - chunkZ * 32, block);
             renderer.refreshMesh();
         }
     };
+}
+function traceRay_impl(getVoxel, px, py, pz, dx, dy, dz, max_d = 64, hit_pos, hit_norm) {
+    var t = 0.0, floor = Math.floor, ix = floor(px) | 0, iy = floor(py) | 0, iz = floor(pz) | 0, stepx = dx > 0 ? 1 : -1, stepy = dy > 0 ? 1 : -1, stepz = dz > 0 ? 1 : -1, txDelta = Math.abs(1 / dx), tyDelta = Math.abs(1 / dy), tzDelta = Math.abs(1 / dz), xdist = stepx > 0 ? ix + 1 - px : px - ix, ydist = stepy > 0 ? iy + 1 - py : py - iy, zdist = stepz > 0 ? iz + 1 - pz : pz - iz, txMax = txDelta < Infinity ? txDelta * xdist : Infinity, tyMax = tyDelta < Infinity ? tyDelta * ydist : Infinity, tzMax = tzDelta < Infinity ? tzDelta * zdist : Infinity, steppedIndex = -1;
+    while(t <= max_d){
+        var b = getVoxel(ix, iy, iz);
+        if (b) {
+            if (hit_pos) {
+                hit_pos[0] = px + t * dx;
+                hit_pos[1] = py + t * dy;
+                hit_pos[2] = pz + t * dz;
+            }
+            if (hit_norm) {
+                hit_norm[0] = hit_norm[1] = hit_norm[2] = 0;
+                if (steppedIndex === 0) hit_norm[0] = -stepx;
+                if (steppedIndex === 1) hit_norm[1] = -stepy;
+                if (steppedIndex === 2) hit_norm[2] = -stepz;
+            }
+            return b;
+        }
+        if (txMax < tyMax) {
+            if (txMax < tzMax) {
+                ix += stepx;
+                t = txMax;
+                txMax += txDelta;
+                steppedIndex = 0;
+            } else {
+                iz += stepz;
+                t = tzMax;
+                tzMax += tzDelta;
+                steppedIndex = 2;
+            }
+        } else {
+            if (tyMax < tzMax) {
+                iy += stepy;
+                t = tyMax;
+                tyMax += tyDelta;
+                steppedIndex = 1;
+            } else {
+                iz += stepz;
+                t = tzMax;
+                tzMax += tzDelta;
+                steppedIndex = 2;
+            }
+        }
+    }
+    if (hit_pos) {
+        hit_pos[0] = px + t * dx;
+        hit_pos[1] = py + t * dy;
+        hit_pos[2] = pz + t * dz;
+    }
+    if (hit_norm) {
+        hit_norm[0] = hit_norm[1] = hit_norm[2] = 0;
+    }
+    return 0;
 }
 const errorMessages = document.getElementById('error');
 function handleError(error) {
@@ -1981,3 +2039,43 @@ function paint() {
     });
     frameId = requestAnimationFrame(paint);
 }
+function raycast() {
+    const hit_position = [
+        0,
+        20,
+        0
+    ];
+    const hit_normal = [
+        0,
+        20,
+        0
+    ];
+    const [dx, dy, dz] = oe.transformMat4Upper3x3([
+        0,
+        0,
+        -1
+    ], ce.rotateZ(ce.rotateX(ce.rotationY(-player.yaw), -player.pitch), -player.roll));
+    const length = Math.hypot(dx, dy, dz);
+    console.log('dir', dx / length, dy / length, dz / length);
+    const result = traceRay_impl((x, y, z)=>{
+        console.log('getblock', x, y, z, getBlock(x, y, z));
+        return isSolid(getBlock(x, y, z));
+    }, player.x, player.y, player.z, dx / length, dy / length, dz / length, 10, hit_position, hit_normal);
+    if (result) {
+        return {
+            hit_position,
+            hit_normal
+        };
+    } else {
+        return null;
+    }
+}
+canvas.addEventListener('mousedown', (e)=>{
+    if (e.button === 0) {
+        const result = raycast();
+        console.log(result);
+        if (result) {
+            setBlock(Math.floor(result.hit_position[0]), Math.floor(result.hit_position[1]), Math.floor(result.hit_position[2]), Block.WHITE);
+        }
+    }
+});

@@ -2,13 +2,14 @@
 /// <reference lib="dom" />
 /// <reference lib="deno.ns" />
 
-import { Vector2 } from 'https://sheeptester.github.io/javascripts/Vector2.js'
 import '@webgpu/types'
+import { Vector2 } from 'https://sheeptester.github.io/javascripts/Vector2.js'
 // _ @deno-types="npm:wgpu-matrix"
-import { mat4 } from 'wgpu-matrix'
-import { init } from './webgpu.ts'
-import { SIZE } from './Chunk.ts'
+import { mat4, vec3, vec4 } from 'wgpu-matrix'
+import { ChunkPosition, SIZE } from './Chunk.ts'
 import { Block, isSolid } from './blocks.ts'
+import { traceRay_impl } from './raycast.ts'
+import { init } from './webgpu.ts'
 
 const errorMessages = document.getElementById('error')
 function handleError (error: unknown) {
@@ -307,3 +308,54 @@ function paint () {
   })
   frameId = requestAnimationFrame(paint)
 }
+
+function raycast () {
+  const hit_position: ChunkPosition = [0, 20, 0]
+  const hit_normal: ChunkPosition = [0, 20, 0]
+
+  const [dx, dy, dz] = vec3.transformMat4Upper3x3(
+    [0, 0, -1],
+    mat4.rotateZ(
+      mat4.rotateX(mat4.rotationY(-player.yaw), -player.pitch),
+      -player.roll
+    )
+  )
+  const length = Math.hypot(dx, dy, dz)
+
+  console.log('dir', dx / length, dy / length, dz / length)
+  const result = traceRay_impl(
+    (x, y, z) => {
+      console.log('getblock', x, y, z, getBlock(x, y, z))
+      return isSolid(getBlock(x, y, z))
+    },
+    player.x,
+    player.y,
+    player.z,
+    dx / length,
+    dy / length,
+    dz / length,
+    10,
+    hit_position,
+    hit_normal
+  )
+  if (result) {
+    return { hit_position, hit_normal }
+  } else {
+    return null
+  }
+}
+
+canvas.addEventListener('mousedown', e => {
+  if (e.button === 0) {
+    const result = raycast()
+    console.log(result)
+    if (result) {
+      setBlock(
+        Math.floor(result.hit_position[0]),
+        Math.floor(result.hit_position[1]),
+        Math.floor(result.hit_position[2]),
+        Block.WHITE
+      )
+    }
+  }
+})
