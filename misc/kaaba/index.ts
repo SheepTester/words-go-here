@@ -8,7 +8,7 @@ import '@webgpu/types'
 import { mat4 } from 'wgpu-matrix'
 import { init } from './webgpu.ts'
 import { SIZE } from './Chunk.ts'
-import { isSolid } from './blocks.ts'
+import { Block, isSolid } from './blocks.ts'
 
 const errorMessages = document.getElementById('error')
 function handleError (error: unknown) {
@@ -47,7 +47,12 @@ const context =
   canvas.getContext('webgpu') ??
   fail(new TypeError('Failed to get WebGPU canvas context.'))
 const format = navigator.gpu.getPreferredCanvasFormat()
-const { device, resize, render, getBlock } = await init(format)
+const { device, resize, render, getBlock, setBlock } = await init(format)
+let t = 0
+setInterval(() => {
+  setBlock(0, 10, 0, t % 2 === 0 ? Block.WHITE : Block.AIR)
+  t++
+}, 500)
 device.addEventListener('uncapturederror', e => {
   if (e instanceof GPUUncapturedErrorEvent) {
     handleError(e.error)

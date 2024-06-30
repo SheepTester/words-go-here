@@ -87,6 +87,7 @@ export type Device = {
     camera: ReturnType<typeof mat4.clone>
   ) => Promise<void>
   getBlock: (x: number, y: number, z: number) => Block
+  setBlock: (x: number, y: number, z: number, block: Block) => void
 }
 
 export async function init (format: GPUTextureFormat): Promise<Device> {
@@ -175,11 +176,12 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
     }
   })
 
-  const chunkMap: Record<`${number},${number},${number}`, Chunk> = {}
+  const chunkMap: Record<`${number},${number},${number}`, ChunkRenderer> = {}
 
   function generateChunk (position: ChunkPosition): ChunkRenderer {
     const chunk = new Chunk(position)
-    chunkMap[`${position[0]},${position[1]},${position[2]}`] = chunk
+    const renderer = new ChunkRenderer(chunk, device, pipeline)
+    chunkMap[`${position[0]},${position[1]},${position[2]}`] = renderer
     for (let y = 0; y < SIZE; y++) {
       for (let x = 0; x < SIZE; x++) {
         for (let z = 0; z < SIZE; z++) {
@@ -197,7 +199,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
         }
       }
     }
-    return chunk.mesh(device, pipeline)
+    return renderer
   }
 
   const chunks: ChunkRenderer[] = []
@@ -207,7 +209,16 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
     }
   }
   const testChunk = new Chunk([0, 1, 0])
+
   // https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
+  // Note: in Minecraft 1.20, corner doesn't matter if there are two sides. And
+  // a single corner seems to be darker than a single side. So maybe the levels
+  // (for a given corner of a face) actually go:
+  // 0. Lone block
+  // 1. Single side
+  // 2. Single corner (+ optional side I think)
+  // 3. Two sides (corner doesn't matter)
+
   // Lone block (no AO)
   testChunk.block(1, 3, 6, Block.WHITE)
   // Corners touching (AO level 1)
@@ -229,8 +240,8 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
   testChunk.block(9, 4, 7, Block.WHITE)
   testChunk.block(10, 4, 6, Block.WHITE)
   testChunk.block(10, 4, 7, Block.WHITE)
-  chunkMap['0,1,0'] = testChunk
-  chunks.push(testChunk.mesh(device, pipeline))
+  chunkMap['0,1,0'] = new ChunkRenderer(testChunk, device, pipeline)
+  chunks.push(chunkMap['0,1,0'])
 
   const source = await fetch('./textures.png')
     .then(r => r.blob())
@@ -332,7 +343,7 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
         pass.setPipeline(pipeline)
         pass.setBindGroup(0, common.group)
         for (const chunk of chunks) {
-          chunk(pass)
+          chunk.render(pass)
         }
         pass.end()
       }
@@ -373,9 +384,30 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
         return Block.AIR
       }
       return (
-        chunk.block(x - chunkX * SIZE, y - chunkY * SIZE, z - chunkZ * SIZE) ??
-        Block.AIR
+        chunk.chunk.block(
+          x - chunkX * SIZE,
+          y - chunkY * SIZE,
+          z - chunkZ * SIZE
+        ) ?? Block.AIR
       )
+    },
+    setBlock: (x, y, z, block) => {
+      const chunkX = Math.floor(x / SIZE)
+      const chunkY = Math.floor(y / SIZE)
+      const chunkZ = Math.floor(z / SIZE)
+      chunkMap[`${chunkX},${chunkY},${chunkZ}`] ??= new ChunkRenderer(
+        new Chunk([chunkX, chunkY, chunkZ]),
+        device,
+        pipeline
+      )
+      const renderer = chunkMap[`${chunkX},${chunkY},${chunkZ}`]
+      renderer.chunk.block(
+        x - chunkX * SIZE,
+        y - chunkY * SIZE,
+        z - chunkZ * SIZE,
+        block
+      )
+      renderer.refreshMesh()
     }
   }
 }

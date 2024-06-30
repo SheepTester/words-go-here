@@ -1375,7 +1375,7 @@ class Chunk {
             return this.#data[index];
         }
     }
-    mesh(device, pipeline) {
+    mesh(device) {
         const faces = [];
         for(let x = 0; x < 32; x++){
             for(let y = 0; y < 32; y++){
@@ -1413,15 +1413,31 @@ class Chunk {
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
         });
         device.queue.writeBuffer(vertices, 0, vertexData);
-        const chunkGroup = new Group(device, pipeline, 1, {
+        return vertices;
+    }
+}
+class ChunkRenderer {
+    chunk;
+    device;
+    chunkGroup;
+    vertices = null;
+    constructor(chunk, device, pipeline){
+        this.chunk = chunk;
+        this.device = device;
+        this.chunkGroup = new Group(device, pipeline, 1, {
             transform: new Uniform(device, 0, 4 * 4 * 4)
         });
-        chunkGroup.uniforms.transform.data(ce.translation(this.position.map((pos)=>pos * 32)));
-        return (pass)=>{
-            pass.setBindGroup(1, chunkGroup.group);
-            pass.setVertexBuffer(0, vertices);
-            pass.draw(6, faces.length / 8);
-        };
+        this.chunkGroup.uniforms.transform.data(ce.translation(chunk.position.map((pos)=>pos * 32)));
+    }
+    refreshMesh() {
+        this.vertices = this.chunk.mesh(this.device);
+        return this.vertices;
+    }
+    render(pass) {
+        this.vertices ??= this.chunk.mesh(this.device);
+        pass.setBindGroup(1, this.chunkGroup.group);
+        pass.setVertexBuffer(0, this.vertices);
+        pass.draw(6, this.vertices.size / 8);
     }
 }
 async function init(format) {
@@ -1518,7 +1534,8 @@ async function init(format) {
     const chunkMap = {};
     function generateChunk(position) {
         const chunk = new Chunk(position);
-        chunkMap[`${position[0]},${position[1]},${position[2]}`] = chunk;
+        const renderer = new ChunkRenderer(chunk, device, pipeline);
+        chunkMap[`${position[0]},${position[1]},${position[2]}`] = renderer;
         for(let y = 0; y < 32; y++){
             for(let x = 0; x < 32; x++){
                 for(let z = 0; z < 32; z++){
@@ -1528,7 +1545,7 @@ async function init(format) {
                 }
             }
         }
-        return chunk.mesh(device, pipeline);
+        return renderer;
     }
     const chunks = [];
     for(let x = -1; x <= 1; x++){
@@ -1560,8 +1577,8 @@ async function init(format) {
     testChunk.block(9, 4, 7, Block.WHITE);
     testChunk.block(10, 4, 6, Block.WHITE);
     testChunk.block(10, 4, 7, Block.WHITE);
-    chunkMap['0,1,0'] = testChunk;
-    chunks.push(testChunk.mesh(device, pipeline));
+    chunkMap['0,1,0'] = new ChunkRenderer(testChunk, device, pipeline);
+    chunks.push(chunkMap['0,1,0']);
     const source = await fetch('./textures.png').then((r)=>r.blob()).then((blob)=>createImageBitmap(blob, {
             colorSpaceConversion: 'none'
         }));
@@ -1673,7 +1690,7 @@ async function init(format) {
                 pass.setPipeline(pipeline);
                 pass.setBindGroup(0, common.group);
                 for (const chunk of chunks){
-                    chunk(pass);
+                    chunk.render(pass);
                 }
                 pass.end();
             }
@@ -1718,7 +1735,20 @@ async function init(format) {
             if (!chunk) {
                 return Block.AIR;
             }
-            return chunk.block(x - chunkX * 32, y - chunkY * 32, z - chunkZ * 32) ?? Block.AIR;
+            return chunk.chunk.block(x - chunkX * 32, y - chunkY * 32, z - chunkZ * 32) ?? Block.AIR;
+        },
+        setBlock: (x, y, z, block)=>{
+            const chunkX = Math.floor(x / 32);
+            const chunkY = Math.floor(y / 32);
+            const chunkZ = Math.floor(z / 32);
+            chunkMap[`${chunkX},${chunkY},${chunkZ}`] ??= new ChunkRenderer(new Chunk([
+                chunkX,
+                chunkY,
+                chunkZ
+            ]), device, pipeline);
+            const renderer = chunkMap[`${chunkX},${chunkY},${chunkZ}`];
+            renderer.chunk.block(x - chunkX * 32, y - chunkY * 32, z - chunkZ * 32, block);
+            renderer.refreshMesh();
         }
     };
 }
@@ -1751,7 +1781,12 @@ if (!(canvas instanceof HTMLCanvasElement)) {
 }
 const context = canvas.getContext('webgpu') ?? fail(new TypeError('Failed to get WebGPU canvas context.'));
 const format = navigator.gpu.getPreferredCanvasFormat();
-const { device, resize, render, getBlock } = await init(format);
+const { device, resize, render, getBlock, setBlock } = await init(format);
+let t = 0;
+setInterval(()=>{
+    setBlock(0, 10, 0, t % 2 === 0 ? Block.WHITE : Block.AIR);
+    t++;
+}, 500);
 device.addEventListener('uncapturederror', (e)=>{
     if (e instanceof GPUUncapturedErrorEvent) {
         handleError(e.error);

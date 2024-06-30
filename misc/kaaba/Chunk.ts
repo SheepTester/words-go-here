@@ -18,7 +18,6 @@ function showFace (block: Block, neighbor: Block | null): boolean {
 }
 
 export type ChunkPosition = [x: number, y: number, z: number]
-export type ChunkRenderer = (pass: GPURenderPassEncoder) => void
 
 export class Chunk {
   #data: Uint8Array = new Uint8Array(SIZE * SIZE * SIZE)
@@ -45,7 +44,7 @@ export class Chunk {
     }
   }
 
-  mesh (device: GPUDevice, pipeline: GPURenderPipeline): ChunkRenderer {
+  mesh (device: GPUDevice): GPUBuffer {
     const faces: number[] = []
     for (let x = 0; x < SIZE; x++) {
       for (let y = 0; y < SIZE; y++) {
@@ -85,18 +84,36 @@ export class Chunk {
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
     })
     device.queue.writeBuffer(vertices, 0, vertexData)
+    return vertices
+  }
+}
 
-    const chunkGroup = new Group(device, pipeline, 1, {
+export class ChunkRenderer {
+  chunk: Chunk
+  device: GPUDevice
+  chunkGroup: Group<{ transform: Uniform }>
+  vertices: GPUBuffer | null = null
+
+  constructor (chunk: Chunk, device: GPUDevice, pipeline: GPURenderPipeline) {
+    this.chunk = chunk
+    this.device = device
+    this.chunkGroup = new Group(device, pipeline, 1, {
       transform: new Uniform(device, 0, 4 * 4 * 4)
     })
-    chunkGroup.uniforms.transform.data(
-      mat4.translation(this.position.map(pos => pos * SIZE))
+    this.chunkGroup.uniforms.transform.data(
+      mat4.translation(chunk.position.map(pos => pos * SIZE))
     )
+  }
 
-    return pass => {
-      pass.setBindGroup(1, chunkGroup.group)
-      pass.setVertexBuffer(0, vertices)
-      pass.draw(6, faces.length / 8)
-    }
+  refreshMesh (): GPUBuffer {
+    this.vertices = this.chunk.mesh(this.device)
+    return this.vertices
+  }
+
+  render (pass: GPURenderPassEncoder) {
+    this.vertices ??= this.chunk.mesh(this.device)
+    pass.setBindGroup(1, this.chunkGroup.group)
+    pass.setVertexBuffer(0, this.vertices)
+    pass.draw(6, this.vertices.size / 8)
   }
 }
