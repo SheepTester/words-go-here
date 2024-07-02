@@ -1323,6 +1323,56 @@ var FaceDirection;
     FaceDirection[FaceDirection["BOTTOM"] = 4] = "BOTTOM";
     FaceDirection[FaceDirection["TOP"] = 5] = "TOP";
 })(FaceDirection || (FaceDirection = {}));
+const directions = [
+    {
+        face: 0,
+        normal: [
+            0,
+            0,
+            -1
+        ]
+    },
+    {
+        face: 1,
+        normal: [
+            0,
+            0,
+            1
+        ]
+    },
+    {
+        face: 2,
+        normal: [
+            -1,
+            0,
+            0
+        ]
+    },
+    {
+        face: 3,
+        normal: [
+            1,
+            0,
+            0
+        ]
+    },
+    {
+        face: 4,
+        normal: [
+            0,
+            -1,
+            0
+        ]
+    },
+    {
+        face: 5,
+        normal: [
+            0,
+            1,
+            0
+        ]
+    }
+];
 const squareVertices = [
     [
         0.0,
@@ -1373,7 +1423,7 @@ function getFaceVertex(face, index) {
 }
 console.log(Array.from({
     length: 6
-}, (_, i)=>getFaceVertex(5, i)));
+}, (_, i)=>getFaceVertex(0, i)));
 function showFace(block, neighbor) {
     return block !== neighbor && !isOpaque(neighbor);
 }
@@ -1413,38 +1463,21 @@ class Chunk {
                     if (block === null || texture === null) {
                         continue;
                     }
-                    if (showFace(block, this.block(x - 1, y, z))) {
-                        faces.push(x, y, z, 2, texture, 0, 0, 0);
-                    }
-                    if (showFace(block, this.block(x + 1, y, z))) {
-                        faces.push(x, y, z, 3, texture, 0, 0, 0);
-                    }
-                    if (showFace(block, this.block(x, y - 1, z))) {
-                        faces.push(x, y, z, 4, texture, 0, 0, 0);
-                    }
-                    if (showFace(block, this.block(x, y + 1, z))) {
-                        let ao = 0;
-                        let i = 0;
-                        for (const xCorner of [
-                            -1,
-                            1
-                        ]){
-                            for (const zCorner of [
-                                -1,
-                                1
-                            ]){
-                                const opaques = +isOpaque(this.block(x + xCorner, y + 1, z)) + +isOpaque(this.block(x + xCorner, y + 1, z + zCorner)) + +isOpaque(this.block(x, y + 1, z + zCorner));
+                    for (const { face, normal: [dx, dy, dz] } of directions){
+                        if (showFace(block, this.block(x + dx, y + dy, z + dz))) {
+                            let ao = 0;
+                            for (const [i, index] of [
+                                0,
+                                1,
+                                4,
+                                3
+                            ].entries()){
+                                const [cx, cy, cz] = getFaceVertex(face, index);
+                                const opaques = +isOpaque(this.block(x + (dx || (cx ? 1 : -1)), y + (dy || (cy ? 1 : -1)), z + (dz || (cz ? 1 : -1)))) + (dx === 0 ? +isOpaque(this.block(x + (dx || (cx ? 1 : -1)), y + dy, z + dz)) : 0) + (dy === 0 ? +isOpaque(this.block(x + dx, y + (dy || (cy ? 1 : -1)), z + dz)) : 0) + (dz === 0 ? +isOpaque(this.block(x + dx, y + dy, z + (dz || (cz ? 1 : -1)))) : 0);
                                 ao |= opaques << i * 2;
-                                i++;
                             }
+                            faces.push(x, y, z, face, texture, ao, 0, 0);
                         }
-                        faces.push(x, y, z, 5, texture, ao, 0, 0);
-                    }
-                    if (showFace(block, this.block(x, y, z - 1))) {
-                        faces.push(x, y, z, 0, texture, 0, 0, 0);
-                    }
-                    if (showFace(block, this.block(x, y, z + 1))) {
-                        faces.push(x, y, z, 1, texture, 0, 0, 0);
                     }
                 }
             }

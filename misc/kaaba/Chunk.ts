@@ -13,6 +13,15 @@ export const enum FaceDirection {
   TOP = 5
 }
 
+const directions = [
+  { face: FaceDirection.BACK, normal: [0, 0, -1] },
+  { face: FaceDirection.FRONT, normal: [0, 0, 1] },
+  { face: FaceDirection.LEFT, normal: [-1, 0, 0] },
+  { face: FaceDirection.RIGHT, normal: [1, 0, 0] },
+  { face: FaceDirection.BOTTOM, normal: [0, -1, 0] },
+  { face: FaceDirection.TOP, normal: [0, 1, 0] }
+]
+
 const squareVertices: [x: number, y: number][] = [
   [0.0, 0.0],
   [0.0, 1.0],
@@ -36,7 +45,7 @@ function getFaceVertex (face: number, index: number): ChunkPosition {
   return rotated
 }
 console.log(
-  Array.from({ length: 6 }, (_, i) => getFaceVertex(FaceDirection.TOP, i))
+  Array.from({ length: 6 }, (_, i) => getFaceVertex(FaceDirection.BACK, i))
 )
 
 function showFace (block: Block, neighbor: Block | null): boolean {
@@ -89,36 +98,43 @@ export class Chunk {
           if (block === null || texture === null) {
             continue
           }
-          if (showFace(block, this.block(x - 1, y, z))) {
-            faces.push(x, y, z, FaceDirection.LEFT, texture, 0, 0, 0)
-          }
-          if (showFace(block, this.block(x + 1, y, z))) {
-            faces.push(x, y, z, FaceDirection.RIGHT, texture, 0, 0, 0)
-          }
-          if (showFace(block, this.block(x, y - 1, z))) {
-            faces.push(x, y, z, FaceDirection.BOTTOM, texture, 0, 0, 0)
-          }
-          if (showFace(block, this.block(x, y + 1, z))) {
-            // For each corner
-            let ao = 0
-            let i = 0
-            for (const xCorner of [-1, 1]) {
-              for (const zCorner of [-1, 1]) {
+          for (const {
+            face,
+            normal: [dx, dy, dz]
+          } of directions) {
+            if (showFace(block, this.block(x + dx, y + dy, z + dz))) {
+              let ao = 0
+              let i = 0
+              // For each corner (yeah the indices are confusing)
+              for (const [i, index] of [0, 1, 4, 3].entries()) {
+                const [cx, cy, cz] = getFaceVertex(face, index)
                 const opaques =
-                  +isOpaque(this.block(x + xCorner, y + 1, z)) +
-                  +isOpaque(this.block(x + xCorner, y + 1, z + zCorner)) +
-                  +isOpaque(this.block(x, y + 1, z + zCorner))
+                  +isOpaque(
+                    this.block(
+                      x + (dx || (cx ? 1 : -1)),
+                      y + (dy || (cy ? 1 : -1)),
+                      z + (dz || (cz ? 1 : -1))
+                    )
+                  ) +
+                  (dx === 0
+                    ? +isOpaque(
+                        this.block(x + (dx || (cx ? 1 : -1)), y + dy, z + dz)
+                      )
+                    : 0) +
+                  (dy === 0
+                    ? +isOpaque(
+                        this.block(x + dx, y + (dy || (cy ? 1 : -1)), z + dz)
+                      )
+                    : 0) +
+                  (dz === 0
+                    ? +isOpaque(
+                        this.block(x + dx, y + dy, z + (dz || (cz ? 1 : -1)))
+                      )
+                    : 0)
                 ao |= opaques << (i * 2)
-                i++
               }
+              faces.push(x, y, z, face, texture, ao, 0, 0)
             }
-            faces.push(x, y, z, FaceDirection.TOP, texture, ao, 0, 0)
-          }
-          if (showFace(block, this.block(x, y, z - 1))) {
-            faces.push(x, y, z, FaceDirection.BACK, texture, 0, 0, 0)
-          }
-          if (showFace(block, this.block(x, y, z + 1))) {
-            faces.push(x, y, z, FaceDirection.FRONT, texture, 0, 0, 0)
           }
         }
       }

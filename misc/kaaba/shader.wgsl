@@ -64,7 +64,7 @@ fn vertex_main(
         (face & 4) != 0
     );
 
-    const ao_indices = array<u32, 6>(3, 2, 0, 0, 1, 3);
+    const ao_indices = array<u32, 6>(0, 1, 3, 3, 2, 0);
     let corner_neighbors = (input[5] >> (2 * ao_indices[index])) & 3;
 
     let normal_dir = select(-1.0, 1.0, (face & 1) != 0);
