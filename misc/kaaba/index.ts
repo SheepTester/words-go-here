@@ -154,7 +154,7 @@ const JUMP_VEL = 10
 /** In 1/s. F = kv. */
 const FRICTION_COEFF = -5
 /** In m. */
-const PLAYER_RADIUS = 0.4
+const PLAYER_RADIUS = 0.3
 /** In m. Distance below the camera. */
 const PLAYER_FEET = 1.4
 /** In m. Distance above the camera. */

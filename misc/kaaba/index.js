@@ -2084,19 +2084,19 @@ function moveAxis(axis, acceleration, time, userMoving) {
     if (collisions) {
         const base = {
             x: [
-                Math.floor(player.x - 0.4 + 0.01),
-                Math.floor(player.x + 0.4 - 0.01)
+                Math.floor(player.x - 0.3 + 0.01),
+                Math.floor(player.x + 0.3 - 0.01)
             ],
             y: [
                 Math.floor(player.y - 1.4 + 0.01),
                 Math.floor(player.y + 0.2 - 0.01)
             ],
             z: [
-                Math.floor(player.z - 0.4 + 0.01),
-                Math.floor(player.z + 0.4 - 0.01)
+                Math.floor(player.z - 0.3 + 0.01),
+                Math.floor(player.z + 0.3 - 0.01)
             ]
         };
-        const offset = axis === 'y' ? displacement > 0 ? 0.2 : 1.4 : 0.4;
+        const offset = axis === 'y' ? displacement > 0 ? 0.2 : 1.4 : 0.3;
         let block = displacement > 0 ? Math.floor(player[axis] + offset) : Math.floor(player[axis] - offset);
         checkCollide: while(displacement > 0 ? block <= player[axis] + offset + displacement : block >= Math.floor(player[axis] - offset + displacement)){
             const range = {
@@ -2168,8 +2168,8 @@ function paint() {
         yAccel = -GRAVITY;
         if (keys[' ']) {
             const y = Math.floor(player.y - 1.4 - 0.01);
-            checkGround: for(let x = Math.floor(player.x - 0.4 + 0.01); x <= Math.floor(player.x + 0.4 - 0.01); x++){
-                for(let z = Math.floor(player.z - 0.4 + 0.01); z <= Math.floor(player.z + 0.4 - 0.01); z++){
+            checkGround: for(let x = Math.floor(player.x - 0.3 + 0.01); x <= Math.floor(player.x + 0.3 - 0.01); x++){
+                for(let z = Math.floor(player.z - 0.3 + 0.01); z <= Math.floor(player.z + 0.3 - 0.01); z++){
                     if (isSolid(getBlock(x, y, z))) {
                         player.yv = JUMP_VEL;
                         break checkGround;
