@@ -18,12 +18,12 @@ fn vertex_main(
     @location(0) data: vec2<u32>,
 ) -> VertexOutput {
     let input = array(
-        extractBits(data.x, 0 * 8, 8),
-        extractBits(data.x, 1 * 8, 8),
-        extractBits(data.x, 2 * 8, 8),
-        extractBits(data.x, 3 * 8, 8),
-        extractBits(data.y, 0 * 8, 8),
-        extractBits(data.y, 1 * 8, 8),
+        extractBits(data.x, 0 * 8, 8), // block x in chunk
+        extractBits(data.x, 1 * 8, 8), // block y in chunk
+        extractBits(data.x, 2 * 8, 8), // block z in chunk
+        extractBits(data.x, 3 * 8, 8), // face direction
+        extractBits(data.y, 0 * 8, 8), // texture id
+        extractBits(data.y, 1 * 8, 8), // ao
         extractBits(data.y, 2 * 8, 8),
         extractBits(data.y, 3 * 8, 8),
     );
@@ -64,6 +64,9 @@ fn vertex_main(
         (face & 4) != 0
     );
 
+    const ao_indices = array<u32, 6>(3, 2, 0, 0, 1, 3);
+    let corner_neighbors = (input[5] >> (2 * ao_indices[index])) & 3;
+
     let normal_dir = select(-1.0, 1.0, (face & 1) != 0);
     let normal = select(
         select(
@@ -79,7 +82,7 @@ fn vertex_main(
     var result: VertexOutput;
     result.position = perspective * camera * transform * vec4((rotated + position.xyz), 1.0);
     result.tex_coord = textures[texture_id] + vec2(1 - f32(square_vertices[index].x), f32(square_vertices[index].y));
-    result.darkness = dot(normal, -LIGHT) / 8 + 0.875;
+    result.darkness = (dot(normal, -LIGHT) / 8 + 0.875) * (1.0 - f32(corner_neighbors) / 3.0 * 0.5);
     return result;
 }
 

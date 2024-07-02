@@ -1323,6 +1323,57 @@ var FaceDirection;
     FaceDirection[FaceDirection["BOTTOM"] = 4] = "BOTTOM";
     FaceDirection[FaceDirection["TOP"] = 5] = "TOP";
 })(FaceDirection || (FaceDirection = {}));
+const squareVertices = [
+    [
+        0.0,
+        0.0
+    ],
+    [
+        0.0,
+        1.0
+    ],
+    [
+        1.0,
+        1.0
+    ],
+    [
+        1.0,
+        1.0
+    ],
+    [
+        1.0,
+        0.0
+    ],
+    [
+        0.0,
+        0.0
+    ]
+];
+function getFaceVertex(face, index) {
+    const squareVertex = squareVertices[index];
+    const flipped = face & 1 ? [
+        1.0 - squareVertex[0],
+        squareVertex[1],
+        1.0
+    ] : [
+        squareVertex[0],
+        squareVertex[1],
+        0.0
+    ];
+    const rotated = face & 4 ? [
+        flipped[0],
+        flipped[2],
+        1.0 - flipped[1]
+    ] : face & 2 ? [
+        flipped[2],
+        flipped[1],
+        1.0 - flipped[0]
+    ] : flipped;
+    return rotated;
+}
+console.log(Array.from({
+    length: 6
+}, (_, i)=>getFaceVertex(5, i)));
 function showFace(block, neighbor) {
     return block !== neighbor && !isOpaque(neighbor);
 }
@@ -1344,6 +1395,14 @@ class Chunk {
             return this.#data[index];
         }
     }
+    #getAo(x, y, z, face) {
+        Array.from({
+            length: 4
+        }, (_, i)=>{
+            const [dx, dy, dz] = getFaceVertex(face, i);
+            return isSolid(this.block(dx ? x + 1 : x - 1, dy ? y + 1 : y - 1, dz ? z + 1 : z - 1));
+        });
+    }
     mesh(device) {
         const faces = [];
         for(let x = 0; x < 32; x++){
@@ -1364,7 +1423,22 @@ class Chunk {
                         faces.push(x, y, z, 4, texture, 0, 0, 0);
                     }
                     if (showFace(block, this.block(x, y + 1, z))) {
-                        faces.push(x, y, z, 5, texture, 0, 0, 0);
+                        let ao = 0;
+                        let i = 0;
+                        for (const xCorner of [
+                            -1,
+                            1
+                        ]){
+                            for (const zCorner of [
+                                -1,
+                                1
+                            ]){
+                                const opaques = +isOpaque(this.block(x + xCorner, y + 1, z)) + +isOpaque(this.block(x + xCorner, y + 1, z + zCorner)) + +isOpaque(this.block(x, y + 1, z + zCorner));
+                                ao |= opaques << i * 2;
+                                i++;
+                            }
+                        }
+                        faces.push(x, y, z, 5, texture, ao, 0, 0);
                     }
                     if (showFace(block, this.block(x, y, z - 1))) {
                         faces.push(x, y, z, 0, texture, 0, 0, 0);
@@ -1891,8 +1965,8 @@ const handleGpuTime = (delta)=>{
 function displayPerf() {
     if (perf) {
         perf.textContent = [
-            `cpu:${lastCpuTime.toFixed(3).padStart(9, ' ')}ms (avg ${(cpuTotalTime / cpuSamples).toFixed(3)}ms)`,
-            `gpu:${lastGpuTime.toString().padStart(9, ' ')}ns (avg ${gpuSamples > 0n ? gpuTotalTime / gpuSamples : '?'}ns)`
+            `cpu:${(lastCpuTime * 1000).toFixed(0).padStart(9, ' ')}ns (avg${(cpuTotalTime / cpuSamples * 1000).toFixed(0).padStart(9, ' ')}ns)`,
+            `gpu:${lastGpuTime.toString().padStart(9, ' ')}ns (avg${(gpuSamples > 0n ? String(gpuTotalTime / gpuSamples) : '?').padStart(9, ' ')}ns)`
         ].join('\n');
     }
 }

@@ -59,12 +59,16 @@ const handleGpuTime = (delta: bigint) => {
 function displayPerf () {
   if (perf) {
     perf.textContent = [
-      `cpu:${lastCpuTime.toFixed(3).padStart(9, ' ')}ms (avg ${(
-        cpuTotalTime / cpuSamples
-      ).toFixed(3)}ms)`,
-      `gpu:${lastGpuTime.toString().padStart(9, ' ')}ns (avg ${
-        gpuSamples > 0n ? gpuTotalTime / gpuSamples : '?'
-      }ns)`
+      `cpu:${(lastCpuTime * 1000).toFixed(0).padStart(9, ' ')}ns (avg${(
+        (cpuTotalTime / cpuSamples) *
+        1000
+      )
+        .toFixed(0)
+        .padStart(9, ' ')}ns)`,
+      `gpu:${lastGpuTime.toString().padStart(9, ' ')}ns (avg${(gpuSamples > 0n
+        ? String(gpuTotalTime / gpuSamples)
+        : '?'
+      ).padStart(9, ' ')}ns)`
     ].join('\n')
   }
 }

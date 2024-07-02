@@ -1,5 +1,5 @@
 import { mat4 } from 'wgpu-matrix'
-import { Block, getTexture, isOpaque } from './blocks.ts'
+import { Block, getTexture, isOpaque, isSolid } from './blocks.ts'
 import { Group, Uniform } from './webgpu.ts'
 
 export const SIZE = 32
@@ -12,6 +12,32 @@ export const enum FaceDirection {
   BOTTOM = 4,
   TOP = 5
 }
+
+const squareVertices: [x: number, y: number][] = [
+  [0.0, 0.0],
+  [0.0, 1.0],
+  [1.0, 1.0],
+  [1.0, 1.0],
+  [1.0, 0.0],
+  [0.0, 0.0]
+]
+function getFaceVertex (face: number, index: number): ChunkPosition {
+  const squareVertex = squareVertices[index]
+  const flipped: ChunkPosition =
+    face & 1 // Rotate ("flip") around center of cube
+      ? [1.0 - squareVertex[0], squareVertex[1], 1.0]
+      : [squareVertex[0], squareVertex[1], 0.0]
+  const rotated: ChunkPosition =
+    face & 4 // 10x: bottom/top
+      ? [flipped[0], flipped[2], 1.0 - flipped[1]]
+      : face & 2 // 01x: left/right
+      ? [flipped[2], flipped[1], 1.0 - flipped[0]] // 00x: back/front
+      : flipped
+  return rotated
+}
+console.log(
+  Array.from({ length: 6 }, (_, i) => getFaceVertex(FaceDirection.TOP, i))
+)
 
 function showFace (block: Block, neighbor: Block | null): boolean {
   return block !== neighbor && !isOpaque(neighbor)
@@ -44,6 +70,15 @@ export class Chunk {
     }
   }
 
+  #getAo (x: number, y: number, z: number, face: FaceDirection) {
+    const corners = Array.from({ length: 4 }, (_, i) => {
+      const [dx, dy, dz] = getFaceVertex(face, i)
+      return isSolid(
+        this.block(dx ? x + 1 : x - 1, dy ? y + 1 : y - 1, dz ? z + 1 : z - 1)
+      )
+    })
+  }
+
   mesh (device: GPUDevice): GPUBuffer {
     const faces: number[] = []
     for (let x = 0; x < SIZE; x++) {
@@ -64,7 +99,20 @@ export class Chunk {
             faces.push(x, y, z, FaceDirection.BOTTOM, texture, 0, 0, 0)
           }
           if (showFace(block, this.block(x, y + 1, z))) {
-            faces.push(x, y, z, FaceDirection.TOP, texture, 0, 0, 0)
+            // For each corner
+            let ao = 0
+            let i = 0
+            for (const xCorner of [-1, 1]) {
+              for (const zCorner of [-1, 1]) {
+                const opaques =
+                  +isOpaque(this.block(x + xCorner, y + 1, z)) +
+                  +isOpaque(this.block(x + xCorner, y + 1, z + zCorner)) +
+                  +isOpaque(this.block(x, y + 1, z + zCorner))
+                ao |= opaques << (i * 2)
+                i++
+              }
+            }
+            faces.push(x, y, z, FaceDirection.TOP, texture, ao, 0, 0)
           }
           if (showFace(block, this.block(x, y, z - 1))) {
             faces.push(x, y, z, FaceDirection.BACK, texture, 0, 0, 0)
