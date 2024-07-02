@@ -5,6 +5,6 @@
   },
   "tasks": {
     "kaaba:build": "deno bundle misc/kaaba/index.ts misc/kaaba/index.js",
-    "kaaba:watch": "deno bundle --watch misc/kaaba/index.ts misc/kaaba/index.js & http-server .. -c-1 -s"
+    "kaaba:watch": "deno bundle --watch misc/kaaba/index.ts misc/kaaba/index.js & deno run --allow-net --allow-read misc/kaaba/serve.ts"
   }
 }

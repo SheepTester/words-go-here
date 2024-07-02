@@ -38,6 +38,37 @@ function fail (error: Error): never {
   throw error
 }
 
+const perf = document.getElementById('perf')
+let lastCpuTime = 0
+let cpuTotalTime = 0
+let cpuSamples = 0
+let lastGpuTime = 0n
+let gpuTotalTime = 0n
+let gpuSamples = 0n
+/** In nanoseconds */
+const handleGpuTime = (delta: bigint) => {
+  lastGpuTime = delta
+  gpuTotalTime += delta
+  gpuSamples++
+  displayPerf()
+  if (gpuSamples > 300) {
+    gpuTotalTime = 0n
+    gpuSamples = 0n
+  }
+}
+function displayPerf () {
+  if (perf) {
+    perf.textContent = [
+      `cpu:${lastCpuTime.toFixed(3).padStart(9, ' ')}ms (avg ${(
+        cpuTotalTime / cpuSamples
+      ).toFixed(3)}ms)`,
+      `gpu:${lastGpuTime.toString().padStart(9, ' ')}ns (avg ${
+        gpuSamples > 0n ? gpuTotalTime / gpuSamples : '?'
+      }ns)`
+    ].join('\n')
+  }
+}
+
 if (!navigator.gpu) {
   throw new TypeError('Your browser does not support WebGPU.')
 }
@@ -49,7 +80,10 @@ const context =
   canvas.getContext('webgpu') ??
   fail(new TypeError('Failed to get WebGPU canvas context.'))
 const format = navigator.gpu.getPreferredCanvasFormat()
-const { device, resize, render, getBlock, setBlock } = await init(format)
+const { device, resize, render, getBlock, setBlock } = await init(
+  format,
+  handleGpuTime
+)
 let t = 0
 setInterval(() => {
   setBlock(0, 10, 0, t % 2 === 0 ? Block.WHITE : Block.AIR)
@@ -110,9 +144,9 @@ canvas.addEventListener('mousemove', e => {
 /** In m/s^2. */
 const MOVE_ACCEL = 50
 /** In m/s^2. */
-const GRAVITY = 20
+const GRAVITY = 30
 /** In m/s. */
-const JUMP_VEL = 15
+const JUMP_VEL = 10
 /** In 1/s. F = kv. */
 const FRICTION_COEFF = -5
 /** In m. */
@@ -227,6 +261,8 @@ function moveAxis<Axis extends 'x' | 'y' | 'z'> (
 let lastTime = Date.now()
 let frameId: number | null = null
 function paint () {
+  const start = performance.now()
+
   const now = Date.now()
   const elapsed = Math.min(now - lastTime, 100) / 1000
   lastTime = now
@@ -308,6 +344,18 @@ function paint () {
     return Promise.reject(error)
   })
   frameId = requestAnimationFrame(paint)
+
+  const elapsedPerf = performance.now() - start
+  if (perf) {
+    lastCpuTime = elapsedPerf
+    cpuTotalTime += elapsedPerf
+    cpuSamples++
+    displayPerf()
+    if (cpuSamples > 300) {
+      cpuTotalTime = 0
+      cpuSamples = 0
+    }
+  }
 }
 
 function doRaycast (): RaycastResult | null {
@@ -336,10 +384,7 @@ canvas.addEventListener('mousedown', e => {
         setBlock(...result.block, Block.AIR)
         break
       }
-      case 1: {
-        console.log(getBlock(...result.block))
-        break
-      }
+      case 1:
       case 2: {
         const target = vec3.add(result.block, result.normal)
         if (getBlock(target[0], target[1], target[2]) === Block.AIR) {

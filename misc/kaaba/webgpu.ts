@@ -90,17 +90,42 @@ export type Device = {
   setBlock: (x: number, y: number, z: number, block: Block) => void
 }
 
-export async function init (format: GPUTextureFormat): Promise<Device> {
+export async function init (
+  format: GPUTextureFormat,
+  onGpuTime: (delta: bigint) => void
+): Promise<Device> {
   const adapter = await navigator.gpu.requestAdapter()
   if (!adapter) {
     throw new TypeError('Failed to obtain WebGPU adapter.')
   }
-  const device = await adapter.requestDevice()
+  const canTimestamp = adapter.features.has('timestamp-query')
+  const device = await adapter.requestDevice({
+    requiredFeatures: canTimestamp ? ['timestamp-query'] : []
+  })
   device.lost.then(info => {
     console.warn('WebGPU device lost. :(', info.message, info)
   })
 
   const check = captureError(device, 'initialization')
+
+  const querySet = canTimestamp
+    ? device.createQuerySet({
+        type: 'timestamp',
+        count: 2
+      })
+    : null
+  const resolveBuffer = querySet
+    ? device.createBuffer({
+        size: querySet.count * 8,
+        usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC
+      })
+    : null
+  const resultBuffer = resolveBuffer
+    ? device.createBuffer({
+        size: resolveBuffer.size,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+      })
+    : null
 
   const module = device.createShaderModule({
     label: '😎 shaders 😎',
@@ -338,7 +363,10 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
             depthClearValue: 1.0,
             depthLoadOp: 'clear',
             depthStoreOp: 'store'
-          }
+          },
+          timestampWrites: querySet
+            ? { querySet, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 }
+            : undefined
         })
         pass.setPipeline(pipeline)
         pass.setBindGroup(0, common.group)
@@ -346,6 +374,19 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
           chunk.render(pass)
         }
         pass.end()
+
+        if (querySet && resolveBuffer && resultBuffer) {
+          encoder.resolveQuerySet(querySet, 0, querySet.count, resolveBuffer, 0)
+          if (resultBuffer.mapState === 'unmapped') {
+            encoder.copyBufferToBuffer(
+              resolveBuffer,
+              0,
+              resultBuffer,
+              0,
+              resultBuffer.size
+            )
+          }
+        }
       }
       {
         const pass = encoder.beginRenderPass({
@@ -372,6 +413,14 @@ export async function init (format: GPUTextureFormat): Promise<Device> {
       }
       // finish() returns a command buffer
       device.queue.submit([encoder.finish()])
+
+      if (canTimestamp && resultBuffer?.mapState === 'unmapped') {
+        resultBuffer.mapAsync(GPUMapMode.READ).then(() => {
+          const times = new BigInt64Array(resultBuffer.getMappedRange())
+          onGpuTime(times[1] - times[0])
+          resultBuffer.unmap()
+        })
+      }
 
       await check()
     },

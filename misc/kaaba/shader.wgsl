@@ -17,28 +17,38 @@ fn vertex_main(
     @builtin(vertex_index) index: u32,
     @location(0) data: vec2<u32>,
 ) -> VertexOutput {
+    let input = array(
+        extractBits(data.x, 0 * 8, 8),
+        extractBits(data.x, 1 * 8, 8),
+        extractBits(data.x, 2 * 8, 8),
+        extractBits(data.x, 3 * 8, 8),
+        extractBits(data.y, 0 * 8, 8),
+        extractBits(data.y, 1 * 8, 8),
+        extractBits(data.y, 2 * 8, 8),
+        extractBits(data.y, 3 * 8, 8),
+    );
     let position = vec3<f32>(vec3(
-        to_i8(extractBits(data.x, 0, 8)),
-        to_i8(extractBits(data.x, 8, 8)),
-        to_i8(extractBits(data.x, 16, 8)),
+        to_i8(input[0]),
+        to_i8(input[1]),
+        to_i8(input[2]),
     ));
-    let face = extractBits(data.x, 24, 3);
+    let face = input[3];
 
     const textures = array(
-        vec2(0.0, 1), vec2(1, 1), vec2(2, 1),
+        vec2(0.0, 1.0), vec2(1.0, 1.0), vec2(2.0, 1.0),
     );
-    let texture_id = extractBits(data.y, 0, 8);
+    let texture_id = input[4];
 
     // The back face (facing away from the camera)
     const square_vertices = array(
-        vec2(false, false), vec2(false, true), vec2(true, true),
-        vec2(true, true), vec2(true, false), vec2(false, false),
+        vec2(0.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0),
+        vec2(1.0, 1.0), vec2(1.0, 0.0), vec2(0.0, 0.0),
     );
     let square_vertex = square_vertices[index];
     let flipped = select(
-        vec3(square_vertex.x, square_vertex.y, false),
+        vec3(square_vertex.x, square_vertex.y, 0.0),
         // Rotate ("flip") around center of cube
-        vec3(!square_vertex.x, square_vertex.y, true),
+        vec3(1.0 - square_vertex.x, square_vertex.y, 1.0),
         (face & 1) != 0,
     );
     let rotated = select(
@@ -46,11 +56,11 @@ fn vertex_main(
             // 00x: back/front
             flipped,
             // 01x: left/right
-            vec3(flipped.z, flipped.y, !flipped.x),
+            vec3(flipped.z, flipped.y, 1.0 - flipped.x),
             (face & 2) != 0
         ),
         // 10x: bottom/top
-        vec3(flipped.x, flipped.z, !flipped.y),
+        vec3(flipped.x, flipped.z, 1.0 - flipped.y),
         (face & 4) != 0
     );
 
@@ -67,7 +77,7 @@ fn vertex_main(
     const LIGHT = normalize(vec3(0.1, -1, -0.5));
 
     var result: VertexOutput;
-    result.position = perspective * camera * transform * vec4((vec3<f32>(rotated) + position.xyz), 1.0);
+    result.position = perspective * camera * transform * vec4((rotated + position.xyz), 1.0);
     result.tex_coord = textures[texture_id] + vec2(1 - f32(square_vertices[index].x), f32(square_vertices[index].y));
     result.darkness = dot(normal, -LIGHT) / 8 + 0.875;
     return result;

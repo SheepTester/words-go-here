@@ -1440,16 +1440,33 @@ function captureError(device, stage) {
         }
     };
 }
-async function init(format) {
+async function init(format, onGpuTime) {
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) {
         throw new TypeError('Failed to obtain WebGPU adapter.');
     }
-    const device = await adapter.requestDevice();
+    const canTimestamp = adapter.features.has('timestamp-query');
+    const device = await adapter.requestDevice({
+        requiredFeatures: canTimestamp ? [
+            'timestamp-query'
+        ] : []
+    });
     device.lost.then((info)=>{
         console.warn('WebGPU device lost. :(', info.message, info);
     });
     const check = captureError(device, 'initialization');
+    const querySet = canTimestamp ? device.createQuerySet({
+        type: 'timestamp',
+        count: 2
+    }) : null;
+    const resolveBuffer = querySet ? device.createBuffer({
+        size: querySet.count * 8,
+        usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC
+    }) : null;
+    const resultBuffer = resolveBuffer ? device.createBuffer({
+        size: resolveBuffer.size,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+    }) : null;
     const module = device.createShaderModule({
         label: '😎 shaders 😎',
         code: await fetch('./shader.wgsl').then((r)=>r.text())
@@ -1685,7 +1702,12 @@ async function init(format) {
                         depthClearValue: 1.0,
                         depthLoadOp: 'clear',
                         depthStoreOp: 'store'
-                    }
+                    },
+                    timestampWrites: querySet ? {
+                        querySet,
+                        beginningOfPassWriteIndex: 0,
+                        endOfPassWriteIndex: 1
+                    } : undefined
                 });
                 pass.setPipeline(pipeline);
                 pass.setBindGroup(0, common.group);
@@ -1693,6 +1715,12 @@ async function init(format) {
                     chunk.render(pass);
                 }
                 pass.end();
+                if (querySet && resolveBuffer && resultBuffer) {
+                    encoder.resolveQuerySet(querySet, 0, querySet.count, resolveBuffer, 0);
+                    if (resultBuffer.mapState === 'unmapped') {
+                        encoder.copyBufferToBuffer(resolveBuffer, 0, resultBuffer, 0, resultBuffer.size);
+                    }
+                }
             }
             {
                 const pass = encoder.beginRenderPass({
@@ -1725,6 +1753,13 @@ async function init(format) {
             device.queue.submit([
                 encoder.finish()
             ]);
+            if (canTimestamp && resultBuffer?.mapState === 'unmapped') {
+                resultBuffer.mapAsync(GPUMapMode.READ).then(()=>{
+                    const times = new BigInt64Array(resultBuffer.getMappedRange());
+                    onGpuTime(times[1] - times[0]);
+                    resultBuffer.unmap();
+                });
+            }
             await check();
         },
         getBlock: (x, y, z)=>{
@@ -1836,6 +1871,31 @@ window.addEventListener('unhandledrejection', (e)=>{
 function fail(error) {
     throw error;
 }
+const perf = document.getElementById('perf');
+let lastCpuTime = 0;
+let cpuTotalTime = 0;
+let cpuSamples = 0;
+let lastGpuTime = 0n;
+let gpuTotalTime = 0n;
+let gpuSamples = 0n;
+const handleGpuTime = (delta)=>{
+    lastGpuTime = delta;
+    gpuTotalTime += delta;
+    gpuSamples++;
+    displayPerf();
+    if (gpuSamples > 300) {
+        gpuTotalTime = 0n;
+        gpuSamples = 0n;
+    }
+};
+function displayPerf() {
+    if (perf) {
+        perf.textContent = [
+            `cpu:${lastCpuTime.toFixed(3).padStart(9, ' ')}ms (avg ${(cpuTotalTime / cpuSamples).toFixed(3)}ms)`,
+            `gpu:${lastGpuTime.toString().padStart(9, ' ')}ns (avg ${gpuSamples > 0n ? gpuTotalTime / gpuSamples : '?'}ns)`
+        ].join('\n');
+    }
+}
 if (!navigator.gpu) {
     throw new TypeError('Your browser does not support WebGPU.');
 }
@@ -1845,7 +1905,7 @@ if (!(canvas instanceof HTMLCanvasElement)) {
 }
 const context = canvas.getContext('webgpu') ?? fail(new TypeError('Failed to get WebGPU canvas context.'));
 const format = navigator.gpu.getPreferredCanvasFormat();
-const { device, resize, render, getBlock, setBlock } = await init(format);
+const { device, resize, render, getBlock, setBlock } = await init(format, handleGpuTime);
 let t = 0;
 setInterval(()=>{
     setBlock(0, 10, 0, t % 2 === 0 ? Block.WHITE : Block.AIR);
@@ -1902,8 +1962,8 @@ canvas.addEventListener('mousemove', (e)=>{
     player.pitch += e.movementY / 500;
 });
 const MOVE_ACCEL = 50;
-const GRAVITY = 20;
-const JUMP_VEL = 15;
+const GRAVITY = 30;
+const JUMP_VEL = 10;
 const FRICTION_COEFF = -5;
 const player = {
     x: 0,
@@ -1976,6 +2036,7 @@ function moveAxis(axis, acceleration, time, userMoving) {
 let lastTime = Date.now();
 let frameId = null;
 function paint() {
+    const start = performance.now();
     const now = Date.now();
     const elapsed = Math.min(now - lastTime, 100) / 1000;
     lastTime = now;
@@ -2044,6 +2105,17 @@ function paint() {
         return Promise.reject(error);
     });
     frameId = requestAnimationFrame(paint);
+    const elapsedPerf = performance.now() - start;
+    if (perf) {
+        lastCpuTime = elapsedPerf;
+        cpuTotalTime += elapsedPerf;
+        cpuSamples++;
+        displayPerf();
+        if (cpuSamples > 300) {
+            cpuTotalTime = 0;
+            cpuSamples = 0;
+        }
+    }
 }
 function doRaycast() {
     const [dx, dy, dz] = oe.transformMat4Upper3x3([
@@ -2073,10 +2145,6 @@ canvas.addEventListener('mousedown', (e)=>{
                     break;
                 }
             case 1:
-                {
-                    console.log(getBlock(...result.block));
-                    break;
-                }
             case 2:
                 {
                     const target = oe.add(result.block, result.normal);

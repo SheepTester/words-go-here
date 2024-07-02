@@ -69,12 +69,20 @@
       #error.no-error {
         display: none;
       }
+
+      #perf {
+        position: fixed;
+        top: 0;
+        left: 0;
+        margin: 10px;
+      }
     </style>
   </head>
   <body>
     <canvas id="canvas"></canvas>
     <div class="center"></div>
     <pre id="error" class="no-error"></pre>
+    <pre id="perf"></pre>
     <script src="./index.js" type="module"></script>
   </body>
 </html>
