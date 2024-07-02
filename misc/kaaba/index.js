@@ -1421,9 +1421,6 @@ function getFaceVertex(face, index) {
     ] : flipped;
     return rotated;
 }
-console.log(Array.from({
-    length: 6
-}, (_, i)=>getFaceVertex(0, i)));
 function showFace(block, neighbor) {
     return block !== neighbor && !isOpaque(neighbor);
 }
@@ -1444,14 +1441,6 @@ class Chunk {
         } else {
             return this.#data[index];
         }
-    }
-    #getAo(x, y, z, face) {
-        Array.from({
-            length: 4
-        }, (_, i)=>{
-            const [dx, dy, dz] = getFaceVertex(face, i);
-            return isSolid(this.block(dx ? x + 1 : x - 1, dy ? y + 1 : y - 1, dz ? z + 1 : z - 1));
-        });
     }
     mesh(device) {
         const faces = [];
