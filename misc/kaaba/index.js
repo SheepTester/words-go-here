@@ -1287,7 +1287,7 @@ function isSolid(block) {
     return block !== 0;
 }
 function getTexture(block) {
-    return block !== null ? textures[block] ?? null : null;
+    return textures[block] ?? null;
 }
 class Uniform {
     #device;
@@ -1424,22 +1424,54 @@ function getFaceVertex(face, index) {
 function showFace(block, neighbor) {
     return block !== neighbor && !isOpaque(neighbor);
 }
+function clampCoord(coord) {
+    if (coord < 0) {
+        return {
+            coord: coord + 32,
+            chunk: 0
+        };
+    } else if (coord >= 32) {
+        return {
+            coord: coord - 32,
+            chunk: 2
+        };
+    } else {
+        return {
+            coord,
+            chunk: 1
+        };
+    }
+}
 class Chunk {
     #data = new Uint8Array(32 * 32 * 32);
     position;
+    neighbors = Array.from({
+        length: 3
+    }, ()=>Array.from({
+            length: 3
+        }, ()=>[
+                null,
+                null,
+                null
+            ]));
     constructor(position){
         this.position = position;
+        this.neighbors[1][1][1] = this;
     }
     block(x, y, z, block) {
-        if (x < 0 || y < 0 || z < 0 || x >= 32 || y >= 32 || z >= 32) {
-            return null;
+        const { coord: blockX, chunk: chunkX } = clampCoord(x);
+        const { coord: blockY, chunk: chunkY } = clampCoord(y);
+        const { coord: blockZ, chunk: chunkZ } = clampCoord(z);
+        const index = (blockX * 32 + blockY) * 32 + blockZ;
+        const chunk = this.neighbors[chunkX][chunkY][chunkZ];
+        if (!chunk) {
+            return Block.AIR;
         }
-        const index = (x * 32 + y) * 32 + z;
         if (block !== undefined) {
-            this.#data[index] = block;
+            chunk.#data[index] = block;
             return block;
         } else {
-            return this.#data[index];
+            return chunk.#data[index];
         }
     }
     mesh(device) {
@@ -1480,6 +1512,30 @@ class Chunk {
         device.queue.writeBuffer(vertices, 0, vertexData);
         return vertices;
     }
+    getAdjacentNeighbors(x, y, z) {
+        const neighbors = new Set();
+        for (const dx of [
+            1,
+            x === 0 ? 0 : x === 32 - 1 ? 2 : 1
+        ]){
+            for (const dy of [
+                1,
+                y === 0 ? 0 : y === 32 - 1 ? 2 : 1
+            ]){
+                for (const dz of [
+                    1,
+                    z === 0 ? 0 : z === 32 - 1 ? 2 : 1
+                ]){
+                    const neighbor = this.neighbors[dx][dy][dz];
+                    if (neighbor) {
+                        neighbors.add(neighbor);
+                    }
+                }
+            }
+        }
+        neighbors.delete(this);
+        return Array.from(neighbors);
+    }
 }
 class Group {
     group;
@@ -1506,8 +1562,10 @@ class ChunkRenderer {
         });
         this.chunkGroup.uniforms.transform.data(ce.translation(chunk.position.map((pos)=>pos * 32)));
     }
-    refreshMesh() {
+    refreshMesh(onTime) {
+        const start = performance.now();
         this.vertices = this.chunk.mesh(this.device);
+        onTime?.(performance.now() - start);
         return this.vertices;
     }
     render(pass) {
@@ -1536,7 +1594,7 @@ function captureError(device, stage) {
         }
     };
 }
-async function init(format, onGpuTime) {
+async function init(format, callbacks = {}) {
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) {
         throw new TypeError('Failed to obtain WebGPU adapter.');
@@ -1645,10 +1703,26 @@ async function init(format, onGpuTime) {
         }
     });
     const chunkMap = {};
+    const chunks = [];
+    function registerChunk(renderer) {
+        chunkMap[`${renderer.chunk.position[0]},${renderer.chunk.position[1]},${renderer.chunk.position[2]}`] = renderer;
+        chunks.push(renderer);
+        for(let dx = -1; dx <= 1; dx++){
+            for(let dy = -1; dy <= 1; dy++){
+                for(let dz = -1; dz <= 1; dz++){
+                    const neighbor = chunkMap[`${renderer.chunk.position[0] + dx},${renderer.chunk.position[1] + dy},${renderer.chunk.position[2] + dz}`];
+                    if (!neighbor) {
+                        continue;
+                    }
+                    renderer.chunk.neighbors[dx + 1][dy + 1][dz + 1] = neighbor.chunk;
+                    neighbor.chunk.neighbors[1 - dx][1 - dy][1 - dz] = renderer.chunk;
+                }
+            }
+        }
+    }
     function generateChunk(position) {
         const chunk = new Chunk(position);
         const renderer = new ChunkRenderer(chunk, device, pipeline);
-        chunkMap[`${position[0]},${position[1]},${position[2]}`] = renderer;
         for(let y = 0; y < 32; y++){
             for(let x = 0; x < 32; x++){
                 for(let z = 0; z < 32; z++){
@@ -1658,16 +1732,15 @@ async function init(format, onGpuTime) {
                 }
             }
         }
-        return renderer;
+        registerChunk(renderer);
     }
-    const chunks = [];
     for(let x = -1; x <= 1; x++){
         for(let z = -1; z <= 1; z++){
-            chunks.push(generateChunk([
+            generateChunk([
                 x,
                 0,
                 z
-            ]));
+            ]);
         }
     }
     const testChunk = new Chunk([
@@ -1690,8 +1763,7 @@ async function init(format, onGpuTime) {
     testChunk.block(9, 4, 7, Block.WHITE);
     testChunk.block(10, 4, 6, Block.WHITE);
     testChunk.block(10, 4, 7, Block.WHITE);
-    chunkMap['0,1,0'] = new ChunkRenderer(testChunk, device, pipeline);
-    chunks.push(chunkMap['0,1,0']);
+    registerChunk(new ChunkRenderer(testChunk, device, pipeline));
     const source = await fetch('./textures.png').then((r)=>r.blob()).then((blob)=>createImageBitmap(blob, {
             colorSpaceConversion: 'none'
         }));
@@ -1852,7 +1924,7 @@ async function init(format, onGpuTime) {
             if (canTimestamp && resultBuffer?.mapState === 'unmapped') {
                 resultBuffer.mapAsync(GPUMapMode.READ).then(()=>{
                     const times = new BigInt64Array(resultBuffer.getMappedRange());
-                    onGpuTime(times[1] - times[0]);
+                    callbacks.onGpuTime?.(times[1] - times[0]);
                     resultBuffer.unmap();
                 });
             }
@@ -1873,17 +1945,18 @@ async function init(format, onGpuTime) {
             const chunkY = Math.floor(y / 32);
             const chunkZ = Math.floor(z / 32);
             if (!chunkMap[`${chunkX},${chunkY},${chunkZ}`]) {
-                const renderer = new ChunkRenderer(new Chunk([
+                registerChunk(new ChunkRenderer(new Chunk([
                     chunkX,
                     chunkY,
                     chunkZ
-                ]), device, pipeline);
-                chunkMap[`${chunkX},${chunkY},${chunkZ}`] = renderer;
-                chunks.push(renderer);
+                ]), device, pipeline));
             }
             const renderer = chunkMap[`${chunkX},${chunkY},${chunkZ}`];
             renderer.chunk.block(x - chunkX * 32, y - chunkY * 32, z - chunkZ * 32, block);
-            renderer.refreshMesh();
+            renderer.refreshMesh(callbacks.onMeshBuildTime);
+            for (const neighbor of renderer.chunk.getAdjacentNeighbors(x - chunkX * 32, y - chunkY * 32, z - chunkZ * 32)){
+                chunkMap[`${neighbor.position[0]},${neighbor.position[1]},${neighbor.position[2]}`]?.refreshMesh(callbacks.onMeshBuildTime);
+            }
         }
     };
 }
@@ -1974,21 +2047,15 @@ let cpuSamples = 0;
 let lastGpuTime = 0n;
 let gpuTotalTime = 0n;
 let gpuSamples = 0n;
-const handleGpuTime = (delta)=>{
-    lastGpuTime = delta;
-    gpuTotalTime += delta;
-    gpuSamples++;
-    displayPerf();
-    if (gpuSamples > 300) {
-        gpuTotalTime = 0n;
-        gpuSamples = 0n;
-    }
-};
+let lastMeshTime = 0;
+let meshTotalTime = 0;
+let meshSamples = 0;
 function displayPerf() {
     if (perf) {
         perf.textContent = [
-            `cpu:${(lastCpuTime * 1000).toFixed(0).padStart(9, ' ')}ns (avg${(cpuTotalTime / cpuSamples * 1000).toFixed(0).padStart(9, ' ')}ns)`,
-            `gpu:${lastGpuTime.toString().padStart(9, ' ')}ns (avg${(gpuSamples > 0n ? String(gpuTotalTime / gpuSamples) : '?').padStart(9, ' ')}ns)`
+            ` cpu:${(lastCpuTime * 1000).toFixed(0).padStart(9, ' ')}ns (avg${(cpuTotalTime / cpuSamples * 1000).toFixed(0).padStart(9, ' ')}ns)`,
+            ` gpu:${lastGpuTime.toString().padStart(9, ' ')}ns (avg${(gpuSamples > 0n ? String(gpuTotalTime / gpuSamples) : '?').padStart(9, ' ')}ns)`,
+            `mesh:${(lastMeshTime * 1000).toFixed(0).padStart(9, ' ')}ns (avg${(meshTotalTime / meshSamples * 1000).toFixed(0).padStart(9, ' ')}ns)`
         ].join('\n');
     }
 }
@@ -2001,10 +2068,31 @@ if (!(canvas instanceof HTMLCanvasElement)) {
 }
 const context = canvas.getContext('webgpu') ?? fail(new TypeError('Failed to get WebGPU canvas context.'));
 const format = navigator.gpu.getPreferredCanvasFormat();
-const { device, resize, render, getBlock, setBlock } = await init(format, handleGpuTime);
+const { device, resize, render, getBlock, setBlock } = await init(format, {
+    onGpuTime: (delta)=>{
+        lastGpuTime = delta;
+        gpuTotalTime += delta;
+        gpuSamples++;
+        displayPerf();
+        if (gpuSamples > 300) {
+            gpuTotalTime = 0n;
+            gpuSamples = 0n;
+        }
+    },
+    onMeshBuildTime: (delta)=>{
+        lastMeshTime = delta;
+        meshTotalTime += delta;
+        meshSamples++;
+        displayPerf();
+        if (meshSamples > 100) {
+            meshTotalTime = 0;
+            meshSamples = 0;
+        }
+    }
+});
 let t = 0;
 setInterval(()=>{
-    setBlock(0, 10, 0, t % 2 === 0 ? Block.WHITE : Block.AIR);
+    setBlock(1, 30, 1, t % 2 === 0 ? Block.WHITE : Block.AIR);
     t++;
 }, 500);
 device.addEventListener('uncapturederror', (e)=>{
@@ -2056,6 +2144,11 @@ canvas.addEventListener('mousemove', (e)=>{
     }
     player.yaw += e.movementX / 500;
     player.pitch += e.movementY / 500;
+    if (player.pitch > Math.PI / 2) {
+        player.pitch = Math.PI / 2;
+    } else if (player.pitch < -Math.PI / 2) {
+        player.pitch = -Math.PI / 2;
+    }
 });
 const MOVE_ACCEL = 50;
 const GRAVITY = 30;

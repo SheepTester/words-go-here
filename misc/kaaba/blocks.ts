@@ -11,14 +11,14 @@ const textures: Partial<Record<Block, number>> = {
   [Block.WHITE]: 2
 }
 
-export function isOpaque (block: Block | null): boolean {
+export function isOpaque (block: Block): boolean {
   return block === Block.STONE || block === Block.WHITE
 }
 
-export function isSolid (block: Block | null): boolean {
+export function isSolid (block: Block): boolean {
   return block !== Block.AIR
 }
 
-export function getTexture (block: Block | null): number | null {
-  return block !== null ? textures[block] ?? null : null
+export function getTexture (block: Block): number | null {
+  return textures[block] ?? null
 }

@@ -90,9 +90,16 @@ export type Device = {
   setBlock: (x: number, y: number, z: number, block: Block) => void
 }
 
+export type TimeCallbacks = {
+  /** @param delta In nanoseconds. */
+  onGpuTime: (delta: bigint) => void
+  /** @param delta In milliseconds. */
+  onMeshBuildTime: (delta: number) => void
+}
+
 export async function init (
   format: GPUTextureFormat,
-  onGpuTime: (delta: bigint) => void
+  callbacks: Partial<TimeCallbacks> = {}
 ): Promise<Device> {
   const adapter = await navigator.gpu.requestAdapter()
   if (!adapter) {
@@ -202,11 +209,35 @@ export async function init (
   })
 
   const chunkMap: Record<`${number},${number},${number}`, ChunkRenderer> = {}
+  const chunks: ChunkRenderer[] = []
 
-  function generateChunk (position: ChunkPosition): ChunkRenderer {
+  function registerChunk (renderer: ChunkRenderer) {
+    chunkMap[
+      `${renderer.chunk.position[0]},${renderer.chunk.position[1]},${renderer.chunk.position[2]}`
+    ] = renderer
+    chunks.push(renderer)
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dz = -1; dz <= 1; dz++) {
+          const neighbor =
+            chunkMap[
+              `${renderer.chunk.position[0] + dx},${
+                renderer.chunk.position[1] + dy
+              },${renderer.chunk.position[2] + dz}`
+            ]
+          if (!neighbor) {
+            continue
+          }
+          renderer.chunk.neighbors[dx + 1][dy + 1][dz + 1] = neighbor.chunk
+          neighbor.chunk.neighbors[1 - dx][1 - dy][1 - dz] = renderer.chunk
+        }
+      }
+    }
+  }
+
+  function generateChunk (position: ChunkPosition): void {
     const chunk = new Chunk(position)
     const renderer = new ChunkRenderer(chunk, device, pipeline)
-    chunkMap[`${position[0]},${position[1]},${position[2]}`] = renderer
     for (let y = 0; y < SIZE; y++) {
       for (let x = 0; x < SIZE; x++) {
         for (let z = 0; z < SIZE; z++) {
@@ -224,13 +255,12 @@ export async function init (
         }
       }
     }
-    return renderer
+    registerChunk(renderer)
   }
 
-  const chunks: ChunkRenderer[] = []
   for (let x = -1; x <= 1; x++) {
     for (let z = -1; z <= 1; z++) {
-      chunks.push(generateChunk([x, 0, z]))
+      generateChunk([x, 0, z])
     }
   }
   const testChunk = new Chunk([0, 1, 0])
@@ -265,8 +295,7 @@ export async function init (
   testChunk.block(9, 4, 7, Block.WHITE)
   testChunk.block(10, 4, 6, Block.WHITE)
   testChunk.block(10, 4, 7, Block.WHITE)
-  chunkMap['0,1,0'] = new ChunkRenderer(testChunk, device, pipeline)
-  chunks.push(chunkMap['0,1,0'])
+  registerChunk(new ChunkRenderer(testChunk, device, pipeline))
 
   const source = await fetch('./textures.png')
     .then(r => r.blob())
@@ -417,7 +446,7 @@ export async function init (
       if (canTimestamp && resultBuffer?.mapState === 'unmapped') {
         resultBuffer.mapAsync(GPUMapMode.READ).then(() => {
           const times = new BigInt64Array(resultBuffer.getMappedRange())
-          onGpuTime(times[1] - times[0])
+          callbacks.onGpuTime?.(times[1] - times[0])
           resultBuffer.unmap()
         })
       }
@@ -445,13 +474,13 @@ export async function init (
       const chunkY = Math.floor(y / SIZE)
       const chunkZ = Math.floor(z / SIZE)
       if (!chunkMap[`${chunkX},${chunkY},${chunkZ}`]) {
-        const renderer = new ChunkRenderer(
-          new Chunk([chunkX, chunkY, chunkZ]),
-          device,
-          pipeline
+        registerChunk(
+          new ChunkRenderer(
+            new Chunk([chunkX, chunkY, chunkZ]),
+            device,
+            pipeline
+          )
         )
-        chunkMap[`${chunkX},${chunkY},${chunkZ}`] = renderer
-        chunks.push(renderer)
       }
       const renderer = chunkMap[`${chunkX},${chunkY},${chunkZ}`]
       renderer.chunk.block(
@@ -460,7 +489,16 @@ export async function init (
         z - chunkZ * SIZE,
         block
       )
-      renderer.refreshMesh()
+      renderer.refreshMesh(callbacks.onMeshBuildTime)
+      for (const neighbor of renderer.chunk.getAdjacentNeighbors(
+        x - chunkX * SIZE,
+        y - chunkY * SIZE,
+        z - chunkZ * SIZE
+      )) {
+        chunkMap[
+          `${neighbor.position[0]},${neighbor.position[1]},${neighbor.position[2]}`
+        ]?.refreshMesh(callbacks.onMeshBuildTime)
+      }
     }
   }
 }

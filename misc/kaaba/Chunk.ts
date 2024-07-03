@@ -45,8 +45,18 @@ function getFaceVertex (face: number, index: number): ChunkPosition {
   return rotated
 }
 
-function showFace (block: Block, neighbor: Block | null): boolean {
+function showFace (block: Block, neighbor: Block): boolean {
   return block !== neighbor && !isOpaque(neighbor)
+}
+
+function clampCoord (coord: number): { coord: number; chunk: number } {
+  if (coord < 0) {
+    return { coord: coord + SIZE, chunk: 0 }
+  } else if (coord >= SIZE) {
+    return { coord: coord - SIZE, chunk: 2 }
+  } else {
+    return { coord, chunk: 1 }
+  }
 }
 
 export type ChunkPosition = [x: number, y: number, z: number]
@@ -54,25 +64,33 @@ export type ChunkPosition = [x: number, y: number, z: number]
 export class Chunk {
   #data: Uint8Array = new Uint8Array(SIZE * SIZE * SIZE)
   position: ChunkPosition
+  neighbors: (Chunk | null)[][][] = Array.from({ length: 3 }, () =>
+    Array.from({ length: 3 }, () => [null, null, null])
+  )
 
   constructor (position: ChunkPosition) {
     this.position = position
+    this.neighbors[1][1][1] = this
   }
 
   /**
    * Gets the block at the given coordinates. If `block` is specified, it sets
    * the block at that position and returns the new ID.
    */
-  block (x: number, y: number, z: number, block?: Block): Block | null {
-    if (x < 0 || y < 0 || z < 0 || x >= SIZE || y >= SIZE || z >= SIZE) {
-      return null
+  block (x: number, y: number, z: number, block?: Block): Block {
+    const { coord: blockX, chunk: chunkX } = clampCoord(x)
+    const { coord: blockY, chunk: chunkY } = clampCoord(y)
+    const { coord: blockZ, chunk: chunkZ } = clampCoord(z)
+    const index = (blockX * SIZE + blockY) * SIZE + blockZ
+    const chunk = this.neighbors[chunkX][chunkY][chunkZ]
+    if (!chunk) {
+      return Block.AIR
     }
-    const index = (x * SIZE + y) * SIZE + z
     if (block !== undefined) {
-      this.#data[index] = block
+      chunk.#data[index] = block
       return block
     } else {
-      return this.#data[index]
+      return chunk.#data[index]
     }
   }
 
@@ -138,6 +156,22 @@ export class Chunk {
     device.queue.writeBuffer(vertices, 0, vertexData)
     return vertices
   }
+
+  getAdjacentNeighbors (x: number, y: number, z: number): Chunk[] {
+    const neighbors = new Set<Chunk>()
+    for (const dx of [1, x === 0 ? 0 : x === SIZE - 1 ? 2 : 1]) {
+      for (const dy of [1, y === 0 ? 0 : y === SIZE - 1 ? 2 : 1]) {
+        for (const dz of [1, z === 0 ? 0 : z === SIZE - 1 ? 2 : 1]) {
+          const neighbor = this.neighbors[dx][dy][dz]
+          if (neighbor) {
+            neighbors.add(neighbor)
+          }
+        }
+      }
+    }
+    neighbors.delete(this)
+    return Array.from(neighbors)
+  }
 }
 
 export class ChunkRenderer {
@@ -157,8 +191,10 @@ export class ChunkRenderer {
     )
   }
 
-  refreshMesh (): GPUBuffer {
+  refreshMesh (onTime?: (delta: number) => void): GPUBuffer {
+    const start = performance.now()
     this.vertices = this.chunk.mesh(this.device)
+    onTime?.(performance.now() - start)
     return this.vertices
   }
 

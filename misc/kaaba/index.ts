@@ -45,30 +45,28 @@ let cpuSamples = 0
 let lastGpuTime = 0n
 let gpuTotalTime = 0n
 let gpuSamples = 0n
-/** In nanoseconds */
-const handleGpuTime = (delta: bigint) => {
-  lastGpuTime = delta
-  gpuTotalTime += delta
-  gpuSamples++
-  displayPerf()
-  if (gpuSamples > 300) {
-    gpuTotalTime = 0n
-    gpuSamples = 0n
-  }
-}
+let lastMeshTime = 0
+let meshTotalTime = 0
+let meshSamples = 0
 function displayPerf () {
   if (perf) {
     perf.textContent = [
-      `cpu:${(lastCpuTime * 1000).toFixed(0).padStart(9, ' ')}ns (avg${(
+      ` cpu:${(lastCpuTime * 1000).toFixed(0).padStart(9, ' ')}ns (avg${(
         (cpuTotalTime / cpuSamples) *
         1000
       )
         .toFixed(0)
         .padStart(9, ' ')}ns)`,
-      `gpu:${lastGpuTime.toString().padStart(9, ' ')}ns (avg${(gpuSamples > 0n
+      ` gpu:${lastGpuTime.toString().padStart(9, ' ')}ns (avg${(gpuSamples > 0n
         ? String(gpuTotalTime / gpuSamples)
         : '?'
-      ).padStart(9, ' ')}ns)`
+      ).padStart(9, ' ')}ns)`,
+      `mesh:${(lastMeshTime * 1000).toFixed(0).padStart(9, ' ')}ns (avg${(
+        (meshTotalTime / meshSamples) *
+        1000
+      )
+        .toFixed(0)
+        .padStart(9, ' ')}ns)`
     ].join('\n')
   }
 }
@@ -84,13 +82,31 @@ const context =
   canvas.getContext('webgpu') ??
   fail(new TypeError('Failed to get WebGPU canvas context.'))
 const format = navigator.gpu.getPreferredCanvasFormat()
-const { device, resize, render, getBlock, setBlock } = await init(
-  format,
-  handleGpuTime
-)
+const { device, resize, render, getBlock, setBlock } = await init(format, {
+  onGpuTime: delta => {
+    lastGpuTime = delta
+    gpuTotalTime += delta
+    gpuSamples++
+    displayPerf()
+    if (gpuSamples > 300) {
+      gpuTotalTime = 0n
+      gpuSamples = 0n
+    }
+  },
+  onMeshBuildTime: delta => {
+    lastMeshTime = delta
+    meshTotalTime += delta
+    meshSamples++
+    displayPerf()
+    if (meshSamples > 100) {
+      meshTotalTime = 0
+      meshSamples = 0
+    }
+  }
+})
 let t = 0
 setInterval(() => {
-  setBlock(0, 10, 0, t % 2 === 0 ? Block.WHITE : Block.AIR)
+  setBlock(1, 30, 1, t % 2 === 0 ? Block.WHITE : Block.AIR)
   t++
 }, 500)
 device.addEventListener('uncapturederror', e => {
@@ -143,6 +159,11 @@ canvas.addEventListener('mousemove', e => {
   }
   player.yaw += e.movementX / 500
   player.pitch += e.movementY / 500
+  if (player.pitch > Math.PI / 2) {
+    player.pitch = Math.PI / 2
+  } else if (player.pitch < -Math.PI / 2) {
+    player.pitch = -Math.PI / 2
+  }
 })
 
 /** In m/s^2. */
