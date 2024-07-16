@@ -40,7 +40,10 @@
     <canvas id="preview"></canvas>
     <!-- Safari doesn't let you right click > Save image on canvases -->
     <h2><code>TEXTURE_NAME.png</code> <button id="download">download</button></h2>
-    <canvas id="output"></canvas>
+    <details id="output-details">
+      <summary>View texture</summary>
+      <canvas id="output"></canvas>
+    </details>
     <h2><code>TEXTURE_NAME.png.mcmeta</code></h2>
     <textarea id="frametime" rows="5" cols="20" readonly></textarea>
     <h1>About</h1>
@@ -72,6 +75,8 @@ function loadFrames() {
   }).then(frameData => {
     frames = frameData.map(frame => frame.getImage());
     update();
+  }).catch(error => {
+    alert(error.stack.includes('Array buffer allocation failed') ? 'Your computer does not have enough memory to hold all of the gif frames at once. Maybe try shrinking the gif before uploading it here.' : error.stack);
   });
 }
 let previewIntervalID = null;
@@ -96,6 +101,7 @@ function update() {
   preview.width = output.width = width;
   preview.height = height;
   output.height = height * frames.length;
+  outputDetails.open = output.height < 1000;
   frameTime.value = JSON.stringify({
     animation: {
       frametime: ticks
@@ -170,6 +176,7 @@ const options = {
 const isTransparent = document.getElementById('transparent');
 const preview = document.getElementById('preview');
 const pc = preview.getContext('2d');
+const outputDetails = document.getElementById('output-details');
 const output = document.getElementById('output');
 const oc = output.getContext('2d');
 const frameTime = document.getElementById('frametime');
