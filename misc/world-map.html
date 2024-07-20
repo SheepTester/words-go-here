@@ -70,13 +70,13 @@
           <span class="file-name">No file selected</span>
         </label>
         <textarea name="countries" aria-label="Input" class="input-content">
-#9EFF9E: Afghanistan, Algeria, Angola, Antigua and Barbuda, Argentina, Armenia, Azerbaijan, Bahamas, Bahrain, Bangladesh, Barbados, Belgium, Belize, Benin, Botswana, Brazil, Brunei Darussalam, Cabo Verde, Cambodia, Chad, Chile, People's Republic of China, Comoros, Cuba, Democratic People's Republic of Korea, Djibouti, Dominican Republic, Egypt, El Salvador, Gabon, Gambia, Guinea, Guinea-Bissau, Guyana, Indonesia, Islamic Republic of Iran, Iraq, Ireland, Jordan, Kazakhstan, Kenya, Kuwait, Kyrgyzstan, Lao People's Democratic Republic, Lebanon, Lesotho, Libya, Luxembourg, Malaysia, Maldives, Mali, Malta, Mauritania, Mauritius, Mexico, Mongolia, Morocco, Mozambique, Namibia, Nicaragua, Niger, Nigeria, Oman, Pakistan, Panama, Paraguay, Peru, Poland, Portugal, Qatar, Russian Federation, Saint Kitts and Nevis, Saint Lucia, Saint Vincent and the Grenadines, Saudi Arabia, Senegal, Sierra Leone, Singapore, Slovenia, Somalia, South Africa, Sri Lanka, Sudan, Suriname, Syrian Arab Republic, Tajikistan, Timor-Leste, Trinidad and Tobago, Tunisia, Turkmenistan, Türkiye, Uganda, Ukraine, United Arab Emirates, Uzbekistan, Viet Nam, Yemen, Zimbabwe
+#74C365: Afghanistan, Algeria, Angola, Antigua and Barbuda, Argentina, Armenia, Azerbaijan, Bahamas, Bahrain, Bangladesh, Barbados, Belgium, Belize, Benin, Botswana, Brazil, Brunei Darussalam, Cabo Verde, Cambodia, Chad, Chile, People's Republic of China, Comoros, Cuba, Democratic People's Republic of Korea, Djibouti, Dominican Republic, Egypt, El Salvador, Gabon, Gambia, Guinea, Guinea-Bissau, Guyana, Indonesia, Islamic Republic of Iran, Iraq, Ireland, Jordan, Kazakhstan, Kenya, Kuwait, Kyrgyzstan, Lao People's Democratic Republic, Lebanon, Lesotho, Libya, Luxembourg, Malaysia, Maldives, Mali, Malta, Mauritania, Mauritius, Mexico, Mongolia, Morocco, Mozambique, Namibia, Nicaragua, Niger, Nigeria, Oman, Pakistan, Panama, Paraguay, Peru, Poland, Portugal, Qatar, Russian Federation, Saint Kitts and Nevis, Saint Lucia, Saint Vincent and the Grenadines, Saudi Arabia, Senegal, Sierra Leone, Singapore, Slovenia, Somalia, South Africa, Sri Lanka, Sudan, Suriname, Syrian Arab Republic, Tajikistan, Timor-Leste, Trinidad and Tobago, Tunisia, Turkmenistan, Türkiye, Uganda, Ukraine, United Arab Emirates, Uzbekistan, Viet Nam, Yemen, Zimbabwe
 
-#FFC7C7: Australia, Austria, Canada, Czech Republic, Estonia, Germany, Guatemala, Hungary, Israel, Italy, Liberia, Lithuania, Marshall Islands, Federated States of Micronesia, Nauru, Palau, United States
+#ab4e52: Australia, Austria, Canada, Czech Republic, Estonia, Germany, Guatemala, Hungary, Israel, Italy, Liberia, Lithuania, Marshall Islands, Federated States of Micronesia, Nauru, Palau, United States
 
-#FF8: Albania, Andorra, Belarus, Bosnia and Herzegovina, Bulgaria, Burundi, Cameroon, Colombia, Costa Rica, Côte d'Ivoire, Croatia, Cyprus, Denmark, Ecuador, Eritrea, Ethiopia, Finland, France, Georgia, Ghana, Greece, Haiti, Honduras, Iceland, India, Japan, Latvia, Liechtenstein, Monaco, Montenegro, Myanmar, Netherlands, New Zealand, North Macedonia, Norway, Philippines, Republic of Korea, Republic of Moldova, Romania, Rwanda, San Marino, Serbia, Slovakia, Solomon Islands, South Sudan, Spain, Sweden, Switzerland, Thailand, Togo, United Kingdom, Uruguay
+#FADA5E: Albania, Andorra, Belarus, Bosnia and Herzegovina, Bulgaria, Burundi, Cameroon, Colombia, Costa Rica, Côte d'Ivoire, Croatia, Cyprus, Denmark, Ecuador, Eritrea, Ethiopia, Finland, France, Georgia, Ghana, Greece, Haiti, Honduras, Iceland, India, Japan, Latvia, Liechtenstein, Monaco, Montenegro, Myanmar, Netherlands, New Zealand, North Macedonia, Norway, Philippines, Republic of Korea, Republic of Moldova, Romania, Rwanda, San Marino, Serbia, Slovakia, Solomon Islands, South Sudan, Spain, Sweden, Switzerland, Thailand, Togo, United Kingdom, Uruguay
 
-#DDF: Bhutan, Bolivia, Burkina Faso, Central African Republic, Congo, Democratic Republic of the Congo, Dominica, Equatorial Guinea, Eswatini, Fiji, Grenada, Jamaica, Kiribati, Madagascar, Malawi, Nepal, Papua New Guinea, Samoa, São Tomé and Príncipe, Seychelles, Tonga, Tuvalu, United Republic of Tanzania, Vanuatu, Venezuela, Zambia</textarea
+#89CFF0: Bhutan, Bolivia, Burkina Faso, Central African Republic, Congo, Democratic Republic of the Congo, Dominica, Equatorial Guinea, Eswatini, Fiji, Grenada, Jamaica, Kiribati, Madagascar, Malawi, Nepal, Papua New Guinea, Samoa, São Tomé and Príncipe, Seychelles, Tonga, Tuvalu, United Republic of Tanzania, Vanuatu, Venezuela, Zambia</textarea
         >
         <div class="image-content output-content">
           <img
@@ -208,6 +208,11 @@
               // 🦅🦅 (otherwise it conflicts with the Minor Outlying Islands)
               if (name.toLowerCase() === 'united states') {
                 return ['US']
+              }
+              // The dataset only has Czechia, but I want to support Czech
+              // Republic too
+              if (name.toLowerCase().includes('czech')) {
+                return ['CZ']
               }
               let code = getCode(name)
               if (!code) {
