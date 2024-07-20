@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>World map coloring</title>
+    <meta
+      name="description"
+      content="Quickly color countries on a world map just by listing their names"
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      #countryCodes {
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>World map coloring</h1>
+      <p>
+        List some colors each followed by names of countries, and the countries
+        will be colored accordingly on the map. The blank world map template
+        comes from
+        <a
+          href="https://commons.wikimedia.org/wiki/File:BlankMap-World.svg"
+          class="link"
+          >Wikimedia Commons</a
+        >, and it is in the public domain.
+      </p>
+      <p>
+        Each line should start with a
+        <a
+          href="https://developer.mozilla.org/en-US/docs/Web/CSS/color_value"
+          class="link"
+          >CSS color</a
+        >
+        (which can be a color name, hex color, etc.), followed by a colon and a
+        comma-separated list of country names. Countries have many different
+        names that may not be supported by the dataset I have, so below there
+        will be a log listing unrecognized country names. When in doubt, you can
+        use the country's two-letter code (e.g. <code>CA</code> for Canada).
+      </p>
+      <p>
+        This tool was made for and currently defaults to a map for
+        <a
+          href="https://en.wikipedia.org/wiki/ICJ_case_on_Israel%27s_occupation_of_the_Palestinian_territories#UN's_Special_Political_and_Decolonization_Committee_vote"
+          class="link"
+          >"UN's Special Political and Decolonization Committee vote."</a
+        >
+      </p>
+
+      <div class="two-col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="text"
+            class="hidden-accessible reform:text-input"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">
+            Choose or drop a text file or type below
+          </span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <textarea name="countries" aria-label="Input" class="input-content">
+#9EFF9E: Afghanistan, Algeria, Angola, Antigua and Barbuda, Argentina, Armenia, Azerbaijan, Bahamas, Bahrain, Bangladesh, Barbados, Belgium, Belize, Benin, Botswana, Brazil, Brunei Darussalam, Cabo Verde, Cambodia, Chad, Chile, People's Republic of China, Comoros, Cuba, Democratic People's Republic of Korea, Djibouti, Dominican Republic, Egypt, El Salvador, Gabon, Gambia, Guinea, Guinea-Bissau, Guyana, Indonesia, Islamic Republic of Iran, Iraq, Ireland, Jordan, Kazakhstan, Kenya, Kuwait, Kyrgyzstan, Lao People's Democratic Republic, Lebanon, Lesotho, Libya, Luxembourg, Malaysia, Maldives, Mali, Malta, Mauritania, Mauritius, Mexico, Mongolia, Morocco, Mozambique, Namibia, Nicaragua, Niger, Nigeria, Oman, Pakistan, Panama, Paraguay, Peru, Poland, Portugal, Qatar, Russian Federation, Saint Kitts and Nevis, Saint Lucia, Saint Vincent and the Grenadines, Saudi Arabia, Senegal, Sierra Leone, Singapore, Slovenia, Somalia, South Africa, Sri Lanka, Sudan, Suriname, Syrian Arab Republic, Tajikistan, Timor-Leste, Trinidad and Tobago, Tunisia, Turkmenistan, Türkiye, Uganda, Ukraine, United Arab Emirates, Uzbekistan, Viet Nam, Yemen, Zimbabwe
+
+#FFC7C7: Australia, Austria, Canada, Czech Republic, Estonia, Germany, Guatemala, Hungary, Israel, Italy, Liberia, Lithuania, Marshall Islands, Federated States of Micronesia, Nauru, Palau, United States
+
+#FF8: Albania, Andorra, Belarus, Bosnia and Herzegovina, Bulgaria, Burundi, Cameroon, Colombia, Costa Rica, Côte d'Ivoire, Croatia, Cyprus, Denmark, Ecuador, Eritrea, Ethiopia, Finland, France, Georgia, Ghana, Greece, Haiti, Honduras, Iceland, India, Japan, Latvia, Liechtenstein, Monaco, Montenegro, Myanmar, Netherlands, New Zealand, North Macedonia, Norway, Philippines, Republic of Korea, Republic of Moldova, Romania, Rwanda, San Marino, Serbia, Slovakia, Solomon Islands, South Sudan, Spain, Sweden, Switzerland, Thailand, Togo, United Kingdom, Uruguay
+
+#DDF: Bhutan, Bolivia, Burkina Faso, Central African Republic, Congo, Democratic Republic of the Congo, Dominica, Equatorial Guinea, Eswatini, Fiji, Grenada, Jamaica, Kiribati, Madagascar, Malawi, Nepal, Papua New Guinea, Samoa, São Tomé and Príncipe, Seychelles, Tonga, Tuvalu, United Republic of Tanzania, Vanuatu, Venezuela, Zambia</textarea
+        >
+        <div class="image-content output-content">
+          <img
+            id="output"
+            data-deps="countryCodes circlexx subxx antxx noxx limitxx unxx"
+          />
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            data-output="output"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            data-output="output"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+
+      <p id="countryCodes" data-deps="countries"></p>
+
+      <label class="radio-label">
+        <input type="checkbox" name="circlexx" class="hidden-accessible" />
+        <span class="radio-button"></span>
+        <span class="label-primary">
+          Circles around small countries and territories
+        </span>
+      </label>
+      <label class="radio-label">
+        <input type="checkbox" name="subxx" class="hidden-accessible" />
+        <span class="radio-button"></span>
+        <span class="label-primary">
+          Smaller circles around subnational territories
+        </span>
+        <span class="label-secondary">
+          Australian external territories, Chinese SARs, Dutch special
+          municipalities, and French DOMs (overseas regions/departments), but
+          not French COMs (overseas collectivities).
+        </span>
+      </label>
+      <label class="radio-label">
+        <input type="checkbox" name="antxx" class="hidden-accessible" checked />
+        <span class="radio-button"></span>
+        <span class="label-primary">
+          Territories without permanent population
+        </span>
+        <span class="label-secondary">
+          The largest of which is Antarctica
+        </span>
+      </label>
+      <label class="radio-label">
+        <input type="checkbox" name="noxx" class="hidden-accessible" />
+        <span class="radio-button"></span>
+        <span class="label-primary">
+          Circles around small countries without permanent population
+        </span>
+      </label>
+      <label class="radio-label">
+        <input type="checkbox" name="limitxx" class="hidden-accessible" />
+        <span class="radio-button"></span>
+        <span class="label-primary">
+          Display all territories with limited or no recognition
+        </span>
+        <span class="label-secondary">
+          All of them&mdash;including Taiwan&mdash;are overlays (i.e. duplicate
+          layers) over their "host" countries, and so not showing them doesn't
+          leave any gaps on the map
+        </span>
+      </label>
+      <label class="radio-label">
+        <input type="checkbox" name="unxx" class="hidden-accessible" />
+        <span class="radio-button"></span>
+        <span class="label-primary">
+          Smaller circles around small territories with limited or no
+          recognition
+        </span>
+      </label>
+    </form>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+      import { getCode, getNames } from 'https://esm.sh/country-list@2.3.0'
+
+      const svgBase = await fetch('./world-map.svg').then(r => r.text())
+
+      const collator = new Intl.Collator([], {
+        usage: 'search',
+        sensitivity: 'base',
+        ignorePunctuation: true
+      })
+      const allNames = getNames().map(original => {
+        const name = original.toLowerCase()
+        if (name.includes(',')) {
+          const [last, first] = name.split(/\s*,\s*/)
+          return { name: `${first} ${last}`, original }
+        } else {
+          return { name, original }
+        }
+      })
+      on('countryCodes', (elem, { countries }) => {
+        const warnings = []
+        const colors = []
+        for (const line of countries.split('\n')) {
+          if (!line.includes(':')) {
+            if (line.trim()) {
+              warnings.push(
+                `Line '${line}' was skipped because it was missing a colon.`
+              )
+            }
+            continue
+          }
+          const [color, names] = line.split(':')
+          colors.push({
+            color: color.trim(),
+            codes: names.split(',').flatMap(name => {
+              name = name.trim()
+              if (name.length === 2) {
+                return [name.toUpperCase()]
+              }
+              // 🦅🦅 (otherwise it conflicts with the Minor Outlying Islands)
+              if (name.toLowerCase() === 'united states') {
+                return ['US']
+              }
+              let code = getCode(name)
+              if (!code) {
+                const nearestNames = allNames.filter(
+                  ({ name: country }) => collator.compare(country, name) === 0
+                )
+                if (nearestNames.length === 1) {
+                  code = getCode(nearestNames[0].original)
+                } else if (
+                  nearestNames.length > 1 &&
+                  nearestNames.length <= 5
+                ) {
+                  warnings.push(
+                    `I don't have the country code for '${name}'. Potential candidates: ${nearestNames
+                      .map(({ name }) => `'${name}'`)
+                      .join(', ')}`
+                  )
+                  return []
+                }
+              }
+              if (!code) {
+                const nearestNames = allNames.filter(
+                  ({ name: country }) =>
+                    country.includes(name.toLowerCase()) ||
+                    name.toLowerCase().includes(country)
+                )
+                if (nearestNames.length === 1) {
+                  code = getCode(nearestNames[0].original)
+                } else if (
+                  nearestNames.length > 1 &&
+                  nearestNames.length <= 5
+                ) {
+                  warnings.push(
+                    `I don't have the country code for '${name}'. Potential candidates: ${nearestNames
+                      .map(({ name }) => `'${name}'`)
+                      .join(', ')}`
+                  )
+                  return []
+                }
+              }
+              if (!code) {
+                warnings.push(
+                  `I don't have the country code for '${name}'. Try using its two-letter country code.`
+                )
+                return []
+              }
+              return [code]
+            })
+          })
+        }
+        elem.textContent = warnings.join('\n')
+        return colors
+      })
+
+      let url
+      on('output', (img, inputs) => {
+        const { countryCodes, circlexx, subxx, antxx, noxx, limitxx, unxx } =
+          inputs
+        const css = [
+          '/* Autogenerated by https://sheeptester.github.io/words-go-here/misc/world-map.html */',
+          ...countryCodes.map(
+            ({ color, codes }) =>
+              `${codes
+                .map(code => '.' + code.toLowerCase())
+                .join(',')} { fill: ${color}; }`
+          ),
+          `.circlexx { opacity: ${+circlexx}; }`,
+          `.subxx { opacity: ${+subxx}; }`,
+          `.antxx { opacity: ${+antxx}; }`,
+          `.noxx { opacity: ${+noxx}; }`,
+          `.limitxx { opacity: ${+limitxx}; }`,
+          `.unxx { opacity: ${+unxx}; }`,
+          '</style>'
+        ].join('\n\n')
+        const svg = svgBase.replace('</style>', () => css)
+        if (url) {
+          URL.revokeObjectURL(url)
+        }
+        const blob = new File([svg], 'world-map.svg', { type: 'image/svg+xml' })
+        url = URL.createObjectURL(blob)
+        img.src = url
+        return blob
+      })
+    </script>
+  </body>
+</html>
