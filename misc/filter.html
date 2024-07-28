@@ -7,21 +7,31 @@
     <title>Audio frequency filter explorer</title>
     <meta
       name="description"
-      content="Uses JavaScript's built-in BiquadFilterNode to apply filters on the frequencies in your audio. Supports low-pass, high-pass, band-pass, low-shelf, high-shelf, peaking, notch, and all-pass filters."
+      content="Uses JavaScript's built-in BiquadFilterNode to filter out or amplify certain frequencies in your audio. Supports low-pass, high-pass, band-pass, low-shelf, high-shelf, peaking, notch, and all-pass filters."
     />
     <meta name="theme-color" content="#4fa1a7" />
 
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
     <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      audio {
+        width: 100%;
+      }
+    </style>
   </head>
   <body>
     <form class="main" role="main" action="javascript:">
-      <h1>Audio frequency filter explorer</h1>
+      <h1>Audio filter explorer</h1>
       <p>
-        Uses JavaScript's built-in BiquadFilterNode to apply filters on the
-        frequencies in your audio. Supports low-pass, high-pass, band-pass,
-        low-shelf, high-shelf, peaking, notch, and all-pass filters.
+        Uses JavaScript's built-in
+        <a
+          href="https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode"
+          class="link"
+          >BiquadFilterNode</a
+        >
+        to filter out or amplify certain frequencies in your audio.
       </p>
 
       <div class="button-row">
@@ -69,9 +79,9 @@
           <span class="radio-button"></span>
           <span class="label-primary">Low-pass</span>
           <span class="label-secondary">
-            Standard second-order resonant low-pass filter with 12dB/octave
-            rolloff. Frequencies below the cutoff pass through; frequencies
-            above it are attenuated.
+            Sounds like muffled audio through a wall. Standard second-order
+            resonant low-pass filter with 12dB/octave rolloff. Frequencies below
+            the cutoff pass through; frequencies above it are attenuated.
           </span>
         </label>
         <label class="radio-label">
@@ -84,9 +94,10 @@
           <span class="radio-button"></span>
           <span class="label-primary">High-pass</span>
           <span class="label-secondary">
-            Standard second-order resonant high-pass filter with 12dB/octave
-            rolloff. Frequencies below the cutoff are attenuated; frequencies
-            above it pass through.
+            Sounds like audio coming out of phone or earphone speakers. Standard
+            second-order resonant high-pass filter with 12dB/octave rolloff.
+            Frequencies below the cutoff are attenuated; frequencies above it
+            pass through.
           </span>
         </label>
         <label class="radio-label">
@@ -114,9 +125,9 @@
           <span class="radio-button"></span>
           <span class="label-primary">Low-shelf</span>
           <span class="label-secondary">
-            Standard second-order low-shelf filter. Frequencies lower than the
-            frequency get a boost, or an attenuation; frequencies over it are
-            unchanged.
+            Sounds like bass-boosted audio. Standard second-order low-shelf
+            filter. Frequencies lower than the frequency get a boost, or an
+            attenuation; frequencies over it are unchanged.
           </span>
         </label>
         <label class="radio-label">
@@ -129,9 +140,9 @@
           <span class="radio-button"></span>
           <span class="label-primary">High-shelf</span>
           <span class="label-secondary">
-            Standard second-order high-shelf filter. Frequencies higher than the
-            frequency get a boost or an attenuation; frequencies lower than it
-            are unchanged.
+            Sounds like music being played while on hold. Standard second-order
+            high-shelf filter. Frequencies higher than the frequency get a boost
+            or an attenuation; frequencies lower than it are unchanged.
           </span>
         </label>
         <label class="radio-label">
@@ -197,7 +208,7 @@
         <span class="label-secondary">
           The frequency in the current filtering algorithm measured in hertz
           (Hz), with a nominal range of 10 to the
-          <a href="https://en.wikipedia.org/wiki/Nyquist_frequency"
+          <a href="https://en.wikipedia.org/wiki/Nyquist_frequency" class="link"
             >Nyquist frequency</a
           >—that is, half of the sample rate.
         </span>
@@ -206,7 +217,13 @@
           id="frequency-desc"
           data-deps="type"
         ></span>
-        <input type="number" name="frequency" value="350" />
+        <input
+          type="number"
+          name="frequency"
+          data-deps="audio"
+          value="350"
+          min="0"
+        />
       </label>
 
       <label class="field-label">
@@ -241,7 +258,7 @@
           -40 to 40.
         </span>
         <span class="label-secondary" id="gain-desc" data-deps="type"></span>
-        <input type="number" name="gain" value="0" min="-40" max="40" />
+        <input type="number" name="gain" value="20" min="-40" max="40" />
       </label>
     </form>
 
@@ -251,15 +268,21 @@
       const context = new AudioContext()
       on('enable-sound', button => {
         if (context.state === 'suspended') {
+          const audio = document.getElementById('audio')
           const handleInteraction = async e => {
             await context.resume()
             button.disabled = true
             button.textContent = 'Sound enabled'
+            audio.play().catch(() => {})
             document.removeEventListener('click', handleInteraction)
             document.removeEventListener('pointerdown', handleInteraction)
+            document.removeEventListener('keydown', handleInteraction)
+            audio.addEventListener('play', handleInteraction)
           }
           document.addEventListener('click', handleInteraction)
           document.addEventListener('pointerdown', handleInteraction)
+          document.addEventListener('keydown', handleInteraction)
+          audio.addEventListener('play', handleInteraction)
         } else {
           button.disabled = true
           button.textContent = 'Sound enabled'
@@ -287,8 +310,6 @@
 
       let prevUrl, sourceNode
       on('audio', async (elem, { file }) => {
-        // Make playing the audio also enable sound
-        elem.onplay = () => document.dispatchEvent(new Event('click'))
         if (prevUrl) {
           URL.revokeObjectURL(prevUrl)
         }
@@ -299,6 +320,12 @@
           sourceNode.connect(filterNode)
         }
         elem.play().catch(() => {})
+        return context.sampleRate
+      })
+
+      on('frequency', input => {
+        input.max = context.sampleRate / 2
+        console.log(context.sampleRate / 2)
       })
 
       on('frequency-desc', (elem, { type }) => {
