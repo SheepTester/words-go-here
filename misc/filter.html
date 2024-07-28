@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Audio frequency filter explorer</title>
+    <meta
+      name="description"
+      content="Uses JavaScript's built-in BiquadFilterNode to apply filters on the frequencies in your audio. Supports low-pass, high-pass, band-pass, low-shelf, high-shelf, peaking, notch, and all-pass filters."
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>Audio frequency filter explorer</h1>
+      <p>
+        Uses JavaScript's built-in BiquadFilterNode to apply filters on the
+        frequencies in your audio. Supports low-pass, high-pass, band-pass,
+        low-shelf, high-shelf, peaking, notch, and all-pass filters.
+      </p>
+
+      <div class="button-row">
+        <button type="submit" class="button primary-btn" id="enable-sound">
+          Enable sound
+        </button>
+      </div>
+
+      <div class="col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="file"
+            accept="audio/*"
+            class="hidden-accessible reform:file-input"
+            data-default="https://sheeptester.github.io/platformre/a/waterflame_glorious_morning.mp3"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">Choose, drop, or paste an audio file</span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <div class="image-content input-content">
+          <audio id="audio" data-deps="file" controls loop></audio>
+        </div>
+      </div>
+
+      <fieldset class="radio-set">
+        <legend class="label-primary">Filter type</legend>
+        <p class="label-secondary">
+          The kind of filtering algorithm. Descriptions are from
+          <a
+            href="https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode/type#type_values_and_their_meaning"
+            class="link"
+            >MDN</a
+          >.
+        </p>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="type"
+            value="lowpass"
+            class="hidden-accessible"
+            checked
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Low-pass</span>
+          <span class="label-secondary">
+            Standard second-order resonant low-pass filter with 12dB/octave
+            rolloff. Frequencies below the cutoff pass through; frequencies
+            above it are attenuated.
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="type"
+            value="highpass"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">High-pass</span>
+          <span class="label-secondary">
+            Standard second-order resonant high-pass filter with 12dB/octave
+            rolloff. Frequencies below the cutoff are attenuated; frequencies
+            above it pass through.
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="type"
+            value="bandpass"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Band-pass</span>
+          <span class="label-secondary">
+            Standard second-order band-pass filter. Frequencies outside the
+            given range of frequencies are attenuated; the frequencies inside it
+            pass through.
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="type"
+            value="lowshelf"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Low-shelf</span>
+          <span class="label-secondary">
+            Standard second-order low-shelf filter. Frequencies lower than the
+            frequency get a boost, or an attenuation; frequencies over it are
+            unchanged.
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="type"
+            value="highshelf"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">High-shelf</span>
+          <span class="label-secondary">
+            Standard second-order high-shelf filter. Frequencies higher than the
+            frequency get a boost or an attenuation; frequencies lower than it
+            are unchanged.
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="type"
+            value="peaking"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Peaking</span>
+          <span class="label-secondary">
+            Frequencies inside the range get a boost or an attenuation;
+            frequencies outside it are unchanged.
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="type"
+            value="notch"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Notch</span>
+          <span class="label-secondary">
+            Standard
+            <a
+              href="https://en.wikipedia.org/wiki/Band-stop_filter"
+              class="link"
+              >notch</a
+            >
+            filter, also called a <em>band-stop</em> or
+            <em>band-rejection</em> filter. It is the opposite of a bandpass
+            filter: frequencies outside the give range of frequencies pass
+            through; frequencies inside it are attenuated.
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="type"
+            value="allpass"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">All-pass</span>
+          <span class="label-secondary">
+            Standard second-order
+            <a
+              href="https://en.wikipedia.org/wiki/All-pass_filter#Digital_Implementation"
+              class="link"
+              >all-pass</a
+            >
+            filter. It lets all frequencies through, but changes the
+            phase-relationship between the various frequencies.
+          </span>
+        </label>
+      </fieldset>
+
+      <label class="field-label">
+        <span class="label-primary">Frequency (Hz)</span>
+        <span class="label-secondary">
+          The frequency in the current filtering algorithm measured in hertz
+          (Hz), with a nominal range of 10 to the
+          <a href="https://en.wikipedia.org/wiki/Nyquist_frequency"
+            >Nyquist frequency</a
+          >—that is, half of the sample rate.
+        </span>
+        <span
+          class="label-secondary"
+          id="frequency-desc"
+          data-deps="type"
+        ></span>
+        <input type="number" name="frequency" value="350" />
+      </label>
+
+      <label class="field-label">
+        <span class="label-primary">Detune</span>
+        <span class="label-secondary">
+          Detune the frequency in
+          <a href="https://en.wikipedia.org/wiki/Cent_%28music%29" class="link"
+            >cents</a
+          >.
+        </span>
+        <input type="number" name="detune" value="0" />
+      </label>
+
+      <label class="field-label">
+        <span class="label-primary">Quality (Q) factor</span>
+        <span class="label-secondary">
+          A dimensionless value with a default value of 1 and a nominal range of
+          0.0001 to 1000.
+        </span>
+        <span class="label-secondary" id="quality-desc" data-deps="type"></span>
+        <input type="number" name="quality" value="1" min="0.0001" max="1000" />
+      </label>
+
+      <label class="field-label">
+        <span class="label-primary">Gain (dB)</span>
+        <span class="label-secondary">
+          Represents the
+          <a href="https://en.wikipedia.org/wiki/Gain">gain</a> used in the
+          current filtering algorithm. When positive, it represents a real gain;
+          when negative, it represents an attenuation. It is expressed in dB,
+          has a default value of 0, and can take a value in a nominal range of
+          -40 to 40.
+        </span>
+        <span class="label-secondary" id="gain-desc" data-deps="type"></span>
+        <input type="number" name="gain" value="0" min="-40" max="40" />
+      </label>
+    </form>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+
+      const context = new AudioContext()
+      on('enable-sound', button => {
+        if (context.state === 'suspended') {
+          const handleInteraction = async e => {
+            await context.resume()
+            button.disabled = true
+            button.textContent = 'Sound enabled'
+            document.removeEventListener('click', handleInteraction)
+            document.removeEventListener('pointerdown', handleInteraction)
+          }
+          document.addEventListener('click', handleInteraction)
+          document.addEventListener('pointerdown', handleInteraction)
+        } else {
+          button.disabled = true
+          button.textContent = 'Sound enabled'
+        }
+      })
+
+      const filterNode = context.createBiquadFilter()
+      filterNode.connect(context.destination)
+
+      on({ name: '_type', deps: ['type'] }, (_, { type }) => {
+        filterNode.type = type
+      })
+      on({ name: '_frequency', deps: ['frequency'] }, (_, { frequency }) => {
+        filterNode.frequency.value = frequency
+      })
+      on({ name: '_detune', deps: ['detune'] }, (_, { detune }) => {
+        filterNode.detune.value = detune
+      })
+      on({ name: '_quality', deps: ['quality'] }, (_, { quality }) => {
+        filterNode.Q.value = quality
+      })
+      on({ name: '_gain', deps: ['gain'] }, (_, { gain }) => {
+        filterNode.gain.value = gain
+      })
+
+      let prevUrl, sourceNode
+      on('audio', async (elem, { file }) => {
+        // Make playing the audio also enable sound
+        elem.onplay = () => document.dispatchEvent(new Event('click'))
+        if (prevUrl) {
+          URL.revokeObjectURL(prevUrl)
+        }
+        prevUrl = URL.createObjectURL(file)
+        elem.src = prevUrl
+        if (!sourceNode) {
+          sourceNode = context.createMediaElementSource(elem)
+          sourceNode.connect(filterNode)
+        }
+        elem.play().catch(() => {})
+      })
+
+      on('frequency-desc', (elem, { type }) => {
+        elem.innerHTML = `<code>${type}</code>: ${
+          {
+            lowpass: 'The cutoff frequency.',
+            highpass: 'The cutoff frequency.',
+            bandpass: 'The center of the range of frequencies.',
+            lowshelf:
+              'The upper limit of the frequencies getting a boost or an attenuation.',
+            highshelf:
+              'The lower limit of the frequencies getting a boost or an attenuation.',
+            peaking:
+              'The middle of the frequency range getting a boost or an attenuation.',
+            notch: 'The center of the range of frequencies.',
+            allpass:
+              'The frequency with the maximal <a href="https://en.wikipedia.org/wiki/Group_delay_and_phase_delay" class="link">group delay</a>, that is, the frequency where the center of the phase transition occurs.'
+          }[type]
+        }`
+      })
+
+      on('quality-desc', (elem, { type }) => {
+        if (type === 'lowshelf' || type === 'highshelf') {
+          elem.parentElement.style.display = 'none'
+          return
+        }
+        elem.parentElement.style.display = null
+        elem.innerHTML = `<code>${type}</code>: ${
+          {
+            lowpass:
+              'Indicates how peaked the frequency is around the cutoff. The greater the value is, the greater is the peak.',
+            highpass:
+              'Indicates how peaked the frequency is around the cutoff. The greater the value, the greater the peak.',
+            bandpass:
+              'Controls the width of the frequency band. The greater the Q value, the smaller the frequency band.',
+            peaking:
+              'Controls the width of the frequency band. The greater the Q value, the smaller the frequency band.',
+            notch:
+              'Controls the width of the frequency band. The greater the Q value, the smaller the frequency band.',
+            allpass:
+              'Controls how sharp the transition is at the medium frequency. The larger this parameter is, the sharper and larger the transition will be.'
+          }[type]
+        }`
+      })
+
+      on('gain-desc', (elem, { type }) => {
+        if (type !== 'lowshelf' && type !== 'highshelf' && type !== 'peaking') {
+          elem.parentElement.style.display = 'none'
+          return
+        }
+        elem.parentElement.style.display = null
+        elem.innerHTML = `<code>${type}</code>: ${
+          {
+            lowshelf:
+              'The boost, in dB, to be applied; if negative, it will be an attenuation.',
+            highshelf:
+              'The boost, in dB, to be applied; if negative, it will be an attenuation.',
+            peaking:
+              'The boost, in dB, to be applied; if negative, it will be an attenuation.'
+          }[type]
+        }`
+      })
+    </script>
+  </body>
+</html>
