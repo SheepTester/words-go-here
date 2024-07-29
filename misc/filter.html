@@ -13,11 +13,57 @@
 
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
     <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"
+      integrity="sha512-zInFF17qBFVvvvFpIfeBzo7Tj7+rQxLeTJDmbxjBz5/zIr89YVbTNelNhdTT+/DCrxoVzBeUPVFJsczKbB7sew=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
     <script src="/sheep3.js" charset="utf-8"></script>
 
     <style>
       audio {
         width: 100%;
+      }
+
+      .graph {
+        fill: none;
+        stroke: currentColor;
+        height: 1em;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        margin-right: 10px;
+        transform: scale(1.5);
+        transform-origin: left;
+      }
+      .out {
+        stroke-width: 1.5;
+      }
+      .zero {
+        stroke-opacity: 0.5;
+      }
+      .out-fill {
+        fill: color-mix(in srgb, currentColor 70%, var(--bg));
+        stroke: color-mix(in srgb, currentColor 70%, var(--bg));
+        stroke-width: 1.5;
+      }
+
+      .spectograms {
+        display: flex;
+        margin: 0 auto 10px;
+        max-width: 1200px;
+        gap: 20px;
+      }
+      .spectogram {
+        flex: 1;
+        height: 60vh;
+      }
+      .spectogram canvas {
+        width: 100%;
+        height: 100%;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        border-radius: 10px;
       }
     </style>
   </head>
@@ -58,6 +104,15 @@
         </div>
       </div>
 
+      <div class="spectograms">
+        <div class="spectogram">
+          <canvas id="source-spectogram"></canvas>
+        </div>
+        <div class="spectogram">
+          <canvas id="filter-spectogram"></canvas>
+        </div>
+      </div>
+
       <fieldset class="radio-set">
         <legend class="label-primary">Filter type</legend>
         <p class="label-secondary">
@@ -77,7 +132,14 @@
             checked
           />
           <span class="radio-button"></span>
-          <span class="label-primary">Low-pass</span>
+          <span class="label-primary">
+            <svg class="graph" viewBox="-2 -12 24 24" aria-hidden="true">
+              <path class="out-fill" d="M 0 0 v 10 h 10 V 0 z" />
+              <path class="zero" d="M 0 0 h 20" />
+              <path class="out" d="M 0 0 h 10 v 10 h 10" />
+            </svg>
+            Low-pass
+          </span>
           <span class="label-secondary">
             Sounds like muffled audio through a wall. Standard second-order
             resonant low-pass filter with 12dB/octave rolloff. Frequencies below
@@ -92,7 +154,14 @@
             class="hidden-accessible"
           />
           <span class="radio-button"></span>
-          <span class="label-primary">High-pass</span>
+          <span class="label-primary">
+            <svg class="graph" viewBox="-2 -12 24 24" aria-hidden="true">
+              <path class="out-fill" d="M 10 0 v 10 h 10 V 0 z" />
+              <path class="zero" d="M 0 0 h 20" />
+              <path class="out" d="M 0 10 h 10 V 0 h 10" />
+            </svg>
+            High-pass
+          </span>
           <span class="label-secondary">
             Sounds like audio coming out of phone or earphone speakers. Standard
             second-order resonant high-pass filter with 12dB/octave rolloff.
@@ -108,7 +177,14 @@
             class="hidden-accessible"
           />
           <span class="radio-button"></span>
-          <span class="label-primary">Band-pass</span>
+          <span class="label-primary">
+            <svg class="graph" viewBox="-2 -12 24 24" aria-hidden="true">
+              <path class="out-fill" d="M 5 0 v 10 h 10 V 0 z" />
+              <path class="zero" d="M 0 0 h 20" />
+              <path class="out" d="M 0 10 h 5 V 0 h 10 v 10 h 5" />
+            </svg>
+            Band-pass
+          </span>
           <span class="label-secondary">
             Standard second-order band-pass filter. Frequencies outside the
             given range of frequencies are attenuated; the frequencies inside it
@@ -123,7 +199,14 @@
             class="hidden-accessible"
           />
           <span class="radio-button"></span>
-          <span class="label-primary">Low-shelf</span>
+          <span class="label-primary">
+            <svg class="graph" viewBox="-2 -12 24 24" aria-hidden="true">
+              <path class="out-fill" d="M 0 -10 h 10 v 10 h 10 v 10 H 0 z" />
+              <path class="zero" d="M 0 0 h 20" />
+              <path class="out" d="M 0 -10 h 10 v 10 h 10" />
+            </svg>
+            Low-shelf
+          </span>
           <span class="label-secondary">
             Sounds like bass-boosted audio. Standard second-order low-shelf
             filter. Frequencies lower than the frequency get a boost, or an
@@ -138,7 +221,14 @@
             class="hidden-accessible"
           />
           <span class="radio-button"></span>
-          <span class="label-primary">High-shelf</span>
+          <span class="label-primary">
+            <svg class="graph" viewBox="-2 -12 24 24" aria-hidden="true">
+              <path class="out-fill" d="M 0 0 h 10 v -10 h 10 V 10 H 0 z" />
+              <path class="zero" d="M 0 0 h 20" />
+              <path class="out" d="M 0 0 h 10 v -10 h 10" />
+            </svg>
+            High-shelf
+          </span>
           <span class="label-secondary">
             Sounds like music being played while on hold. Standard second-order
             high-shelf filter. Frequencies higher than the frequency get a boost
@@ -153,7 +243,17 @@
             class="hidden-accessible"
           />
           <span class="radio-button"></span>
-          <span class="label-primary">Peaking</span>
+          <span class="label-primary">
+            <svg class="graph" viewBox="-2 -12 24 24" aria-hidden="true">
+              <path
+                class="out-fill"
+                d="M 0 0 h 5 v -10 h 10 v 10 h 5 V 10 H 0 z"
+              />
+              <path class="zero" d="M 0 0 h 20" />
+              <path class="out" d="M 0 0 h 5 v -10 h 10 v 10 h 5" />
+            </svg>
+            Peaking
+          </span>
           <span class="label-secondary">
             Frequencies inside the range get a boost or an attenuation;
             frequencies outside it are unchanged.
@@ -167,7 +267,17 @@
             class="hidden-accessible"
           />
           <span class="radio-button"></span>
-          <span class="label-primary">Notch</span>
+          <span class="label-primary">
+            <svg class="graph" viewBox="-2 -12 24 24" aria-hidden="true">
+              <path
+                class="out-fill"
+                d="M 0 0 h 5 v 10 H 0 z M 15 0 h 5 v 10 H 15 z"
+              />
+              <path class="zero" d="M 0 0 h 20" />
+              <path class="out" d="M 0 0 h 5 v 10 h 10 v -10 h 5" />
+            </svg>
+            Notch
+          </span>
           <span class="label-secondary">
             Standard
             <a
@@ -189,7 +299,13 @@
             class="hidden-accessible"
           />
           <span class="radio-button"></span>
-          <span class="label-primary">All-pass</span>
+          <span class="label-primary">
+            <svg class="graph" viewBox="-2 -12 24 24" aria-hidden="true">
+              <path class="out-fill" d="M 0 0 h 20 v 10 H 0 z" />
+              <path class="out" d="M 0 0 h 20" />
+            </svg>
+            All-pass
+          </span>
           <span class="label-secondary">
             Standard second-order
             <a
@@ -265,10 +381,11 @@
     <script type="module">
       import { on } from '/reform/v1/index.js'
 
+      const audio = document.getElementById('audio')
+
       const context = new AudioContext()
       on('enable-sound', button => {
         if (context.state === 'suspended') {
-          const audio = document.getElementById('audio')
           const handleInteraction = async e => {
             await context.resume()
             button.disabled = true
@@ -289,8 +406,80 @@
         }
       })
 
+      const sourceNode = context.createMediaElementSource(audio)
+      const sourceAnalyser = context.createAnalyser()
       const filterNode = context.createBiquadFilter()
-      filterNode.connect(context.destination)
+      const filterAnalyser = context.createAnalyser()
+      sourceNode.connect(sourceAnalyser)
+      sourceAnalyser.connect(filterNode)
+      filterNode.connect(filterAnalyser)
+      filterAnalyser.connect(context.destination)
+
+      const sc = document.getElementById('source-spectogram').getContext('2d')
+      const fc = document.getElementById('filter-spectogram').getContext('2d')
+      const sourceSamples = []
+      const filterSamples = []
+      const MAX_SAMPLES = 256
+      function removeUntilHasSpace (samples) {
+        while (samples.length >= MAX_SAMPLES) {
+          // Remove the sample that is closest to its neighbor
+          const { index } = samples.reduce(
+            (cum, curr, i) => {
+              const dist =
+                (samples[i + 1]?.time ?? audio.duration) -
+                (samples[i - 1]?.time ?? 0)
+              if (dist < cum.dist) {
+                return { index: i, dist }
+              } else {
+                return cum
+              }
+            },
+            { index: 0, dist: Infinity }
+          )
+          samples.splice(index, 1)
+        }
+      }
+      audio.addEventListener('timeupdate', () => {
+        const time = audio.currentTime
+        const sourceSample = new Float32Array(sourceAnalyser.frequencyBinCount)
+        const filterSample = new Float32Array(filterAnalyser.frequencyBinCount)
+        sourceAnalyser.getFloatFrequencyData(sourceSample)
+        filterAnalyser.getFloatFrequencyData(filterSample)
+        removeUntilHasSpace(sourceSamples)
+        removeUntilHasSpace(filterSamples)
+        sourceSamples.push({ time, sample: sourceSample })
+        filterSamples.push({ time, sample: filterSample })
+        render(sc, sourceSamples, sourceAnalyser)
+        render(fc, filterSamples, filterAnalyser)
+      })
+      const WIDTH = 600
+      const scale = chroma.scale(['yellow', 'navy']).mode('lch')
+      function render (c, samples, analyserNode) {
+        if (samples.length === 0) {
+          return
+        }
+        c.canvas.width = WIDTH
+        c.canvas.height = analyserNode.frequencyBinCount
+        const range = analyserNode.maxDecibels - analyserNode.minDecibels
+        samples.sort((a, b) => a.time - b.time)
+        for (const [i, { time, sample }] of samples.entries()) {
+          const left = Math.floor(
+            i === 0 ? 0 : (samples[i - 1].time / audio.duration) * WIDTH
+          )
+          const right = Math.floor(
+            i === samples.length - 1 ? WIDTH : (time / audio.duration) * WIDTH
+          )
+          for (const [j, value] of sample.entries()) {
+            c.fillStyle = scale(1 - (value - analyserNode.minDecibels) / range)
+            c.fillRect(
+              left,
+              analyserNode.frequencyBinCount - j - 1,
+              right - left,
+              1
+            )
+          }
+        }
+      }
 
       on({ name: '_type', deps: ['type'] }, (_, { type }) => {
         filterNode.type = type
@@ -308,17 +497,13 @@
         filterNode.gain.value = gain
       })
 
-      let prevUrl, sourceNode
+      let prevUrl
       on('audio', async (elem, { file }) => {
         if (prevUrl) {
           URL.revokeObjectURL(prevUrl)
         }
         prevUrl = URL.createObjectURL(file)
         elem.src = prevUrl
-        if (!sourceNode) {
-          sourceNode = context.createMediaElementSource(elem)
-          sourceNode.connect(filterNode)
-        }
         elem.play().catch(() => {})
         return context.sampleRate
       })
