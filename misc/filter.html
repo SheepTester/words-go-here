@@ -77,6 +77,14 @@
         font-size: 0.8em;
         border-left: 1px solid currentColor;
         padding: 0 5px;
+        box-sizing: border-box;
+      }
+      .flip {
+        width: 300px;
+        border-left: none;
+        text-align: right;
+        border-right: 1px solid currentColor;
+        margin-left: -300px;
       }
       .current-time {
         position: absolute;
@@ -349,28 +357,42 @@
         </label>
       </fieldset>
 
-      <label class="field-label">
-        <span class="label-primary">Frequency (Hz)</span>
-        <span class="label-secondary">
-          The frequency in the current filtering algorithm measured in hertz
-          (Hz), with a nominal range of 10 to the
-          <a href="https://en.wikipedia.org/wiki/Nyquist_frequency" class="link"
-            >Nyquist frequency</a
-          >—that is, half of the sample rate.
-        </span>
-        <span
-          class="label-secondary"
-          id="frequency-desc"
-          data-deps="type"
-        ></span>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Frequency (Hz)</span>
+          <span class="label-secondary">
+            The frequency in the current filtering algorithm measured in hertz
+            (Hz), with a nominal range of 10 to the
+            <a
+              href="https://en.wikipedia.org/wiki/Nyquist_frequency"
+              class="link"
+              >Nyquist frequency</a
+            >—that is, half of the sample rate.
+          </span>
+          <span
+            class="label-secondary"
+            id="frequency-desc"
+            data-deps="type"
+          ></span>
+          <input
+            type="range"
+            name="frequency"
+            data-deps="audio"
+            value="350"
+            min="0"
+            max="24000"
+          />
+        </label>
         <input
           type="number"
           name="frequency"
           data-deps="audio"
           value="350"
           min="0"
+          max="24000"
+          aria-label="Frequency value"
         />
-      </label>
+      </div>
 
       <label class="field-label">
         <span class="label-primary">Detune</span>
@@ -393,19 +415,29 @@
         <input type="number" name="quality" value="1" min="0.0001" max="1000" />
       </label>
 
-      <label class="field-label">
-        <span class="label-primary">Gain (dB)</span>
-        <span class="label-secondary">
-          Represents the
-          <a href="https://en.wikipedia.org/wiki/Gain">gain</a> used in the
-          current filtering algorithm. When positive, it represents a real gain;
-          when negative, it represents an attenuation. It is expressed in dB,
-          has a default value of 0, and can take a value in a nominal range of
-          -40 to 40.
-        </span>
-        <span class="label-secondary" id="gain-desc" data-deps="type"></span>
-        <input type="number" name="gain" value="20" min="-40" max="40" />
-      </label>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Gain (dB)</span>
+          <span class="label-secondary">
+            Represents the
+            <a href="https://en.wikipedia.org/wiki/Gain">gain</a> used in the
+            current filtering algorithm. When positive, it represents a real
+            gain; when negative, it represents an attenuation. It is expressed
+            in dB, has a default value of 0, and can take a value in a nominal
+            range of -40 to 40.
+          </span>
+          <span class="label-secondary" id="gain-desc" data-deps="type"></span>
+          <input type="range" name="gain" value="20" min="-40" max="40" />
+        </label>
+        <input
+          type="number"
+          name="gain"
+          value="20"
+          min="-40"
+          max="40"
+          aria-label="Gain value"
+        />
+      </div>
     </form>
 
     <script type="module">
@@ -533,10 +565,20 @@
       on('frequency1', (elem, { frequency }) => {
         elem.style.left = `${(frequency / (context.sampleRate / 2)) * 100}%`
         elem.textContent = `${frequency} Hz`
+        if (frequency > context.sampleRate / 4) {
+          elem.classList.add('flip')
+        } else {
+          elem.classList.remove('flip')
+        }
       })
       on('frequency2', (elem, { frequency }) => {
         elem.style.left = `${(frequency / (context.sampleRate / 2)) * 100}%`
         elem.textContent = `${frequency} Hz`
+        if (frequency > context.sampleRate / 4) {
+          elem.classList.add('flip')
+        } else {
+          elem.classList.remove('flip')
+        }
       })
 
       on({ name: '_type', deps: ['type'] }, (_, { type }) => {
@@ -568,10 +610,10 @@
         return context.sampleRate
       })
 
-      on('frequency', input => {
-        input.max = context.sampleRate / 2
-        console.log(context.sampleRate / 2)
-      })
+      document.querySelector('[name=frequency][type=range]').max =
+        context.sampleRate / 2
+      document.querySelector('[name=frequency][type=number]').max =
+        context.sampleRate / 2
 
       on('frequency-desc', (elem, { type }) => {
         elem.innerHTML = `<code>${type}</code>: ${
@@ -618,10 +660,10 @@
 
       on('gain-desc', (elem, { type }) => {
         if (type !== 'lowshelf' && type !== 'highshelf' && type !== 'peaking') {
-          elem.parentElement.style.display = 'none'
+          elem.parentElement.parentElement.style.display = 'none'
           return
         }
-        elem.parentElement.style.display = null
+        elem.parentElement.parentElement.style.display = null
         elem.innerHTML = `<code>${type}</code>: ${
           {
             lowshelf:

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>low high pass screwer arounder</title>
+    <meta
+      name="description"
+      content="repeatedly fools around with low and high pass"
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      audio {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>low and high pass</h1>
+      <p>
+        Uses JavaScript's built-in
+        <a
+          href="https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode"
+          class="link"
+          >BiquadFilterNode</a
+        >
+      </p>
+      <p>see <a href="./filter.html" class="link">the playground</a></p>
+
+      <div class="button-row">
+        <button type="submit" class="button primary-btn" id="enable-sound">
+          Enable sound
+        </button>
+      </div>
+
+      <div class="col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="file"
+            accept="audio/*"
+            class="hidden-accessible reform:file-input"
+            data-default="https://sheeptester.github.io/platformre/a/waterflame_glorious_morning.mp3"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">Choose, drop, or paste an audio file</span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <div class="image-content input-content">
+          <audio id="audio" data-deps="file" controls loop></audio>
+        </div>
+      </div>
+    </form>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+
+      const audio = document.getElementById('audio')
+
+      const context = new AudioContext()
+      on('enable-sound', button => {
+        if (context.state === 'suspended') {
+          const handleInteraction = async e => {
+            await context.resume()
+            button.disabled = true
+            button.textContent = 'Sound enabled'
+            audio.play().catch(() => {})
+            document.removeEventListener('click', handleInteraction)
+            document.removeEventListener('pointerdown', handleInteraction)
+            document.removeEventListener('keydown', handleInteraction)
+            audio.addEventListener('play', handleInteraction)
+          }
+          document.addEventListener('click', handleInteraction)
+          document.addEventListener('pointerdown', handleInteraction)
+          document.addEventListener('keydown', handleInteraction)
+          audio.addEventListener('play', handleInteraction)
+        } else {
+          button.disabled = true
+          button.textContent = 'Sound enabled'
+        }
+      })
+
+      const sourceNode = context.createMediaElementSource(audio)
+      const lowPassNode = context.createBiquadFilter()
+      lowPassNode.type = 'lowpass'
+      lowPassNode.frequency.value = context.sampleRate / 2
+      const highPassNode = context.createBiquadFilter()
+      highPassNode.type = 'highpass'
+      highPassNode.frequency.value = 0
+      sourceNode.connect(lowPassNode)
+      lowPassNode.connect(highPassNode)
+      highPassNode.connect(context.destination)
+
+      const DURATION = 2
+      const wait = delay => new Promise(resolve => setTimeout(resolve, delay))
+      async function bleh () {
+        while (true) {
+          console.log('low')
+          lowPassNode.frequency.linearRampToValueAtTime(
+            20,
+            context.currentTime + DURATION
+          )
+          lowPassNode.frequency.linearRampToValueAtTime(
+            3000,
+            context.currentTime + DURATION * 2
+          )
+          await wait(2.5 * DURATION * 1000)
+          console.log('high')
+          highPassNode.frequency.linearRampToValueAtTime(
+            3000,
+            context.currentTime + DURATION
+          )
+          highPassNode.frequency.linearRampToValueAtTime(
+            0,
+            context.currentTime + DURATION * 2
+          )
+          await wait(2.5 * DURATION * 1000)
+        }
+        setInterval(bleh, 4 * DURATION * 1000)
+      }
+      bleh()
+
+      let prevUrl
+      on('audio', async (elem, { file }) => {
+        if (prevUrl) {
+          URL.revokeObjectURL(prevUrl)
+        }
+        prevUrl = URL.createObjectURL(file)
+        elem.src = prevUrl
+        elem.play().catch(() => {})
+        return context.sampleRate
+      })
+    </script>
+  </body>
+</html>
