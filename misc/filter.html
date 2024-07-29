@@ -49,7 +49,10 @@
       }
 
       .spectograms {
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        grid-auto-flow: column;
         margin: 0 auto 10px;
         max-width: 1200px;
         gap: 20px;
@@ -57,6 +60,7 @@
       .spectogram {
         flex: 1;
         height: 60vh;
+        position: relative;
       }
       .spectogram canvas {
         width: 100%;
@@ -64,6 +68,22 @@
         image-rendering: pixelated;
         image-rendering: crisp-edges;
         border-radius: 10px;
+        border: 1px solid var(--line);
+      }
+      .frequency {
+        position: absolute;
+        margin: 0;
+        bottom: 100%;
+        font-size: 0.8em;
+        border-left: 1px solid currentColor;
+        padding: 0 5px;
+      }
+      .current-time {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        border-top: 1px solid currentColor;
       }
     </style>
   </head>
@@ -105,11 +125,21 @@
       </div>
 
       <div class="spectograms">
+        <p>Original</p>
         <div class="spectogram">
           <canvas id="source-spectogram"></canvas>
+          <p class="frequency" id="frequency1" data-deps="frequency">
+            frequency
+          </p>
+          <div class="current-time" id="time1"></div>
         </div>
+        <p>Filtered</p>
         <div class="spectogram">
           <canvas id="filter-spectogram"></canvas>
+          <p class="frequency" id="frequency2" data-deps="frequency">
+            frequency
+          </p>
+          <div class="current-time" id="time2"></div>
         </div>
       </div>
 
@@ -415,10 +445,12 @@
       filterNode.connect(filterAnalyser)
       filterAnalyser.connect(context.destination)
 
+      const time1 = document.getElementById('time1')
+      const time2 = document.getElementById('time2')
       const sc = document.getElementById('source-spectogram').getContext('2d')
       const fc = document.getElementById('filter-spectogram').getContext('2d')
-      const sourceSamples = []
-      const filterSamples = []
+      let sourceSamples = []
+      let filterSamples = []
       const MAX_SAMPLES = 256
       function removeUntilHasSpace (samples) {
         while (samples.length >= MAX_SAMPLES) {
@@ -439,6 +471,21 @@
           samples.splice(index, 1)
         }
       }
+      const scale = chroma.scale(['yellow', 'navy']).mode('lch')
+      function toColor (sample, analyserNode) {
+        const range = analyserNode.maxDecibels - analyserNode.minDecibels
+        return new Uint8ClampedArray(
+          Array.from(sample, value => {
+            const color = scale(1 - (value - analyserNode.minDecibels) / range)
+            return [
+              color.get('rgb.r'),
+              color.get('rgb.g'),
+              color.get('rgb.b'),
+              255
+            ]
+          }).flat()
+        )
+      }
       audio.addEventListener('timeupdate', () => {
         const time = audio.currentTime
         const sourceSample = new Float32Array(sourceAnalyser.frequencyBinCount)
@@ -447,39 +494,50 @@
         filterAnalyser.getFloatFrequencyData(filterSample)
         removeUntilHasSpace(sourceSamples)
         removeUntilHasSpace(filterSamples)
-        sourceSamples.push({ time, sample: sourceSample })
-        filterSamples.push({ time, sample: filterSample })
+        sourceSamples.push({
+          time,
+          sample: toColor(sourceSample, sourceAnalyser)
+        })
+        filterSamples.push({
+          time,
+          sample: toColor(filterSample, filterAnalyser)
+        })
         render(sc, sourceSamples, sourceAnalyser)
         render(fc, filterSamples, filterAnalyser)
+        time1.style.top = `${(time / audio.duration) * 100}%`
+        time2.style.top = `${(time / audio.duration) * 100}%`
       })
-      const WIDTH = 600
-      const scale = chroma.scale(['yellow', 'navy']).mode('lch')
+      const SIZE = 600
       function render (c, samples, analyserNode) {
         if (samples.length === 0) {
           return
         }
-        c.canvas.width = WIDTH
-        c.canvas.height = analyserNode.frequencyBinCount
-        const range = analyserNode.maxDecibels - analyserNode.minDecibels
+        c.canvas.width = analyserNode.frequencyBinCount
+        c.canvas.height = SIZE
         samples.sort((a, b) => a.time - b.time)
+        const imageData = new ImageData(c.canvas.width, c.canvas.height)
         for (const [i, { time, sample }] of samples.entries()) {
           const left = Math.floor(
-            i === 0 ? 0 : (samples[i - 1].time / audio.duration) * WIDTH
+            i === 0 ? 0 : (samples[i - 1].time / audio.duration) * SIZE
           )
           const right = Math.floor(
-            i === samples.length - 1 ? WIDTH : (time / audio.duration) * WIDTH
+            i === samples.length - 1 ? SIZE : (time / audio.duration) * SIZE
           )
-          for (const [j, value] of sample.entries()) {
-            c.fillStyle = scale(1 - (value - analyserNode.minDecibels) / range)
-            c.fillRect(
-              left,
-              analyserNode.frequencyBinCount - j - 1,
-              right - left,
-              1
-            )
+          for (let t = left; t < right; t++) {
+            imageData.data.set(sample, analyserNode.frequencyBinCount * 4 * t)
           }
         }
+        c.putImageData(imageData, 0, 0)
       }
+
+      on('frequency1', (elem, { frequency }) => {
+        elem.style.left = `${(frequency / (context.sampleRate / 2)) * 100}%`
+        elem.textContent = `${frequency} Hz`
+      })
+      on('frequency2', (elem, { frequency }) => {
+        elem.style.left = `${(frequency / (context.sampleRate / 2)) * 100}%`
+        elem.textContent = `${frequency} Hz`
+      })
 
       on({ name: '_type', deps: ['type'] }, (_, { type }) => {
         filterNode.type = type
@@ -499,6 +557,8 @@
 
       let prevUrl
       on('audio', async (elem, { file }) => {
+        sourceSamples = []
+        filterSamples = []
         if (prevUrl) {
           URL.revokeObjectURL(prevUrl)
         }
