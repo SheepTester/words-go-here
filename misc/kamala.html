@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>brat album cover maker</title>
+    <meta name="description" content="kamala harris is brat" />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      #reference {
+        position: absolute;
+        inset: 20px;
+        width: calc(100% - 40px);
+        height: calc(100% - 40px);
+        opacity: 0.4;
+        filter: invert();
+        animation: wiggle 1s infinite alternate;
+      }
+      @keyframes wiggle {
+        from {
+          opacity: 0.2;
+        }
+        to {
+          opacity: 0.5;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>brat album cover maker</h1>
+
+      <div class="two-col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="text"
+            class="hidden-accessible reform:text-input"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">
+            Choose or drop a text file or type below
+          </span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <textarea name="text" aria-label="Text" class="input-content">
+brat</textarea
+        >
+        <div class="image-content output-content">
+          <canvas id="output" data-deps="lowerQuality"></canvas>
+          <img
+            src="https://media.cnn.com/api/v1/images/stellar/prod/441902098-18440592547052491-612846478017568761-n.jpg?q=w_2000,c_fill"
+            id="reference"
+          />
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            data-output="output"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            data-output="output"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+
+      <canvas
+        id="lowerQuality"
+        data-deps="text scaleX scaleY"
+        style="display: none"
+      ></canvas>
+
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Horizontal scale</span>
+          <input
+            type="range"
+            name="scaleX"
+            min="0"
+            max="2"
+            step="any"
+            value="0.71"
+          />
+        </label>
+        <input
+          type="number"
+          name="scaleX"
+          min="0"
+          max="2"
+          step="any"
+          value="0.71"
+          aria-label="Horizontal scale value"
+        />
+      </div>
+
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Vertical scale</span>
+          <input
+            type="range"
+            name="scaleY"
+            min="0"
+            max="2"
+            step="any"
+            value="1"
+          />
+        </label>
+        <input
+          type="number"
+          name="scaleY"
+          min="0"
+          max="2"
+          step="any"
+          value="1"
+          aria-label="Vertical scale value"
+        />
+      </div>
+    </form>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+
+      const LOWER_SIZE = 1000
+      on('lowerQuality', (c, { text, scaleX, scaleY }) => {
+        c.canvas.width = LOWER_SIZE
+        c.canvas.height = LOWER_SIZE
+        c.fillStyle = '#8bcf00'
+        c.fillRect(0, 0, LOWER_SIZE, LOWER_SIZE)
+        c.translate(LOWER_SIZE / 2, LOWER_SIZE / 2)
+        c.scale(scaleX, scaleY)
+        c.textAlign = 'center'
+        c.textBaseline = 'middle'
+        c.font = `${LOWER_SIZE * 0.365}px Arial, sans-serif`
+        c.fillStyle = 'black'
+        c.fillText(text, LOWER_SIZE * -0.013, LOWER_SIZE * 0.028)
+        return c.canvas
+      })
+
+      const FULL_SIZE = 2000
+      on('output', (c, { lowerQuality }) => {
+        c.canvas.width = FULL_SIZE
+        c.canvas.height = FULL_SIZE
+        c.drawImage(lowerQuality, 0, 0, FULL_SIZE, FULL_SIZE)
+      })
+    </script>
+  </body>
+</html>
