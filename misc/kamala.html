@@ -18,17 +18,20 @@
         inset: 20px;
         width: calc(100% - 40px);
         height: calc(100% - 40px);
-        opacity: 0.4;
-        filter: invert();
-        animation: wiggle 1s infinite alternate;
+        filter: brightness(1.05);
+        animation: wiggle 1s steps(2, jump-none) infinite;
+        display: none;
       }
       @keyframes wiggle {
-        from {
-          opacity: 0.2;
+        0% {
+          opacity: 0;
         }
-        to {
-          opacity: 0.5;
+        100% {
+          opacity: 1;
         }
+      }
+      .coconut-tree {
+        height: 1em;
       }
     </style>
   </head>
@@ -53,9 +56,9 @@
 brat</textarea
         >
         <div class="image-content output-content">
-          <canvas id="output" data-deps="lowerQuality"></canvas>
+          <canvas id="output" data-deps="lowerQuality fullSize"></canvas>
           <img
-            src="https://media.cnn.com/api/v1/images/stellar/prod/441902098-18440592547052491-612846478017568761-n.jpg?q=w_2000,c_fill"
+            src="https://upload.wikimedia.org/wikipedia/commons/6/60/Charli_XCX_-_Brat_%28album_cover%29.png"
             id="reference"
           />
         </div>
@@ -82,9 +85,32 @@ brat</textarea
 
       <canvas
         id="lowerQuality"
-        data-deps="text scaleX scaleY"
+        data-deps="text scaleX scale lqSize outline image"
         style="display: none"
       ></canvas>
+
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Text size</span>
+          <input
+            type="range"
+            name="scale"
+            min="0"
+            max="2"
+            step="any"
+            value="0.37"
+          />
+        </label>
+        <input
+          type="number"
+          name="scale"
+          min="0"
+          max="2"
+          step="0.01"
+          value="0.37"
+          aria-label="Vertical scale value"
+        />
+      </div>
 
       <div class="field-label range-wrapper">
         <label class="range-label">
@@ -95,7 +121,7 @@ brat</textarea
             min="0"
             max="2"
             step="any"
-            value="0.71"
+            value="0.7"
           />
         </label>
         <input
@@ -103,60 +129,119 @@ brat</textarea
           name="scaleX"
           min="0"
           max="2"
-          step="any"
-          value="0.71"
+          step="0.01"
+          value="0.7"
           aria-label="Horizontal scale value"
         />
       </div>
 
-      <div class="field-label range-wrapper">
-        <label class="range-label">
-          <span class="label-primary">Vertical scale</span>
-          <input
-            type="range"
-            name="scaleY"
-            min="0"
-            max="2"
-            step="any"
-            value="1"
-          />
+      <div class="cols">
+        <label class="field-label">
+          <span class="label-primary">Low quality size</span>
+          <input type="number" name="lqSize" value="128" />
         </label>
-        <input
-          type="number"
-          name="scaleY"
-          min="0"
-          max="2"
-          step="any"
-          value="1"
-          aria-label="Vertical scale value"
-        />
+        <label class="field-label">
+          <span class="label-primary">Final image size</span>
+          <input type="number" name="fullSize" value="2048" />
+        </label>
       </div>
+
+      <label class="radio-label" style="display: none">
+        <input type="checkbox" name="outline" class="hidden-accessible" />
+        <span class="radio-button"></span>
+        <span class="label-secondary">Add black outline (for emoji)</span>
+      </label>
+
+      <fieldset class="radio-set">
+        <legend class="label-primary">Image</legend>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="image"
+            value="twemoji"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">
+            <img
+              class="coconut-tree"
+              src="./coconut-tree-twemoji.svg"
+              alt="🥥🌴 in Twitter emoji font"
+              id="twemoji"
+            />
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="image"
+            value="win10"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">
+            <img
+              class="coconut-tree"
+              src="./coconut-tree-win10.png"
+              alt="🥥🌴 in Window 10 emoji font"
+              id="win10"
+            />
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="image"
+            value="none"
+            class="hidden-accessible"
+            checked
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">None</span>
+        </label>
+      </fieldset>
     </form>
 
     <script type="module">
       import { on } from '/reform/v1/index.js'
 
-      const LOWER_SIZE = 1000
-      on('lowerQuality', (c, { text, scaleX, scaleY }) => {
-        c.canvas.width = LOWER_SIZE
-        c.canvas.height = LOWER_SIZE
+      on('lowerQuality', (c, options) => {
+        const { text, scaleX, scale, lqSize, outline, image } = options
+        c.canvas.width = lqSize
+        c.canvas.height = lqSize
         c.fillStyle = '#8bcf00'
-        c.fillRect(0, 0, LOWER_SIZE, LOWER_SIZE)
-        c.translate(LOWER_SIZE / 2, LOWER_SIZE / 2)
-        c.scale(scaleX, scaleY)
+        c.fillRect(0, 0, lqSize, lqSize)
+        c.translate(lqSize / 2, lqSize / 2)
+        c.scale(scaleX, 1)
+        if (image !== 'none') {
+          c.drawImage(
+            document.getElementById(image),
+            lqSize * -scale,
+            lqSize * scale * -0.5,
+            lqSize * scale * 2,
+            lqSize * scale
+          )
+        }
         c.textAlign = 'center'
         c.textBaseline = 'middle'
-        c.font = `${LOWER_SIZE * 0.365}px Arial, sans-serif`
+        c.font = `${lqSize * scale}px Arial, sans-serif`
+        if (outline) {
+          c.strokeStyle = 'black'
+          c.lineWidth = lqSize * 0.02
+          c.strokeText(text, lqSize * -0.013, lqSize * 0.028)
+        }
         c.fillStyle = 'black'
-        c.fillText(text, LOWER_SIZE * -0.013, LOWER_SIZE * 0.028)
+        c.fillText(text, lqSize * -0.013, lqSize * 0.028)
         return c.canvas
       })
 
-      const FULL_SIZE = 2000
-      on('output', (c, { lowerQuality }) => {
-        c.canvas.width = FULL_SIZE
-        c.canvas.height = FULL_SIZE
-        c.drawImage(lowerQuality, 0, 0, FULL_SIZE, FULL_SIZE)
+      on('output', async (c, { lowerQuality, fullSize }) => {
+        c.canvas.width = fullSize
+        c.canvas.height = fullSize
+        c.drawImage(lowerQuality, 0, 0, fullSize, fullSize)
+
+        const blob = await new Promise(resolve => c.canvas.toBlob(resolve))
+        return new File([blob], 'album-cover.png', { type: blob.type })
       })
     </script>
   </body>
