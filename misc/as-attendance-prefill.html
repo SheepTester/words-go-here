@@ -27,21 +27,21 @@
   </head>
   <body>
     <form class="main" role="main">
-      <h1>Prefill A.S. attendance form</h1>
+      <h1>A.S. attendance form template</h1>
       <p>
-        Generates a link that prefills values in
+        Generates a link that automatically fills in questions in
         <a
           href="https://docs.google.com/forms/u/1/d/e/1FAIpQLSc-akfqTNzrWUmOub_rMDj5wExBUDfakMXDbeGicOrpxBr6jg/viewform"
           class="link"
           >A.S.'s attendance form</a
         >
-        to expediate checking in and discourage attendees from putting "N/A" if
-        asked to complete form before receiving food. You can then use the link
-        to
+        to expediate checking in and discourage attendees from claiming there
+        wasn't food when asked to complete the form before receiving food. Maybe
+        you can use the link to
         <a href="https://sheeptester.github.io/qr/" class="link"
           >generate a QR code</a
         >
-        superior to the one A.S. provides.
+        superior to the one provided by A.S.
       </p>
       <p>Some things to note:</p>
       <ul>
@@ -54,7 +54,7 @@
         <li>
           <p>
             Google cleans off the prefilling part of the URL once you visit the
-            page, which is a bit confusing, but it does prefill the form.
+            page, which is a bit confusing, but it still prefills the form.
           </p>
         </li>
         <li>
@@ -128,8 +128,8 @@
       <label class="field-label">
         <span class="label-primary">Food</span>
         <span class="label-secondary">
-          This prefills the final question, "Please list any and all food or
-          items received at this event, or N/A if you did not receive any."
+          This corresponds to the final question, "Please list any and all food
+          or items received at this event, or N/A if you did not receive any."
           <!-- A
           shorter response like "burrito" is less suspicious than everyone
           saying "I got a delectable sofritas burrito 🌯 from Chipotle." -->
@@ -139,11 +139,13 @@
 
       <fieldset class="radio-set">
         <legend class="label-primary">Default affiliation</legend>
-        <!-- <p class="label-secondary">
-          My guess is that A.S. wants to know if the events are being gatekept
+        <p class="label-secondary">
+          This corresponds to the question, "What is your affiliation with the
+          hosting organization(s)?"
+          <!-- My guess is that A.S. wants to know if the events are being gatekept
           to only people within org, so they might prefer "prospective member"
-          over the other options.
-        </p> -->
+          over the other options. -->
+        </p>
         <label class="radio-label">
           <input
             type="radio"
@@ -193,11 +195,12 @@
 
       <fieldset class="radio-set">
         <legend class="label-primary">Default source</legend>
-        <!-- <p class="label-secondary">
-          I'm guessing if "forum announcement" and "word of mouth" were the only
+        <p class="label-secondary">
+          This corresponds to the question, "How did you hear about this event?"
+          <!-- I'm guessing if "forum announcement" and "word of mouth" were the only
           responses, A.S. would be a bit displeased because those modes are more
-          private to existing org members.
-        </p> -->
+          private to existing org members. -->
+        </p>
         <label class="radio-label">
           <input
             type="radio"
