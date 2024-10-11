@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Generate prefill link for AS attendance form</title>
+    <meta
+      name="description"
+      content="The link can set the default selection and value for the event name and food received. To help comply with A.S. UCSD's 2024 funding guide."
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      [type='text'] {
+        width: 100%;
+      }
+      .button {
+        display: flex;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="main" role="main">
+      <h1>Prefill A.S. attendance form</h1>
+      <p>
+        Generates a link that prefills values in
+        <a
+          href="https://docs.google.com/forms/u/1/d/e/1FAIpQLSc-akfqTNzrWUmOub_rMDj5wExBUDfakMXDbeGicOrpxBr6jg/viewform"
+          class="link"
+          >A.S.'s attendance form</a
+        >
+        to expediate checking in and discourage attendees from putting "N/A" if
+        asked to complete form before receiving food. You can then use the link
+        to
+        <a href="https://sheeptester.github.io/qr/" class="link"
+          >generate a QR code</a
+        >
+        superior to the one A.S. provides.
+      </p>
+      <p>Some things to note:</p>
+      <ul>
+        <li>
+          <p>
+            Prefilling only works with the long form URL, not the short link.
+            You can put the entire URL in a new short link.
+          </p>
+        </li>
+        <li>
+          <p>
+            Google cleans off the prefilling part of the URL once you visit the
+            page, which is a bit confusing, but it does prefill the form.
+          </p>
+        </li>
+        <li>
+          <p>
+            Sometimes, A.S. deletes and re-creates a question in the form, which
+            will change its ID. This occasionally happens to the event dropdown
+            because it's probably easier for them than clearing each option
+            individually. With the new ID, the question will no longer be
+            prefilled, but the form will still work.
+          </p>
+        </li>
+        <li>
+          <p>The form link itself seems to be persistent. 🤞</p>
+        </li>
+      </ul>
+
+      <div class="col-io col-output reform:io">
+        <textarea
+          class="output-content"
+          name="link"
+          data-deps="name food affiliation source"
+          aria-label="Prefilled form link"
+          readonly
+        ></textarea>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            data-output="output"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            data-output="output"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+      <div class="button-row">
+        <a
+          class="button primary-btn"
+          id="test-link"
+          data-deps="link"
+          href="#"
+          target="_blank"
+          >Try link</a
+        >
+      </div>
+
+      <label class="field-label">
+        <span class="label-primary">Event name</span>
+        <span class="label-secondary">
+          Events follow the format
+          <code>[org name] - [event name]</code> in the form. I feel like A.S.
+          adds these manually, so it might be prone to formatting errors, but I
+          haven't seen that happen yet.
+        </span>
+        <input
+          type="text"
+          name="name"
+          value="Association for Computing Machinery (ACM) - Bit Byte Speedfriending"
+        />
+      </label>
+
+      <label class="field-label">
+        <span class="label-primary">Food</span>
+        <span class="label-secondary">
+          This prefills the final question, "Please list any and all food or
+          items received at this event, or N/A if you did not receive any."
+          <!-- A
+          shorter response like "burrito" is less suspicious than everyone
+          saying "I got a delectable sofritas burrito 🌯 from Chipotle." -->
+        </span>
+        <input type="text" name="food" value="Boba" />
+      </label>
+
+      <fieldset class="radio-set">
+        <legend class="label-primary">Default affiliation</legend>
+        <!-- <p class="label-secondary">
+          My guess is that A.S. wants to know if the events are being gatekept
+          to only people within org, so they might prefer "prospective member"
+          over the other options.
+        </p> -->
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="affiliation"
+            value=""
+            class="hidden-accessible"
+            checked
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Unspecified</span>
+          <span class="label-secondary">
+            No option will be selected in the form. The attendee will be
+            required to select an option.
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="affiliation"
+            value="Attendee / Prospective Member"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Attendee / Prospective Member</span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="affiliation"
+            value="Member"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Member</span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="affiliation"
+            value="Officer"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Officer</span>
+        </label>
+      </fieldset>
+
+      <fieldset class="radio-set">
+        <legend class="label-primary">Default source</legend>
+        <!-- <p class="label-secondary">
+          I'm guessing if "forum announcement" and "word of mouth" were the only
+          responses, A.S. would be a bit displeased because those modes are more
+          private to existing org members.
+        </p> -->
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="source"
+            value=""
+            class="hidden-accessible"
+            checked
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Unspecified</span>
+          <span class="label-secondary">
+            No option will be selected in the form. The attendee will be
+            required to select an option.
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="source"
+            value="Social Media Post (Instagram, Tiktok, etc.)"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">
+            Social Media Post (Instagram, Tiktok, etc.)
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="source"
+            value="Forum Announcement (Discord, WeChat, etc.)"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">
+            Forum Announcement (Discord, WeChat, etc.)
+          </span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="source"
+            value="Tabling / Tabling Handouts"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Tabling / Tabling Handouts</span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="source"
+            value="Word of Mouth"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Word of Mouth</span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="source"
+            value="Posted Flyers / Posters"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Posted Flyers / Posters</span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="source"
+            value="Email / Newsletter"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-primary">Email / Newsletter</span>
+        </label>
+      </fieldset>
+    </form>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+
+      const FORM_LINK =
+        'https://docs.google.com/forms/d/e/1FAIpQLSc-akfqTNzrWUmOub_rMDj5wExBUDfakMXDbeGicOrpxBr6jg/viewform'
+
+      on('link', (output, { name, food, affiliation, source }) => {
+        const url = `${FORM_LINK}?${new URLSearchParams(
+          // stringify and parse is to remove the undefined keys
+          JSON.parse(
+            JSON.stringify({
+              'entry.219446721': name || undefined,
+              'entry.570464428': food || undefined,
+              'entry.1851239463': affiliation || undefined,
+              'entry.153208156': source || undefined
+            })
+          )
+        )}`
+        output.value = url
+        return url
+      })
+
+      on('test-link', (elem, { link }) => {
+        elem.href = link
+      })
+    </script>
+  </body>
+</html>
