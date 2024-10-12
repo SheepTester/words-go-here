@@ -31,7 +31,7 @@
     <form class="main" role="main">
       <h1>Google Contacts directory scraper</h1>
       <p>
-        Scrapes all the contacts listed in your organization's
+        Collects all the contacts listed in your organization's
         <a href="https://contacts.google.com/u/1/directory" class="link"
           >directory in Google Contacts</a
         >. This works for non-personal Google accounts, e.g. your student
@@ -46,7 +46,7 @@
           id="authorize"
           data-deps="clientId apiKey"
         >
-          Authorize
+          Authorize and scrape
         </button>
       </div>
 
@@ -158,8 +158,46 @@
 
       gapi.load('client')
 
+      async function scrape (handle) {
+        const writable = await handle.createWritable()
+        await writable.write('name,email\n')
+        try {
+          let pageToken
+          do {
+            const {
+              result: { people, nextPageToken }
+            } = await gapi.client.people.people
+              .listDirectoryPeople({
+                sources: [
+                  'DIRECTORY_SOURCE_TYPE_DOMAIN_CONTACT',
+                  'DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE'
+                ],
+                readMask: 'names,emailAddresses',
+                pageSize: 1000,
+                pageToken
+              })
+              .getPromise()
+            pageToken = nextPageToken
+            for (const person of people) {
+              await writable.write(
+                [
+                  person.names.map(({ displayName }) => displayName).join(' '),
+                  person.emailAddresses.map(({ value }) => value).join(' ')
+                ].join(',') + '\n'
+              )
+            }
+            break
+          } while (pageToken)
+        } finally {
+          await writable.close()
+        }
+      }
+
       on('authorize', (btn, { clientId, apiKey }) => {
         btn.onclick = async () => {
+          const handle = await window.showSaveFilePicker({
+            types: [{ accept: { 'text/csv': ['.csv'] } }]
+          })
           await gapi.client.init({
             apiKey,
             // Apparently this is necessary
@@ -167,7 +205,7 @@
               'https://www.googleapis.com/discovery/v1/apis/people/v1/rest'
             ]
           })
-          google.accounts.oauth2
+          await google.accounts.oauth2
             .initTokenClient({
               client_id: clientId,
               scope: 'https://www.googleapis.com/auth/directory.readonly',
@@ -175,20 +213,12 @@
                 if (response.error !== undefined) {
                   throw response
                 }
-                const {
-                  result: { people, nextPageToken }
-                } = await gapi.client.people.people
-                  .listDirectoryPeople({
-                    sources: [
-                      'DIRECTORY_SOURCE_TYPE_DOMAIN_CONTACT',
-                      'DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE'
-                    ],
-                    readMask: 'names,emailAddresses',
-                    pageSize: 1000,
-                    pageToken: undefined
-                  })
-                  .getPromise()
-                console.log(nextPageToken, people)
+                btn.disabled = true
+                try {
+                  scrape(handle)
+                } finally {
+                  btn.disabled = false
+                }
               }
             })
             .requestAccessToken({
