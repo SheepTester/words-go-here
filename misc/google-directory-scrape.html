@@ -25,6 +25,9 @@
         display: flex;
         align-items: center;
       }
+      .button-row {
+        align-items: center;
+      }
     </style>
   </head>
   <body>
@@ -38,6 +41,14 @@
         account, and will collect all names in your school district or
         university.
       </p>
+      <p>
+        This will ask to save a CSV file to store the contacts in, then open a
+        Google sign-in screen. Make sure to select an account in the
+        organization you want to scrape (e.g. your school account). Then, leave
+        this page open and wait. To avoid rate limits, this page will scrape
+        1000 contacts every two seconds. It will eventually unceremoniously
+        finish, and you can find the contacts in the CSV file you saved.
+      </p>
 
       <div class="button-row">
         <button
@@ -48,6 +59,7 @@
         >
           Authorize and scrape
         </button>
+        <div id="status" data-deps="authorize"></div>
       </div>
 
       <label class="field-label">
@@ -152,17 +164,30 @@
 
     <script type="module">
       import { on } from '/reform/v1/index.js'
+      import { stringify } from 'https://esm.sh/csv-stringify@6.5.1/sync'
 
       // Based on
       // https://sheeptester.github.io/hello-world/test/google-contacts-directory-api-test.html
 
       gapi.load('client')
 
-      async function scrape (handle) {
+      async function scrape (handle, onProgress) {
         const writable = await handle.createWritable()
-        await writable.write('name,email\n')
+        await writable.write(
+          stringify([
+            [
+              'ID',
+              'Email',
+              'Display name',
+              'Family name',
+              'Given name',
+              'Photo'
+            ]
+          ])
+        )
         try {
           let pageToken
+          let contacts = 0
           do {
             const {
               result: { people, nextPageToken }
@@ -172,7 +197,7 @@
                   'DIRECTORY_SOURCE_TYPE_DOMAIN_CONTACT',
                   'DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE'
                 ],
-                readMask: 'names,emailAddresses',
+                readMask: 'names,emailAddresses,photos',
                 pageSize: 1000,
                 pageToken
               })
@@ -180,20 +205,31 @@
             pageToken = nextPageToken
             for (const person of people) {
               await writable.write(
-                [
-                  person.names.map(({ displayName }) => displayName).join(' '),
-                  person.emailAddresses.map(({ value }) => value).join(' ')
-                ].join(',') + '\n'
+                stringify([
+                  [
+                    person.resourceName.replace('people/', ''),
+                    person.emailAddresses.map(({ value }) => value).join(' '),
+                    person.names
+                      .map(({ displayName }) => displayName)
+                      .join(' '),
+                    person.names.map(({ familyName }) => familyName).join(' '),
+                    person.names.map(({ givenName }) => givenName).join(' '),
+                    person.photos.map(({ url }) => url).join(' ')
+                  ]
+                ])
               )
             }
-            break
+
+            contacts += people.length
+            onProgress(contacts)
+            await new Promise(resolve => setTimeout(resolve, 2000))
           } while (pageToken)
         } finally {
           await writable.close()
         }
       }
 
-      on('authorize', (btn, { clientId, apiKey }) => {
+      on('authorize', (btn, { clientId, apiKey, callback }) => {
         btn.onclick = async () => {
           const handle = await window.showSaveFilePicker({
             types: [{ accept: { 'text/csv': ['.csv'] } }]
@@ -213,9 +249,13 @@
                 if (response.error !== undefined) {
                   throw response
                 }
-                btn.disabled = true
                 try {
-                  scrape(handle)
+                  btn.disabled = true
+                  callback({ done: false, contacts: 0 })
+                  await scrape(handle, contacts => {
+                    callback({ done: false, contacts })
+                  })
+                  callback({ done: true })
                 } finally {
                   btn.disabled = false
                 }
@@ -225,6 +265,12 @@
               prompt: gapi.client.getToken() === null ? 'consent' : ''
             })
         }
+      })
+
+      on('status', (elem, { authorize: status }) => {
+        elem.textContent = status.done
+          ? 'Done!'
+          : `${status.contacts} contacts scraped.`
       })
     </script>
   </body>
