@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Scrape your school's entire Google Contacts directory</title>
+    <meta
+      name="description"
+      content="Uses the Google People API to scrape your Google account org's directory. For API keys used within the organization, no approval is needed."
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+
+    <style>
+      [type='text'] {
+        width: 100%;
+      }
+      .button {
+        display: flex;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="main" role="main">
+      <h1>Google Contacts directory scraper</h1>
+      <p>
+        Scrapes all the contacts listed in your organization's
+        <a href="https://contacts.google.com/u/1/directory" class="link"
+          >directory in Google Contacts</a
+        >. This works for non-personal Google accounts, e.g. your student
+        account, and will collect all names in your school district or
+        university.
+      </p>
+
+      <div class="button-row">
+        <button
+          type="button"
+          class="button primary-btn"
+          id="authorize"
+          data-deps="clientId apiKey"
+        >
+          Authorize
+        </button>
+      </div>
+
+      <label class="field-label">
+        <span class="label-primary">Google OAuth client ID</span>
+        <input
+          type="text"
+          name="clientId"
+          value="39298609199-aeeoi7f4q4qmn8bvprqqgfke5u7s4bm3.apps.googleusercontent.com"
+        />
+      </label>
+
+      <label class="field-label">
+        <span class="label-primary">Google API key</span>
+        <input
+          type="text"
+          name="apiKey"
+          value="AIzaSyAuZsqstoc2ZQ9iPeARwH3pi3yapkdGbeY"
+        />
+      </label>
+
+      <p>
+        The default values above are from my school account for UC San Diego. It
+        should work for any UC San Diego student, at least until I graduate. For
+        other organizations, you can follow these steps to create your own
+        client ID and API key:
+      </p>
+      <ol>
+        <li>
+          <p>
+            Create or select an existing project on the
+            <a href="https://console.cloud.google.com/" class="link"
+              >Google Cloud console</a
+            >.
+          </p>
+        </li>
+        <li>
+          <p>
+            Follow the steps in
+            <a
+              href="https://developers.google.com/people/quickstart/js"
+              class="link"
+              >Google's People API JavaScript quickstart guide</a
+            >.
+          </p>
+          <ol>
+            <li>
+              <p>
+                <a
+                  href="https://console.cloud.google.com/flows/enableapi?apiid=people.googleapis.com"
+                  class="link"
+                  >Enable the People API.</a
+                >
+              </p>
+            </li>
+            <li>
+              <p>
+                Set the
+                <a
+                  href="https://console.cloud.google.com/apis/credentials/consent"
+                  class="link"
+                  >OAuth consent screen</a
+                >
+                to be for users internal to the organization. Under "Authorized
+                domains," put <code>sheeptester.github.io</code> so the OAuth
+                screen works on this page.
+              </p>
+              <p>
+                On the "Scopes" screen, add the People API
+                <code>&hellip;/auth/directory.readonly</code> scope, which
+                should show up under "Your sensitive scopes."
+              </p>
+            </li>
+            <li>
+              <p>
+                Create an
+                <a
+                  href="https://console.cloud.google.com/apis/credentials"
+                  class="link"
+                  >OAuth client ID</a
+                >. Make sure to add
+                <code>http://sheeptester.github.io</code> under "Authorized
+                JavaScript origins" so this web page can use it. Copy that
+                client ID here.
+              </p>
+            </li>
+            <li>
+              <p>
+                Create an
+                <a
+                  href="https://console.cloud.google.com/apis/credentials"
+                  class="link"
+                  >API key</a
+                >
+                and paste it above.
+              </p>
+            </li>
+          </ol>
+        </li>
+        <li><p>Click the "Authorize" button.</p></li>
+      </ol>
+    </form>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+
+      // Based on
+      // https://sheeptester.github.io/hello-world/test/google-contacts-directory-api-test.html
+
+      gapi.load('client')
+
+      on('authorize', (btn, { clientId, apiKey }) => {
+        btn.onclick = async () => {
+          await gapi.client.init({
+            apiKey,
+            // Apparently this is necessary
+            discoveryDocs: [
+              'https://www.googleapis.com/discovery/v1/apis/people/v1/rest'
+            ]
+          })
+          google.accounts.oauth2
+            .initTokenClient({
+              client_id: clientId,
+              scope: 'https://www.googleapis.com/auth/directory.readonly',
+              callback: async response => {
+                if (response.error !== undefined) {
+                  throw response
+                }
+                const {
+                  result: { people, nextPageToken }
+                } = await gapi.client.people.people
+                  .listDirectoryPeople({
+                    sources: [
+                      'DIRECTORY_SOURCE_TYPE_DOMAIN_CONTACT',
+                      'DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE'
+                    ],
+                    readMask: 'names,emailAddresses',
+                    pageSize: 1000,
+                    pageToken: undefined
+                  })
+                  .getPromise()
+                console.log(nextPageToken, people)
+              }
+            })
+            .requestAccessToken({
+              prompt: gapi.client.getToken() === null ? 'consent' : ''
+            })
+        }
+      })
+    </script>
+  </body>
+</html>
