@@ -46,8 +46,8 @@
         Google sign-in screen. Make sure to select an account in the
         organization you want to scrape (e.g. your school account). Then, leave
         this page open and wait. To avoid rate limits, this page will scrape
-        1000 contacts every two seconds. It will eventually unceremoniously
-        finish, and you can find the contacts in the CSV file you saved.
+        1000 contacts every second. It will eventually unceremoniously finish,
+        and you can find the contacts in the CSV file you saved.
       </p>
 
       <div class="button-row">
@@ -222,7 +222,7 @@
 
             contacts += people.length
             onProgress(contacts)
-            await new Promise(resolve => setTimeout(resolve, 2000))
+            await new Promise(resolve => setTimeout(resolve, 1000))
           } while (pageToken)
         } finally {
           await writable.close()

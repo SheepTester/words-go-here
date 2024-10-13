@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Most frequent names</title>
+    <meta name="description" content="No description yet." />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      .visually-hidden {
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        height: 1px;
+        overflow: hidden;
+        position: absolute;
+        white-space: nowrap;
+        width: 1px;
+      }
+      button,
+      input {
+        border: 0;
+        background: none;
+        font: inherit;
+        color: inherit;
+        padding: 0;
+      }
+      button:not(:disabled) {
+        cursor: pointer;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji',
+          'Segoe UI Emoji', 'Segoe UI Symbol';
+      }
+      #root {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .source-wrapper {
+        display: flex;
+        gap: 5px;
+        padding: 10px;
+      }
+      .source {
+        font-weight: 500;
+        cursor: pointer;
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+      .table-wrapper {
+        height: 80vh;
+        border: 0 solid rgba(0, 0, 0, 0.1);
+        border-width: 1px 0;
+      }
+      .person {
+        display: grid;
+        grid-template-areas:
+          'photo name'
+          'photo email';
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+        padding: 10px;
+        padding-bottom: 0;
+        gap: 0 10px;
+        box-sizing: border-box;
+      }
+      .photo-wrapper {
+        grid-area: photo;
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      .photo {
+        position: absolute;
+        inset: 0;
+        height: 100%;
+        border-radius: 5px;
+      }
+      .name {
+        grid-area: name;
+      }
+      .email {
+        grid-area: email;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      .leaderboards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        padding: 10px;
+        gap: 10px;
+      }
+      .leaderboard {
+        display: flex;
+        flex-direction: column;
+        height: 400px;
+      }
+      h2 {
+        margin: 0;
+        font-weight: normal;
+      }
+      .entry {
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      import { parse } from 'https://esm.sh/csv-parse@5.5.6/sync'
+      import {
+        createElement as h,
+        Fragment,
+        useMemo,
+        useState
+      } from 'https://esm.sh/react@18.3.1'
+      import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client'
+      import { AutoSizer, List } from 'https://esm.sh/react-virtualized@9.22.5'
+
+      function Person ({ person, style }) {
+        return h(
+          'div',
+          { className: 'person', style },
+          h(
+            'a',
+            { className: 'photo-wrapper', href: person['Photo'] },
+            h('img', { className: 'photo', src: person['Photo'] })
+          ),
+          h('div', { className: 'name' }, person['Display name']),
+          h('div', { className: 'email' }, person['Email'])
+        )
+      }
+
+      function Table ({ data }) {
+        return h(
+          'div',
+          { className: 'table-wrapper' },
+          h(AutoSizer, null, ({ width, height }) =>
+            h(List, {
+              width,
+              height,
+              rowCount: data.length,
+              rowHeight: 60,
+              rowRenderer: ({ index, style, key }) =>
+                h(Person, { person: data[index], style, key })
+            })
+          )
+        )
+      }
+
+      function Leaderboard ({ title, names }) {
+        const frequencies = useMemo(() => {
+          const freqs = {}
+          for (const name of names) {
+            freqs[name.toLowerCase()] ??= { total: 0, casings: {} }
+            freqs[name.toLowerCase()].total++
+            freqs[name.toLowerCase()].casings[name] ??= 0
+            freqs[name.toLowerCase()].casings[name]++
+          }
+          return Object.values(freqs)
+            .map(({ total, casings }) => ({
+              name: Object.entries(casings).reduce(
+                (cum, curr) => (curr[1] > cum[1] ? curr : cum),
+                ['', 0]
+              )[0],
+              count: total
+            }))
+            .sort((a, b) => b.count - a.count)
+        }, [names])
+
+        return h(
+          'div',
+          { className: 'leaderboard' },
+          h('h2', null, title),
+          h(AutoSizer, null, ({ width, height }) =>
+            h(List, {
+              width,
+              height: 400,
+              rowCount: frequencies.length,
+              rowHeight: 60,
+              rowRenderer: ({ index, key }) => {
+                const { name, count } = frequencies[index]
+                return h(
+                  'div',
+                  { className: 'entry', key },
+                  h('div', { className: 'place' }, index + 1),
+                  h('div', { className: 'leaderboard-name' }, name),
+                  h('div', { className: 'count' }, count)
+                )
+              }
+            })
+          )
+        )
+      }
+
+      function App () {
+        const [data, setData] = useState([])
+        const displayNames = useMemo(
+          () => data.map(person => person['Display name']),
+          [data]
+        )
+        const givenNames = useMemo(
+          () => data.map(person => person['Given name']),
+          [data]
+        )
+        const familyNames = useMemo(
+          () => data.map(person => person['Family name']),
+          [data]
+        )
+
+        console.log(data)
+
+        return h(
+          Fragment,
+          null,
+          h(
+            'div',
+            { className: 'source-wrapper' },
+            h(
+              'label',
+              { className: 'source' },
+              'Choose a file',
+              h('input', {
+                type: 'file',
+                accept: 'text/csv',
+                className: 'visually-hidden',
+                onChange: async e => {
+                  const file = e.currentTarget.files[0]
+                  if (file) {
+                    setData(parse(await file.text(), { columns: true }))
+                  }
+                }
+              })
+            ),
+            ' or ',
+            h(
+              'button',
+              { className: 'source', onClick: () => {} },
+              'try an example'
+            )
+          ),
+          h(Table, { data }),
+          h(
+            'div',
+            { className: 'leaderboards' },
+            h(Leaderboard, {
+              title: 'Full names',
+              names: displayNames
+            }),
+            h(Leaderboard, {
+              title: 'First names',
+              names: givenNames
+            }),
+            h(Leaderboard, {
+              title: 'Last names',
+              names: familyNames
+            })
+          )
+        )
+      }
+
+      createRoot(document.getElementById('root')).render(h(App))
+    </script>
+  </body>
+</html>
