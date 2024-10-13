@@ -104,6 +104,7 @@
         display: flex;
         flex-direction: column;
         height: 400px;
+        gap: 10px;
       }
       h2 {
         margin: 0;
@@ -111,7 +112,19 @@
       }
       .entry {
         display: flex;
-        justify-content: space-between;
+        gap: 5px;
+      }
+      .place {
+        min-width: 4ch;
+      }
+      .leaderboard-name {
+        flex: auto;
+      }
+      .no-data {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(0, 0, 0, 0.5);
       }
     </style>
   </head>
@@ -143,6 +156,13 @@
       }
 
       function Table ({ data }) {
+        if (data.length === 0) {
+          return h(
+            'div',
+            { className: 'table-wrapper no-data' },
+            'Select a CSV file of contacts to continue'
+          )
+        }
         return h(
           'div',
           { className: 'table-wrapper' },
@@ -150,10 +170,12 @@
             h(List, {
               width,
               height,
-              rowCount: data.length,
-              rowHeight: 60,
+              rowCount: data.length + 1,
+              rowHeight: ({ index }) => (index < data.length ? 55 : 10),
               rowRenderer: ({ index, style, key }) =>
-                h(Person, { person: data[index], style, key })
+                index < data.length
+                  ? h(Person, { person: data[index], style, key })
+                  : null
             })
           )
         )
@@ -177,24 +199,44 @@
               count: total
             }))
             .sort((a, b) => b.count - a.count)
+            .map((entry, index) => ({ ...entry, place: index + 1 }))
         }, [names])
+
+        const [search, setSearch] = useState('')
+        const normalizedSearch = search.toLowerCase()
+
+        const filtered = useMemo(
+          () =>
+            normalizedSearch
+              ? frequencies.filter(({ name }) =>
+                  name.toLowerCase().includes(normalizedSearch)
+                )
+              : frequencies,
+          [frequencies, search]
+        )
 
         return h(
           'div',
           { className: 'leaderboard' },
           h('h2', null, title),
+          h('input', {
+            type: 'search',
+            placeholder: `Search ${title.toLowerCase()}`,
+            value: search,
+            onChange: e => setSearch(e.currentTarget.value)
+          }),
           h(AutoSizer, null, ({ width, height }) =>
             h(List, {
               width,
               height: 400,
-              rowCount: frequencies.length,
-              rowHeight: 60,
-              rowRenderer: ({ index, key }) => {
-                const { name, count } = frequencies[index]
+              rowCount: filtered.length,
+              rowHeight: 30,
+              rowRenderer: ({ index, style, key }) => {
+                const { name, count, place } = filtered[index]
                 return h(
                   'div',
-                  { className: 'entry', key },
-                  h('div', { className: 'place' }, index + 1),
+                  { className: 'entry', key, style },
+                  h('div', { className: 'place' }, place, '.'),
                   h('div', { className: 'leaderboard-name' }, name),
                   h('div', { className: 'count' }, count)
                 )
