@@ -30,9 +30,6 @@
         margin: 0;
         margin-top: 40px;
       }
-      .family:first-of-type {
-        margin-top: 0;
-      }
       .font {
         display: flex;
         flex-direction: column;
@@ -42,6 +39,7 @@
         font-size: 36px;
         margin: 0;
         margin-block-end: 5px;
+        white-space: pre-wrap;
       }
       .description {
         font-size: 14px;
@@ -80,6 +78,20 @@
       .loading a {
         color: black;
       }
+
+      .preview {
+        grid-column: 1 / -1;
+        resize: vertical;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background-color: white;
+        padding: 20px;
+        font: inherit;
+        position: sticky;
+        top: 0;
+      }
+      ::placeholder {
+        color: rgba(0, 0, 0, 0.5);
+      }
     </style>
   </head>
   <body>
@@ -87,6 +99,13 @@
       Waiting for permission to
       <a href="https://wicg.github.io/local-font-access/">get your fonts</a>.
     </p>
+    <textarea
+      class="preview"
+      id="preview"
+      placeholder="Type to preview"
+      aria-label="Preview text"
+      rows="1"
+    ></textarea>
     <script type="module">
       let localFonts
       do {
@@ -160,6 +179,7 @@
       }
 
       const fragment = document.createDocumentFragment()
+      const previews = []
       for (const [family, styles] of Object.entries(fonts)) {
         const heading = Object.assign(document.createElement('h2'), {
           className: 'family',
@@ -193,6 +213,7 @@
             fontStyle: styleValues[style],
             fontStretch: stretchValues[stretch]
           })
+          previews.push({ element: name, defaultText: fullName })
           const postscript = Object.assign(document.createElement('p'), {
             className: 'description postscript',
             textContent: postscriptName
@@ -208,6 +229,13 @@
       document.body.append(fragment)
 
       document.getElementById('loading').remove()
+
+      const preview = document.getElementById('preview')
+      preview.addEventListener('input', () => {
+        for (const { element, defaultText } of previews) {
+          element.textContent = preview.value || defaultText
+        }
+      })
 
       Object.assign(window, { fonts })
     </script>
