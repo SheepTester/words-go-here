@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>html native dialog close animation?</title>
+    <title>html native dialog (modal) close animation?</title>
     <meta
       name="description"
-      content="since i found out visibility is pretty good for animating dialogs"
+      content="since i found out visibility is pretty good for animating dialogs. This is a bunch of CSS to allow for smooth open/close animations for dialogs for use as modals."
     />
 
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
@@ -20,7 +20,55 @@
       body {
         font-family: sans-serif;
       }
-      dialog {
+
+      dialog:not([class]) {
+        /* Reset styles */
+        border: none;
+        padding: 0;
+        color: inherit;
+        max-width: unset;
+        max-height: unset;
+
+        /* Set styles to mimic open state for closing animation */
+        display: block;
+        visibility: hidden;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        user-select: none;
+
+        /* Dialog styles (feel free to change) */
+        background-color: rgba(0, 0, 0, 0.8);
+
+        /* Closing animation */
+        opacity: 0;
+        transition: all 0.5s;
+      }
+      dialog:not([class])[open] {
+        /* Opening animation */
+        visibility: visible;
+        opacity: 1;
+        pointer-events: unset;
+        user-select: text;
+      }
+      dialog:not([class])::backdrop {
+        /* Reset style */
+        background: none;
+      }
+      form:not([class]) {
+        /* Closing animation */
+        transform: scale(0.9);
+        transition: transform 0.5s;
+      }
+      dialog:not([class])[open] form:not([class]) {
+        /* Opening animation */
+        transform: none;
+      }
+
+      .dialog {
         display: block;
         visibility: hidden;
         border: none;
@@ -44,16 +92,16 @@
         max-width: unset;
         max-height: unset;
       }
-      dialog[open] {
+      .dialog[open] {
         visibility: visible;
         opacity: 1;
         pointer-events: unset;
         user-select: text;
       }
-      dialog::backdrop {
+      .dialog::backdrop {
         background: none;
       }
-      form {
+      .form {
         border-radius: 15px;
         padding: 20px;
         background-color: rgb(19, 16, 49);
@@ -64,14 +112,15 @@
         transform: scale(0.9);
         transition: transform 0.5s;
       }
+      .dialog[open] .form {
+        transform: none;
+      }
+
       .row {
         display: flex;
         gap: 20px;
         justify-content: space-between;
         align-items: flex-start;
-      }
-      dialog[open] form {
-        transform: none;
       }
       h1,
       h2,
@@ -92,11 +141,18 @@
         gap: 20px;
         margin: 20px;
       }
+      .encourage-copy {
+        user-select: all;
+      }
+      .comment {
+        user-select: none;
+        opacity: 0.5;
+      }
     </style>
   </head>
   <body>
-    <dialog>
-      <form method="dialog">
+    <dialog class="dialog">
+      <form class="form" method="dialog">
         <div class="row">
           <h1>Hi, gamers</h1>
           <button aria-label="Close">&times;</button>
@@ -108,10 +164,88 @@
         </div>
       </form>
     </dialog>
-    <p><button id="open">Open dialog</button></p>
+    <dialog>
+      <form method="dialog">
+        <button type="submit">Close</button>
+      </form>
+    </dialog>
+    <p>
+      <button id="open">Open dialog</button>
+      <button id="open2">Open dialog (minimal)</button>
+    </p>
     <p>
       <label><input type="checkbox" id="slow" /> Slow animation</label>
     </p>
+    <h2>Template</h2>
+    <p>Use this HTML structure:</p>
+    <pre class="encourage-copy">
+&lt;dialog&gt;
+  &lt;form method="dialog"&gt;
+    &lt;button type="submit"&gt;Close&lt;/button&gt;
+  &lt;/form&gt;
+&lt;/dialog&gt;</pre
+    >
+    <p>Copy this CSS:</p>
+    <details>
+      <summary>(click to reveal like 46 lines of CSS)</summary>
+      <pre class="encourage-copy">
+dialog {
+<span class="comment">  /* Reset styles */
+</span>  border: none;
+  padding: 0;
+  color: inherit;
+  max-width: unset;
+  max-height: unset;
+<span class="comment">
+  /* Set styles to mimic open state for closing animation */
+</span>  display: block;
+  visibility: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+<span class="comment">
+  /* Dialog styles (feel free to change) */
+</span>  background-color: rgba(0, 0, 0, 0.8);
+<span class="comment">
+  /* Closing animation */
+</span>  opacity: 0;
+  transition: all 0.5s;
+}
+dialog[open] {
+<span class="comment">  /* Opening animation */
+</span>  visibility: visible;
+  opacity: 1;
+  pointer-events: unset;
+  user-select: text;
+}
+dialog::backdrop {
+<span class="comment">  /* Reset style */
+</span>  background: none;
+}
+form {
+<span class="comment">  /* Closing animation */
+</span>  transform: scale(0.9);
+  transition: transform 0.5s;
+}
+dialog[open] form {
+<span class="comment">  /* Opening animation */
+</span>  transform: none;
+}</pre>
+    </details>
+    <p>Open the dialog with JavaScript:</p>
+    <pre>dialog.showModal()</pre>
+    <p>Allow the user to click the greyed area to close:</p>
+    <pre>
+<span class="comment">// Close modal when backdrop clicked</span>
+dialog<span class="encourage-copy">.addEventListener('click', e => {
+  if (e.target === e.currentTarget) {
+    e.currentTarget.close()
+  }
+})</span></pre>
     <h2>Browser notes</h2>
     <ul>
       <li>
@@ -147,15 +281,25 @@ dialog:-internal-dialog-in-top-layer {
     </ul>
     <script>
       document.getElementById('open').addEventListener('click', () => {
-        document.querySelector('dialog').showModal()
+        document.querySelector('.dialog').showModal()
+      })
+      document.getElementById('open2').addEventListener('click', () => {
+        document.querySelector('dialog:not([class])').showModal()
       })
 
       // Close modal when backdrop clicked
-      document.querySelector('dialog').addEventListener('click', e => {
+      document.querySelector('.dialog').addEventListener('click', e => {
         if (e.target === e.currentTarget) {
           e.currentTarget.close()
         }
       })
+      document
+        .querySelector('dialog:not([class])')
+        .addEventListener('click', e => {
+          if (e.target === e.currentTarget) {
+            e.currentTarget.close()
+          }
+        })
 
       document.getElementById('slow').addEventListener('change', e => {
         if (e.currentTarget.checked) {
