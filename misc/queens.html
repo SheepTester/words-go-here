@@ -73,7 +73,7 @@
             name="image"
             accept="image/*"
             class="hidden-accessible reform:image-input reform:paste-target"
-            data-default="./queens-default.png"
+            data-default="./queens-default.webp"
           />
           <span class="icon icon-upload"></span>
           <span class="file-label">Choose, drop, or paste an image</span>
@@ -189,7 +189,7 @@
         div.addEventListener('pointercancel', handlePointerEnd)
 
         if (!cleanup) {
-          callback({ left: 15, top: 40, width: 419, height: 420 })
+          callback({ left: 17, top: 98, width: 512, height: 506 })
         }
 
         cleanup = () => {
@@ -207,11 +207,11 @@
         { name: '--queens-board-color13', hex: 0x8acc6d },
         { name: '--queens-board-color12', hex: 0xff93f3 },
         { name: '--queens-board-color11', hex: 0x62efea },
-        { name: '--queens-board-color10', hex: 0xb9b29e },
-        { name: '--queens-board-color9', hex: 0xe6f388 },
-        { name: '--queens-board-color8', hex: 0xff7b60 },
-        { name: '--queens-board-color7', hex: 0xa3d2d8 },
-        { name: '--queens-board-color6', hex: 0xdfa0bf },
+        { name: '--queens-board-color10', hex: 0xa3d2d8 },
+        { name: '--queens-board-color9', hex: 0xdfa0bf },
+        { name: '--queens-board-color8', hex: 0xb9b29e },
+        { name: '--queens-board-color7', hex: 0xe6f388 },
+        { name: '--queens-board-color6', hex: 0xff7b60 },
         { name: '--queens-board-color5', hex: 0xdfdfdf },
         { name: '--queens-board-color4', hex: 0xb3dfa0 },
         { name: '--queens-board-color3', hex: 0x96beff },

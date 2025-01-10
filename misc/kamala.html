@@ -38,6 +38,16 @@
   <body>
     <form class="main" role="main" action="javascript:">
       <h1>brat album cover maker</h1>
+      <p>
+        According to
+        <a
+          href="https://abcdinamo.com/news/our-font-for-charli-xcxs-brat"
+          class="link"
+          >Dinamo</a
+        >, the original album cover was designed on a 150px-wide image, and the
+        hex code of the green is
+        <a href="/colour/#8ACE00" class="link">#8ACE00</a>.
+      </p>
 
       <div class="two-col-io reform:io">
         <label class="input-controls file">
@@ -138,7 +148,7 @@ brat</textarea
       <div class="cols">
         <label class="field-label">
           <span class="label-primary">Low quality size</span>
-          <input type="number" name="lqSize" value="128" />
+          <input type="number" name="lqSize" value="150" />
         </label>
         <label class="field-label">
           <span class="label-primary">Final image size</span>
@@ -209,7 +219,7 @@ brat</textarea
         const { text, scaleX, scale, lqSize, outline, image } = options
         c.canvas.width = lqSize
         c.canvas.height = lqSize
-        c.fillStyle = '#8bcf00'
+        c.fillStyle = '#8ace00'
         c.fillRect(0, 0, lqSize, lqSize)
         c.translate(lqSize / 2, lqSize / 2)
         c.scale(scaleX, 1)

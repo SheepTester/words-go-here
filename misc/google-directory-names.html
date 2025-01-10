@@ -76,6 +76,7 @@
       }
       .table-wrapper {
         height: 80vh;
+        max-height: 500px;
         border: 0 solid rgba(0, 0, 0, 0.1);
         border-width: 1px 0;
       }
@@ -135,6 +136,7 @@
         height: 400px;
         flex: none;
         white-space: pre;
+        border: 1px solid rgba(0, 0, 0, 0.1);
       }
       .place {
         min-width: 4ch;
@@ -244,8 +246,8 @@
           () =>
             normalizedSearch
               ? frequencies.filter(({ name }) =>
-                  name.toLowerCase().includes(normalizedSearch)
-                )
+                name.toLowerCase().includes(normalizedSearch)
+              )
               : frequencies,
           [frequencies, search]
         )
