@@ -31,11 +31,11 @@
   </head>
   <body>
     <div id="container"></div>
-    <script src="https://unpkg.com/monaco-editor@0.34.0/min/vs/loader.js"></script>
+    <script src="https://unpkg.com/monaco-editor@0.34.1/min/vs/loader.js"></script>
     <script>
       // https://stackoverflow.com/a/68746273
       require.config({
-        paths: { vs: 'https://unpkg.com/monaco-editor@0.34.0/min/vs' }
+        paths: { vs: 'https://unpkg.com/monaco-editor@0.34.1/min/vs' }
       })
       require(['vs/editor/editor.main'], () => {
         // https://microsoft.github.io/monaco-editor/playground.html#creating-the-diffeditor-multi-line-example
