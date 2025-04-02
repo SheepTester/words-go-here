@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Intl.DurationFormat</title>
+    <meta name="description" content="kamala harris is brat" />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style></style>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>Intl.DurationFormat</h1>
+      <p>
+        Added in
+        <a class="link" href="https://developer.chrome.com/release-notes/129"
+          >Chrome 129</a
+        >.
+      </p>
+
+      <div class="col-io reform:io">
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            data-output="output"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            data-output="output"
+            aria-label="Share"
+          ></button>
+        </div>
+        <textarea
+          class="output-content code"
+          id="output"
+          data-deps="style"
+          aria-label="Output"
+          readonly
+        ></textarea>
+      </div>
+
+      <fieldset class="radio-set">
+        <legend class="label-primary">Style</legend>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="style"
+            value="long"
+            class="hidden-accessible"
+            checked
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">long</span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="style"
+            value="short"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">short</span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="style"
+            value="narrow"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">narrow</span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="style"
+            value="digital"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">digital</span>
+        </label>
+      </fieldset>
+    </form>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+
+      const pairs = []
+      const alphabet = 'abcdefghijklmnopqrstuvwxyz'
+      for (const a of alphabet) {
+        for (const b of alphabet) {
+          pairs.push(a + b)
+        }
+      }
+      const languages = Intl.DurationFormat.supportedLocalesOf(pairs)
+
+      // zero one two few many/other
+      const numbers = [0, 1, 2, 9, 11]
+      const n = () => numbers[Math.floor(Math.random() * numbers.length)]
+
+      on('output', async (pre, { style }) => {
+        const duration = {
+          years: n(),
+          months: n(),
+          weeks: n(),
+          days: n(),
+          hours: n(),
+          minutes: n(),
+          seconds: n(),
+          milliseconds: n(),
+          microseconds: n(),
+          nanoseconds: n()
+        }
+        const string = languages
+          .map(
+            language =>
+              `[${language}] ${new Intl.DurationFormat(language, {
+                style
+              }).format(duration)}`
+          )
+          .join('\n')
+        pre.value = string
+        return new File([string], 'output.txt', { type: 'text/plain' })
+      })
+    </script>
+  </body>
+</html>
