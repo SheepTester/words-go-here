@@ -9,6 +9,7 @@
 
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 
     <style>
       :root {
@@ -16,6 +17,9 @@
       }
       canvas {
         width: 200px;
+      }
+      canvas,
+      img {
         image-rendering: pixelated;
         image-rendering: crisp-edges;
       }
@@ -111,7 +115,7 @@
           )
         )
         c.putImageData(new ImageData(pixels, 32), 0, 0)
-        return pixels
+        return new ImageData(pixels, 32)
       }
 
       function simulate (t, radius) {
@@ -135,8 +139,40 @@
         }
       }
 
+      function exportAsGif (frames, width, height, fileName) {
+        const gif = new GIF({
+          workerScript: './gif-worker.js', // https://sheeptester.github.io/animations/gif-worker.js
+          width,
+          height
+        })
+        gif.on('finished', blob => {
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          Object.assign(a, {
+            textContent: `download ${fileName}`,
+            download: fileName,
+            href: url
+          })
+          const img = document.createElement('img')
+          img.src = url
+          a.append(img)
+          document.body.append(a)
+        })
+        for (const [i, frame] of frames.entries()) {
+          gif.addFrame(frame, {
+            delay: 1000 / 30,
+            copy: true,
+            quality: 1,
+            dither: 'FloydSteinberg-serpentine',
+            globalPalette: true
+          })
+        }
+        gif.render()
+      }
+
       const END_TIME = 4.5
       const START = -1.5
+      let exported = false
       while (true) {
         const frames = []
         let t = START
@@ -157,6 +193,33 @@
           await wait(1000 / 30)
         }
         console.log('end time', t)
+
+        if (!exported) {
+          exported = true
+          console.log('exporting')
+          exportAsGif(frames, 32, 32, 'biolumen-32.gif')
+          exportAsGif(
+            frames.map(data => {
+              const wow = new Uint8ClampedArray(data.data.length * 10 * 10)
+              for (let y = 0; y < 32; y++) {
+                for (let x = 0; x < 32; x++) {
+                  for (let yy = 0; yy < 10; yy++) {
+                    for (let xx = 0; xx < 10; xx++) {
+                      for (let i = 0; i < 4; i++) {
+                        wow[((y * 10 + yy) * 320 + x * 10 + xx) * 4 + i] =
+                          data.data[(y * 32 + x) * 4 + i]
+                      }
+                    }
+                  }
+                }
+              }
+              return new ImageData(wow, 320)
+            }),
+            320,
+            320,
+            'biolumen-320.gif'
+          )
+        }
       }
 
       // canvas.remove()
