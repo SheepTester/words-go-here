@@ -49,27 +49,69 @@
         return from + (to - from) * progress
       }
 
-      function draw () {
-        c.putImageData(
-          new ImageData(
-            new Uint8ClampedArray(
-              array.flatMap(row =>
-                row.flatMap(brightness => {
-                  if (brightness > 1) {
-                    brightness = 1
+      const design = `
+        u..u..ccc..sss.dddd.,
+        u..u.c....s....d...d,
+        u..u.c.....ss..d...d,
+        u..u.c.......s.d...d,
+        u..u.c.......s.d...d,
+        .uuu..ccc.sss..dddd.
+      `
+        .replace(/\s/g, '')
+        .split(',')
+      console.log('design size:', design[0].length, design.length)
+
+      function cubicCurve (t) {
+        if (t < 0) {
+          t = 0
+        }
+        if (t > 1) {
+          t = 1
+        }
+        if (t > 0.5) {
+          return (2 * t - 2) ** 3 / 2 + 1
+        } else {
+          return (2 * t) ** 3 / 2
+        }
+      }
+
+      function draw (progress) {
+        const ox = -((32 - design[0].length) / 2) | 0
+        const oy = -((32 - design.length) / 2) | 0
+        const pixels = new Uint8ClampedArray(
+          array.flatMap((row, y) =>
+            row.flatMap((brightness, x) => {
+              if (brightness > 1) {
+                brightness = 1
+              }
+              let alpha = 0
+              let t =
+                progress +
+                (32 - (x - ox)) * 0.004 +
+                (32 - (y - oy)) * 0.001 +
+                0.4
+              t %= 1
+              if (t < 0.4) {
+                alpha = cubicCurve(t / 0.2)
+              } else {
+                alpha = 1 - cubicCurve((t - 0.4) / 0.2)
+              }
+              alpha = alpha * 0.7
+              return [
+                ...dark.map((c, i) => {
+                  let color = mix(c, bright[i], brightness)
+                  if ((design[y + oy]?.[x + ox] ?? '.') !== '.') {
+                    color = alpha * 255 + (1 - alpha) * color
                   }
-                  return [
-                    ...dark.map((c, i) => mix(c, bright[i], brightness)),
-                    255
-                  ]
-                })
-              )
-            ),
-            32
-          ),
-          0,
-          0
+                  return color
+                }),
+                255
+              ]
+            })
+          )
         )
+        c.putImageData(new ImageData(pixels, 32), 0, 0)
+        return pixels
       }
 
       function simulate (t, radius) {
@@ -93,20 +135,31 @@
         }
       }
 
-      let t = -1.5
+      const END_TIME = 4.5
+      const START = -1.5
       while (true) {
-        const count = 4
-        const step = 0.1
-        const radius = 20
-        for (let i = 0; i < count; i++) {
-          simulate(t, (radius * (1 - (i + 1))) / count)
-          t += step / count
+        const frames = []
+        let t = START
+        for (let i = 0; i < 60; i++) {
+          const count = 4
+          const step = 0.1
+          const radius = 20
+          for (let i = 0; i < count; i++) {
+            simulate(t, (radius * (1 - (i + 1))) / count)
+            t += step / count
+          }
+
+          const p = (t - START) / (END_TIME - START)
+          // console.log(p)
+          frames.push(draw(p))
+          // frames.push(structuredClone(array))
+
+          await wait(1000 / 30)
         }
-
-        draw()
-
-        await wait(1000 / 30)
+        console.log('end time', t)
       }
+
+      // canvas.remove()
     </script>
   </body>
 </html>
