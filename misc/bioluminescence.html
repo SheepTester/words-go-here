@@ -139,6 +139,8 @@
         }
       }
 
+      const delay = (1000 / 30) * 1.5
+
       function exportAsGif (frames, width, height, fileName) {
         const gif = new GIF({
           workerScript: './gif-worker.js', // https://sheeptester.github.io/animations/gif-worker.js
@@ -160,7 +162,7 @@
         })
         for (const [i, frame] of frames.entries()) {
           gif.addFrame(frame, {
-            delay: 1000 / 30,
+            delay,
             copy: true,
             quality: 1,
             dither: 'FloydSteinberg-serpentine',
@@ -190,7 +192,7 @@
           frames.push(draw(p))
           // frames.push(structuredClone(array))
 
-          await wait(1000 / 30)
+          await wait(delay)
         }
         console.log('end time', t)
 
