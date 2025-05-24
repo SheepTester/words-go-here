@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>ucsd bioluminescence</title>
+    <meta name="description" content="No description yet." />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      canvas {
+        width: 200px;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      <a href="https://pixel-art.goto.ucsd.edu/">pxiel art</a>
+    </p>
+    <script type="module">
+      const canvas = document.createElement('canvas')
+      const c = canvas.getContext('2d')
+      canvas.width = 32
+      canvas.height = 32
+      document.body.append(canvas)
+
+      function wait (delay) {
+        return new Promise(resolve => setTimeout(resolve, delay))
+      }
+
+      const array = Array.from({ length: 32 }, () =>
+        Array.from({ length: 32 }, () => 0)
+      )
+      const hasBact = Array.from({ length: 32 }, () =>
+        Array.from({ length: 32 }, () => Math.random() < 0.1)
+      )
+
+      const dark = [1, 15, 20]
+      const bright = [2, 253, 207]
+      function mix (from, to, progress) {
+        return from + (to - from) * progress
+      }
+
+      function draw () {
+        c.putImageData(
+          new ImageData(
+            new Uint8ClampedArray(
+              array.flatMap(row =>
+                row.flatMap(brightness => {
+                  if (brightness > 1) {
+                    brightness = 1
+                  }
+                  return [
+                    ...dark.map((c, i) => mix(c, bright[i], brightness)),
+                    255
+                  ]
+                })
+              )
+            ),
+            32
+          ),
+          0,
+          0
+        )
+      }
+
+      function simulate (t, radius) {
+        const cx = (0.7 * t + 1) * 16
+        const cy = (1 - t * t * t + 0.5 * t) * 16
+        const pressure = Math.abs(t * t - 0.5) * 3
+        for (let y = 0; y < 32; y++) {
+          for (let x = 0; x < 32; x++) {
+            // if (!hasBact[y][x]) {
+            //   continue
+            // }
+            array[y][x] *= 0.96
+            const dist = Math.hypot(x - cx, y - cy)
+            if (dist <= 8) {
+              array[y][x] +=
+                Math.random() ** 50 *
+                pressure *
+                Math.exp((-dist * dist) / (radius * radius))
+            }
+          }
+        }
+      }
+
+      let t = -1.5
+      while (true) {
+        const count = 4
+        const step = 0.1
+        const radius = 20
+        for (let i = 0; i < count; i++) {
+          simulate(t, (radius * (1 - (i + 1))) / count)
+          t += step / count
+        }
+
+        draw()
+
+        await wait(1000 / 30)
+      }
+    </script>
+  </body>
+</html>
