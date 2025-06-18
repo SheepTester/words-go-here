@@ -201,6 +201,7 @@
           let pageToken
           let contacts = 0
           do {
+            const delayNext = Date.now() + 1000
             const {
               result: { people, nextPageToken }
             } = await gapi.client.people.people
@@ -215,26 +216,34 @@
               })
               .getPromise()
             pageToken = nextPageToken
+            let rows = ''
             for (const person of people) {
-              await writable.write(
-                stringify([
-                  [
-                    person.resourceName.replace('people/', ''),
-                    person.emailAddresses.map(({ value }) => value).join(' '),
-                    person.names
-                      .map(({ displayName }) => displayName)
-                      .join(' '),
-                    person.names.map(({ familyName }) => familyName).join(' '),
-                    person.names.map(({ givenName }) => givenName).join(' '),
-                    person.photos.map(({ url }) => url).join(' ')
-                  ]
-                ])
-              )
+              // https://contacts.google.com/u/1/person/114026015464631956661 Sienna Hernandez has no name or email ?
+              rows += stringify([
+                [
+                  person.resourceName.replace('people/', ''),
+                  person.emailAddresses?.map(({ value }) => value).join(' ') ??
+                    '',
+                  person.names
+                    ?.map(({ displayName }) => displayName)
+                    .join(' ') ?? '',
+                  person.names?.map(({ familyName }) => familyName).join(' ') ??
+                    '',
+                  person.names?.map(({ givenName }) => givenName).join(' ') ??
+                    '',
+                  person.photos?.map(({ url }) => url).join(' ') ?? ''
+                ]
+              ])
             }
 
             contacts += people.length
             onProgress(contacts)
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            await Promise.all([
+              new Promise(resolve =>
+                setTimeout(resolve, delayNext - Date.now())
+              ),
+              writable.write(rows)
+            ])
           } while (pageToken)
         } finally {
           await writable.close()
