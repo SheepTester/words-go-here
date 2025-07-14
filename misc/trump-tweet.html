@@ -11,9 +11,25 @@
     />
     <meta name="theme-color" content="#4fa1a7" />
 
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700"
+    />
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
     <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      #measurer {
+        font-family: 'Inter';
+        white-space: pre-wrap;
+        box-sizing: border-box;
+        padding: 0 16px;
+        font-size: 18px;
+        line-height: 28px;
+      }
+    </style>
   </head>
   <body>
     <form class="main" role="main" action="javascript:">
@@ -97,6 +113,7 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
         width="200"
         height="0"
         class="hidden-accessible"
+        aria-hidden
       >
         <style>
           @font-face {
@@ -258,6 +275,20 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
           </div>
         </foreignObject>
       </svg>
+      <img
+        src="data:image/svg+xml,%3Csvg viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8.82.521a1.596 1.596 0 012.36 0l.362.398c.42.46 1.07.635 1.664.445l.512-.163a1.596 1.596 0 012.043 1.18l.115.525a1.596 1.596 0 001.218 1.218l.525.115a1.596 1.596 0 011.18 2.043l-.163.513a1.596 1.596 0 00.446 1.663l.397.362a1.596 1.596 0 010 2.36l-.397.362c-.461.42-.635 1.07-.446 1.664l.163.512a1.596 1.596 0 01-1.18 2.043l-.525.115a1.596 1.596 0 00-1.218 1.218l-.115.525a1.596 1.596 0 01-2.043 1.18l-.512-.163a1.596 1.596 0 00-1.664.445l-.362.398a1.596 1.596 0 01-2.36 0l-.362-.398a1.596 1.596 0 00-1.663-.445l-.513.163a1.596 1.596 0 01-2.043-1.18l-.115-.525a1.596 1.596 0 00-1.218-1.218l-.525-.115a1.596 1.596 0 01-1.18-2.043l.164-.512a1.596 1.596 0 00-.446-1.664L.52 11.18a1.596 1.596 0 010-2.36l.398-.362c.46-.42.635-1.07.446-1.663L1.2 6.282a1.596 1.596 0 011.18-2.043l.525-.115a1.596 1.596 0 001.218-1.218l.115-.525A1.596 1.596 0 016.282 1.2l.513.163c.594.19 1.244.015 1.663-.445L8.821.52z' fill='%23ff4775'%3E%3C/path%3E%3Cpath d='M6.66 7.464L5.012 9.111l3.85 3.85 5.483-5.481-1.966-1.966L8.544 9.35 6.66 7.464z' fill='%23fff'%3E%3C/path%3E%3Cpath opacity='.5' d='M11.25 15.55l-1.646-1.848 1.646-1.646 1.887 1.887-1.887 1.606z' fill='%23fff'%3E%3C/path%3E%3C/svg%3E"
+        class="hidden-accessible"
+        id="verified-badge"
+        aria-hidden
+      />
+      <img
+        src="data:image/svg+xml,%3Csvg viewBox='0 0 22 21' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='1' y='0.5' width='20' height='20' rx='6' fill='%2308051B'%3E%3C/rect%3E%3Crect x='1' y='0.5' width='20' height='20' rx='6' stroke='white' stroke-opacity='0.2'%3E%3C/rect%3E%3Cpath d='M6 8.85547H9.05031V11.8448H6V8.85547Z' fill='%232FEECC'%3E%3C/path%3E%3Cpath d='M13.3203 5.5V8.85547H16.8594V11.8447H13.3203V15.2002H10.1484V5.5H13.3203Z' fill='white'%3E%3C/path%3E%3C/svg%3E"
+        class="hidden-accessible"
+        id="premium-badge"
+        aria-hidden
+      />
+
+      <div id="measurer" class="hidden-accessible" aria-hidden></div>
 
       <label class="radio-label">
         <input type="checkbox" name="darkTheme" class="hidden-accessible" />
@@ -362,28 +393,11 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
     <script type="module">
       import { on } from '/reform/v1/index.js'
 
-      const urls = []
-      for (const url of [
-        'https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2',
-        'https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2',
-        'https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2'
-      ]) {
-        urls.push({
-          original: url,
-          replacement: await fetch(url)
-            .then(r => r.arrayBuffer())
-            .then(
-              buffer =>
-                `'data:font/woff2;base64,${btoa(
-                  Array.from(new Uint8Array(buffer), byte =>
-                    String.fromCharCode(byte)
-                  ).join('')
-                )}'`
-            )
-        })
-      }
-
       const elems = {
+        measurer: document.getElementById('measurer'),
+        verifiedBadge: document.getElementById('verified-badge'),
+        premiumBadge: document.getElementById('premium-badge'),
+
         svg: document.getElementById('svg'),
         fo: document.getElementById('fo'),
         post: document.getElementById('post'),
@@ -397,6 +411,14 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
         repostsCount: document.getElementById('reposts-count'),
         likes: document.getElementById('likes'),
         likesCount: document.getElementById('likes-count')
+      }
+
+      await document.fonts.ready
+      if (!elems.verifiedBadge.complete) {
+        await new Promise(resolve => (elems.verifiedBadge.onload = resolve))
+      }
+      if (!elems.premiumBadge.complete) {
+        await new Promise(resolve => (elems.premiumBadge.onload = resolve))
       }
 
       let id = 0
@@ -417,86 +439,124 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
           darkTheme
         } = params
 
-        elems.name.textContent = name
-        elems.username.textContent = username
-        elems.content.textContent = content
-        elems.verified.style.display = verified ? '' : 'none'
-        elems.premium.style.display = premium ? '' : 'none'
-        if (reposts || likes) {
-          elems.stats.style.display = ''
+        elems.measurer.style.width = `${width}px`
+        const chars = Array.from(content, char => ({
+          char,
+          span: Object.assign(document.createElement('span'), {
+            textContent: char
+          })
+        }))
+        const fragment = document.createDocumentFragment()
+        for (const { span } of chars) {
+          fragment.append(span)
+        }
+        while (elems.measurer.lastChild) {
+          elems.measurer.removeChild(elems.measurer.lastChild)
+        }
+        elems.measurer.append(fragment)
 
-          if (reposts) {
-            elems.reposts.style.display = ''
-            elems.repostsCount.textContent = reposts
-            if (+reposts === 1) {
-              elems.reposts.classList.add('singular')
-            } else {
-              elems.reposts.classList.remove('singular')
-            }
-          } else {
-            elems.reposts.style.display = 'none'
+        const lines = []
+        let y = null
+        for (const { char, span } of chars) {
+          const { top } = span.getBoundingClientRect()
+          if (y === null || top !== y) {
+            y = top
+            lines.push('')
           }
-
-          if (likes) {
-            elems.likes.style.display = ''
-            elems.likesCount.textContent = likes
-            if (+likes === 1) {
-              elems.likes.classList.add('singular')
-            } else {
-              elems.likes.classList.remove('singular')
-            }
-          } else {
-            elems.likes.style.display = 'none'
-          }
-        } else {
-          elems.stats.style.display = 'none'
+          lines[lines.length - 1] += char
         }
-        if (darkTheme) {
-          elems.svg.classList.add('dark')
-        } else {
-          elems.svg.classList.remove('dark')
-        }
-
-        elems.svg.width.baseVal.value = width
-        elems.fo.width.baseVal.value = width
-        const height = elems.post.getBoundingClientRect().height
-        elems.svg.height.baseVal.value = height
-        elems.fo.height.baseVal.value = height
-
-        let svgSource = elems.svg.outerHTML.replace(
-          './trump-pfp.jpeg',
-          pfp.canvas.toDataURL()
-        )
-        for (const { original, replacement } of urls) {
-          svgSource = svgSource.replace(original, replacement)
-        }
-
-        const svgBlob = new File([svgSource], 'false-truth.svg', {
-          type: 'image/svg+xml'
-        })
-        if (lastUrl) {
-          URL.revokeObjectURL(lastUrl)
-        }
-        lastUrl = URL.createObjectURL(svgBlob)
-
-        const image = new Image()
-        image.src = lastUrl
-        await new Promise((resolve, reject) => {
-          image.addEventListener('load', resolve)
-          image.addEventListener('error', e =>
-            reject(e.error ?? 'SVG failed to load')
-          )
-        })
-        if (myId !== id) {
-          return
-        }
+        const contentLineHeight = 1.75 * 16
+        const height =
+          lines.length * contentLineHeight +
+          2.5 * 16 +
+          42 +
+          (reposts || likes ? (0.5 + 1.25) * 16 : 0)
 
         c.canvas.width = width * scale
         c.canvas.height = height * scale
         c.scale(scale, scale)
-        c.drawImage(image, 0, 0)
 
-        return svgBlob
+        c.fillStyle = darkTheme ? 'rgb(8, 5, 27)' : 'white'
+        c.fillRect(0, 0, width, height)
+
+        c.fillStyle = darkTheme ? 'rgb(251, 250, 251)' : 'rgb(8, 5, 27)'
+        c.textBaseline = 'middle'
+
+        c.font = `${1.125 * 16}px "Inter"`
+        const contentLineHeightOffset = contentLineHeight / 2
+        for (const [i, line] of lines.entries()) {
+          c.fillText(
+            line,
+            16,
+            1.5 * 16 + 42 + i * contentLineHeight + contentLineHeightOffset
+          )
+        }
+
+        c.font = `600 ${0.875 * 16}px "Inter"`
+        c.fillText(name, 1.75 * 16 + 42, 1 * 16 + (1.25 * 16) / 2)
+
+        let badgeX = (1.75 + 0.25) * 16 + 42 + c.measureText(name).width
+        const badgeY = 1 * 16 + (1.25 * 16 - 16) / 2
+        if (verified) {
+          c.drawImage(elems.verifiedBadge, badgeX, badgeY, 16, 16)
+          badgeX += 16 * (1 + 0.25)
+        }
+        if (premium) {
+          c.drawImage(elems.premiumBadge, badgeX, badgeY, 16, 16)
+        }
+
+        const countFont = `700 ${1 * 16}px "Inter"`
+        const labelFont = `${1 * 16}px "Inter"`
+        const statsLineHeightOffset = (1.25 * 16) / 2
+        const statsTop =
+          42 + 2 * 16 + lines.length * contentLineHeight + statsLineHeightOffset
+        const statsLeft = 1 * 16
+        c.font = countFont
+        const repostsLabel =
+          statsLeft + (reposts ? c.measureText(reposts).width : 0)
+        c.font = labelFont
+        const repostsEnd =
+          repostsLabel +
+          (reposts
+            ? c.measureText(+reposts === 1 ? ' ReTruth' : ' ReTruths').width
+            : 0)
+        const likesLeft = repostsEnd + (reposts ? 0.75 * 16 : 0)
+        c.font = countFont
+        const likesLabel = likesLeft + (likes ? c.measureText(likes).width : 0)
+
+        if (reposts) {
+          c.fillText(reposts, statsLeft, statsTop)
+        }
+        if (likes) {
+          c.fillText(likes, likesLeft, statsTop)
+        }
+
+        c.fillStyle = darkTheme ? 'rgb(134, 131, 147)' : 'rgb(101, 97, 117)'
+        c.font = labelFont
+        if (reposts) {
+          c.fillText(
+            +reposts === 1 ? ' ReTruth' : ' ReTruths',
+            repostsLabel,
+            statsTop
+          )
+        }
+        if (likes) {
+          c.fillText(+likes === 1 ? ' Like' : ' Likes', likesLabel, statsTop)
+        }
+
+        c.font = `${0.875 * 16}px "Inter"`
+        c.fillText(username, 1.75 * 16 + 42, 1 * 16 + 1.25 * 16 * 1.5)
+
+        c.beginPath()
+        c.arc(16 + 42 / 2, 16 + 42 / 2, 42 / 2, 0, Math.PI * 2)
+        c.clip()
+        c.drawImage(pfp.canvas, 16, 16, 42, 42)
+
+        const blob = await new Promise(resolve => c.canvas.toBlob(resolve))
+        if (myId !== id) {
+          return
+        }
+        return new File([blob], 'false-truth.png', blob)
       })
     </script>
   </body>
