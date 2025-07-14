@@ -87,7 +87,7 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
         <div class="image-content output-content">
           <canvas
             id="output"
-            data-deps="content width scale name username pfp verified premium reposts likes darkTheme"
+            data-deps="content width scale name username pfp verified premium reposts likes time darkTheme"
           ></canvas>
         </div>
         <div class="output-controls">
@@ -347,6 +347,10 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
           <span class="label-primary">Likes</span>
           <input type="text" name="likes" />
         </label>
+        <label class="field-label">
+          <span class="label-primary">Timestamp</span>
+          <input type="text" name="time" />
+        </label>
       </div>
 
       <label class="field-label">
@@ -440,6 +444,7 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
           premium,
           reposts,
           likes,
+          time,
           darkTheme
         } = params
 
@@ -474,7 +479,7 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
           lines.length * contentLineHeight +
           2.5 * 16 +
           42 +
-          (reposts || likes ? (0.5 + 1.25) * 16 : 0)
+          (reposts || likes || time ? (0.5 + 1.25) * 16 : 0)
 
         c.canvas.width = width * scale
         c.canvas.height = height * scale
@@ -497,10 +502,10 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
         }
 
         c.font = `600 ${0.875 * 16}px "Inter"`
-        c.fillText(name, 1.75 * 16 + 42, 1 * 16 + (1.25 * 16) / 2)
+        c.fillText(name, 1.75 * 16 + 42, 1 * 16 + 24 / 2)
 
         let badgeX = (1.75 + 0.25) * 16 + 42 + c.measureText(name).width
-        const badgeY = 1 * 16 + (1.25 * 16 - 16) / 2
+        const badgeY = 1 * 16 + (24 - 16) / 2
         if (verified) {
           c.drawImage(elems.verifiedBadge, badgeX, badgeY, 16, 16)
           badgeX += 16 * (1 + 0.25)
@@ -549,7 +554,12 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
         }
 
         c.font = `${0.875 * 16}px "Inter"`
-        c.fillText(username, 1.75 * 16 + 42, 1 * 16 + 1.25 * 16 * 1.5)
+        c.fillText(username, 1.75 * 16 + 42, 1 * 16 + 24 + (1.25 * 16) / 2)
+
+        c.textAlign = 'right'
+        if (time) {
+          c.fillText(time, width - 16, statsTop)
+        }
 
         c.beginPath()
         c.arc(16 + 42 / 2, 16 + 42 / 2, 42 / 2, 0, Math.PI * 2)
