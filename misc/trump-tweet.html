@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Fake a Truth Social post</title>
+    <meta
+      name="description"
+      content="People like to post screenshots of posts without linking to a source, leading to complacency that makes it really easy to fabricate a Trump tweet."
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>Fake a Truth Social post</h1>
+      <p>
+        I&rsquo;m guessing because platforms like Instagram are image-first and
+        don&rsquo;t make links clickable (to discourage spam), it&rsquo;s very
+        common for images of tweets to be posted and reposted across social
+        media without linking to the original, even on platforms that allow
+        links like Reddit. This makes users
+        <a
+          href="https://www.reddit.com/r/facepalm/comments/1lyje4j/stop_or_share_this/"
+          class="link"
+          >vulnerable to faked posts</a
+        >.
+      </p>
+      <p>
+        To encourage skepticism and citing sources, this tool makes it
+        <em>easier</em> to fabricate posts on Truth Social.
+      </p>
+      <p>
+        <strong>Tip:</strong> In general, when linking to posts on X, replace
+        <code>x.com</code> with <code>xcancel.com</code> to avoid a login wall.
+        For Trump&rsquo;s posts on Truth Social, link to the post on a publicly
+        accessible archive, such as
+        <a href="https://trumpstruth.org/" class="link">Trump&rsquo;s Truth</a>.
+        This also helps deny those platforms ad revenue and tracking
+        opportunities.
+      </p>
+
+      <div class="two-col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="content"
+            class="hidden-accessible reform:text-input"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">
+            Choose or drop a text file or type below
+          </span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <textarea
+          name="content"
+          aria-label="Content of tweet"
+          class="input-content"
+        >
+STOP TALKING ABOUT EPSTEIN!!!!!</textarea
+        >
+        <div class="image-content output-content">
+          <canvas
+            id="output"
+            data-deps="content width scale name username pfp verified premium reposts likes darkTheme"
+          ></canvas>
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            data-output="output"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            data-output="output"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        id="svg"
+        width="200"
+        height="0"
+        class="hidden-accessible"
+      >
+        <style>
+          @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 400;
+            src: url(https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2)
+              format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+              U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC,
+              U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+          }
+          @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 600;
+            src: url(https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2)
+              format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+              U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC,
+              U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+          }
+          @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 700;
+            src: url(https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2)
+              format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+              U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC,
+              U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+          }
+
+          svg {
+            font-family: 'Inter';
+          }
+
+          .post {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            color: rgb(8, 5, 27);
+            background-color: white;
+          }
+          .dark .post {
+            background-color: rgb(8, 5, 27);
+          }
+
+          .content {
+            font-size: 1.125rem;
+            line-height: 1.75rem;
+            white-space: pre-wrap;
+          }
+
+          .author {
+            display: flex;
+            gap: 0.75rem;
+          }
+
+          .pfp {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background-color: rgb(246, 246, 247);
+            background-image: url('./trump-pfp.jpeg');
+            background-size: cover;
+            background-position: center;
+            flex: none;
+          }
+          .dark .pfp {
+            background-color: rgb(32, 28, 60);
+          }
+
+          .names {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+          }
+
+          .name {
+            font-weight: 600;
+            display: flex;
+            gap: 0.25rem;
+          }
+
+          .username {
+            color: rgb(101, 97, 117);
+          }
+
+          .stats {
+            display: flex;
+            gap: 0.75rem;
+            color: rgb(101, 97, 117);
+            line-height: 1.25rem;
+            font-size: 1rem;
+          }
+
+          .stats strong {
+            font-weight: 700;
+            color: rgb(8, 5, 27);
+          }
+          .singular .s {
+            display: none;
+          }
+
+          .badge {
+            width: 1rem;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: contain;
+          }
+          .verified {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8.82.521a1.596 1.596 0 012.36 0l.362.398c.42.46 1.07.635 1.664.445l.512-.163a1.596 1.596 0 012.043 1.18l.115.525a1.596 1.596 0 001.218 1.218l.525.115a1.596 1.596 0 011.18 2.043l-.163.513a1.596 1.596 0 00.446 1.663l.397.362a1.596 1.596 0 010 2.36l-.397.362c-.461.42-.635 1.07-.446 1.664l.163.512a1.596 1.596 0 01-1.18 2.043l-.525.115a1.596 1.596 0 00-1.218 1.218l-.115.525a1.596 1.596 0 01-2.043 1.18l-.512-.163a1.596 1.596 0 00-1.664.445l-.362.398a1.596 1.596 0 01-2.36 0l-.362-.398a1.596 1.596 0 00-1.663-.445l-.513.163a1.596 1.596 0 01-2.043-1.18l-.115-.525a1.596 1.596 0 00-1.218-1.218l-.525-.115a1.596 1.596 0 01-1.18-2.043l.164-.512a1.596 1.596 0 00-.446-1.664L.52 11.18a1.596 1.596 0 010-2.36l.398-.362c.46-.42.635-1.07.446-1.663L1.2 6.282a1.596 1.596 0 011.18-2.043l.525-.115a1.596 1.596 0 001.218-1.218l.115-.525A1.596 1.596 0 016.282 1.2l.513.163c.594.19 1.244.015 1.663-.445L8.821.52z' fill='%23ff4775'%3E%3C/path%3E%3Cpath d='M6.66 7.464L5.012 9.111l3.85 3.85 5.483-5.481-1.966-1.966L8.544 9.35 6.66 7.464z' fill='%23fff'%3E%3C/path%3E%3Cpath opacity='.5' d='M11.25 15.55l-1.646-1.848 1.646-1.646 1.887 1.887-1.887 1.606z' fill='%23fff'%3E%3C/path%3E%3C/svg%3E");
+          }
+          .premium {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 22 21' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='1' y='0.5' width='20' height='20' rx='6' fill='%2308051B'%3E%3C/rect%3E%3Crect x='1' y='0.5' width='20' height='20' rx='6' stroke='white' stroke-opacity='0.2'%3E%3C/rect%3E%3Cpath d='M6 8.85547H9.05031V11.8448H6V8.85547Z' fill='%232FEECC'%3E%3C/path%3E%3Cpath d='M13.3203 5.5V8.85547H16.8594V11.8447H13.3203V15.2002H10.1484V5.5H13.3203Z' fill='white'%3E%3C/path%3E%3C/svg%3E");
+          }
+
+          .dark .post,
+          .dark .stats strong {
+            color: rgb(251, 250, 251);
+          }
+          .dark .username,
+          .dark .stats {
+            color: rgb(134, 131, 147);
+          }
+        </style>
+        <foreignObject x="0" y="0" width="200" height="0" id="fo">
+          <div xmlns="http://www.w3.org/1999/xhtml" class="post" id="post">
+            <div class="author">
+              <div class="pfp"></div>
+              <div class="names">
+                <div class="name">
+                  <div id="name">Donald J. Trump</div>
+                  <div class="badge verified" id="verified"></div>
+                  <div class="badge premium" id="premium"></div>
+                </div>
+                <div class="username" id="username">@realDonaldTrump</div>
+              </div>
+            </div>
+            <div class="content" id="content">
+              I will be interviewed by my wonderful daughter-in-law, Lara Trump,
+              on FoxNews, at 9:00 P.M. (TONIGHT!). Enjoy!
+            </div>
+            <div class="stats" id="stats">
+              <div class="stat" id="reposts">
+                <strong id="reposts-count">4.85k</strong> ReTruth<span class="s"
+                  >s</span
+                >
+              </div>
+              <div class="stat" id="likes">
+                <strong id="likes-count">28.7k</strong> Like<span class="s"
+                  >s</span
+                >
+              </div>
+            </div>
+          </div>
+        </foreignObject>
+      </svg>
+
+      <label class="radio-label">
+        <input type="checkbox" name="darkTheme" class="hidden-accessible" />
+        <span class="radio-button"></span>
+        <span class="label-secondary">Dark theme</span>
+      </label>
+
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Image width</span>
+          <input type="range" name="width" min="250" max="1000" value="350" />
+        </label>
+        <input
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          name="width"
+          min="0"
+          value="350"
+          aria-label="Image width"
+        />
+      </div>
+
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Resolution scale</span>
+          <input
+            type="range"
+            name="scale"
+            min="1"
+            max="5"
+            step="0.1"
+            value="2"
+          />
+        </label>
+        <input
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          name="scale"
+          value="2"
+          aria-label="Resolution scale"
+        />
+      </div>
+
+      <div class="cols">
+        <label class="field-label">
+          <span class="label-primary">&ldquo;ReTruths&rdquo;</span>
+          <input type="text" name="reposts" />
+        </label>
+        <label class="field-label">
+          <span class="label-primary">Likes</span>
+          <input type="text" name="likes" />
+        </label>
+      </div>
+
+      <label class="field-label">
+        <span class="label-primary">Author name</span>
+        <input type="text" name="name" value="Donald J. Trump" />
+      </label>
+
+      <label class="field-label">
+        <span class="label-primary">Author username</span>
+        <input type="text" name="username" value="@realDonaldTrump" />
+      </label>
+
+      <label class="radio-label">
+        <input
+          type="checkbox"
+          name="verified"
+          class="hidden-accessible"
+          checked
+        />
+        <span class="radio-button"></span>
+        <span class="label-secondary">Verified account badge</span>
+      </label>
+
+      <label class="radio-label">
+        <input type="checkbox" name="premium" class="hidden-accessible" />
+        <span class="radio-button"></span>
+        <span class="label-secondary">Truth+ Premium badge</span>
+      </label>
+
+      <div class="col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="pfp"
+            accept="image/*"
+            class="hidden-accessible reform:image-input"
+            aria-label="Profile picture"
+            data-default="./trump-pfp.jpeg"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">Choose or drop a profile picture</span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <div class="image-content input-content"><canvas></canvas></div>
+      </div>
+    </form>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+
+      const urls = []
+      for (const url of [
+        'https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2',
+        'https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2',
+        'https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2'
+      ]) {
+        urls.push({
+          original: url,
+          replacement: await fetch(url)
+            .then(r => r.arrayBuffer())
+            .then(
+              buffer =>
+                `'data:font/woff2;base64,${btoa(
+                  Array.from(new Uint8Array(buffer), byte =>
+                    String.fromCharCode(byte)
+                  ).join('')
+                )}'`
+            )
+        })
+      }
+
+      const elems = {
+        svg: document.getElementById('svg'),
+        fo: document.getElementById('fo'),
+        post: document.getElementById('post'),
+        name: document.getElementById('name'),
+        verified: document.getElementById('verified'),
+        premium: document.getElementById('premium'),
+        username: document.getElementById('username'),
+        content: document.getElementById('content'),
+        stats: document.getElementById('stats'),
+        reposts: document.getElementById('reposts'),
+        repostsCount: document.getElementById('reposts-count'),
+        likes: document.getElementById('likes'),
+        likesCount: document.getElementById('likes-count')
+      }
+
+      let id = 0
+      let lastUrl = null
+      on('output', async (c, params) => {
+        const myId = ++id
+        const {
+          content,
+          width,
+          scale,
+          name,
+          username,
+          pfp,
+          verified,
+          premium,
+          reposts,
+          likes,
+          darkTheme
+        } = params
+
+        elems.name.textContent = name
+        elems.username.textContent = username
+        elems.content.textContent = content
+        elems.verified.style.display = verified ? '' : 'none'
+        elems.premium.style.display = premium ? '' : 'none'
+        if (reposts || likes) {
+          elems.stats.style.display = ''
+
+          if (reposts) {
+            elems.reposts.style.display = ''
+            elems.repostsCount.textContent = reposts
+            if (+reposts === 1) {
+              elems.reposts.classList.add('singular')
+            } else {
+              elems.reposts.classList.remove('singular')
+            }
+          } else {
+            elems.reposts.style.display = 'none'
+          }
+
+          if (likes) {
+            elems.likes.style.display = ''
+            elems.likesCount.textContent = likes
+            if (+likes === 1) {
+              elems.likes.classList.add('singular')
+            } else {
+              elems.likes.classList.remove('singular')
+            }
+          } else {
+            elems.likes.style.display = 'none'
+          }
+        } else {
+          elems.stats.style.display = 'none'
+        }
+        if (darkTheme) {
+          elems.svg.classList.add('dark')
+        } else {
+          elems.svg.classList.remove('dark')
+        }
+
+        elems.svg.width.baseVal.value = width
+        elems.fo.width.baseVal.value = width
+        const height = elems.post.getBoundingClientRect().height
+        elems.svg.height.baseVal.value = height
+        elems.fo.height.baseVal.value = height
+
+        let svgSource = elems.svg.outerHTML.replace(
+          './trump-pfp.jpeg',
+          pfp.canvas.toDataURL()
+        )
+        for (const { original, replacement } of urls) {
+          svgSource = svgSource.replace(original, replacement)
+        }
+
+        const svgBlob = new File([svgSource], 'false-truth.svg', {
+          type: 'image/svg+xml'
+        })
+        if (lastUrl) {
+          URL.revokeObjectURL(lastUrl)
+        }
+        lastUrl = URL.createObjectURL(svgBlob)
+
+        const image = new Image()
+        image.src = lastUrl
+        await new Promise((resolve, reject) => {
+          image.addEventListener('load', resolve)
+          image.addEventListener('error', e =>
+            reject(e.error ?? 'SVG failed to load')
+          )
+        })
+        if (myId !== id) {
+          return
+        }
+
+        c.canvas.width = width * scale
+        c.canvas.height = height * scale
+        c.scale(scale, scale)
+        c.drawImage(image, 0, 0)
+
+        return svgBlob
+      })
+    </script>
+  </body>
+</html>
