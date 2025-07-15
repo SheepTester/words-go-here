@@ -26,12 +26,18 @@
       }
 
       #measurer {
+        position: fixed;
         font-family: 'Inter';
         white-space: pre-wrap;
+        word-break: break-word;
         box-sizing: border-box;
         padding: 0 16px;
         font-size: 18px;
         line-height: 28px;
+      }
+
+      [type='range'] {
+        touch-action: none;
       }
     </style>
   </head>
