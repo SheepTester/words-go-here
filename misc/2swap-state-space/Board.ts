@@ -41,26 +41,36 @@ export function displayState (board: Board, state: State): string {
   return display
 }
 
-function serializeState (state: State): string {
-  return state.map(({ left, top }) => `${left},${top}`).join(' ')
-}
-
 export function * traverse (
   board: Board,
   init: State,
   method: 'breadth' | 'depth'
 ): Generator<State> {
-  const added: Record<string, State> = { [serializeState(init)]: init }
+  const added = new Set<string>()
   const toVisit = new Deque<State>()
-  toVisit.pushRight(init)
+
+  const cells = new Uint8Array(board.width * board.height * 2)
   const tryState = (state: State) => {
-    const id = serializeState(state)
-    if (!added[id]) {
-      added[id] = state
+    cells.fill(0)
+    for (const [i, block] of board.blocks.entries()) {
+      const { left, top } = state[i]
+      for (let y = 0; y < block.height; y++) {
+        for (let x = 0; x < block.width; x++) {
+          cells[((top + y) * board.width + left + x) * 2] =
+            (+block.canHorizontal * 0x80) | block.width
+          cells[((top + y) * board.width + left + x) * 2 + 1] =
+            (+block.canVertical * 0x80) | block.height
+        }
+      }
+    }
+    const id = cells.join(' ')
+    if (!added.has(id)) {
+      added.add(id)
       toVisit.pushRight(state)
     }
   }
-  console.log(added)
+  tryState(init)
+
   const occupied = new Uint8Array(board.width * board.height)
   while (true) {
     const next = method === 'breadth' ? toVisit.popLeft() : toVisit.popRight()
