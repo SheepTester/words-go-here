@@ -1,5 +1,10 @@
 {
+  "scripts": {
+    "2swap:build": "esbuild --bundle ./misc/2swap-state-space/index.ts --loader:.wgsl=text --outdir=./misc/2swap-state-space/ --minify",
+    "2swap:dev": "esbuild --bundle ./misc/2swap-state-space/index.ts --loader:.wgsl=text --outdir=./misc/2swap-state-space/ --servedir=.. --sourcemap"
+  },
   "devDependencies": {
+    "esbuild": "^0.25.9",
     "prettierx": "^0.19.0"
   }
 }
