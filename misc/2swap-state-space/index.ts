@@ -1,4 +1,4 @@
-import { Board, displayState, State, traverse } from './Board.ts'
+import { Board, displayState, GraphNode, State, traverse } from './Board.ts'
 
 const board: Board = {
   width: 4,
@@ -16,24 +16,44 @@ const board: Board = {
     { width: 1, height: 1, canHorizontal: true, canVertical: true }
   ]
 }
-const result = Array.from(
-  traverse(
-    board,
-    [
-      { left: 0, top: 0 },
-      { left: 1, top: 0 },
-      { left: 3, top: 0 },
-      { left: 0, top: 2 },
-      { left: 1, top: 2 },
-      { left: 1, top: 3 },
-      { left: 2, top: 3 },
-      { left: 3, top: 2 },
-      { left: 0, top: 4 },
-      { left: 3, top: 4 }
-    ],
-    'breadth'
-  )
+const result = traverse(
+  board,
+  [
+    { left: 0, top: 0 },
+    { left: 1, top: 0 },
+    { left: 3, top: 0 },
+    { left: 0, top: 2 },
+    { left: 1, top: 2 },
+    { left: 1, top: 3 },
+    { left: 2, top: 3 },
+    { left: 3, top: 2 },
+    { left: 0, top: 4 },
+    { left: 3, top: 4 }
+  ],
+  'breadth'
 )
 console.log(result)
-console.log(displayState(board, result[0]))
-console.log(displayState(board, result[result.length - 1]))
+
+let moves = 0
+let s = ''
+let next: GraphNode | undefined = result.nodes[result.nodes.length - 1]
+while (next) {
+  s = `${displayState(board, next.state)}\n\n${s}`
+  next = next.prev
+  if (next) {
+    moves++
+  }
+}
+console.groupCollapsed(`Longest path (${moves} moves)`)
+console.log(s)
+console.groupEnd()
+
+console.log(
+  'max neighbors',
+  result.nodes.reduce((cum, curr) => Math.max(cum, curr.neighbors.size), 0)
+)
+console.log(
+  'avg neighbors',
+  result.nodes.reduce((cum, curr) => cum + curr.neighbors.size, 0) /
+    result.nodes.length
+)
