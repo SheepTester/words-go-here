@@ -1,9 +1,5 @@
 import { Board, displayState, GraphNode, traverse } from './Board'
-
-const adapter = await navigator.gpu.requestAdapter()
-if (!adapter) {
-  throw new TypeError('Failed to obtain WebGPU adapter.')
-}
+import simSource from './sim.wgsl'
 
 const board: Board = {
   width: 4,
@@ -62,3 +58,65 @@ console.log(
   result.nodes.reduce((cum, curr) => cum + curr.neighbors.size, 0) /
     result.nodes.length
 )
+
+const adapter = await navigator.gpu.requestAdapter()
+if (!adapter) {
+  throw new TypeError('Failed to obtain WebGPU adapter.')
+}
+const device = await adapter.requestDevice()
+
+const simPipeline = device.createComputePipeline({
+  layout: 'auto',
+  compute: { module: device.createShaderModule({ code: simSource }) }
+})
+const initialNodeData = new Float32Array(result.nodes.length * 6)
+for (let i = 0; i < result.nodes.length; ++i) {
+  initialNodeData[i * 6 + 0] = 2 * (Math.random() - 0.5)
+  initialNodeData[i * 6 + 1] = 2 * (Math.random() - 0.5)
+  initialNodeData[i * 6 + 2] = 2 * (Math.random() - 0.5)
+  initialNodeData[i * 6 + 3] = 2 * (Math.random() - 0.5) * 0.1
+  initialNodeData[i * 6 + 4] = 2 * (Math.random() - 0.5) * 0.1
+  initialNodeData[i * 6 + 5] = 2 * (Math.random() - 0.5) * 0.1
+}
+
+const buffers = Array.from({ length: 2 }, _ => {
+  const buffer = device.createBuffer({
+    size: initialNodeData.byteLength,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+    mappedAtCreation: true
+  })
+  new Float32Array(buffer.getMappedRange()).set(initialNodeData)
+  buffer.unmap()
+  return buffer
+})
+const bindGroups = buffers.map((buffer, i) =>
+  device.createBindGroup({
+    layout: simPipeline.getBindGroupLayout(0),
+    entries: [
+      {
+        binding: 0,
+        resource: {
+          buffer: buffer,
+          offset: 0,
+          size: initialNodeData.byteLength
+        }
+      },
+      {
+        binding: 1,
+        resource: {
+          buffer: buffers[(i + 1) % buffers.length],
+          offset: 0,
+          size: initialNodeData.byteLength
+        }
+      }
+    ]
+  })
+)
+
+const commandEncoder = device.createCommandEncoder()
+const passEncoder = commandEncoder.beginComputePass()
+passEncoder.setPipeline(simPipeline)
+passEncoder.setBindGroup(0, bindGroups[0])
+passEncoder.dispatchWorkgroups(Math.ceil(result.nodes.length / 64))
+passEncoder.end()
+device.queue.submit([commandEncoder.finish()])
