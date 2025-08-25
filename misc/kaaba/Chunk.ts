@@ -1,6 +1,6 @@
 import { mat4 } from 'wgpu-matrix'
-import { Block, getTexture, isOpaque, isSolid } from './blocks.ts'
-import { Group, Uniform } from './webgpu.ts'
+import { Block, getTexture, isOpaque, isSolid } from './blocks'
+import { Group, Uniform } from './webgpu'
 
 export const SIZE = 32
 
@@ -40,8 +40,8 @@ function getFaceVertex (face: number, index: number): ChunkPosition {
     face & 4 // 10x: bottom/top
       ? [flipped[0], flipped[2], 1.0 - flipped[1]]
       : face & 2 // 01x: left/right
-      ? [flipped[2], flipped[1], 1.0 - flipped[0]] // 00x: back/front
-      : flipped
+        ? [flipped[2], flipped[1], 1.0 - flipped[0]] // 00x: back/front
+        : flipped
   return rotated
 }
 
@@ -124,18 +124,18 @@ export class Chunk {
                   ) +
                   (dx === 0
                     ? +isOpaque(
-                        this.block(x + (dx || (cx ? 1 : -1)), y + dy, z + dz)
-                      )
+                      this.block(x + (dx || (cx ? 1 : -1)), y + dy, z + dz)
+                    )
                     : 0) +
                   (dy === 0
                     ? +isOpaque(
-                        this.block(x + dx, y + (dy || (cy ? 1 : -1)), z + dz)
-                      )
+                      this.block(x + dx, y + (dy || (cy ? 1 : -1)), z + dz)
+                    )
                     : 0) +
                   (dz === 0
                     ? +isOpaque(
-                        this.block(x + dx, y + dy, z + (dz || (cz ? 1 : -1)))
-                      )
+                      this.block(x + dx, y + dy, z + (dz || (cz ? 1 : -1)))
+                    )
                     : 0)
                 ao |= opaques << (i * 2)
               }

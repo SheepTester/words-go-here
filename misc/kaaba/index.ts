@@ -1,16 +1,11 @@
-/// <reference no-default-lib="true"/>
-/// <reference lib="dom" />
-/// <reference lib="deno.ns" />
-
-import '@webgpu/types'
 import { Vector2 } from 'https://sheeptester.github.io/javascripts/Vector2.js'
 // _ @deno-types="npm:wgpu-matrix"
 import { mat4, vec3 } from 'wgpu-matrix'
-import { SIZE } from './Chunk.ts'
-import { Block, isSolid } from './blocks.ts'
-import { raycast } from './raycast.ts'
-import { init } from './webgpu.ts'
-import { RaycastResult } from './raycast.ts'
+import { SIZE } from './Chunk'
+import { Block, isSolid } from './blocks'
+import { raycast } from './raycast'
+import { init } from './webgpu'
+import { RaycastResult } from './raycast'
 
 const errorMessages = document.getElementById('error')
 function handleError (error: unknown) {

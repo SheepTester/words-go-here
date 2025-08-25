@@ -1,6 +1,6 @@
 ```sh
-$ deno task kaaba:build
-$ deno task kaaba:watch
+$ npm run kaaba:build
+$ npm run kaaba:dev
 ```
 
 - `c` to toggle collisions

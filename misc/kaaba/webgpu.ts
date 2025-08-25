@@ -1,7 +1,7 @@
 // _ @deno-types="npm:wgpu-matrix"
 import { mat4 } from 'wgpu-matrix'
-import { Block } from './blocks.ts'
-import { Chunk, ChunkPosition, ChunkRenderer, SIZE } from './Chunk.ts'
+import { Block } from './blocks'
+import { Chunk, ChunkPosition, ChunkRenderer, SIZE } from './Chunk'
 
 export class Uniform {
   #device: GPUDevice
@@ -117,21 +117,21 @@ export async function init (
 
   const querySet = canTimestamp
     ? device.createQuerySet({
-        type: 'timestamp',
-        count: 2
-      })
+      type: 'timestamp',
+      count: 2
+    })
     : null
   const resolveBuffer = querySet
     ? device.createBuffer({
-        size: querySet.count * 8,
-        usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC
-      })
+      size: querySet.count * 8,
+      usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC
+    })
     : null
   const resultBuffer = resolveBuffer
     ? device.createBuffer({
-        size: resolveBuffer.size,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
-      })
+      size: resolveBuffer.size,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+    })
     : null
 
   const module = device.createShaderModule({

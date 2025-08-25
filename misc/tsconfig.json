@@ -5,7 +5,7 @@
     "target": "esnext",
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "bundler",
-    "types": ["@webgpu/types"]
+    "moduleResolution": "bundler"
+    // "typeRoots": ["./node_modules/@webgpu/types", "./node_modules/@types"]
   }
 }
