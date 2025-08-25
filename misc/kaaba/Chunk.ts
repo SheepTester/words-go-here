@@ -187,7 +187,9 @@ export class ChunkRenderer {
       transform: new Uniform(device, 0, 4 * 4 * 4)
     })
     this.chunkGroup.uniforms.transform.data(
-      mat4.translation(chunk.position.map(pos => pos * SIZE))
+      mat4.translation<Float32Array<ArrayBuffer>>(
+        chunk.position.map(pos => pos * SIZE)
+      )
     )
   }
 
