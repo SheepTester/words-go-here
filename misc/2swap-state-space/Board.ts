@@ -1,4 +1,4 @@
-import { Deque } from './Deque.ts'
+import { Deque } from './Deque'
 
 export type Block = {
   width: number

@@ -1,6 +1,11 @@
 {
-  "deno.enable": true,
+  "deno.enable": false,
   "deno.lint": false,
   "deno.unstable": false,
-  "prettier.prettierPath": "./node_modules/prettierx"
+  "prettier.prettierPath": "./node_modules/prettierx",
+  // ignore kaaba's no-default-lib (comment out if using Deno)
+  // https://github.com/microsoft/vscode/issues/66017#issuecomment-452100711
+  "files.associations": {
+    "**/kaaba/*.ts": "plaintext"
+  }
 }

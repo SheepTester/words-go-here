@@ -1,4 +1,9 @@
-import { Board, displayState, GraphNode, State, traverse } from './Board.ts'
+import { Board, displayState, GraphNode, traverse } from './Board'
+
+const adapter = await navigator.gpu.requestAdapter()
+if (!adapter) {
+  throw new TypeError('Failed to obtain WebGPU adapter.')
+}
 
 const board: Board = {
   width: 4,
