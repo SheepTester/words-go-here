@@ -1,5 +1,6 @@
 import { Board, displayState, GraphNode, traverse } from './Board'
 import simSource from './sim.wgsl'
+import renderSource from './render.wgsl'
 
 const board: Board = {
   width: 4,
@@ -59,11 +60,52 @@ console.log(
     result.nodes.length
 )
 
+// https://webgpu.github.io/webgpu-samples/?sample=computeBoids
+// https://webgpu.github.io/webgpu-samples/?sample=gameOfLife
 const adapter = await navigator.gpu.requestAdapter()
 if (!adapter) {
   throw new TypeError('Failed to obtain WebGPU adapter.')
 }
 const device = await adapter.requestDevice()
+
+const canvas = document.getElementById('canvas') as HTMLCanvasElement
+const context = canvas.getContext('webgpu')!
+const devicePixelRatio = window.devicePixelRatio
+canvas.width = canvas.clientWidth * devicePixelRatio
+canvas.height = canvas.clientHeight * devicePixelRatio
+const format = navigator.gpu.getPreferredCanvasFormat()
+
+context.configure({ device, format })
+
+const spriteShaderModule = device.createShaderModule({ code: renderSource })
+const renderPipeline = device.createRenderPipeline({
+  layout: 'auto',
+  vertex: {
+    module: spriteShaderModule,
+    buffers: [
+      {
+        arrayStride: 2 * 3 * 4,
+        stepMode: 'instance',
+        attributes: [
+          {
+            // instance position
+            shaderLocation: 0,
+            offset: 0,
+            format: 'float32x2'
+          },
+          {
+            // instance velocity
+            shaderLocation: 1,
+            offset: 2 * 4,
+            format: 'float32x2'
+          }
+        ]
+      }
+    ]
+  },
+  fragment: { module: spriteShaderModule, targets: [{ format }] },
+  primitive: { topology: 'triangle-list' }
+})
 
 const simPipeline = device.createComputePipeline({
   layout: 'auto',
