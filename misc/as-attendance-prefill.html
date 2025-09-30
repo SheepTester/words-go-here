@@ -31,7 +31,7 @@
       <p>
         Generates a link that automatically fills in questions in
         <a
-          href="https://docs.google.com/forms/u/1/d/e/1FAIpQLSc-akfqTNzrWUmOub_rMDj5wExBUDfakMXDbeGicOrpxBr6jg/viewform"
+          href="https://docs.google.com/forms/d/e/1FAIpQLSdTyROOr_WZGOgpNyfJL2QQFxIDj9FJxSxk2T0orOKu4VvQlQ/viewform"
           class="link"
           >A.S.'s attendance form</a
         >
@@ -66,8 +66,12 @@
             prefilled, but the form will still work.
           </p>
         </li>
+        <li></li>
         <li>
-          <p>The form link itself seems to be persistent. 🤞</p>
+          <p>
+            The form link itself seems to <del>be persistent 🤞</del> change
+            once a year.
+          </p>
         </li>
       </ul>
 
@@ -75,7 +79,7 @@
         <textarea
           class="output-content"
           name="link"
-          data-deps="name food affiliation source"
+          data-deps="formUrl name food affiliation source"
           aria-label="Prefilled form link"
           readonly
         ></textarea>
@@ -121,7 +125,7 @@
         <input
           type="text"
           name="name"
-          value="Association for Computing Machinery (ACM) - Bit Byte Speedfriending"
+          value="Association for Computing Machinery (ACM) - Fall Kickoff"
         />
       </label>
 
@@ -281,16 +285,23 @@
           <span class="label-primary">Email / Newsletter</span>
         </label>
       </fieldset>
+
+      <label class="field-label">
+        <span class="label-primary">Attendance form link</span>
+        <span class="label-secondary">Changes once a year it seems.</span>
+        <input
+          type="url"
+          name="formUrl"
+          value="https://docs.google.com/forms/d/e/1FAIpQLSdTyROOr_WZGOgpNyfJL2QQFxIDj9FJxSxk2T0orOKu4VvQlQ/viewform"
+        />
+      </label>
     </form>
 
     <script type="module">
       import { on } from '/reform/v1/index.js'
 
-      const FORM_LINK =
-        'https://docs.google.com/forms/d/e/1FAIpQLSc-akfqTNzrWUmOub_rMDj5wExBUDfakMXDbeGicOrpxBr6jg/viewform'
-
-      on('link', (output, { name, food, affiliation, source }) => {
-        const url = `${FORM_LINK}?${new URLSearchParams(
+      on('link', (output, { formUrl, name, food, affiliation, source }) => {
+        const url = `${formUrl}?${new URLSearchParams(
           // stringify and parse is to remove the undefined keys
           JSON.parse(
             JSON.stringify({
