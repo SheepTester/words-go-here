@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Language detector</title>
+    <meta
+      name="description"
+      content="What language does JavaScript think your keyboard smash looks like?"
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+        }
+      }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji',
+          'Segoe UI Emoji', 'Segoe UI Symbol';
+
+        &::before {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          height: 5px;
+          visibility: hidden;
+          opacity: 0;
+          width: var(--loaded);
+          background-color: #3b82f6;
+          transition: visibility 0.2s, opacity 0.2s;
+        }
+      }
+      .loading::before {
+        visibility: visible;
+        opacity: 1;
+        transition: none;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+        font-weight: bold;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      .wrapper {
+        position: sticky;
+        top: 0;
+        border-bottom: 1px solid
+          color-mix(in srgb, currentColor 10%, transparent);
+        background-color: Canvas;
+
+        &:focus-within {
+          border-bottom-color: currentColor;
+          background-color: color-mix(in srgb, currentColor 5%, Canvas);
+        }
+      }
+      .text {
+        padding: 20px;
+      }
+      #text {
+        visibility: hidden;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      #input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        resize: none;
+        border: none;
+        background: none;
+        font: inherit;
+        color: inherit;
+        &:focus {
+          outline: none;
+        }
+      }
+      .no-support {
+        margin: 20px;
+        padding: 20px;
+        border: 1px solid #f43f5e;
+        background-color: #f43f5e33;
+        border-radius: 10px;
+        display: none;
+      }
+      .show-no-support .no-support {
+        display: block;
+      }
+
+      .results {
+        margin: 0 auto;
+        border-collapse: collapse;
+        min-width: 400px;
+
+        @media (max-width: 400px) {
+          min-width: unset;
+          width: 100%;
+        }
+
+        & th {
+          text-align: left;
+        }
+
+        & tr :last-child {
+          text-align: right;
+        }
+
+        & th,
+        & td {
+          padding: 5px 10px;
+        }
+
+        & tbody tr:nth-child(2n + 1) {
+          background-color: color-mix(in srgb, currentColor 5%, Canvas);
+        }
+      }
+      .undetermined {
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="text" id="text"></div>
+      <textarea
+        class="text"
+        id="input"
+        aria-label="Text to detect language of"
+        autofocus
+      >
+arigato</textarea
+      >
+    </div>
+    <div class="no-support">
+      Your browser does not support the
+      <a href="https://developer.chrome.com/docs/ai/language-detection"
+        >Language Detector API</a
+      >. (That's a good thing.)
+    </div>
+    <table class="results">
+      <thead>
+        <tr>
+          <th>Language</th>
+          <th>Confidence</th>
+        </tr>
+      </thead>
+      <tbody id="results"></tbody>
+    </table>
+    <script type="module">
+      const text = document.getElementById('text')
+      const input = document.getElementById('input')
+      const resultsTable = document.getElementById('results')
+
+      const displayNames = new Intl.DisplayNames([], { type: 'language' })
+
+      let detector
+
+      function setText () {
+        text.textContent = input.value + '\xa0'
+        handleDetect()
+      }
+      input.addEventListener('input', setText)
+      setText()
+
+      async function handleDetect () {
+        if (!detector) {
+          return
+        }
+        const value = input.value
+        const results = await detector.detect(value)
+        if (value !== input.value) {
+          return
+        }
+        const fragment = document.createDocumentFragment()
+        for (const { detectedLanguage, confidence } of results) {
+          const row = document.createElement('tr')
+          fragment.append(row)
+
+          row.append(
+            Object.assign(document.createElement('td'), {
+              className: detectedLanguage === 'und' ? 'undetermined' : '',
+              textContent:
+                detectedLanguage === 'und'
+                  ? 'Undetermined'
+                  : displayNames.of(detectedLanguage)
+            }),
+            Object.assign(document.createElement('td'), {
+              textContent: `${(confidence * 100).toFixed(5)}%`
+            })
+          )
+        }
+        resultsTable.replaceChildren(fragment)
+      }
+
+      if (!('LanguageDetector' in window)) {
+        document.body.classList.add('show-no-support')
+      }
+
+      LanguageDetector.create({
+        monitor (m) {
+          m.addEventListener('downloadprogress', e => {
+            document.body.classList.add('loading')
+            document.body.style.setProperty('--loaded', `${e.loaded * 100}%`)
+          })
+        }
+      }).then(d => {
+        detector = d
+        handleDetect()
+        document.body.classList.remove('loading')
+      })
+    </script>
+  </body>
+</html>
