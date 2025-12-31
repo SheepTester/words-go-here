@@ -100,7 +100,7 @@
     </form>
 
     <script type="module">
-      import { on } from '/reform/v1/index.js'
+      import { on, Out } from '/reform/v1/index.js'
 
       on('output', (c, { image, chunkCount, jitter }) => {
         const { width, height } = image.canvas
@@ -126,7 +126,7 @@
           }
         }
 
-        return c
+        return Out.from(image.canvas.dataset.name + ' (jittered).png', c)
       })
     </script>
   </body>

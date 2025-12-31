@@ -174,7 +174,7 @@
         return opentype.parse(await fontFile.arrayBuffer())
       })
 
-      on('svg', async (svgElem, inputs) => {
+      on('svg', (svgElem, inputs) => {
         const {
           font,
           schedule: scheduleJson,
@@ -221,8 +221,8 @@
                   period.name === 'FlexTime'
                     ? 'flex'
                     : period.name === 'SELF'
-                    ? 'self'
-                    : period.name.slice(-1),
+                      ? 'self'
+                      : period.name.slice(-1),
                 minutes = period.end - period.start + ' min',
                 times = trumpify(period.start) + ' – ' + trumpify(period.end)
               innerHTML += `<path fill="${textColor}" d="${centreTextInRect(
@@ -261,9 +261,7 @@
         svgElem.setAttributeNS(null, 'height', tallestDay + padding)
         svgElem.innerHTML = innerHTML
 
-        return new File([svgElem.outerHTML], 'schedule.svg', {
-          type: 'image/svg+xml'
-        })
+        return Out.from('schedule.svg', svgElem.outerHTML, 'image/svg+xml')
       })
     </script>
   </body>

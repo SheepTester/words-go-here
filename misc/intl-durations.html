@@ -100,7 +100,7 @@
     </form>
 
     <script type="module">
-      import { on } from '/reform/v1/index.js'
+      import { on, Out } from '/reform/v1/index.js'
 
       const pairs = []
       const alphabet = 'abcdefghijklmnopqrstuvwxyz'
@@ -137,7 +137,7 @@
           )
           .join('\n')
         pre.value = string
-        return new File([string], 'output.txt', { type: 'text/plain' })
+        return Out.from('output.txt', string)
       })
     </script>
   </body>

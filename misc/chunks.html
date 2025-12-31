@@ -63,7 +63,7 @@
     </form>
 
     <script type="module">
-      import { on } from '/reform/v1/index.js'
+      import { on, Out } from '/reform/v1/index.js'
 
       function shuffleInPlace (arr) {
         for (let i = arr.length - 1; i >= 1; i--) {
@@ -74,7 +74,7 @@
         }
       }
 
-      on('output', async (context, { image: { canvas: image }, chunk }) => {
+      on('output', (context, { image: { canvas: image }, chunk }) => {
         const chunkSize = Math.max(Math.floor(chunk), 1) || 50
         const width = Math.floor(image.width / chunkSize)
         const height = Math.floor(image.height / chunkSize)
@@ -107,12 +107,7 @@
           }
         }
 
-        const blob = await new Promise(resolve =>
-          context.canvas.toBlob(resolve)
-        )
-        return new File([blob], image.dataset.name + ' (chunks).png', {
-          type: blob.type
-        })
+        return Out.from(image.dataset.name + ' (chunks).png', context)
       })
     </script>
   </body>

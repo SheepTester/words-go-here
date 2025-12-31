@@ -148,7 +148,7 @@
     </form>
 
     <script type="module">
-      import { on } from '/reform/v1/index.js'
+      import { on, Out } from '/reform/v1/index.js'
 
       const RADIUS = 6378137
       /** CSS pixel size of tile */
@@ -172,7 +172,10 @@
         }
       }
 
+      let lastCallId = 0
       on('output', async (context, inputs) => {
+        const callId = ++lastCallId
+
         const { tileset, zoom, minX, maxX, minY, maxY } = inputs
         const tileSet = tileset.replace('*', '')
         /** Image size */
@@ -197,6 +200,9 @@
               new Promise((resolve, reject) => {
                 const image = new Image()
                 image.addEventListener('load', () => {
+                  if (callId !== lastCallId) {
+                    return
+                  }
                   context.clearRect(
                     x * tileSize,
                     y * tileSize,
@@ -217,10 +223,8 @@
         }
 
         await Promise.all(promises)
-        const blob = await new Promise(resolve =>
-          context.canvas.toBlob(resolve)
-        )
-        return new File([blob], 'ucsd-map.png', { type: blob.type })
+
+        return Out.from('ucsd-map.png', context)
       })
     </script>
   </body>

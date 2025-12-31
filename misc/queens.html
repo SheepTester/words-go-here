@@ -128,7 +128,7 @@
       </p>
     </form>
     <script type="module">
-      import { on } from '/reform/v1/index.js'
+      import { on, Out } from '/reform/v1/index.js'
 
       let cleanup
       on('selectedRegion', (div, { image: { canvas }, callback }) => {
@@ -363,7 +363,7 @@
 
       const CELL_SIZE = 40
       const GAP = 1
-      on('output', async (context, { grid, size }) => {
+      on('output', (context, { grid, size }) => {
         if (grid.length !== size) {
           return
         }
@@ -417,10 +417,7 @@
           context.fillText(`No solutions found :(`, 0, context.canvas.height)
         }
 
-        const blob = await new Promise(resolve =>
-          context.canvas.toBlob(resolve)
-        )
-        return new File([blob], 'queens-solution.png', blob)
+        return Out.from('queens-solution.png', context)
       })
     </script>
   </body>

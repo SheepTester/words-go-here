@@ -154,7 +154,7 @@
     </form>
 
     <script type="module">
-      import { on } from '/reform/v1/index.js'
+      import { on, Out } from '/reform/v1/index.js'
 
       const sqrt3 = Math.sqrt(3)
       const skew = sqrt3 / 2 - 0.5
@@ -224,7 +224,7 @@
       }
 
       const commonTable = []
-      on('canvas', async (context, inputs) => {
+      on('canvas', (context, inputs) => {
         const {
           scaleX,
           scaleY,
@@ -264,10 +264,7 @@
           }
         }
 
-        const blob = await new Promise(resolve =>
-          context.canvas.toBlob(resolve)
-        )
-        return new File([blob], 'simplex-noise.png', { type: blob.type })
+        return Out.from('simplex-noise.png', context)
       })
     </script>
   </body>

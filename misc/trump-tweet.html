@@ -405,7 +405,7 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
     </form>
 
     <script type="module">
-      import { on } from '/reform/v1/index.js'
+      import { on, Out } from '/reform/v1/index.js'
 
       const elems = {
         measurer: document.getElementById('measurer'),
@@ -435,10 +435,8 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
         await new Promise(resolve => (elems.premiumBadge.onload = resolve))
       }
 
-      let id = 0
       let lastUrl = null
-      on('output', async (c, params) => {
-        const myId = ++id
+      on('output', (c, params) => {
         const {
           content,
           width,
@@ -572,11 +570,7 @@ STOP TALKING ABOUT EPSTEIN!!!!!</textarea
         c.clip()
         c.drawImage(pfp.canvas, 16, 16, 42, 42)
 
-        const blob = await new Promise(resolve => c.canvas.toBlob(resolve))
-        if (myId !== id) {
-          return
-        }
-        return new File([blob], 'false-truth.png', blob)
+        return Out.from('false-truth.png', c)
       })
     </script>
   </body>

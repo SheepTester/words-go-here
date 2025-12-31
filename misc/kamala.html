@@ -6,7 +6,10 @@
 
     <title>brat album cover maker</title>
     <meta name="description" content="kamala harris is brat" />
-    <meta property="og:image" content="https://sheeptester.github.io/img/brat.webp" />
+    <meta
+      property="og:image"
+      content="https://sheeptester.github.io/img/brat.webp"
+    />
     <meta name="theme-color" content="#4fa1a7" />
 
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
@@ -214,7 +217,7 @@ brat</textarea
     </form>
 
     <script type="module">
-      import { on } from '/reform/v1/index.js'
+      import { on, Out } from '/reform/v1/index.js'
 
       on('lowerQuality', (c, options) => {
         const { text, scaleX, scale, lqSize, outline, image } = options
@@ -246,13 +249,12 @@ brat</textarea
         return c.canvas
       })
 
-      on('output', async (c, { lowerQuality, fullSize }) => {
+      on('output', (c, { lowerQuality, fullSize }) => {
         c.canvas.width = fullSize
         c.canvas.height = fullSize
         c.drawImage(lowerQuality, 0, 0, fullSize, fullSize)
 
-        const blob = await new Promise(resolve => c.canvas.toBlob(resolve))
-        return new File([blob], 'album-cover.png', { type: blob.type })
+        return Out.from('album-cover.png', c)
       })
     </script>
   </body>

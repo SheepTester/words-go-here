@@ -66,7 +66,6 @@
             prefilled, but the form will still work.
           </p>
         </li>
-        <li></li>
         <li>
           <p>
             The form link itself seems to <del>be persistent 🤞</del> change
@@ -298,7 +297,7 @@
     </form>
 
     <script type="module">
-      import { on } from '/reform/v1/index.js'
+      import { on, Out } from '/reform/v1/index.js'
 
       on('link', (output, { formUrl, name, food, affiliation, source }) => {
         const url = `${formUrl}?${new URLSearchParams(
@@ -313,11 +312,11 @@
           )
         )}`
         output.value = url
-        return url
+        return Out.from('url.txt', url)
       })
 
       on('test-link', (elem, { link }) => {
-        elem.href = link
+        elem.href = link.value
       })
     </script>
   </body>
