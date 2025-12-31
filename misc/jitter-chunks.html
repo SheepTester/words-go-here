@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>jitter chunks</title>
+    <meta name="description" content="an attempt at bypassing synthid" />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>jitter chunks</h1>
+      <p>
+        splits the image into chunks, then jitters them around randomly and
+        slightly. hypothesis: this breaks up the invisible generation patterns
+        that google synthid relies on to detect its generations
+      </p>
+
+      <div class="two-col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="image"
+            accept="image/*"
+            class="hidden-accessible reform:image-input reform:paste-target"
+            data-default="./jitter-chunks-ai-sheep-man.png"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">Choose, drop, or paste an image</span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <div class="image-content input-content"><canvas></canvas></div>
+        <div class="image-content output-content">
+          <canvas id="output" data-deps="image chunkCount jitter"></canvas>
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+
+      <label class="field-label">
+        <span class="label-primary">Subdivisions</span>
+        <span class="label-secondary">
+          For <em>n</em> subdivisions, there will be <em>n</em
+          ><sup>2</sup> chunks in the image.
+        </span>
+        <input type="number" name="chunkCount" min="1" value="10" />
+      </label>
+
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Max jitter (pixels)</span>
+          <input
+            type="range"
+            name="jitter"
+            min="0"
+            max="10"
+            step="0.01"
+            value="1"
+          />
+        </label>
+        <input
+          type="number"
+          name="jitter"
+          min="0"
+          max="10"
+          step="0.01"
+          value="1"
+          aria-label="Maximum jitter value"
+        />
+      </div>
+    </form>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+
+      on('output', (c, { image, chunkCount, jitter }) => {
+        const { width, height } = image.canvas
+        c.canvas.width = width
+        c.canvas.height = height
+        c.drawImage(image.canvas, 0, 0)
+
+        for (let x = 0; x < chunkCount; x++) {
+          for (let y = 0; y < chunkCount; y++) {
+            const dx = (Math.random() * 2 - 1) * jitter
+            const dy = (Math.random() * 2 - 1) * jitter
+            c.drawImage(
+              image.canvas,
+              (x / chunkCount) * width,
+              (y / chunkCount) * height,
+              width / chunkCount,
+              height / chunkCount,
+              (x / chunkCount) * width + dx,
+              (y / chunkCount) * height + dy,
+              width / chunkCount,
+              height / chunkCount
+            )
+          }
+        }
+      })
+    </script>
+  </body>
+</html>
