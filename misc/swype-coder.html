@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Autocorrect-resistent JavaScript keyboard</title>
+    <meta
+      name="description"
+      content="Reformats auto-corrected words typed on a mobile keyboard into hopefully valid JavaScript code."
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>Autocorrect-resistent JavaScript keyboard</h1>
+      <p>
+        In unfortunate circumstances, I sometimes want to write JavaScript on my
+        phone, but autocorrect can get in the way of typing code. More
+        specifically, I like to
+        <a class="link" href="https://en.wikipedia.org/wiki/Swype"
+          >swipe type</a
+        >
+        on mobile, so it's easy and quick to type normal, capitalized sentences
+        like "I'm going to piss on your bed."
+      </p>
+      <p>
+        However, camelCased JavaScript variable names like
+        <code>getBoundingClientRect</code> require manually typing out and
+        casing each letter, which is comparatively a pain. In addition, after
+        typing a period (<code>.</code>), the phone keyboard autocapitalizes the
+        next word, which isn't great for JavaScript, a case-sensitive language.
+        Also, for some reason, swyping <code>const</code> keeps giving me
+        "Cindy."
+      </p>
+      <p>
+        This tool lets me swype an English-like sentence, then it'll do its best
+        to turn it into valid JavaScript code by merging adjacent words into
+        camelCase names.
+      </p>
+
+      <div class="two-col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="input"
+            class="hidden-accessible reform:text-input"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label"
+            >Choose or drop a text file or type below</span
+          >
+          <span class="file-name">No file selected</span>
+        </label>
+        <textarea
+          name="input"
+          aria-label="Write code on your mobile keyboard"
+          class="input-content"
+        >
+Cindy element content= document. Query selector('p'). Text content
+Console. Log(element content)
+Cindy params=New URL search params()
+URL. Create object URL(new Blob())
+</textarea
+        >
+        <textarea
+          class="output-content code"
+          id="transformed"
+          data-deps="input"
+          aria-label="Hopefully valid JavaScript"
+          readonly
+        ></textarea>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+    </form>
+
+    <script type="module">
+      import { on, Out } from '/reform/v1/index.js'
+
+      const keywords = ['const', 'let', 'cindy', 'new', 'await']
+
+      const capitalize = word => word[0].toUpperCase() + word.slice(1)
+
+      on('transformed', (textarea, { input }) => {
+        textarea.value = input.replace(/\w+( +\w+)*/g, match => {
+          const words = match.split(/ +/)
+          let prefix = ''
+          if (words.length > 1 && keywords.includes(words[0].toLowerCase())) {
+            const keyword = words.shift().toLowerCase()
+            prefix = `${keyword === 'cindy' ? 'const' : keyword} `
+          }
+          const ident = words
+            .map((word, i) =>
+              word === 'URL'
+                ? word
+                : i > 0
+                  ? capitalize(word.toLowerCase())
+                  : word.toLowerCase()
+            )
+            .join('')
+          const capitalized = capitalize(ident)
+          return (
+            prefix +
+            (words[0][0] === words[0][0].toUpperCase() && window[capitalized]
+              ? capitalized
+              : ident)
+          )
+        })
+        return Out.from('code.js', textarea.value)
+      })
+    </script>
+  </body>
+</html>
