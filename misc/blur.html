@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Gaussian Blur</title>
+    <meta name="description" content="Lets you blur an image A LOT" />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>Big Beautiful Blur</h1>
+      <p>
+        Blurs your image with Gaussian blur. You can blur it a lot if you want.
+      </p>
+
+      <div class="two-col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="image"
+            accept="image/*"
+            class="hidden-accessible reform:image-input reform:paste-target"
+            data-default="PXL_20230624_020141093.jpg"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">Choose or drop a photo</span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <div class="image-content input-content"><canvas></canvas></div>
+        <div class="image-content output-content">
+          <canvas
+            id="texture"
+            data-deps="image"
+            class="reform:canvas-element reform:io-ignore"
+          ></canvas>
+          <div
+            class="reform:io-ignore"
+            style="display: none"
+            id="output"
+            data-deps="texture blur"
+          ></div>
+          <canvas id="canvas2d" data-deps="output" style="display: no"></canvas>
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Blur</span>
+          <input type="range" name="blur" min="0" max="200" value="10" />
+        </label>
+        <input
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          name="blur"
+          min="0"
+          value="10"
+          aria-label="Blur value"
+        />
+      </div>
+    </form>
+
+    <script type="module">
+      import { on, Out } from '/reform/v1/index.js'
+
+      let webGpu
+      async function setupWebgpu (canvas) {
+        const context = canvas.getContext('webgpu')
+        const format = navigator.gpu.getPreferredCanvasFormat()
+        const adapter = await navigator.gpu.requestAdapter()
+        const device = await adapter.requestDevice()
+        device.lost.then(({ reason, message }) => {
+          throw new Error(`WebGPU device lost: ${message} (reason: ${reason})`)
+        })
+        context.configure({ device, format })
+
+        device.pushErrorScope('internal')
+        device.pushErrorScope('out-of-memory')
+        device.pushErrorScope('validation')
+
+        const module = device.createShaderModule({
+          code: await fetch('./blur.wgsl').then(r => r.text())
+        })
+        const { messages } = await module.getCompilationInfo()
+        if (messages.some(message => message.type === 'error')) {
+          console.log(messages)
+          throw new SyntaxError(
+            'Shader failed to compile:' +
+              messages
+                .map(
+                  message =>
+                    `\nblur.wgsl:${message.lineNum}:${message.linePos}: ${message.message}`
+                )
+                .join('')
+          )
+        }
+
+        const pipeline = device.createRenderPipeline({
+          layout: 'auto',
+          vertex: { module, entryPoint: 'vertex_main' },
+          fragment: {
+            module,
+            entryPoint: 'fragment_main',
+            targets: [{ format }]
+          }
+        })
+
+        const blurUniform = device.createBuffer({
+          size: 4,
+          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        })
+        const dimensionsUniform = device.createBuffer({
+          size: 4 * 2,
+          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        })
+        const group = device.createBindGroup({
+          layout: pipeline.getBindGroupLayout(0),
+          entries: [
+            { binding: 0, resource: { buffer: blurUniform } },
+            { binding: 1, resource: { buffer: dimensionsUniform } },
+            { binding: 2, resource: device.createSampler() }
+          ]
+        })
+
+        const validationError = await device.popErrorScope()
+        const memoryError = await device.popErrorScope()
+        const internalError = await device.popErrorScope()
+        if (validationError) {
+          throw new TypeError(
+            `WebGPU validation error: ${validationError.message}`
+          )
+        }
+        if (memoryError) {
+          throw new TypeError(
+            `WebGPU out of memory error: ${memoryError.message}`
+          )
+        }
+        if (internalError) {
+          throw new TypeError(`WebGPU internal error: ${internalError.message}`)
+        }
+
+        return {
+          device,
+          blurUniform,
+          dimensionsUniform,
+          group,
+          pipeline,
+          context
+        }
+      }
+
+      let texture
+      let textureExecId = 0
+      on('texture', async (canvas, { image }) => {
+        const execId = ++textureExecId
+
+        webGpu ??= setupWebgpu(canvas)
+        const { device, dimensionsUniform, pipeline } = await webGpu
+        if (execId !== textureExecId) {
+          return
+        }
+
+        const source = await createImageBitmap(image.canvas, {
+          colorSpaceConversion: 'none'
+        })
+        if (execId !== textureExecId) {
+          return
+        }
+        texture?.destroy()
+        texture = device.createTexture({
+          label: 'texture',
+          format: 'rgba8unorm',
+          size: [source.width, source.height],
+          usage:
+            GPUTextureUsage.TEXTURE_BINDING |
+            GPUTextureUsage.COPY_DST |
+            GPUTextureUsage.RENDER_ATTACHMENT
+        })
+        console.log(texture)
+        device.queue.copyExternalImageToTexture(
+          { source, flipY: true },
+          { texture },
+          { width: source.width, height: source.height }
+        )
+        device.queue.writeBuffer(
+          dimensionsUniform,
+          0,
+          new Float32Array([source.width, source.height])
+        )
+        canvas.width = source.width
+        canvas.height = source.height
+
+        return {
+          group: device.createBindGroup({
+            layout: pipeline.getBindGroupLayout(1),
+            entries: [{ binding: 0, resource: texture.createView() }]
+          }),
+          fileName: image.canvas.dataset.name
+        }
+      })
+
+      let outputExecId = 0
+      on(
+        'output',
+        async (_, { texture: { group: textureGroup, fileName }, blur }) => {
+          const execId = ++outputExecId
+
+          const { device, blurUniform, context, pipeline, group } = await webGpu
+          if (execId !== outputExecId) {
+            return
+          }
+
+          device.queue.writeBuffer(blurUniform, 0, new Float32Array([blur]))
+
+          const encoder = device.createCommandEncoder()
+          const pass = encoder.beginRenderPass({
+            colorAttachments: [
+              {
+                view: context.getCurrentTexture().createView(),
+                clearValue: [1, 0, 1, 1],
+                loadOp: 'clear',
+                storeOp: 'store'
+              }
+            ]
+          })
+          pass.setPipeline(pipeline)
+          pass.setBindGroup(0, group)
+          pass.setBindGroup(1, textureGroup)
+          pass.draw(6)
+          pass.end()
+          device.queue.submit([encoder.finish()])
+
+          // toBlob/toDataURL returns a transparent image for WebGPU on Chrome
+          // https://issues.chromium.org/issues/40168039
+          return { fileName, canvas: context.canvas }
+        }
+      )
+
+      on('canvas2d', (ctx, { output: { fileName, canvas } }) => {
+        ctx.canvas.width = canvas.width
+        ctx.canvas.height = canvas.height
+        // For some reason this works
+        ctx.drawImage(canvas, 0, 0)
+
+        return Out.from(fileName + '.png', ctx)
+      })
+    </script>
+  </body>
+</html>
