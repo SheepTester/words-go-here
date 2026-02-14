@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Where are they now?</title>
+    <meta
+      name="description"
+      content="Find out in what part of their lives today's college students went through Covid. It probably explains why they're the way they are."
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Montserrat', sans-serif;
+        font-optical-sizing: auto;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 80px 20px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 80px;
+        line-height: 1;
+        position: relative;
+        word-break: break-word;
+      }
+      .bg {
+        color: transparent;
+        user-select: none;
+        position: absolute;
+        z-index: -1;
+      }
+      .desc {
+        color: color-mix(in srgb, currentColor 50%, transparent);
+        font-style: italic;
+      }
+      .bg .college {
+        background-color: #fde047;
+      }
+
+      table {
+        border-collapse: collapse;
+      }
+      th {
+        font-size: 40px;
+        text-align: left;
+      }
+      tbody {
+        word-break: break-word;
+      }
+      tbody tr:nth-child(2n + 1) {
+        /* background-color: color-mix(in srgb, currentColor 5%, transparent); */
+      }
+      th,
+      td {
+        vertical-align: top;
+      }
+      td {
+        padding: 5px 0;
+      }
+      tr > :first-child {
+        text-align: right;
+        padding-right: 20px;
+      }
+
+      @media (max-width: 480px) {
+        h1 {
+          font-size: 50px;
+        }
+        th {
+          font-size: 30px;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+        }
+        .bg .college {
+          background-color: #854d0e;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>
+      <span class="bg" aria-hidden="true"
+        >Today's college students were <span class="college"></span> during
+        Covid.</span
+      >
+      <span class="fore"
+        >Today's college students were <span class="college"></span> during
+        Covid.</span
+      >
+    </h1>
+    <p class="desc">
+      Assumes a typical Californian student, acknowledging that many people are
+      anything but.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Today's ...</th>
+          <th>were ... during Covid.</th>
+        </tr>
+      </thead>
+      <tbody id="table"></tbody>
+    </table>
+    <script>
+      const years = ['kindergarten']
+      const yearPeople = ['kindergarteners']
+      const ordinal = n =>
+        n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`
+      for (let i = 1; i <= 8; i++) {
+        years.push(`${ordinal(i)} grade`)
+        yearPeople.push(`${ordinal(i)} graders`)
+      }
+      years.push(
+        'freshman year',
+        'sophomore year',
+        'junior year',
+        'senior year'
+      )
+      yearPeople.push('freshmen', 'sophomores', 'juniors', 'seniors')
+      for (let i = 1; i <= 4; i++) {
+        years.push(`${ordinal(i)} year of undergrad`)
+        yearPeople.push(`${ordinal(i)}-year undergrads`)
+      }
+
+      const today = new Date()
+      /** fall year; assumes school year transition in july */
+      const schoolYear =
+        (today.getMonth() < 7 ? today.getFullYear() - 1 : today.getFullYear()) +
+        0
+      // 2020–21 was entirely online
+      const schoolYearsSinceCovid = schoolYear - 2020
+
+      // Since this is a range, we can include the 2019–20 school year too,
+      // which also helps account for students who took a gap year I think
+      const collegeLower = 13 - schoolYearsSinceCovid - 1
+      const collegeUpper = 16 - schoolYearsSinceCovid
+      const ageUpper = collegeUpper + 6
+      const collegeText =
+        collegeLower >= 0
+          ? `between ${years[collegeLower]} and ${years[collegeUpper]}`
+          : collegeUpper >= 0
+            ? `before ${years[collegeUpper]}`
+            : ageUpper > 0
+              ? `less than ${ageUpper} years old`
+              : 'not born yet'
+      for (const collegeElem of document.getElementsByClassName('college')) {
+        collegeElem.textContent = collegeText
+      }
+
+      const fragment = document.createDocumentFragment()
+      for (let i = 16; i >= 0; i--) {
+        const tr = document.createElement('tr')
+        fragment.append(tr)
+
+        const covidYear = i - schoolYearsSinceCovid
+        const upperAge = covidYear + 6
+        tr.append(
+          Object.assign(document.createElement('td'), {
+            textContent: yearPeople[i]
+          }),
+          Object.assign(document.createElement('td'), {
+            textContent:
+              covidYear >= 0
+                ? yearPeople[covidYear]
+                : upperAge > 1
+                  ? `around ${upperAge - 1}–${upperAge} years old`
+                  : upperAge >= 0
+                    ? 'less than a year old'
+                    : 'not born yet'
+          })
+        )
+      }
+      document.getElementById('table').append(fragment)
+    </script>
+  </body>
+</html>
