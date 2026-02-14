@@ -68,7 +68,7 @@
 
       <div class="field-label range-wrapper">
         <label class="range-label">
-          <span class="label-primary">Blur</span>
+          <span class="label-primary">Blur radius</span>
           <input type="range" name="blur" min="0" max="200" value="10" />
         </label>
         <input
@@ -233,7 +233,7 @@
             return
           }
 
-          device.queue.writeBuffer(blurUniform, 0, new Float32Array([blur]))
+          device.queue.writeBuffer(blurUniform, 0, new Int32Array([blur]))
 
           const encoder = device.createCommandEncoder()
           const pass = encoder.beginRenderPass({

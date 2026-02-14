@@ -17,12 +17,20 @@ fn vertex_main(
     return result;
 }
 
-@group(0) @binding(0) var<uniform> blur: f32;
+@group(0) @binding(0) var<uniform> blur: i32;
 @group(0) @binding(1) var<uniform> texture_size: vec2<f32>;
 @group(0) @binding(2) var texture_sampler: sampler;
 @group(1) @binding(0) var texture: texture_2d<f32>;
 
 @fragment
 fn fragment_main(vertex: VertexOutput) -> @location(0) vec4<f32> {
-    return textureSample(texture, texture_sampler, vertex.tex_coord * (blur * 0.0 + 1.0 + texture_size.x * 0.0));
+    var sum = vec4(0.0);
+    var count = 0.0;
+    for (var x = -blur; x <= blur; x++) {
+        for (var y = -blur; y <= blur; y++) {
+            sum += textureSample(texture, texture_sampler, vertex.tex_coord + vec2(f32(x), f32(y)) / texture_size);
+            count += 1;
+        }
+    }
+    return sum / count;
 }
