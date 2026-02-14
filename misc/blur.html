@@ -35,16 +35,21 @@
         <div class="image-content input-content"><canvas></canvas></div>
         <div class="image-content output-content">
           <canvas
-            id="texture"
-            data-deps="image"
+            id="webgpu"
             class="reform:canvas-element reform:io-ignore"
             style="display: none"
           ></canvas>
           <div
+            id="texture"
+            data-deps="webgpu image"
             class="reform:io-ignore"
             style="display: none"
+          ></div>
+          <div
             id="output"
-            data-deps="texture blur resolution giveUp"
+            data-deps="webgpu texture weights resolution"
+            class="reform:io-ignore"
+            style="display: none"
           ></div>
           <canvas id="canvas2d" data-deps="output" style="display: no"></canvas>
         </div>
@@ -67,6 +72,12 @@
         </div>
       </div>
 
+      <p>
+        With your settings, blurring will be
+        <span id="weights" data-deps="webgpu blur cutoff resolution"></span>x
+        slower than just copying the image.
+      </p>
+
       <div class="field-label range-wrapper">
         <label class="range-label">
           <span class="label-primary">Blur radius</span>
@@ -76,14 +87,20 @@
             goes on forever, but I cut it off at some point because it somewhat
             quickly gets really close to zero.
           </span>
-          <input type="range" name="blur" min="0" max="500" value="80" />
+          <input
+            type="range"
+            name="blur"
+            min="0"
+            max="500"
+            step="0.1"
+            value="80"
+          />
         </label>
         <input
-          type="text"
-          inputmode="numeric"
-          pattern="[0-9]*"
+          type="number"
           name="blur"
           min="0"
+          step="0.1"
           value="80"
           aria-label="Blur value"
         />
@@ -93,22 +110,30 @@
         <label class="range-label">
           <span class="label-primary">Gaussian cutoff</span>
           <span class="label-secondary">
-            Determines to cut off the Gaussian. A cutoff of <em>x</em> means
-            that the blur will stop taking into account pixels that will be
-            multipled by less than <em>x</em>/255. A higher cutoff means a less
-            accurate blur, but it'll be able to stop calculating the blur
-            earlier.
+            Determines when to cut off the Gaussian, in multiples of the
+            standard deviation &sigma; ("blur radius"). This is necessary
+            because it goes on infinitely, but it also drops close to zero
+            fairly quickly. A higher cutoff means a less accurate blur (<span
+              id="cutoff-calc"
+              data-deps="cutoff"
+            ></span
+            >), but it'll be able to stop calculating the blur earlier.
           </span>
-          <input type="range" name="giveUp" min="1" max="255" value="1" />
+          <input
+            type="range"
+            name="cutoff"
+            min="0"
+            max="5"
+            step="0.01"
+            value="3"
+          />
         </label>
         <input
-          type="text"
-          inputmode="numeric"
-          pattern="[0-9]*"
-          name="giveUp"
-          min="1"
-          max="255"
-          value="1"
+          type="number"
+          name="cutoff"
+          min="0"
+          step="0.01"
+          value="3"
           aria-label="Gaussian cutoff value"
         />
       </div>
@@ -140,9 +165,9 @@
 
     <script type="module">
       import { on, Out } from '/reform/v1/index.js'
+      import { erf } from './erf.js'
 
-      let webGpu
-      async function setupWebgpu (canvas) {
+      on('webgpu', async canvas => {
         const context = canvas.getContext('webgpu')
         const format = navigator.gpu.getPreferredCanvasFormat()
         const adapter = await navigator.gpu.requestAdapter()
@@ -198,15 +223,7 @@
           size: 4 * 2,
           usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         })
-        const blurUniform = device.createBuffer({
-          size: 4,
-          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        })
         const resolutionUniform = device.createBuffer({
-          size: 4,
-          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        })
-        const giveUpUniform = device.createBuffer({
           size: 4,
           usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         })
@@ -217,9 +234,7 @@
             { binding: 0, resource: device.createSampler() },
             { binding: 1, resource: { buffer: directionYUniform } },
             { binding: 2, resource: { buffer: dimensionsUniform } },
-            { binding: 3, resource: { buffer: blurUniform } },
-            { binding: 4, resource: { buffer: resolutionUniform } },
-            { binding: 5, resource: { buffer: giveUpUniform } }
+            { binding: 3, resource: { buffer: resolutionUniform } }
           ]
         })
         const groupX = device.createBindGroup({
@@ -228,9 +243,7 @@
             { binding: 0, resource: device.createSampler() },
             { binding: 1, resource: { buffer: directionXUniform } },
             { binding: 2, resource: { buffer: dimensionsUniform } },
-            { binding: 3, resource: { buffer: blurUniform } },
-            { binding: 4, resource: { buffer: resolutionUniform } },
-            { binding: 5, resource: { buffer: giveUpUniform } }
+            { binding: 3, resource: { buffer: resolutionUniform } }
           ]
         })
 
@@ -253,9 +266,7 @@
 
         return {
           device,
-          blurUniform,
           resolutionUniform,
-          giveUpUniform,
           dimensionsUniform,
           groupY,
           groupX,
@@ -263,20 +274,15 @@
           context,
           format
         }
-      }
+      })
 
       let textureY
       let textureX
       let textureExecId = 0
-      on('texture', async (canvas, { image }) => {
+      on('texture', async (_, { webgpu, image }) => {
         const execId = ++textureExecId
 
-        webGpu ??= setupWebgpu(canvas)
-        const { device, dimensionsUniform, pipeline, format } = await webGpu
-        if (execId !== textureExecId) {
-          return
-        }
-
+        const { device, dimensionsUniform, pipeline, format, context } = webgpu
         const source = await createImageBitmap(image.canvas, {
           colorSpaceConversion: 'none'
         })
@@ -315,8 +321,8 @@
           0,
           new Float32Array([source.width, source.height])
         )
-        canvas.width = source.width
-        canvas.height = source.height
+        context.canvas.width = source.width
+        context.canvas.height = source.height
 
         return {
           groupY: device.createBindGroup({
@@ -332,85 +338,120 @@
         }
       })
 
-      let outputExecId = 0
-      on(
-        'output',
-        async (
-          _,
-          {
-            texture: {
-              groupY: textureGroupY,
-              groupX: textureGroupX,
-              textureX,
-              fileName
-            },
-            blur,
-            resolution,
-            giveUp
-          }
-        ) => {
-          const execId = ++outputExecId
-
-          const {
-            device,
-            blurUniform,
-            resolutionUniform,
-            giveUpUniform,
-            context,
-            pipeline,
-            groupY,
-            groupX
-          } = await webGpu
-          if (execId !== outputExecId) {
-            return
-          }
-
-          device.queue.writeBuffer(blurUniform, 0, new Float32Array([blur]))
-          device.queue.writeBuffer(
-            resolutionUniform,
-            0,
-            new Int32Array([resolution])
+      let lastBuffer
+      const sqrt2pi = Math.sqrt(2 * Math.PI)
+      on('weights', (slower, { webgpu, blur, cutoff, resolution }) => {
+        const radius = Math.ceil(blur * cutoff)
+        const blurSquared = blur * blur
+        const weights = []
+        for (let i = 0; i <= radius; i += resolution) {
+          weights.push(
+            (Math.exp((-i * i) / blurSquared / 2) * resolution) /
+              (blur * sqrt2pi)
           )
-          device.queue.writeBuffer(giveUpUniform, 0, new Float32Array([giveUp]))
-
-          const encoder = device.createCommandEncoder()
-          const passY = encoder.beginRenderPass({
-            colorAttachments: [
-              {
-                view: textureX.createView(),
-                clearValue: [1, 0, 1, 1],
-                loadOp: 'clear',
-                storeOp: 'store'
-              }
-            ]
-          })
-          passY.setPipeline(pipeline)
-          passY.setBindGroup(0, groupY)
-          passY.setBindGroup(1, textureGroupY)
-          passY.draw(6)
-          passY.end()
-          const passX = encoder.beginRenderPass({
-            colorAttachments: [
-              {
-                view: context.getCurrentTexture().createView(),
-                clearValue: [1, 0, 1, 1],
-                loadOp: 'clear',
-                storeOp: 'store'
-              }
-            ]
-          })
-          passX.setPipeline(pipeline)
-          passX.setBindGroup(0, groupX)
-          passX.setBindGroup(1, textureGroupX)
-          passX.draw(6)
-          passX.end()
-          device.queue.submit([encoder.finish()])
-
-          // toBlob/toDataURL returns a transparent image for WebGPU on Chrome
-          // https://issues.chromium.org/issues/40168039
-          return { fileName, canvas: context.canvas }
         }
-      )
+        const sum =
+          weights.reduce((cum, curr) => cum + curr, 0) * 2 - weights[0]
+        // console.log('sum of weights', sum)
+        slower.textContent = weights.length
+
+        const { device, pipeline } = webgpu
+        if (lastBuffer?.size !== weights.length) {
+          lastBuffer?.buffer.destroy()
+          const size = 4 * weights.length
+          const buffer = device.createBuffer({
+            size,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+          })
+          lastBuffer = {
+            size,
+            buffer,
+            group: device.createBindGroup({
+              layout: pipeline.getBindGroupLayout(2),
+              entries: [{ binding: 0, resource: { buffer } }]
+            })
+          }
+        }
+        device.queue.writeBuffer(
+          lastBuffer.buffer,
+          0,
+          new Float32Array(weights)
+        )
+        return lastBuffer.group
+      })
+
+      // https://sheeptester.github.io/words-go-here/misc/ece109-cumsheet.html
+      // (week 6)
+      // Phi(u) = (1 + erf(u / sqrt 2)) / 2 = int -infty..u N(0, 1) dz
+      // area = 1 - 2 (1 - Phi(u)) = 2 Phi(u) - 1 = erf(u / sqrt 2)
+      // then for N(0, sigma^2), it's Phi(u / sigma) = erf(u / (sigma sqrt 2))
+      on('cutoff-calc', (span, { cutoff }) => {
+        const area = erf(cutoff / Math.SQRT2)
+        const missing = 1 - area
+        const precision = Math.max(0, 1 - Math.log10(missing * 100))
+        span.textContent = `${cutoff.toFixed(2)}σ means ${(area * 100).toFixed(
+          precision
+        )}% accuracy`
+      })
+
+      let outputExecId = 0
+      on('output', async (_, { webgpu, texture, weights, resolution }) => {
+        const execId = ++outputExecId
+
+        const { device, resolutionUniform, context, pipeline, groupY, groupX } =
+          webgpu
+        const {
+          groupY: textureGroupY,
+          groupX: textureGroupX,
+          textureX,
+          fileName
+        } = texture
+
+        device.queue.writeBuffer(
+          resolutionUniform,
+          0,
+          new Uint32Array([resolution])
+        )
+
+        const encoder = device.createCommandEncoder()
+        const passY = encoder.beginRenderPass({
+          colorAttachments: [
+            {
+              view: textureX.createView(),
+              clearValue: [1, 0, 1, 1],
+              loadOp: 'clear',
+              storeOp: 'store'
+            }
+          ]
+        })
+        passY.setPipeline(pipeline)
+        passY.setBindGroup(0, groupY)
+        passY.setBindGroup(1, textureGroupY)
+        passY.setBindGroup(2, weights)
+        passY.draw(6)
+        passY.end()
+        const passX = encoder.beginRenderPass({
+          colorAttachments: [
+            {
+              view: context.getCurrentTexture().createView(),
+              clearValue: [1, 0, 1, 1],
+              loadOp: 'clear',
+              storeOp: 'store'
+            }
+          ]
+        })
+        passX.setPipeline(pipeline)
+        passX.setBindGroup(0, groupX)
+        passX.setBindGroup(1, textureGroupX)
+        passX.setBindGroup(2, weights)
+        passX.draw(6)
+        passX.end()
+        device.queue.submit([encoder.finish()])
+
+        // toBlob/toDataURL returns a transparent image for WebGPU on Chrome
+        // https://issues.chromium.org/issues/40168039
+        return { fileName, canvas: context.canvas }
+      })
 
       on('canvas2d', (ctx, { output: { fileName, canvas } }) => {
         ctx.canvas.width = canvas.width
