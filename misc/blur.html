@@ -75,17 +75,14 @@
       <p>
         With your settings, blurring will be
         <span id="weights" data-deps="webgpu blur cutoff resolution"></span>x
-        slower than just copying the image.
+        slower compared to directly copying the image.
       </p>
 
       <div class="field-label range-wrapper">
         <label class="range-label">
-          <span class="label-primary">Blur radius</span>
+          <span class="label-primary">Blur</span>
           <span class="label-secondary">
-            Mathematically, the standard deviation &sigma; of the Gaussian blur,
-            in pixels. It's not really a radius&mdash;the Gaussian distribution
-            goes on forever, but I cut it off at some point because it somewhat
-            quickly gets really close to zero.
+            The standard deviation &sigma; of the Gaussian blur, in pixels..
           </span>
           <input
             type="range"
@@ -110,14 +107,11 @@
         <label class="range-label">
           <span class="label-primary">Gaussian cutoff</span>
           <span class="label-secondary">
-            Determines when to cut off the Gaussian, in multiples of the
-            standard deviation &sigma; ("blur radius"). This is necessary
-            because it goes on infinitely, but it also drops close to zero
-            fairly quickly. A higher cutoff means a less accurate blur (<span
-              id="cutoff-calc"
-              data-deps="cutoff"
-            ></span
-            >), but it'll be able to stop calculating the blur earlier.
+            When to cut off the Gaussian, in multiples of the standard deviation
+            &sigma; ("blur radius"). The Gaussian continues infinitely, but it
+            also drops close to zero fairly quickly, so we can cut it off at
+            some point.
+            <span id="cutoff-calc" data-deps="cutoff"></span>
           </span>
           <input
             type="range"
@@ -142,12 +136,9 @@
         <label class="range-label">
           <span class="label-primary">Resolution</span>
           <span class="label-secondary">
-            The number of pixels to skip by, in pixels. This decreases the
-            quality, but it allows the blur to account for fewer pixels. This
-            might make sense for a large blur radius in a large image, where
-            pixels next to each other might be the same color. However, if it
-            gets too large, you might see a grid pattern appear as it starts
-            skipping over noticeable details.
+            The number of pixels to skip by for a faster blur. This works best
+            if nearby pixels are similar in color; otherwise, a grid pattern can
+            appear.
           </span>
           <input type="range" name="resolution" min="1" max="50" value="1" />
         </label>
@@ -389,9 +380,9 @@
         const area = erf(cutoff / Math.SQRT2)
         const missing = 1 - area
         const precision = Math.max(0, 1 - Math.log10(missing * 100))
-        span.textContent = `${cutoff.toFixed(2)}σ means ${(area * 100).toFixed(
-          precision
-        )}% accuracy`
+        span.textContent = `With ${cutoff.toFixed(
+          2
+        )} × σ, you get an accuracy of ${(area * 100).toFixed(precision)}%.`
       })
 
       let outputExecId = 0
