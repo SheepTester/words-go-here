@@ -301,8 +301,8 @@
           0,
           new Float32Array(
             positions.flatMap(({ x, y }) => [
-              ((x - xAvg) * scale) / source.width,
-              ((yAvg - y) * scale) / source.height
+              ((xAvg - x) * scale) / source.width,
+              ((y - yAvg) * scale) / source.height
             ])
           )
         )
