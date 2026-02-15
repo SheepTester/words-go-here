@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Motion Blur</title>
+    <meta name="description" content="shaky hands" />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      .positions {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        touch-action: none;
+        aspect-ratio: 1 / 1;
+        width: 100%;
+        max-width: 300px;
+        margin-top: 10px;
+      }
+      .path {
+        stroke: var(--secondary);
+        fill: none;
+        vector-effect: non-scaling-stroke;
+      }
+      .dots {
+        fill: var(--text);
+      }
+      .axis {
+        stroke: var(--line);
+        fill: none;
+        vector-effect: non-scaling-stroke;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>Motion Blur</h1>
+      <p>
+        Blurs your image with Gaussian blur. You can blur it a lot if you want.
+      </p>
+
+      <div class="two-col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="image"
+            accept="image/*"
+            class="hidden-accessible reform:image-input reform:paste-target"
+            data-default="blur_taipei_crosswalk.jpg"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">Choose or drop a photo</span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <div class="image-content input-content"><canvas></canvas></div>
+        <div class="image-content output-content">
+          <canvas
+            id="webgpu"
+            class="reform:canvas-element reform:io-ignore"
+            style="display: none"
+          ></canvas>
+          <div
+            id="texture"
+            data-deps="webgpu image"
+            class="reform:io-ignore"
+            style="display: none"
+          ></div>
+          <div
+            id="positionsGroup"
+            data-deps="webgpu positions"
+            class="reform:io-ignore"
+            style="display: none"
+          ></div>
+          <div
+            id="output"
+            data-deps="webgpu texture positionsGroup scale"
+            class="reform:io-ignore"
+            style="display: none"
+          ></div>
+          <canvas id="canvas2d" data-deps="output" style="display: no"></canvas>
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+
+      <div class="field-label">
+        <span class="label-primary">Motion</span>
+        <span class="label-secondary">Draw a path in the square below.</span>
+        <svg
+          viewBox="0 0 100 100"
+          xmlns="http://www.w3.org/2000/svg"
+          class="positions"
+          id="positions"
+          data-deps="path dots"
+        >
+          <path class="axis" d="M 50 0 V 100 M 0 50 H 100" />
+          <path class="path" id="path" />
+          <path class="dots" id="dots" />
+        </svg>
+      </div>
+
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Scale</span>
+          <input
+            type="range"
+            name="scale"
+            min="0"
+            max="500"
+            step="0.01"
+            value="20"
+          />
+        </label>
+        <input
+          type="number"
+          name="scale"
+          min="0"
+          step="0.01"
+          value="20"
+          aria-label="Scale value"
+        />
+      </div>
+    </form>
+
+    <script type="module">
+      import { on, Out } from '/reform/v1/index.js'
+      import { erf } from './erf.js'
+
+      on('webgpu', async canvas => {
+        const context = canvas.getContext('webgpu')
+        const format = navigator.gpu.getPreferredCanvasFormat()
+        const adapter = await navigator.gpu.requestAdapter()
+        const device = await adapter.requestDevice()
+        device.lost.then(({ reason, message }) => {
+          throw new Error(`WebGPU device lost: ${message} (reason: ${reason})`)
+        })
+        context.configure({ device, format })
+
+        device.pushErrorScope('internal')
+        device.pushErrorScope('out-of-memory')
+        device.pushErrorScope('validation')
+
+        const module = device.createShaderModule({
+          code: await fetch('./blur-motion.wgsl').then(r => r.text())
+        })
+        const { messages } = await module.getCompilationInfo()
+        if (messages.some(message => message.type === 'error')) {
+          console.log(messages)
+          throw new SyntaxError(
+            'Shader failed to compile:' +
+              messages
+                .map(
+                  message =>
+                    `\nblur-motion.wgsl:${message.lineNum}:${message.linePos}: ${message.message}`
+                )
+                .join('')
+          )
+        }
+
+        const pipeline = device.createRenderPipeline({
+          layout: 'auto',
+          vertex: { module, entryPoint: 'vertex_main' },
+          fragment: {
+            module,
+            entryPoint: 'fragment_main',
+            targets: [{ format }]
+          }
+        })
+
+        const group = device.createBindGroup({
+          layout: pipeline.getBindGroupLayout(0),
+          entries: [{ binding: 0, resource: device.createSampler() }]
+        })
+
+        const validationError = await device.popErrorScope()
+        const memoryError = await device.popErrorScope()
+        const internalError = await device.popErrorScope()
+        if (validationError) {
+          throw new TypeError(
+            `WebGPU validation error: ${validationError.message}`
+          )
+        }
+        if (memoryError) {
+          throw new TypeError(
+            `WebGPU out of memory error: ${memoryError.message}`
+          )
+        }
+        if (internalError) {
+          throw new TypeError(`WebGPU internal error: ${internalError.message}`)
+        }
+
+        return {
+          device,
+          group,
+          pipeline,
+          context,
+          format
+        }
+      })
+
+      let texture
+      let textureExecId = 0
+      on('texture', async (_, { webgpu, image }) => {
+        const execId = ++textureExecId
+
+        const { device, pipeline, format, context } = webgpu
+        const source = await createImageBitmap(image.canvas, {
+          colorSpaceConversion: 'none'
+        })
+        if (execId !== textureExecId) {
+          return
+        }
+        texture?.destroy()
+        texture = device.createTexture({
+          label: 'texture',
+          format,
+          size: [source.width, source.height],
+          usage:
+            GPUTextureUsage.TEXTURE_BINDING |
+            GPUTextureUsage.COPY_DST |
+            GPUTextureUsage.RENDER_ATTACHMENT
+        })
+        device.queue.copyExternalImageToTexture(
+          { source, flipY: true },
+          { texture },
+          { width: source.width, height: source.height }
+        )
+
+        context.canvas.width = source.width
+        context.canvas.height = source.height
+
+        return {
+          group: device.createBindGroup({
+            layout: pipeline.getBindGroupLayout(1),
+            entries: [{ binding: 0, resource: texture.createView() }]
+          }),
+          source,
+          fileName: image.canvas.dataset.name
+        }
+      })
+
+      let lastBuffer
+      on('positionsGroup', (_, { webgpu, positions }) => {
+        const { device, pipeline } = webgpu
+        const size = 4 * 2 * positions.length
+        if (lastBuffer?.size !== size) {
+          lastBuffer?.buffer.destroy()
+          const buffer = device.createBuffer({
+            size,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+          })
+          lastBuffer = {
+            size,
+            buffer,
+            group: device.createBindGroup({
+              layout: pipeline.getBindGroupLayout(2),
+              entries: [{ binding: 0, resource: { buffer } }]
+            })
+          }
+        }
+        device.queue.writeBuffer(
+          lastBuffer.buffer,
+          0,
+          new Float32Array(positions.flat())
+        )
+        return { ...lastBuffer, positions }
+      })
+
+      let outputExecId = 0
+      on('output', async (_, { webgpu, texture, positionsGroup, scale }) => {
+        const execId = ++outputExecId
+
+        const { device, context, pipeline, group } = webgpu
+        const { group: textureGroup, source, fileName } = texture
+
+        const { positions, group: groupP, buffer } = positionsGroup
+        const xAvg =
+          positions.reduce((cum, curr) => cum + curr.x, 0) / positions.length
+        const yAvg =
+          positions.reduce((cum, curr) => cum + curr.x, 0) / positions.length
+        device.queue.writeBuffer(
+          buffer,
+          0,
+          new Float32Array(
+            positions.flatMap(({ x, y }) => [
+              ((x - xAvg) * scale) / source.width,
+              ((yAvg - y) * scale) / source.height
+            ])
+          )
+        )
+
+        const encoder = device.createCommandEncoder()
+        const pass = encoder.beginRenderPass({
+          colorAttachments: [
+            {
+              view: context.getCurrentTexture().createView(),
+              clearValue: [1, 0, 1, 1],
+              loadOp: 'clear',
+              storeOp: 'store'
+            }
+          ]
+        })
+        pass.setPipeline(pipeline)
+        pass.setBindGroup(0, group)
+        pass.setBindGroup(1, textureGroup)
+        pass.setBindGroup(2, groupP)
+        pass.draw(6)
+        pass.end()
+        device.queue.submit([encoder.finish()])
+
+        // toBlob/toDataURL returns a transparent image for WebGPU on Chrome
+        // https://issues.chromium.org/issues/40168039
+        return { fileName, canvas: context.canvas }
+      })
+
+      on('canvas2d', (ctx, { output: { fileName, canvas } }) => {
+        ctx.canvas.width = canvas.width
+        ctx.canvas.height = canvas.height
+        // For some reason this works
+        ctx.drawImage(canvas, 0, 0)
+
+        return Out.from(fileName + '.png', ctx)
+      })
+
+      on('path', path => path)
+      on('dots', dots => dots)
+
+      const DOT_RADIUS = 1
+      on('positions', (svg, { path, dots, callback }) => {
+        const drawPositions = positions => {
+          path.setAttributeNS(
+            null,
+            'd',
+            positions
+              .map(
+                ({ x, y }, i) => `${i === 0 ? 'M' : 'L'}${x * 100} ${y * 100}`
+              )
+              .join('')
+          )
+          dots.setAttributeNS(
+            null,
+            'd',
+            positions
+              .flatMap(({ x, y }) => [
+                `M ${x * 100 - DOT_RADIUS} ${y * 100}`,
+                `a ${DOT_RADIUS} ${DOT_RADIUS} 0 0 0 ${DOT_RADIUS * 2} 0`,
+                `a ${DOT_RADIUS} ${DOT_RADIUS} 0 0 0 ${-DOT_RADIUS * 2} 0`
+              ])
+              .join('')
+          )
+        }
+
+        const defaultPositions = []
+        for (let i = -5; i <= 5; i++) {
+          defaultPositions.push({
+            x: (i / 10) * 0.5 + 0.5,
+            y: -(i / 10) * 0.9 + 0.5
+          })
+        }
+        drawPositions(defaultPositions)
+        callback(defaultPositions)
+
+        let dragState = null
+        svg.addEventListener('pointerdown', e => {
+          if (!dragState) {
+            const rect = svg.getBoundingClientRect()
+            dragState = {
+              positions: [
+                {
+                  x: (e.clientX - rect.left) / rect.width,
+                  y: (e.clientY - rect.top) / rect.height
+                }
+              ],
+              pointerId: e.pointerId
+            }
+            svg.setPointerCapture(e.pointerId)
+            drawPositions(dragState.positions)
+          }
+        })
+        svg.addEventListener('pointermove', e => {
+          if (dragState?.pointerId === e.pointerId) {
+            const rect = svg.getBoundingClientRect()
+            dragState.positions.push({
+              x: (e.clientX - rect.left) / rect.width,
+              y: (e.clientY - rect.top) / rect.height
+            })
+            drawPositions(dragState.positions)
+          }
+        })
+        const handlePointerEnd = e => {
+          if (dragState?.pointerId === e.pointerId) {
+            callback(dragState.positions)
+            dragState = null
+          }
+        }
+        svg.addEventListener('pointerup', handlePointerEnd)
+        svg.addEventListener('pointercancel', handlePointerEnd)
+      })
+    </script>
+  </body>
+</html>

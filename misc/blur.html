@@ -347,9 +347,9 @@
         slower.textContent = weights.length
 
         const { device, pipeline } = webgpu
-        if (lastBuffer?.size !== weights.length) {
+        const size = 4 * weights.length
+        if (lastBuffer?.size !== size) {
           lastBuffer?.buffer.destroy()
-          const size = 4 * weights.length
           const buffer = device.createBuffer({
             size,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
