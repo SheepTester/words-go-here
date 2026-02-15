@@ -29,9 +29,17 @@ fn fragment_main(vertex: VertexOutput) -> @location(0) vec4<f32> {
     }
 
     var sum = vec4(0.0);
+    var total = 0;
     for (var i: u32 = 0; i < length; i++) {
-        let t = vertex.tex_coord + positions[i];
+        var t = vertex.tex_coord + positions[i];
+        if (t.x < 0 || t.x >= 1) {
+           t.x = 1 - t.x;
+        }
+        if (t.y < 0 || t.y >= 1) {
+           t.y = 1 - t.y;
+        }
         sum += textureSample(texture, texture_sampler, t);
+        total++;
     }
-    return sum / f32(length);
+    return select(sum, sum / f32(total), total != 0);
 }
