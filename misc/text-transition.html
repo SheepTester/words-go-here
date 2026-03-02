@@ -187,7 +187,88 @@ Change this text and hit "Animate"</textarea
         }
         return dp[tokensLeft.length][tokensRight.length]
       }
-      console.log(myersDiff(['a', 'b', 'f', 'c'], ['a', 'e', 'b', 'c']))
+
+      function breakIntoWords (text) {
+        const pieces = []
+        let lastIndex = 0
+        for (const match of text.matchAll(/[\p{L}\p{N}]+/gu)) {
+          if (match.index > lastIndex) {
+            pieces.push(text.slice(lastIndex, match.index))
+          }
+          pieces.push(match[0])
+          lastIndex = match.index + match[0].length
+        }
+        if (lastIndex < text.length - 1) {
+          pieces.push(text.slice(lastIndex))
+        }
+        return pieces
+      }
+
+      function simplify (diff) {
+        for (let i = 1; i < diff.length; i++) {
+          const curr = diff[i]
+          if (curr.type === 'change') {
+            // I originally didn't write `simplify` to handle `change` since
+            // they were created by `simplify` but now I guess I do, so I'll
+            // just split them into `left-only`/`right-only` then re-merge on
+            // the next iteration ¯\_(ツ)_/¯
+            diff.splice(
+              i,
+              1,
+              { type: 'left-only', token: curr.tokenLeft },
+              { type: 'right-only', token: curr.tokenRight }
+            )
+            i--
+            continue
+          }
+          let prev = diff[i - 1]
+          if (prev.type === curr.type) {
+            // Merge same types
+            prev.token += curr.token
+            diff.splice(i, 1)
+            i--
+            continue
+          }
+          if (prev.type === 'both' || curr.type === 'both') {
+            continue
+          }
+          // `curr.type` is either `left-only` and `right-only`, and it is not
+          // the same as `prev.type` (which may also be `change`). Merge
+          // `left-only` and `right-only` into `change`
+          if (prev.type !== 'change') {
+            prev =
+              prev.type === 'left-only'
+                ? { type: 'change', tokenLeft: prev.token, tokenRight: '' }
+                : { type: 'change', tokenLeft: '', tokenRight: prev.token }
+            diff[i - 1] = prev
+          }
+          if (curr.type === 'left-only') {
+            prev.tokenLeft += curr.token
+          } else {
+            prev.tokenRight += curr.token
+          }
+          diff.splice(i, 1)
+          i--
+        }
+        return diff
+      }
+
+      function diffText (left, right) {
+        return simplify(
+          simplify(
+            myersDiff(breakIntoWords(left), breakIntoWords(right))
+          ).flatMap(change => {
+            if (change.type === 'change') {
+              // Character-by-character diff
+              return myersDiff([...change.tokenLeft], [...change.tokenRight])
+            } else {
+              return [change]
+            }
+          })
+        )
+      }
+
+      console.log(diffText('hello hee y gamer wow', 'hello y gwmer ho wow'))
     </script>
   </body>
 </html>
