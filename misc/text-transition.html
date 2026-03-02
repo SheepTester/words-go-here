@@ -198,7 +198,7 @@ Change this text and hit "Animate"</textarea
           pieces.push(match[0])
           lastIndex = match.index + match[0].length
         }
-        if (lastIndex < text.length - 1) {
+        if (lastIndex < text.length) {
           pieces.push(text.slice(lastIndex))
         }
         return pieces
@@ -268,7 +268,7 @@ Change this text and hit "Animate"</textarea
         )
       }
 
-      console.log(diffText('hello hee y gamer wow', 'hello y gwmer ho wow'))
+      console.log(diffText('hello hee y gamer wow.', 'hello y gwmer ho wow'))
     </script>
   </body>
 </html>
