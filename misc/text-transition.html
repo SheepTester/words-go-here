@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Transition between two pieces of text</title>
+    <meta
+      name="description"
+      content="One way of smoothly animating between two strings. I might use this approach if I ever make videos."
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      textarea.input-content {
+        min-height: 200px;
+      }
+
+      #textMeasure {
+        visibility: hidden;
+        white-space: pre-wrap;
+        word-break: break-word;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>Text transition</h1>
+      <p>TODO</p>
+
+      <div class="two-col-io reform:io no-output-controls">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="input"
+            class="hidden-accessible reform:text-input"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label"
+            >Choose or drop a text file or type below</span
+          >
+          <span class="file-name">No file selected</span>
+        </label>
+        <textarea name="input" aria-label="Text" class="input-content">
+Change this text and hit "Animate"</textarea
+        >
+        <div class="image-content output-content">
+          <canvas id="canvas" data-deps="TODO"></canvas>
+        </div>
+      </div>
+
+      <div id="textMeasure" data-deps="input width animate-btn"></div>
+
+      <div class="button-row">
+        <button type="submit" class="button primary-btn" id="animate-btn">
+          Animate
+        </button>
+      </div>
+
+      <fieldset class="radio-set">
+        <legend class="label-primary">Animation speed</legend>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="speed"
+            value="fast"
+            class="hidden-accessible"
+            checked
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">Fast</span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="speed"
+            value="slow"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">Slow</span>
+        </label>
+      </fieldset>
+
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Maximum text width</span>
+          <input type="range" name="width" min="100" max="1200" value="500" />
+        </label>
+        <input
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          name="width"
+          min="100"
+          max="1200"
+          value="500"
+          aria-label="Maximum text width value"
+        />
+      </div>
+    </form>
+
+    <script type="module">
+      import { on, Out } from '/reform/v1/index.js'
+
+      // TODO: this doesn't work, it should forward arguments on click and
+      // everything is a dependency on it
+      on('animate-btn', (btn, { callback }) => {
+        btn.addEventListener('click', callback)
+      })
+
+      on('textMeasure', (div, { input, width }) => {
+        const fragment = document.createDocumentFragment()
+        const chars = []
+        for (const char of input) {
+          const span = document.createElement('span')
+          span.textContent = char
+          fragment.append(span)
+          chars.push({ char, span })
+        }
+        div.replaceChildren(fragment)
+        div.style.width = `${width}px`
+
+        const baseRect = div.getBoundingClientRect()
+        for (const char of chars) {
+          const { left, top } = char.span.getBoundingClientRect()
+          char.x = left - baseRect.left
+          char.y = top - baseRect.top
+        }
+        console.log(chars)
+      })
+
+      function myersDiff (tokensLeft, tokensRight) {
+        // Inspired by diagram here: https://nathaniel.ai/myers-diff/
+        // A(i, j) = minimum diff to tokensLeft[0..i], tokensRight[0..j]
+        // A(0, 0) = []
+        // A(i, 0) = add tokensLeft[0..i]
+        // A(0, j) = add tokensRight[0..j]
+        const dp = Array.from({ length: tokensLeft.length + 1 }, () =>
+          Array.from({ length: tokensRight.length + 1 })
+        )
+        dp[0][0] = []
+        for (let i = 1; i <= tokensLeft.length; i++) {
+          dp[i][0] = tokensLeft
+            .slice(0, i)
+            .map(token => ({ type: 'left-only', token }))
+        }
+        for (let j = 1; j <= tokensRight.length; j++) {
+          dp[0][j] = tokensRight
+            .slice(0, j)
+            .map(token => ({ type: 'right-only', token }))
+        }
+        for (let i = 1; i <= tokensLeft.length; i++) {
+          for (let j = 1; j <= tokensRight.length; j++) {
+            // Options:
+            // - diff from A(i - 1, j) + a left token
+            // - diff from A(i, j - 1) + a right token
+            // - diff from A(i - 1, j - 1) + a both token, but only if the
+            //   tokens match
+            const options = [
+              [
+                ...dp[i - 1][j],
+                { type: 'left-only', token: tokensLeft[i - 1] }
+              ],
+              [
+                ...dp[i][j - 1],
+                { type: 'right-only', token: tokensRight[j - 1] }
+              ]
+            ]
+            if (tokensLeft[i - 1] === tokensRight[j - 1]) {
+              options.push([
+                ...dp[i - 1][j - 1],
+                { type: 'both', token: tokensLeft[i - 1] }
+              ])
+            }
+            dp[i][j] = options.reduce((cum, curr) =>
+              cum.length < curr.length ? cum : curr
+            )
+          }
+        }
+        return dp[tokensLeft.length][tokensRight.length]
+      }
+      console.log(myersDiff(['a', 'b', 'f', 'c'], ['a', 'e', 'b', 'c']))
+    </script>
+  </body>
+</html>
