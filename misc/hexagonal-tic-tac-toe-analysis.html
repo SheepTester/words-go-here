@@ -241,8 +241,8 @@
         for (const hex of hexes) {
           const cell = get(hex)
           const status = {
-            o: { threat: false, preemptive: false },
-            x: { threat: false, preemptive: false }
+            o: { win: false, threat: false, preemptive: false },
+            x: { win: false, threat: false, preemptive: false }
           }
           for (const [dir] of neighborPairs) {
             const cells = []
@@ -279,23 +279,33 @@
               if (total < 6 && present < 6) {
                 // not possible to form a row
               } else if (present >= 2) {
-                status[shape][present >= 4 ? 'threat' : 'preemptive'] = true
+                status[shape][
+                  present >= 6 ? 'win' : present >= 4 ? 'threat' : 'preemptive'
+                ] = true
               }
             }
           }
-          const fill = status.o.threat
-            ? status.x.threat
-              ? '#a855f733'
-              : '#3b82f633'
-            : status.x.threat
-              ? '#f43f5e33'
-              : status.o.preemptive
-                ? status.x.preemptive
-                  ? '#a855f711'
-                  : '#3b82f611'
-                : status.x.preemptive
-                  ? '#f43f5e11'
-                  : null
+          const fill = status.o.win
+            ? status.x.win
+              ? 'black'
+              : '#3b82f6'
+            : status.x.win
+              ? '#f43f5e'
+              : status.o.threat
+                ? status.x.threat
+                  ? getNext() === 'x'
+                    ? '#f43f5e33'
+                    : '#3b82f633'
+                  : '#3b82f633'
+                : status.x.threat
+                  ? '#f43f5e33'
+                  : status.o.preemptive
+                    ? status.x.preemptive
+                      ? '#a855f711'
+                      : '#3b82f611'
+                    : status.x.preemptive
+                      ? '#f43f5e11'
+                      : null
           if (fill) {
             c.fillStyle = fill
             c.beginPath()
@@ -312,7 +322,12 @@
           const displayShape = cell ?? (hovered?.equals(hex) ? getNext() : null)
           switch (displayShape) {
             case 'o': {
-              c.strokeStyle = cell ? '#3b82f6' : 'rgba(0, 0, 0, 0.1)'
+              c.strokeStyle =
+                status.o.win || status.x.win
+                  ? 'white'
+                  : cell
+                    ? '#3b82f6'
+                    : 'rgba(0, 0, 0, 0.1)'
               c.beginPath()
               const radius = HEX_RADIUS * 0.4
               c.moveTo(...new Vector2(radius).add(px))
@@ -321,7 +336,12 @@
               break
             }
             case 'x': {
-              c.strokeStyle = cell ? '#f43f5e' : 'rgba(0, 0, 0, 0.1)'
+              c.strokeStyle =
+                status.o.win || status.x.win
+                  ? 'white'
+                  : cell
+                    ? '#f43f5e'
+                    : 'rgba(0, 0, 0, 0.1)'
               c.beginPath()
               const radius = HEX_RADIUS * 0.5
               for (let i = 0; i < 2; i++) {
