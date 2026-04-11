@@ -57,6 +57,14 @@
         }
         return closest
       }
+      const neighbors = [
+        new Vector2(-1, -1),
+        new Vector2(-1, 0),
+        new Vector2(0, -1),
+        new Vector2(0, 1),
+        new Vector2(1, 0),
+        new Vector2(1, 1)
+      ]
 
       /** @type {HTMLCanvasElement} */
       const canvas = document.getElementById('canvas')
@@ -117,8 +125,7 @@
       const handlePointerEnd = e => {
         if (dragState?.pointerId === e.pointerId) {
           if (!dragState.dragging) {
-            const clicked = nearestHex(pxToHex(untransform(dragState.initPtr)))
-            console.log(clicked)
+            click(nearestHex(pxToHex(untransform(dragState.initPtr))))
           }
           dragState = null
         }
@@ -152,6 +159,20 @@
         { passive: false }
       )
 
+      const board = new Map()
+      const get = ({ x, y }) => board.get(x)?.get(y)
+      const set = ({ x, y }, value) =>
+        board.getOrInsertComputed(x, () => new Map()).set(y, value)
+      let turn = 0
+      const click = hex => {
+        if (get(hex)) {
+          return
+        }
+        turn++
+        set(hex, Math.floor(turn / 2) % 2 === 0 ? 'x' : 'o')
+        paint()
+      }
+
       const hexPath = hex => {
         for (let i = 0; i < 6; i++) {
           c[i ? 'lineTo' : 'moveTo'](
@@ -170,6 +191,8 @@
         c.translate(...view.translate)
         c.scale(view.scale, view.scale)
 
+        c.lineCap = 'round'
+
         const hexes = []
         const min = pxToHex(untransform(new Vector2()))
         const max = pxToHex(untransform(size.clone()))
@@ -180,22 +203,73 @@
               position.bounded({ min: -HEX_RADIUS }) &&
               position.clone().sub(size).bounded({ max: HEX_RADIUS })
             ) {
-              hexes.push({ x, y })
+              hexes.push(new Vector2(x, y))
             }
           }
         }
 
         const hovered = mouse && nearestHex(pxToHex(untransform(mouse.clone())))
+        c.lineWidth = 5
         for (const hex of hexes) {
+          const cell = get(hex)
+          if (!cell) {
+            let has = false
+            for (const n of neighbors) {
+              for (let i = 1; i < 6; i++) {
+                if (get(n.clone().scale(i).add(hex))) {
+                  has = true
+                  break
+                }
+              }
+            }
+            if (has) {
+              c.fillStyle = 'rgba(0, 0, 255, 0.1)'
+              c.beginPath()
+              hexPath(hex)
+              c.fill()
+            }
+          }
           if (hovered?.equals(hex)) {
             c.fillStyle = 'rgba(0, 0, 0, 0.03)'
             c.beginPath()
             hexPath(hex)
             c.fill()
           }
+          const px = hexToPx(hex)
+          switch (cell) {
+            case 'o': {
+              c.strokeStyle = '#3b82f6'
+              c.beginPath()
+              const radius = HEX_RADIUS * 0.4
+              c.moveTo(...new Vector2(radius, 0).add(px))
+              c.arc(...px, radius, 0, 2 * Math.PI)
+              c.stroke()
+              break
+            }
+            case 'x': {
+              c.strokeStyle = '#f43f5e'
+              c.beginPath()
+              const radius = HEX_RADIUS * 0.5
+              for (let i = 0; i < 2; i++) {
+                c.moveTo(
+                  ...new Vector2(radius, 0)
+                    .rotate(Math.PI * (i * 0.5 + 0.25))
+                    .add(px)
+                )
+                c.lineTo(
+                  ...new Vector2(radius, 0)
+                    .rotate(Math.PI * (i * 0.5 + 1.25))
+                    .add(px)
+                )
+              }
+              c.stroke()
+              break
+            }
+          }
         }
 
         c.strokeStyle = 'rgba(0, 0, 0, 0.1)'
+        c.lineWidth = 1
         c.beginPath()
         for (const hex of hexes) {
           hexPath(hex)
