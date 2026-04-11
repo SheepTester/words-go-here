@@ -244,62 +244,42 @@
             o: { threat: false, preemptive: false },
             x: { threat: false, preemptive: false }
           }
-          directions: for (const [forth, back] of neighborPairs) {
-            let seenForth
-            let countForth = 0
-            let blockedForth = false
-            for (let i = 0; i < 6; i++) {
-              const rowCell = get(forth.clone().scale(i).add(hex))
-              if (rowCell) {
-                if (seenForth && seenForth !== rowCell) {
-                  blockedForth = true
+          for (const [dir] of neighborPairs) {
+            const cells = []
+            for (let i = -5; i < 6; i++) {
+              cells.push(get(dir.clone().scale(i).add(hex)))
+            }
+            for (const shape of ['o', 'x']) {
+              if (cell && shape !== cell) {
+                continue
+              }
+              let total = 1
+              let present = 0
+              if (cells[6] === shape) {
+                present++
+              }
+              for (let i = 7; i < cells.length; i++) {
+                if (cells[i] && cells[i] !== shape) {
                   break
                 }
-                seenForth = rowCell
-                countForth++
-              }
-            }
-            if (cell) {
-              let blockedBack = false
-              for (let i = 1; i < 6; i++) {
-                const rowCell = get(back.clone().scale(i).add(hex))
-                if (rowCell) {
-                  if (cell !== rowCell) {
-                    blockedBack = true
-                    break
-                  }
-                  countForth++
+                if (cells[i] === shape) {
+                  present++
                 }
+                total++
               }
-              if (blockedForth && blockedBack && countForth < 6) {
-                // blocked, threat neutralized
-              } else {
-                status[seenForth][
-                  countForth >= 4 ? 'threat' : 'preemptive'
-                ] = true
-              }
-            } else {
-              let seenBack
-              let countBack = 0
-              for (let i = 0; i < 6; i++) {
-                const rowCell = get(back.clone().scale(i).add(hex))
-                if (rowCell) {
-                  if (seenBack && seenBack !== rowCell) {
-                    break
-                  }
-                  seenBack = rowCell
-                  countBack++
+              for (let i = 5; i >= 0; i--) {
+                if (cells[i] && cells[i] !== shape) {
+                  break
                 }
+                if (cells[i] === shape) {
+                  present++
+                }
+                total++
               }
-              if (seenForth && countForth >= 2) {
-                status[seenForth][
-                  countForth >= 4 ? 'threat' : 'preemptive'
-                ] = true
-              }
-              if (seenBack && countBack >= 2) {
-                status[seenBack][
-                  countBack >= 4 ? 'threat' : 'preemptive'
-                ] = true
+              if (total < 6 && present < 6) {
+                // not possible to form a row
+              } else if (present >= 2) {
+                status[shape][present >= 4 ? 'threat' : 'preemptive'] = true
               }
             }
           }
