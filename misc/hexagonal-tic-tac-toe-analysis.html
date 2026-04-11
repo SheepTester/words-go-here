@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Hexagonal tic-tac-toe analysis</title>
+    <meta
+      name="description"
+      content="Hexagonal tic-tac-toe with board markings for threats and preemptives"
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        display: flex;
+        margin: 0;
+      }
+      canvas {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script type="module">
+      import { Vector2 } from 'https://sheeptester.github.io/javascripts/Vector2.js'
+
+      // math figured out in github.com/Subset-UCSD/Commit-Challenge-2026/blob/main/enclose-hexse.html
+      const HEX_RADIUS = 30
+      const offsetX = HEX_RADIUS * 1.5
+      const offsetY = HEX_RADIUS * Math.sqrt(3)
+      const hexToPx = ({ x, y }) =>
+        new Vector2(x * offsetX, (y - x / 2) * offsetY)
+      const pxToHex = v => {
+        const x = v.x / offsetX
+        return new Vector2(x, v.y / offsetY + x / 2)
+      }
+      const nearestHex = hex => {
+        let closest
+        let dist = Infinity
+        for (let x = Math.floor(hex.x) - 1; x <= Math.ceil(hex.x) + 1; x++) {
+          for (let y = Math.floor(hex.y) - 1; y <= Math.ceil(hex.y) + 1; y++) {
+            const d = new Vector2(x, y).sub(hex).lengthSquared
+            if (d < dist) {
+              dist = d
+              closest = new Vector2(x, y)
+            }
+          }
+        }
+        return closest
+      }
+
+      /** @type {HTMLCanvasElement} */
+      const canvas = document.getElementById('canvas')
+      const c = canvas.getContext('2d', { alpha: false })
+      let size = new Vector2()
+      let dpr = 1
+
+      const resize = () => {
+        size = new Vector2(window.innerWidth, window.innerHeight)
+        dpr = window.devicePixelRatio
+        canvas.width = size.x * dpr
+        canvas.height = size.y * dpr
+        paint()
+      }
+      window.addEventListener('resize', resize)
+
+      const view = { translate: new Vector2(), scale: 1 }
+      const transform = v => v.scale(view.scale).add(view.translate)
+      const untransform = v => v.sub(view.translate).scale(1 / view.scale)
+      let mouse
+      let dragState
+      canvas.addEventListener('pointerdown', e => {
+        if (!dragState) {
+          dragState = {
+            pointerId: e.pointerId,
+            initPtr: Vector2.fromMouseEvent(e),
+            initTranslate: view.translate,
+            dragging: false
+          }
+          canvas.setPointerCapture(e.pointerId)
+        }
+      })
+      canvas.addEventListener('pointermove', e => {
+        let change = false
+        if (dragState?.pointerId === e.pointerId) {
+          if (!dragState.dragging) {
+            if (
+              Vector2.fromMouseEvent(e).sub(dragState.initPtr).lengthSquared > 5
+            ) {
+              dragState.dragging = true
+            }
+          }
+          if (dragState.dragging) {
+            view.translate = Vector2.fromMouseEvent(e)
+              .sub(dragState.initPtr)
+              .add(dragState.initTranslate)
+            change = true
+          }
+        }
+        if (e.pointerType === 'mouse') {
+          mouse = Vector2.fromMouseEvent(e)
+          change = true
+        }
+        if (change) {
+          paint()
+        }
+      })
+      const handlePointerEnd = e => {
+        if (dragState?.pointerId === e.pointerId) {
+          if (!dragState.dragging) {
+            const clicked = nearestHex(pxToHex(untransform(dragState.initPtr)))
+            console.log(clicked)
+          }
+          dragState = null
+        }
+      }
+      canvas.addEventListener('pointerup', handlePointerEnd)
+      canvas.addEventListener('pointercancel', handlePointerEnd)
+      canvas.addEventListener('pointerleave', () => {
+        if (mouse) {
+          mouse = null
+          paint()
+        }
+      })
+      canvas.addEventListener(
+        'wheel',
+        e => {
+          if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
+            return
+          }
+          e.preventDefault()
+          const oldScale = view.scale
+          view.scale *= Math.exp(Math.min(Math.max(-e.deltaY / 600, -2), 2))
+          view.scale = Math.max(view.scale, 0.2)
+          view.translate.add(
+            view.translate
+              .clone()
+              .sub(Vector2.fromMouseEvent(e))
+              .scale((view.scale - oldScale) / oldScale)
+          )
+          paint()
+        },
+        { passive: false }
+      )
+
+      const hexPath = hex => {
+        for (let i = 0; i < 6; i++) {
+          c[i ? 'lineTo' : 'moveTo'](
+            ...new Vector2(HEX_RADIUS)
+              .rotate(i * (Math.PI / 3))
+              .add(hexToPx(hex))
+          )
+        }
+        c.closePath()
+      }
+      const paint = () => {
+        c.fillStyle = '#eee'
+        c.fillRect(0, 0, canvas.width, canvas.height)
+        c.save()
+        c.scale(dpr, dpr)
+        c.translate(...view.translate)
+        c.scale(view.scale, view.scale)
+
+        const hexes = []
+        const min = pxToHex(untransform(new Vector2()))
+        const max = pxToHex(untransform(size.clone()))
+        for (let x = Math.floor(min.x); x <= Math.ceil(max.x); x++) {
+          for (let y = Math.floor(min.y); y <= Math.ceil(max.y); y++) {
+            const position = hexToPx({ x, y })
+            if (
+              position.bounded({ min: -HEX_RADIUS }) &&
+              position.clone().sub(size).bounded({ max: HEX_RADIUS })
+            ) {
+              hexes.push({ x, y })
+            }
+          }
+        }
+
+        const hovered = mouse && nearestHex(pxToHex(untransform(mouse.clone())))
+        for (const hex of hexes) {
+          if (hovered?.equals(hex)) {
+            c.fillStyle = 'rgba(0, 0, 0, 0.03)'
+            c.beginPath()
+            hexPath(hex)
+            c.fill()
+          }
+        }
+
+        c.strokeStyle = 'rgba(0, 0, 0, 0.1)'
+        c.beginPath()
+        for (const hex of hexes) {
+          hexPath(hex)
+        }
+        c.stroke()
+
+        c.restore()
+      }
+
+      resize()
+    </script>
+  </body>
+</html>
