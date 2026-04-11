@@ -21,14 +21,43 @@
       body {
         display: flex;
         margin: 0;
+        font-family: system-ui;
       }
       canvas {
         width: 100%;
         height: 100%;
       }
+      p {
+        position: fixed;
+        top: 0;
+        left: 0;
+        margin: 20px;
+        padding: 10px 20px;
+        border-radius: 50px;
+        background-color: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(5px);
+      }
+      a {
+        color: #3b82f6;
+        text-decoration-color: color-mix(
+          in srgb,
+          currentColor 30%,
+          transparent
+        );
+
+        &:hover {
+          text-decoration-color: currentColor;
+        }
+      }
     </style>
   </head>
   <body>
+    <p>
+      Highlights threats and preemptives in
+      <a href="https://www.youtube.com/watch?v=EzLzkcRZurk"
+        >hexagonal tic-tac-toe</a
+      >.
+    </p>
     <canvas id="canvas"></canvas>
     <script type="module">
       import { Vector2 } from 'https://sheeptester.github.io/javascripts/Vector2.js'
@@ -43,12 +72,13 @@
         const x = v.x / offsetX
         return new Vector2(x, v.y / offsetY + x / 2)
       }
-      const nearestHex = hex => {
+      const nearestHex = mouse => {
         let closest
         let dist = Infinity
-        for (let x = Math.floor(hex.x) - 1; x <= Math.ceil(hex.x) + 1; x++) {
-          for (let y = Math.floor(hex.y) - 1; y <= Math.ceil(hex.y) + 1; y++) {
-            const d = new Vector2(x, y).sub(hex).lengthSquared
+        const guess = pxToHex(mouse)
+        for (let x = Math.floor(guess.x); x <= Math.ceil(guess.x); x++) {
+          for (let y = Math.floor(guess.y); y <= Math.ceil(guess.y); y++) {
+            const d = hexToPx({ x, y }).sub(mouse).lengthSquared
             if (d < dist) {
               dist = d
               closest = new Vector2(x, y)
@@ -125,7 +155,7 @@
       const handlePointerEnd = e => {
         if (dragState?.pointerId === e.pointerId) {
           if (!dragState.dragging) {
-            click(nearestHex(pxToHex(untransform(dragState.initPtr))))
+            click(nearestHex(untransform(dragState.initPtr)))
           }
           dragState = null
         }
@@ -147,7 +177,7 @@
           e.preventDefault()
           const oldScale = view.scale
           view.scale *= Math.exp(Math.min(Math.max(-e.deltaY / 600, -2), 2))
-          view.scale = Math.max(view.scale, 0.2)
+          view.scale = Math.max(Math.min(view.scale, 20), 0.2)
           view.translate.add(
             view.translate
               .clone()
@@ -164,12 +194,13 @@
       const set = ({ x, y }, value) =>
         board.getOrInsertComputed(x, () => new Map()).set(y, value)
       let turn = 0
+      const getNext = () => (Math.floor((turn + 1) / 2) % 2 === 0 ? 'x' : 'o')
       const click = hex => {
         if (get(hex)) {
           return
         }
+        set(hex, getNext())
         turn++
-        set(hex, Math.floor(turn / 2) % 2 === 0 ? 'x' : 'o')
         paint()
       }
 
@@ -208,26 +239,49 @@
           }
         }
 
-        const hovered = mouse && nearestHex(pxToHex(untransform(mouse.clone())))
+        const hovered = mouse && nearestHex(untransform(mouse.clone()))
         c.lineWidth = 5
         for (const hex of hexes) {
           const cell = get(hex)
-          if (!cell) {
-            let has = false
-            for (const n of neighbors) {
-              for (let i = 1; i < 6; i++) {
-                if (get(n.clone().scale(i).add(hex))) {
-                  has = true
+          const status = {
+            o: { threat: false, preemptive: false },
+            x: { threat: false, preemptive: false }
+          }
+          directions: for (const n of neighbors) {
+            let seen
+            let count = 0
+            for (let i = 0; i < 6; i++) {
+              const rowCell = get(n.clone().scale(i).add(hex))
+              if (rowCell) {
+                if (seen && seen !== rowCell) {
                   break
                 }
+                seen = rowCell
+                count++
               }
             }
-            if (has) {
-              c.fillStyle = 'rgba(0, 0, 255, 0.1)'
-              c.beginPath()
-              hexPath(hex)
-              c.fill()
+            if (seen && count >= 2) {
+              status[seen][count >= 4 ? 'threat' : 'preemptive'] = true
             }
+          }
+          const fill = status.o.threat
+            ? status.x.threat
+              ? '#a855f733'
+              : '#3b82f633'
+            : status.x.threat
+              ? '#f43f5e33'
+              : status.o.preemptive
+                ? status.x.preemptive
+                  ? '#a855f711'
+                  : '#3b82f611'
+                : status.x.preemptive
+                  ? '#f43f5e11'
+                  : null
+          if (fill) {
+            c.fillStyle = fill
+            c.beginPath()
+            hexPath(hex)
+            c.fill()
           }
           if (hovered?.equals(hex)) {
             c.fillStyle = 'rgba(0, 0, 0, 0.03)'
@@ -236,28 +290,29 @@
             c.fill()
           }
           const px = hexToPx(hex)
-          switch (cell) {
+          const displayShape = cell ?? (hovered?.equals(hex) ? getNext() : null)
+          switch (displayShape) {
             case 'o': {
-              c.strokeStyle = '#3b82f6'
+              c.strokeStyle = cell ? '#3b82f6' : 'rgba(0, 0, 0, 0.1)'
               c.beginPath()
               const radius = HEX_RADIUS * 0.4
-              c.moveTo(...new Vector2(radius, 0).add(px))
+              c.moveTo(...new Vector2(radius).add(px))
               c.arc(...px, radius, 0, 2 * Math.PI)
               c.stroke()
               break
             }
             case 'x': {
-              c.strokeStyle = '#f43f5e'
+              c.strokeStyle = cell ? '#f43f5e' : 'rgba(0, 0, 0, 0.1)'
               c.beginPath()
               const radius = HEX_RADIUS * 0.5
               for (let i = 0; i < 2; i++) {
                 c.moveTo(
-                  ...new Vector2(radius, 0)
+                  ...new Vector2(radius)
                     .rotate(Math.PI * (i * 0.5 + 0.25))
                     .add(px)
                 )
                 c.lineTo(
-                  ...new Vector2(radius, 0)
+                  ...new Vector2(radius)
                     .rotate(Math.PI * (i * 0.5 + 1.25))
                     .add(px)
                 )
