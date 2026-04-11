@@ -26,16 +26,29 @@
       canvas {
         width: 100%;
         height: 100%;
+        touch-action: none;
+        user-select: none;
       }
-      p {
+      .note {
         position: fixed;
         top: 0;
         left: 0;
         margin: 20px;
-        padding: 10px 20px;
-        border-radius: 50px;
+        padding: 20px;
+        gap: 10px;
+        border-radius: 15px;
         background-color: rgba(255, 255, 255, 0.3);
         backdrop-filter: blur(5px);
+        width: 250px;
+        display: flex;
+        flex-direction: column;
+      }
+      p,
+      ol {
+        margin: 0;
+      }
+      ol ::marker {
+        color: color-mix(in srgb, currentColor 30%, transparent);
       }
       a {
         color: #3b82f6;
@@ -44,6 +57,7 @@
           currentColor 30%,
           transparent
         );
+        font-weight: bold;
 
         &:hover {
           text-decoration-color: currentColor;
@@ -52,12 +66,22 @@
     </style>
   </head>
   <body>
-    <p>
-      Highlights threats and preemptives in
-      <a href="https://www.youtube.com/watch?v=EzLzkcRZurk"
-        >hexagonal tic-tac-toe</a
-      >.
-    </p>
+    <div class="note">
+      <p>
+        Highlights threats and preemptives in
+        <a href="https://www.youtube.com/watch?v=EzLzkcRZurk"
+          >hexagonal tic-tac-toe</a
+        >:
+      </p>
+      <ol>
+        <li>Infinite hex grid</li>
+        <li>6 in a row to win</li>
+        <li>
+          Play order:
+          &times;&compfn;&compfn;&times;&times;&compfn;&compfn;&times;&times;⋯
+        </li>
+      </ol>
+    </div>
     <canvas id="canvas"></canvas>
     <script type="module">
       import { Vector2 } from 'https://sheeptester.github.io/javascripts/Vector2.js'
