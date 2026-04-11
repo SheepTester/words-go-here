@@ -187,9 +187,9 @@
       )
 
       const board = new Map()
-      const get = ({ x, y }) => board.get(x)?.get(y)
-      const set = ({ x, y }, value) =>
-        board.getOrInsertComputed(x, () => new Map()).set(y, value)
+      const get = ({ x, y }, b = board) => b.get(x)?.get(y)
+      const set = ({ x, y }, value, b = board) =>
+        b.getOrInsertComputed(x, () => new Map()).set(y, value)
       let turn = 0
       const getNext = () => (Math.floor((turn + 1) / 2) % 2 === 0 ? 'x' : 'o')
       const click = hex => {
@@ -198,18 +198,65 @@
         }
         set(hex, getNext())
         turn++
+        renderCache = new Map()
         paint()
       }
+      let renderCache = new Map()
 
-      const hexPath = hex => {
-        for (let i = 0; i < 6; i++) {
-          c[i ? 'lineTo' : 'moveTo'](
+      const hexPath = (hex, alt) => {
+        for (let i = 1; i < 7; i++) {
+          c[(alt ? !(i % 2) : i > 1) ? 'lineTo' : 'moveTo'](
             ...new Vector2(HEX_RADIUS)
               .rotate(i * (Math.PI / 3))
               .add(hexToPx(hex))
           )
         }
         c.closePath()
+      }
+      const getStatus = hex => {
+        const status = {
+          o: { win: false, threat: false, preemptive: false },
+          x: { win: false, threat: false, preemptive: false }
+        }
+        for (const [dir] of neighborPairs) {
+          let cum = { count: 0, total: 0, last: null, queue: [] }
+          for (let i = -5; i < 6; i++) {
+            const dirCell = get(dir.clone().scale(i).add(hex))
+            if (dirCell) {
+              if (!cum.last) {
+                cum.last = dirCell
+              } else if (dirCell !== cum.last) {
+                cum = { count: 0, total: 0, last: dirCell, queue: [] }
+              }
+              cum.count++
+              cum.queue.push(1)
+            } else {
+              cum.queue.push(0)
+            }
+            if (cum.total < 6) {
+              cum.total++
+            } else {
+              // cut off the left end of the 6-cell range
+              cum.count -= cum.queue.shift()
+            }
+            if (cum.total > 6) {
+              throw new Error('range too long')
+            }
+            if (cum.queue.length > 6) {
+              throw new Error('queue too long')
+            }
+            if (cum.total === 6 && cum.count >= 2) {
+              status[cum.last][
+                cum.count >= 6
+                  ? 'win'
+                  : cum.count >= 4
+                    ? 'threat'
+                    : 'preemptive'
+              ] = true
+            }
+          }
+        }
+        return status
       }
       const paint = () => {
         c.fillStyle = '#eee'
@@ -240,48 +287,9 @@
         c.lineWidth = 5
         for (const hex of hexes) {
           const cell = get(hex)
-          const status = {
-            o: { win: false, threat: false, preemptive: false },
-            x: { win: false, threat: false, preemptive: false }
-          }
-          for (const [dir] of neighborPairs) {
-            let cum = { count: 0, total: 0, last: null, queue: [] }
-            for (let i = -5; i < 6; i++) {
-              const dirCell = get(dir.clone().scale(i).add(hex))
-              if (dirCell) {
-                if (!cum.last) {
-                  cum.last = dirCell
-                } else if (dirCell !== cum.last) {
-                  cum = { count: 0, total: 0, last: dirCell, queue: [] }
-                }
-                cum.count++
-                cum.queue.push(1)
-              } else {
-                cum.queue.push(0)
-              }
-              if (cum.total < 6) {
-                cum.total++
-              } else {
-                // cut off the left end of the 6-cell range
-                cum.count -= cum.queue.shift()
-              }
-              if (cum.total > 6) {
-                throw new Error('range too long')
-              }
-              if (cum.queue.length > 6) {
-                throw new Error('queue too long')
-              }
-              if (cum.total === 6 && cum.count >= 2) {
-                status[cum.last][
-                  cum.count >= 6
-                    ? 'win'
-                    : cum.count >= 4
-                      ? 'threat'
-                      : 'preemptive'
-                ] = true
-              }
-            }
-          }
+          const status = renderCache
+            .getOrInsertComputed(hex.x, () => new Map())
+            .getOrInsertComputed(hex.y, () => getStatus(hex))
           const fill = status.o.win
             ? status.x.win
               ? 'black'
@@ -363,7 +371,12 @@
         c.lineWidth = 1
         c.beginPath()
         for (const hex of hexes) {
-          hexPath(hex)
+          const mod = (hex.x + hex.y) % 3
+          if (mod === 0) {
+            hexPath(hex)
+          } else if (mod === 1 || mod === -2) {
+            hexPath(hex, true)
+          }
         }
         c.stroke()
 
