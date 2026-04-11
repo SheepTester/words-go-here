@@ -87,13 +87,10 @@
         }
         return closest
       }
-      const neighbors = [
-        new Vector2(-1, -1),
-        new Vector2(-1, 0),
-        new Vector2(0, -1),
-        new Vector2(0, 1),
-        new Vector2(1, 0),
-        new Vector2(1, 1)
+      const neighborPairs = [
+        [new Vector2(0, -1), new Vector2(0, 1)],
+        [new Vector2(-1, 0), new Vector2(1, 0)],
+        [new Vector2(-1, -1), new Vector2(1, 1)]
       ]
 
       /** @type {HTMLCanvasElement} */
@@ -247,21 +244,63 @@
             o: { threat: false, preemptive: false },
             x: { threat: false, preemptive: false }
           }
-          directions: for (const n of neighbors) {
-            let seen
-            let count = 0
+          directions: for (const [forth, back] of neighborPairs) {
+            let seenForth
+            let countForth = 0
+            let blockedForth = false
             for (let i = 0; i < 6; i++) {
-              const rowCell = get(n.clone().scale(i).add(hex))
+              const rowCell = get(forth.clone().scale(i).add(hex))
               if (rowCell) {
-                if (seen && seen !== rowCell) {
+                if (seenForth && seenForth !== rowCell) {
+                  blockedForth = true
                   break
                 }
-                seen = rowCell
-                count++
+                seenForth = rowCell
+                countForth++
               }
             }
-            if (seen && count >= 2) {
-              status[seen][count >= 4 ? 'threat' : 'preemptive'] = true
+            if (cell) {
+              let blockedBack = false
+              for (let i = 1; i < 6; i++) {
+                const rowCell = get(back.clone().scale(i).add(hex))
+                if (rowCell) {
+                  if (cell !== rowCell) {
+                    blockedBack = true
+                    break
+                  }
+                  countForth++
+                }
+              }
+              if (blockedForth && blockedBack && countForth < 6) {
+                // blocked, threat neutralized
+              } else {
+                status[seenForth][
+                  countForth >= 4 ? 'threat' : 'preemptive'
+                ] = true
+              }
+            } else {
+              let seenBack
+              let countBack = 0
+              for (let i = 0; i < 6; i++) {
+                const rowCell = get(back.clone().scale(i).add(hex))
+                if (rowCell) {
+                  if (seenBack && seenBack !== rowCell) {
+                    break
+                  }
+                  seenBack = rowCell
+                  countBack++
+                }
+              }
+              if (seenForth && countForth >= 2) {
+                status[seenForth][
+                  countForth >= 4 ? 'threat' : 'preemptive'
+                ] = true
+              }
+              if (seenBack && countBack >= 2) {
+                status[seenBack][
+                  countBack >= 4 ? 'threat' : 'preemptive'
+                ] = true
+              }
             }
           }
           const fill = status.o.threat
