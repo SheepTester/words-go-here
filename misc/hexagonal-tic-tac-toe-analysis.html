@@ -245,42 +245,39 @@
             x: { win: false, threat: false, preemptive: false }
           }
           for (const [dir] of neighborPairs) {
-            const cells = []
+            let cum = { count: 0, total: 0, last: null, queue: [] }
             for (let i = -5; i < 6; i++) {
-              cells.push(get(dir.clone().scale(i).add(hex)))
-            }
-            for (const shape of ['o', 'x']) {
-              if (cell && shape !== cell) {
-                continue
-              }
-              let total = 1
-              let present = 0
-              if (cells[6] === shape) {
-                present++
-              }
-              for (let i = 7; i < cells.length; i++) {
-                if (cells[i] && cells[i] !== shape) {
-                  break
+              const dirCell = get(dir.clone().scale(i).add(hex))
+              if (dirCell) {
+                if (!cum.last) {
+                  cum.last = dirCell
+                } else if (dirCell !== cum.last) {
+                  cum = { count: 0, total: 0, last: dirCell, queue: [] }
                 }
-                if (cells[i] === shape) {
-                  present++
-                }
-                total++
+                cum.count++
+                cum.queue.push(1)
+              } else {
+                cum.queue.push(0)
               }
-              for (let i = 5; i >= 0; i--) {
-                if (cells[i] && cells[i] !== shape) {
-                  break
-                }
-                if (cells[i] === shape) {
-                  present++
-                }
-                total++
+              if (cum.total < 6) {
+                cum.total++
+              } else {
+                // cut off the left end of the 6-cell range
+                cum.count -= cum.queue.shift()
               }
-              if (total < 6 && present < 6) {
-                // not possible to form a row
-              } else if (present >= 2) {
-                status[shape][
-                  present >= 6 ? 'win' : present >= 4 ? 'threat' : 'preemptive'
+              if (cum.total > 6) {
+                throw new Error('range too long')
+              }
+              if (cum.queue.length > 6) {
+                throw new Error('queue too long')
+              }
+              if (cum.total === 6 && cum.count >= 2) {
+                status[cum.last][
+                  cum.count >= 6
+                    ? 'win'
+                    : cum.count >= 4
+                      ? 'threat'
+                      : 'preemptive'
                 ] = true
               }
             }
