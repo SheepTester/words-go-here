@@ -38,6 +38,7 @@
         gap: 10px;
         border-radius: 15px;
         background-color: rgba(255, 255, 255, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.3);
         backdrop-filter: blur(5px);
         width: 250px;
         display: flex;
@@ -88,13 +89,13 @@
 
       // math figured out in github.com/Subset-UCSD/Commit-Challenge-2026/blob/main/enclose-hexse.html
       const HEX_RADIUS = 30
-      const offsetX = HEX_RADIUS * 1.5
-      const offsetY = HEX_RADIUS * Math.sqrt(3)
+      const offsetX = HEX_RADIUS * Math.sqrt(3)
+      const offsetY = HEX_RADIUS * 1.5
       const hexToPx = ({ x, y }) =>
-        new Vector2(x * offsetX, (y - x / 2) * offsetY)
+        new Vector2((x - y / 2) * offsetX, y * offsetY)
       const pxToHex = v => {
-        const x = v.x / offsetX
-        return new Vector2(x, v.y / offsetY + x / 2)
+        const y = v.y / offsetY
+        return new Vector2(v.x / offsetX + y / 2, y)
       }
       const nearestHex = mouse => {
         let closest
@@ -231,7 +232,7 @@
         for (let i = 1; i < 7; i++) {
           c[(alt ? !(i % 2) : i > 1) ? 'lineTo' : 'moveTo'](
             ...new Vector2(HEX_RADIUS)
-              .rotate(i * (Math.PI / 3))
+              .rotate((i + 0.5) * (Math.PI / 3))
               .add(hexToPx(hex))
           )
         }
