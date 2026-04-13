@@ -143,15 +143,39 @@
           dragState = {
             pointerId: e.pointerId,
             initPtr: Vector2.fromMouseEvent(e),
+            lastPtr: Vector2.fromMouseEvent(e),
             initTranslate: view.translate,
             dragging: false
           }
           canvas.setPointerCapture(e.pointerId)
+        } else if (!dragState.pointer2) {
+          dragState.pointer2 = true
+          dragState.pointerId2 = e.pointerId
+          // Basically, distance controls scale, midpoint controls translation
+          dragState.initScale = view.scale
+          dragState.initDist = Vector2.fromMouseEvent(e).sub(
+            dragState.lastPtr
+          ).length
+          dragState.initPtr = Vector2.fromMouseEvent(e)
+            .add(dragState.lastPtr)
+            .scale(1 / 2)
+          dragState.initTranslate = view.translate
+          dragState.lastPtr2 = Vector2.fromMouseEvent(e)
+          canvas.setPointerCapture(e.pointerId)
+          dragState.dragging = true
         }
       })
       canvas.addEventListener('pointermove', e => {
         let change = false
-        if (dragState?.pointerId === e.pointerId) {
+        if (
+          dragState?.pointerId === e.pointerId ||
+          dragState?.pointerId2 === e.pointerId
+        ) {
+          if (dragState.pointerId2 === e.pointerId) {
+            dragState.lastPtr2 = Vector2.fromMouseEvent(e)
+          } else {
+            dragState.lastPtr = Vector2.fromMouseEvent(e)
+          }
           if (!dragState.dragging) {
             if (
               Vector2.fromMouseEvent(e).sub(dragState.initPtr).lengthSquared > 5
@@ -160,9 +184,47 @@
             }
           }
           if (dragState.dragging) {
-            view.translate = Vector2.fromMouseEvent(e)
-              .sub(dragState.initPtr)
-              .add(dragState.initTranslate)
+            if (dragState.pointer2) {
+              const midPoint = dragState.lastPtr2
+                .clone()
+                .add(dragState.lastPtr)
+                .scale(0.5)
+              const newScale = Math.max(
+                Math.min(
+                  dragState.initScale *
+                    (dragState.lastPtr2.clone().sub(dragState.lastPtr).length /
+                      dragState.initDist),
+                  20
+                ),
+                0.2
+              )
+              // Ideally it's like
+              // 1. undo translate by initTranslate
+              // 2. scale by scaleMultiplier (perhaps similar to handling in
+              //    onwheel?)
+              // 3. translate by initTranslate + midPoint - initPtr
+              //
+              // Maybe it's easier in 1D? Basically, we want the untransformed
+              // midpoint to be the same init and now:
+              // * s0 * p + t0 = p0'
+              // * s1 * p + t1 = p1'
+              // * We know s0, t0, s1, p0', and p1'. We don't know p and we want
+              //   to know t1
+              // * p = (p0' - t0) / s0 = (p1' - t1) / s1
+              // * p1' - t1 = (p0' - t0) * (s1 / s0)
+              // * t1 - p1' = (t0 - p0') * (s1 / s0)
+              // * t1 = (t0 - p0') * (s1 / s0) + p1'
+              view.translate = dragState.initTranslate
+                .clone()
+                .sub(dragState.initPtr)
+                .scale(newScale / dragState.initScale)
+                .add(midPoint)
+              view.scale = newScale
+            } else {
+              view.translate = Vector2.fromMouseEvent(e)
+                .sub(dragState.initPtr)
+                .add(dragState.initTranslate)
+            }
             change = true
           }
         }
@@ -176,10 +238,22 @@
       })
       const handlePointerEnd = e => {
         if (dragState?.pointerId === e.pointerId) {
-          if (!dragState.dragging) {
-            click(nearestHex(untransform(dragState.initPtr)))
+          if (dragState.pointer2) {
+            dragState.pointer2 = false
+            dragState.pointerId = dragState.pointerId2
+            dragState.initPtr = dragState.lastPtr2
+            dragState.lastPtr = dragState.lastPtr2
+            dragState.initTranslate = view.translate
+          } else {
+            if (!dragState.dragging) {
+              click(nearestHex(untransform(dragState.initPtr)))
+            }
+            dragState = null
           }
-          dragState = null
+        } else if (dragState?.pointerId2 === e.pointerId) {
+          dragState.pointer2 = false
+          dragState.initPtr = dragState.lastPtr
+          dragState.initTranslate = view.translate
         }
       }
       canvas.addEventListener('pointerup', handlePointerEnd)
@@ -200,16 +274,19 @@
           const oldScale = view.scale
           view.scale *= Math.exp(Math.min(Math.max(-e.deltaY / 600, -2), 2))
           view.scale = Math.max(Math.min(view.scale, 20), 0.2)
-          view.translate.add(
+          view.translate = view.translate.clone().add(
             view.translate
               .clone()
               .sub(Vector2.fromMouseEvent(e))
               .scale((view.scale - oldScale) / oldScale)
           )
+          dragState.initPtr = dragState.lastPtr
+          dragState.initTranslate = view.translate
           paint()
         },
         { passive: false }
       )
+      canvas.addEventListener('contextmenu', e => e.preventDefault())
 
       const board = new Map()
       const get = ({ x, y }, b = board) => b.get(x)?.get(y)
