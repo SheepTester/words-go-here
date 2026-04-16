@@ -11,6 +11,12 @@
     />
     <meta name="theme-color" content="#4fa1a7" />
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" type="text/css" href="/sheep3.css" />
     <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
@@ -39,7 +45,10 @@
         </label>
         <div class="image-content input-content"><canvas></canvas></div>
         <div class="image-content output-content">
-          <canvas id="output" data-deps="photo"></canvas>
+          <canvas
+            id="output"
+            data-deps="photo color zh zhPos zhOpacity zhSize zhLetterSpacing en enPos enOpacity enSize enLetterSpacing"
+          ></canvas>
         </div>
         <div class="output-controls">
           <a class="file download">
@@ -60,23 +69,255 @@
         </div>
       </div>
 
+      <fieldset class="radio-set">
+        <legend class="label-primary">Text color</legend>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="color"
+            value="light"
+            class="hidden-accessible"
+            checked
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">Light</span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="color"
+            value="dark"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">Dark</span>
+        </label>
+      </fieldset>
+
       <label class="field-label">
         <span class="label-primary">Chinese name</span>
-        <input type="text" name="zh" value="歐洲" />
+        <input
+          type="text"
+          name="zh"
+          value="歐洲"
+          style="font-family: 'Noto Serif TC', serif; font-weight: 700"
+          lang="zh"
+        />
       </label>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Chinese name position</span>
+          <input type="range" name="zhPos" min="0" max="100" value="28" />
+        </label>
+        <input
+          type="number"
+          name="zhPos"
+          value="28"
+          aria-label="Chinese name position value"
+        />
+      </div>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Chinese name opacity</span>
+          <input type="range" name="zhOpacity" min="0" max="100" value="15" />
+        </label>
+        <input
+          type="number"
+          name="zhOpacity"
+          value="15"
+          aria-label="Chinese name opacity value"
+        />
+      </div>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Chinese name size</span>
+          <input
+            type="range"
+            name="zhSize"
+            min="0"
+            max="100"
+            step="0.1"
+            value="24"
+          />
+        </label>
+        <input
+          type="number"
+          name="zhSize"
+          step="0.1"
+          value="24"
+          aria-label="Chinese name size value"
+        />
+      </div>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">Chinese name character spacing</span>
+          <input
+            type="range"
+            name="zhLetterSpacing"
+            min="0"
+            max="100"
+            value="10"
+          />
+        </label>
+        <input
+          type="number"
+          name="zhLetterSpacing"
+          value="10"
+          aria-label="Chinese name character spacing value"
+        />
+      </div>
+
       <label class="field-label">
         <span class="label-primary">English name</span>
         <input
           type="text"
           name="en"
           value="Ouzhou"
-          style="text-transform: uppercase"
+          style="
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 900;
+            text-transform: uppercase;
+          "
         />
       </label>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">English name position</span>
+          <input type="range" name="enPos" min="0" max="100" value="31" />
+        </label>
+        <input
+          type="number"
+          name="enPos"
+          value="31"
+          aria-label="English name position value"
+        />
+      </div>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">English name opacity</span>
+          <input type="range" name="enOpacity" min="0" max="100" value="50" />
+        </label>
+        <input
+          type="number"
+          name="enOpacity"
+          value="50"
+          aria-label="English name opacity value"
+        />
+      </div>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">English name size</span>
+          <input
+            type="range"
+            name="enSize"
+            min="0"
+            max="100"
+            step="0.1"
+            value="6.8"
+          />
+        </label>
+        <input
+          type="number"
+          name="enSize"
+          step="0.1"
+          value="6.8"
+          aria-label="English name size value"
+        />
+      </div>
+      <div class="field-label range-wrapper">
+        <label class="range-label">
+          <span class="label-primary">English name character spacing</span>
+          <input
+            type="range"
+            name="enLetterSpacing"
+            min="0"
+            max="100"
+            value="20"
+          />
+        </label>
+        <input
+          type="number"
+          name="enLetterSpacing"
+          value="20"
+          aria-label="English name character spacing value"
+        />
+      </div>
     </form>
 
     <script type="module">
       import { on, Out } from '/reform/v1/index.js'
+
+      await document.fonts.ready
+
+      on('output', (ctx_, inputs) => {
+        /** @type {CanvasRenderingContext2D} */
+        const ctx = ctx_
+        const {
+          photo,
+          color,
+          zh,
+          zhPos,
+          zhOpacity,
+          zhSize,
+          zhLetterSpacing,
+          en,
+          enPos,
+          enOpacity,
+          enSize,
+          enLetterSpacing
+        } = inputs
+
+        const { width, height } = photo.canvas
+        ctx.canvas.width = width
+        ctx.canvas.height = height
+        ctx.drawImage(photo.canvas, 0, 0)
+
+        const text = [
+          {
+            content: zh,
+            position: zhPos,
+            opacity: zhOpacity,
+            size: zhSize,
+            letterSpacing: zhLetterSpacing,
+            weight: 700
+          },
+          {
+            content: en.toUpperCase(),
+            position: enPos,
+            opacity: enOpacity,
+            size: enSize,
+            letterSpacing: enLetterSpacing,
+            weight: 900
+          }
+        ]
+        ctx.textBaseline = 'middle'
+        ctx.globalCompositeOperation =
+          color === 'light' ? 'lighter' : 'multiply'
+        for (const {
+          content,
+          position,
+          opacity,
+          size,
+          letterSpacing,
+          weight
+        } of text) {
+          const fontSize = (size / 100) * height
+          ctx.font = `${weight} ${fontSize}px 'Noto Serif TC', serif`
+          const letterSpacingPx = (letterSpacing / 100) * fontSize
+          ctx.letterSpacing = `${letterSpacingPx}px`
+          ctx.fillStyle = `rgba(${
+            color === 'light' ? '255, 255, 255' : '0, 0, 0'
+          }, ${opacity / 100})`
+          const measurement = ctx.measureText(content)
+          ctx.fillText(
+            content,
+            (width - (measurement.width - letterSpacingPx)) / 2,
+            (position / 100) * height
+          )
+        }
+
+        return Out.from(en + '.png', ctx)
+      })
     </script>
   </body>
 </html>
