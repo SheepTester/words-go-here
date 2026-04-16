@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Add Chinese city name over a photo</title>
+    <meta
+      name="description"
+      content="I'm going to Europe tomorrow, and I want to pretend I'm going to the exotic Chinese city of Ouzhou"
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>Ouzhou</h1>
+      <p>
+        I'm going to Europe tomorrow, and I want to pretend I'm going to the
+        exotic Chinese city of Ouzhou.
+      </p>
+      <p>This adds a Chinese city name over a photo.</p>
+
+      <div class="two-col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="photo"
+            accept="image/*"
+            class="hidden-accessible reform:image-input reform:paste-target"
+            data-default="ouzhou-default.jpg"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">Choose, drop, or paste a photo</span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <div class="image-content input-content"><canvas></canvas></div>
+        <div class="image-content output-content">
+          <canvas id="output" data-deps="photo"></canvas>
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+
+      <label class="field-label">
+        <span class="label-primary">Chinese name</span>
+        <input type="text" name="zh" value="歐洲" />
+      </label>
+      <label class="field-label">
+        <span class="label-primary">English name</span>
+        <input
+          type="text"
+          name="en"
+          value="Ouzhou"
+          style="text-transform: uppercase"
+        />
+      </label>
+    </form>
+
+    <script type="module">
+      import { on, Out } from '/reform/v1/index.js'
+    </script>
+  </body>
+</html>
