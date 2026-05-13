@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Generate a BIG file</title>
+    <meta name="description" content="Get gigabytes, FAST." />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:" id="main">
+      <h1>Generate a <em>big</em> file</h1>
+      <p>
+        Have you ever wanted a big, multi-gigabyte file? This tool will manifest
+        bytes out of thin air, all on your device, so it won't waste your
+        internet usage.
+      </p>
+
+      <label class="field-label">
+        <span class="label-primary">File size (bytes)</span>
+        <span class="label-secondary">
+          <code>e</code> means "ten to the power of."
+        </span>
+        <input type="number" name="size" min="0" value="5e9" />
+      </label>
+
+      <div class="button-row">
+        <button type="submit" class="button primary-btn">Save</button>
+      </div>
+
+      <label class="field-label" style="display: none">
+        <span class="label-primary">Save progress</span>
+        <progress id="progress" min="0" style="width: 100%"></progress>
+      </label>
+    </form>
+
+    <script type="module">
+      import { on, Out } from '/reform/v1/index.js'
+
+      /** a mibibyte */
+      const CHUNK_SIZE = 2 << 15
+
+      const progress = document.getElementById('progress')
+
+      on('main', form => {
+        form.addEventListener('submit', async () => {
+          let size = +new FormData(form).get('size')
+          const name = `${size} byte${size === 1 ? '' : 's'}`
+          const chunk = new ArrayBuffer(CHUNK_SIZE)
+          if (window.showSaveFilePicker) {
+            const handle = await window
+              .showSaveFilePicker({ suggestedName: name })
+              .catch(error =>
+                error instanceof DOMException && error.name === 'AbortError'
+                  ? null
+                  : Promise.reject(error)
+              )
+            if (!handle) {
+              return
+            }
+            progress.parentElement.style.display = ''
+            progress.value = size
+            progress.max = size
+            try {
+              const stream = await handle.createWritable()
+              try {
+                while (size > 0) {
+                  await stream.write(
+                    size < CHUNK_SIZE ? new Uint8Array(chunk, 0, size) : chunk
+                  )
+                  size -= CHUNK_SIZE
+                  progress.value = size
+                }
+              } finally {
+                await stream.close()
+              }
+            } finally {
+              progress.parentElement.style.display = 'none'
+            }
+          } else {
+            const chunks = []
+            while (size > 0) {
+              chunks.push(
+                size < CHUNK_SIZE ? new Uint8Array(chunk, 0, size) : chunk
+              )
+              size -= CHUNK_SIZE
+            }
+            const url = URL.createObjectURL(new Blob(chunks))
+            const a = Object.assign(document.createElement('a'), {
+              href: url,
+              download: name
+            })
+            document.body.append(a)
+            a.click()
+            a.remove()
+            URL.revokeObjectURL(url)
+          }
+        })
+      })
+    </script>
+  </body>
+</html>
