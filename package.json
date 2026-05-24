@@ -7,10 +7,10 @@
   },
   "type": "module",
   "devDependencies": {
+    "@sheeptester/prettier": "^3.9.0",
     "@types/node": "^24.3.0",
     "@webgpu/types": "^0.1.64",
-    "esbuild": "^0.25.9",
-    "prettierx": "^0.19.0"
+    "esbuild": "^0.25.9"
   },
   "dependencies": {
     "wgpu-matrix": "^3.4.0"
