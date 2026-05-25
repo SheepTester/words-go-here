@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -40,7 +40,7 @@
         background-color: rgba(255, 255, 255, 0.3);
         border: 1px solid rgba(255, 255, 255, 0.3);
         backdrop-filter: blur(5px);
-        width: 250px;
+        width: min-content;
         display: flex;
         flex-direction: column;
       }
@@ -64,6 +64,37 @@
           text-decoration-color: currentColor;
         }
       }
+      kbd {
+        border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+        padding: 0 3px;
+        border-radius: 5px;
+      }
+      .button-row {
+        display: flex;
+        gap: 5px;
+      }
+      button {
+        display: flex;
+        gap: 5px;
+        padding: 0 3px;
+        align-items: center;
+        border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+        border-radius: 5px;
+        background: none;
+        color: inherit;
+        font: inherit;
+        white-space: nowrap;
+
+        &:hover {
+          background-color: color-mix(in srgb, currentColor 3%, transparent);
+        }
+        &:enabled {
+          cursor: pointer;
+        }
+        &:disabled {
+          opacity: 0.5;
+        }
+      }
     </style>
   </head>
   <body>
@@ -82,6 +113,21 @@
           &times;&compfn;&compfn;&times;&times;&compfn;&compfn;&times;&times;⋯
         </li>
       </ol>
+      <p class="button-row">
+        <button id="undo" disabled>
+          undo
+          <kbd>z</kbd>
+        </button>
+        <button id="redo" disabled>
+          redo
+          <kbd>y</kbd>
+        </button>
+        <button id="switch-turn">
+          switch turn
+          <kbd>x</kbd>
+          <kbd>o</kbd>
+        </button>
+      </p>
     </div>
     <canvas id="canvas"></canvas>
     <script type="module">
@@ -292,18 +338,97 @@
       const get = ({ x, y }, b = board) => b.get(x)?.get(y)
       const set = ({ x, y }, value, b = board) =>
         b.getOrInsertComputed(x, () => new Map()).set(y, value)
-      let turn = 0
-      const getNext = () => (Math.floor((turn + 1) / 2) % 2 === 0 ? 'x' : 'o')
+      const del = ({ x, y }, b = board) => b.get(x)?.delete(y)
+      let turnState = { current: 'x', remaining: 1 }
+      const undoHistory = []
+      let redoHistory = []
       const click = hex => {
         if (get(hex)) {
           return
         }
-        set(hex, getNext())
-        turn++
+        const prevTurnState = { ...turnState }
+        const action = {
+          up: () => {
+            set(hex, turnState.current)
+            turnState.remaining--
+            if (turnState.remaining <= 0) {
+              turnState = {
+                current: turnState.current === 'x' ? 'o' : 'x',
+                remaining: 2
+              }
+            }
+          },
+          down: () => {
+            del(hex)
+            turnState = prevTurnState
+          }
+        }
+        action.up()
+        undoHistory.push(action)
+        undoBtn.disabled = false
+        redoHistory = []
+        redoBtn.disabled = true
         renderCache = new Map()
         paint()
       }
       let renderCache = new Map()
+
+      const undoBtn = document.getElementById('undo')
+      const redoBtn = document.getElementById('redo')
+      document.addEventListener('keydown', e => {
+        if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) {
+          return
+        }
+        switch (e.key) {
+          case 'z': {
+            e.preventDefault()
+            undoBtn.click()
+            break
+          }
+          case 'y': {
+            e.preventDefault()
+            redoBtn.click()
+            break
+          }
+          case 'x':
+          case 'o': {
+            e.preventDefault()
+            turnState = { current: e.key, remaining: 2 }
+            paint()
+            break
+          }
+        }
+      })
+      undoBtn.addEventListener('click', () => {
+        const action = undoHistory.pop()
+        if (action) {
+          action.down()
+          redoHistory.push(action)
+          redoBtn.disabled = false
+          renderCache = new Map()
+          paint()
+        }
+        undoBtn.disabled = undoHistory.length === 0
+      })
+      redoBtn.addEventListener('click', () => {
+        const action = redoHistory.pop()
+        if (action) {
+          action.up()
+          undoHistory.push(action)
+          undoBtn.disabled = false
+          renderCache = new Map()
+          paint()
+        }
+        redoBtn.disabled = redoHistory.length === 0
+      })
+      document.getElementById('switch-turn').addEventListener('click', () => {
+        turnState = {
+          current: turnState.current === 'x' ? 'o' : 'x',
+          // because mobile can't preview the next turn
+          remaining: Infinity
+        }
+        paint()
+      })
 
       const hexPath = (hex, alt) => {
         for (let i = 1; i < 7; i++) {
@@ -400,7 +525,7 @@
               ? '#f43f5e'
               : status.o.threat
                 ? status.x.threat
-                  ? getNext() === 'x'
+                  ? turnState.current === 'x'
                     ? '#f43f5e33'
                     : '#3b82f633'
                   : '#3b82f633'
@@ -426,7 +551,8 @@
             c.fill()
           }
           const px = hexToPx(hex)
-          const displayShape = cell ?? (hovered?.equals(hex) ? getNext() : null)
+          const displayShape =
+            cell ?? (hovered?.equals(hex) ? turnState.current : null)
           switch (displayShape) {
             case 'o': {
               c.strokeStyle =
