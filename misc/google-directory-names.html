@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -43,7 +43,8 @@
         margin: 0;
         display: flex;
         flex-direction: column;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
           'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji',
           'Segoe UI Emoji', 'Segoe UI Symbol';
       }
@@ -164,7 +165,8 @@
         createElement as h,
         Fragment,
         useMemo,
-        useState
+        useState,
+        useEffect
       } from 'https://esm.sh/react@18.3.1'
       import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client'
       import { AutoSizer, List } from 'https://esm.sh/react-virtualized@9.22.5'
@@ -176,29 +178,35 @@
           h(
             'a',
             { className: 'photo-wrapper', href: person['Photo'] },
-            h('img', { className: 'photo', src: person['Photo'] })
+            h('img', {
+              className: 'photo',
+              src: person['Photo'],
+              loading: 'lazy'
+            })
           ),
           h('div', { className: 'name' }, person['Display name']),
           h('div', { className: 'email' }, person['Email'])
         )
       }
 
-      function Table ({ data }) {
+      function Table ({ data, loading }) {
         if (data.length === 0) {
           return h(
             'div',
             { className: 'table-wrapper no-data' },
-            h(
-              'p',
-              null,
-              'Select a ',
-              h(
-                'a',
-                { href: './google-directory-scrape.html' },
-                'CSV file of contacts'
-              ),
-              ' to continue'
-            )
+            loading
+              ? h('p', null, 'Loading...')
+              : h(
+                'p',
+                null,
+                'Select a ',
+                h(
+                  'a',
+                  { href: './google-directory-scrape.html' },
+                  'CSV file of contacts'
+                ),
+                ' to continue'
+              )
           )
         }
         return h(
@@ -324,6 +332,24 @@
 
         console.log(data)
 
+        useEffect(() => {
+          const loadUrl = new URL(window.location.href).searchParams.get('load')
+          if (loadUrl) {
+            setLoading(true)
+            fetch(loadUrl)
+              .then(r => r.blob())
+              .then(
+                blob =>
+                  new Response(
+                    blob.stream().pipeThrough(new DecompressionStream('gzip'))
+                  )
+              )
+              .then(r => r.text())
+              .then(csv => setData(parse(csv, { columns: true })))
+              .finally(() => setLoading(false))
+          }
+        }, [])
+
         return h(
           Fragment,
           null,
@@ -336,11 +362,18 @@
               'Choose a file',
               h('input', {
                 type: 'file',
-                accept: 'text/csv',
+                accept: '.csv,.csv.gz',
                 className: 'visually-hidden',
                 onChange: async e => {
-                  const file = e.currentTarget.files[0]
+                  let file = e.currentTarget.files[0]
                   if (file) {
+                    if (file.name.endsWith('.gz')) {
+                      file = new Response(
+                        file
+                          .stream()
+                          .pipeThrough(new DecompressionStream('gzip'))
+                      )
+                    }
                     setData(parse(await file.text(), { columns: true }))
                   }
                 }
@@ -348,34 +381,15 @@
             ),
             ' or ',
             h(
-              'button',
+              'a',
               {
-                className: 'source',
-                onClick: () => {
-                  setLoading(true)
-                  fetch(
-                    'https://sheeptester.gitlab.io/test/ucsd-contacts-2024-10-11.csv.gz'
-                  )
-                    .then(r => r.blob())
-                    .then(
-                      blob =>
-                        new Response(
-                          blob
-                            .stream()
-                            .pipeThrough(new DecompressionStream('gzip'))
-                        )
-                    )
-                    .then(r => r.text())
-                    .then(csv => setData(parse(csv, { columns: true })))
-                    .finally(() => setLoading(false))
-                },
-                disabled: loading
+                href: '?load=https://sheeptester.gitlab.io/test/ucsd-contacts-2024-10-11.csv.gz'
               },
               'try an example'
             ),
             ' (UC San Diego, 2024, 133k contacts)'
           ),
-          h(Table, { data }),
+          h(Table, { data, loading }),
           h(
             'div',
             { className: 'leaderboards' },
