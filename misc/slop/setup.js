@@ -1,4 +1,4 @@
-export async function setup (availabilityArgs) {
+export async function setup ({ destroy, ...availabilityArgs }) {
   const status = document.getElementById('setup-status')
 
   if (!window.LanguageModel) {
@@ -37,8 +37,10 @@ export async function setup (availabilityArgs) {
           .addEventListener('click', resolve)
       )
     } else {
-      status.innerHTML =
+      status.innerHTML = [
+        '<p>Getting ready...</p>',
         '<progress id="setup-progress" min="0" max="100" value="0">your browser doesnt support progress</progress>'
+      ].join('')
     }
     const progress = document.getElementById('setup-progress')
     const session = await LanguageModel.create({
@@ -50,6 +52,10 @@ export async function setup (availabilityArgs) {
       }
     })
     status.style.display = 'none'
-    session.destroy()
+    if (destroy) {
+      session.destroy()
+    } else {
+      return session
+    }
   }
 }

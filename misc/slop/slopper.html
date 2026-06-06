@@ -40,7 +40,24 @@
       import { on } from '/reform/v1/index.js'
       import { setup } from './setup.js'
 
-      await setup()
+      const getSystemPrompt = words =>
+        [
+          `write ONLY javascript (no explanation) that document.body.insertAdjacentHTML() ${words} element(s) to the web page!`,
+          'it will be run with JSON.stringify(await eval(yourCode))',
+          'so no top level await/return.',
+          "you will thus get the last statement's return value or an error."
+          // 'to preserve tokens, code golf/minify your code (single line, single-letter variables).'
+        ].join(' ')
+
+      await setup({
+        destroy: true,
+        initialPrompts: [
+          {
+            role: 'system',
+            content: getSystemPrompt('')
+          }
+        ]
+      })
 
       const adj = [
         'fun',
@@ -141,29 +158,39 @@
         'black and white',
         'comic sans',
         'alert()',
-        'prompt()'
+        'prompt()',
+        'big',
+        'small',
+        'large',
+        'grandiose',
+        'fancy',
+        'palace',
+        'glacial'
       ]
 
       on('wrapper', async wrapper => {
+        const mostRecent = []
         while (true) {
           console.log('creating session...')
-          const words = [
-            adj[Math.floor(Math.random() * adj.length)],
-            adj[Math.floor(Math.random() * adj.length)],
-            adj[Math.floor(Math.random() * adj.length)]
-          ].join(', ')
+          let words = []
+          for (let i = 3; i--; ) {
+            let word
+            do {
+              word = adj[Math.floor(Math.random() * adj.length)]
+            } while (mostRecent.includes(word))
+            mostRecent.push(word)
+            words.push(word)
+          }
+          while (mostRecent.length > 20) {
+            mostRecent.splice(0, 1)
+          }
+          words = words.join(', ')
           wrapper.append(
             Object.assign(document.createElement('h2'), {
               textContent: words
             })
           )
-          const systemPrompt = [
-            `write ONLY javascript (no explanation) that document.body.insertAdjacentHTML() ${words} element(s) to the web page!`,
-            'it will be run with JSON.stringify(await eval(yourCode))',
-            'so no top level await/return.',
-            "you will thus get the last statement's return value or an error."
-            // 'to preserve tokens, code golf/minify your code (single line, single-letter variables).'
-          ].join(' ')
+          const systemPrompt = getSystemPrompt(words)
           console.log('[system]', systemPrompt)
           const session = await LanguageModel.create({
             initialPrompts: [

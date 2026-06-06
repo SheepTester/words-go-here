@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>OCR: extract text from image</title>
+    <meta
+      name="description"
+      content="Uses Chrome's slop API to get text from an image"
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <link rel="stylesheet" type="text/css" href="./setup.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>Image to text</h1>
+      <p>
+        Extracts text from an image using the
+        <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link"
+          >Chrome slop API</a
+        >.
+      </p>
+
+      <div id="setup-status"></div>
+
+      <div class="two-col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="image"
+            accept="image/*"
+            class="hidden-accessible reform:image-input reform:paste-target"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">Choose or drop an image</span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <div class="image-content input-content"><canvas></canvas></div>
+        <textarea
+          class="output-content"
+          id="text"
+          data-deps="image"
+          aria-label="Text in image"
+          readonly
+        ></textarea>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+    </form>
+
+    <script type="module">
+      import { on, Out } from '/reform/v1/index.js'
+      import { setup } from './setup.js'
+
+      const session = await setup({
+        expectedInputs: [{ type: 'image' }],
+        expectedOutputs: [{ type: 'text' }],
+        initialPrompts: [
+          {
+            role: 'system',
+            content: 'Output the text in the image, and nothing else.'
+          }
+        ]
+      })
+
+      let abort
+      on('text', async (textarea, { image }) => {
+        if (abort) {
+          abort.abort()
+        }
+        try {
+          abort = new AbortController()
+          const clone = await session.clone({ signal: abort.signal })
+          textarea.value = ''
+          for await (const chunk of await clone.promptStreaming(
+            [
+              {
+                role: 'user',
+                content: [{ type: 'image', value: image.canvas }]
+              }
+            ],
+            { signal: abort.signal }
+          )) {
+            textarea.value += chunk
+          }
+          return Out.from('text.txt', textarea.value)
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') {
+          } else {
+            throw error
+          }
+        }
+      })
+    </script>
+  </body>
+</html>
