@@ -1,6 +1,5 @@
 #setup-status {
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto 10px;
   max-width: 800px;
   border: 1px solid var(--error);
   padding: 20px;
