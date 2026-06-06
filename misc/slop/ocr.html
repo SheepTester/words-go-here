@@ -90,8 +90,10 @@
         }
         try {
           abort = new AbortController()
+          textarea.value = '(getting ready)'
           const clone = await session.clone({ signal: abort.signal })
-          textarea.value = ''
+          textarea.value = '(thinking)'
+          let output = ''
           for await (const chunk of await clone.promptStreaming(
             [
               {
@@ -101,9 +103,11 @@
             ],
             { signal: abort.signal }
           )) {
-            textarea.value += chunk
+            output += chunk
+            textarea.value = output
           }
-          return Out.from('text.txt', textarea.value)
+          textarea.value = output
+          return Out.from('text.txt', output)
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') {
           } else {
