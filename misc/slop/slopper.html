@@ -7,7 +7,7 @@
     <title>big slopper</title>
     <meta
       name="description"
-      content="use the chrome slop api to slop the slop"
+      content="unsafely evaluate random code that chrome slop api generates"
     />
     <meta name="theme-color" content="#4fa1a7" />
 
@@ -60,14 +60,105 @@
         'animated',
         'flashy',
         'boring',
-        'unseen'
+        'unseen',
+        'sparkly',
+        'sprinkles',
+        'spaghetti',
+        'lasagna',
+        'chinese',
+        'multicultural',
+        'particles',
+        'minecraft',
+        'blocky',
+        // 'educational',
+        'interactive',
+        'turtle',
+        'sheep',
+        'ovine',
+        'divine',
+        'scientific',
+        'pseudoscientific',
+        'imaginary',
+        'imaginative',
+        'fictional',
+        'emoji',
+        'circle',
+        'square',
+        'triangle',
+        'rounded',
+        'fast',
+        'funny',
+        'interesting',
+        'curious',
+        'playable',
+        'tactical',
+        'tactile',
+        'futuristic',
+        'traditional',
+        'classic',
+        'smelly',
+        'multilingual',
+        'spanish',
+        'french',
+        'japanese',
+        'cherokee',
+        'toki pona',
+        'esperanto',
+        'cat',
+        'dog',
+        'shepherd',
+        'lamb',
+        'ram',
+        'zodiac',
+        'css',
+        'canvas',
+        'bouncy',
+        'boingy',
+        'springy',
+        'faded',
+        'shaded',
+        'lit',
+        'bright',
+        'exciting',
+        'catalan',
+        'german',
+        'shapes',
+        'unicorn',
+        'seahorse emoji',
+        'trump',
+        'political',
+        'images',
+        'graphical',
+        'does something',
+        'clickable',
+        'draggable',
+        'tappable',
+        'adventure',
+        'colorful',
+        'rainbow',
+        'pride',
+        'multicolor',
+        'black and white',
+        'comic sans',
+        'alert()',
+        'prompt()'
       ]
 
       on('wrapper', async wrapper => {
         while (true) {
           console.log('creating session...')
+          const words = [
+            adj[Math.floor(Math.random() * adj.length)],
+            adj[Math.floor(Math.random() * adj.length)],
+            adj[Math.floor(Math.random() * adj.length)]
+          ].join(', ')
+          wrapper.append(
+            Object.assign(document.createElement('h2'), {
+              textContent: words
+            })
+          )
           const systemPrompt = [
-            `write ONLY javascript (no explanation) that adds something ${adj[Math.floor(Math.random() * adj.length)]} and ${adj[Math.floor(Math.random() * adj.length)]} to the web page!`,
+            `write ONLY javascript (no explanation) that document.body.insertAdjacentHTML() ${words} element(s) to the web page!`,
             'it will be run with JSON.stringify(await eval(yourCode))',
             'so no top level await/return.',
             "you will thus get the last statement's return value or an error."
@@ -84,13 +175,14 @@
           })
           console.log(`${session.contextUsage}/${session.contextWindow}`)
           let result
+          let attempts = 0
           while (true) {
             const pre = document.createElement('pre')
             wrapper.append(pre)
             let javascript = ''
             pre.textContent = javascript
             for await (const chunk of session.promptStreaming([
-              ...(result ? [{ role: 'user', content: result }] : []),
+              ...(result ? [{ role: 'user', content: `${result}` }] : []),
               { role: 'assistant', content: '```js\n', prefix: true }
             ])) {
               javascript += chunk
@@ -98,7 +190,10 @@
             }
             console.log(javascript)
             console.log(`${session.contextUsage}/${session.contextWindow}`)
-            const stripped = javascript.replace(/^```js/, '').split('```')[0]
+            const stripped = javascript
+              .replace(/^```js/, '')
+              .split('```')[0]
+              .replaceAll('document.body.', 'wrapper.')
             pre.textContent = stripped
             if (!stripped.trim()) {
               pre.remove()
@@ -112,25 +207,40 @@
             let success = false
             if (stripped.includes('body.innerHTML')) {
               result = 'do not use innerHTML'
+            } else if (stripped.includes('<script>')) {
+              result =
+                'script tag shouldnt be necessary, you can just run javascript after inserting your html'
             } else {
               try {
                 result = await eval(stripped)
-                result = JSON.stringify(result)
+                result =
+                  result === undefined ? undefined : JSON.stringify(result)
                 success = true
               } catch (error) {
                 result = error.stack
               }
             }
-            wrapper.append(
-              Object.assign(document.createElement('pre'), {
-                textContent: result
-              })
-            )
+            if (result !== undefined) {
+              wrapper.append(
+                Object.assign(document.createElement('pre'), {
+                  textContent: result
+                })
+              )
+            }
             if (success) {
               result +=
                 '\nif this result seems correct to you, output a blank code block and do not repeat the code again.'
             }
             console.log('[result]', result)
+            attempts++
+            if (attempts >= 3) {
+              wrapper.append(
+                Object.assign(document.createElement('p'), {
+                  textContent: 'dumbass clanker, lets try a new thing'
+                })
+              )
+              break
+            }
           }
         }
       })
