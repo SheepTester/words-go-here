@@ -5,7 +5,7 @@ export async function setup ({ destroy, ...availabilityArgs }) {
     status.style.display = 'flex'
     status.innerHTML = [
       '<h2>Blessed you are!</h2>',
-      '<p>Your browser has spared you from <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link">Google\'s AI whims</a>, so websites can\'t just download 4 GB on your computer willy nilly. However, that means this web page is of little use to you. Switch to Chrome if you really want to download 4 GB just for a web demo.</p>'
+      '<p>Your browser has spared you from <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link">Google\'s AI whims</a>, so websites can\'t just download 4 GB on your device willy nilly. However, that means this web page is of little use to you. Switch to desktop Chrome if you really want to download 4 GB just for a web demo.</p>'
     ].join('')
     await new Promise(() => {})
   }
