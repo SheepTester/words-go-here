@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -205,7 +205,7 @@
           // https://www.shadertoy.com/view/XdfGDH
           // I have no idea what I'm doing
           // https://github.com/mrdoob/three.js/blob/master/examples/jsm/shaders/CopyShader.js
-		// https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
+          // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
           fragmentShader: /* glsl */ `
 #ifdef GL_ES
 precision mediump float;
@@ -295,10 +295,13 @@ void main()
         const endY = Math.ceil(options.height / 2 / charHeight)
         for (let x = startX; x <= endX; x++) {
           for (let y = startY; y <= endY; y++) {
+            if (x === 0 && y === 0) {
+              continue
+            }
             c.fillText(
               options.char,
               x * charWidth + options.width / 2,
-              (y - 0.5) * charHeight + options.height / 2
+              (y + (x % 2 ? -0.35 : 0.15)) * charHeight + options.height / 2
             )
           }
         }
