@@ -1,0 +1,26 @@
+#setup-status {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 800px;
+  border: 1px solid var(--error);
+  padding: 20px;
+  background-color: var(--error-bg);
+  border-radius: 10px;
+  display: none;
+  gap: 20px;
+  flex-direction: column;
+
+  h2,
+  p {
+    margin: 0;
+  }
+
+  &.normal {
+    border-color: var(--line);
+    background-color: transparent;
+  }
+}
+
+#setup-progress {
+  width: 100%;
+}

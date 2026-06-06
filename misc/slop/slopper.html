@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>big slopper</title>
+    <meta
+      name="description"
+      content="use the chrome slop api to slop the slop"
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <link rel="stylesheet" type="text/css" href="./setup.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+    <style>
+      pre {
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:" id="wrapper">
+      <h1>slop</h1>
+      <p>
+        slop slop slop. this uses the
+        <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link"
+          >chrome slop api</a
+        >
+        to unsafely evaluate arbitary LLM-generated javascript on this very web
+        page
+      </p>
+
+      <div id="setup-status"></div>
+    </form>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+      import { setup } from './setup.js'
+
+      await setup()
+
+      const adj = [
+        'fun',
+        'crazy',
+        'weird',
+        'normal',
+        'average',
+        'bland',
+        'creative',
+        'abstract',
+        'complex',
+        'simple',
+        'red',
+        'yellow',
+        'green',
+        'blue',
+        'animated',
+        'flashy',
+        'boring',
+        'unseen'
+      ]
+
+      on('wrapper', async wrapper => {
+        while (true) {
+          console.log('creating session...')
+          const systemPrompt = [
+            `write ONLY javascript (no explanation) that adds something ${adj[Math.floor(Math.random() * adj.length)]} and ${adj[Math.floor(Math.random() * adj.length)]} to the web page!`,
+            'it will be run with JSON.stringify(await eval(yourCode))',
+            'so no top level await/return.',
+            "you will thus get the last statement's return value or an error."
+            // 'to preserve tokens, code golf/minify your code (single line, single-letter variables).'
+          ].join(' ')
+          console.log('[system]', systemPrompt)
+          const session = await LanguageModel.create({
+            initialPrompts: [
+              {
+                role: 'system',
+                content: systemPrompt
+              }
+            ]
+          })
+          console.log(`${session.contextUsage}/${session.contextWindow}`)
+          let result
+          while (true) {
+            const pre = document.createElement('pre')
+            wrapper.append(pre)
+            let javascript = ''
+            pre.textContent = javascript
+            for await (const chunk of session.promptStreaming([
+              ...(result ? [{ role: 'user', content: result }] : []),
+              { role: 'assistant', content: '```js\n', prefix: true }
+            ])) {
+              javascript += chunk
+              pre.textContent = javascript
+            }
+            console.log(javascript)
+            console.log(`${session.contextUsage}/${session.contextWindow}`)
+            const stripped = javascript.replace(/^```js/, '').split('```')[0]
+            pre.textContent = stripped
+            if (!stripped.trim()) {
+              pre.remove()
+              wrapper.append(
+                Object.assign(document.createElement('p'), {
+                  textContent: 'clanker is satisfied. again!'
+                })
+              )
+              break
+            }
+            let success = false
+            if (stripped.includes('body.innerHTML')) {
+              result = 'do not use innerHTML'
+            } else {
+              try {
+                result = await eval(stripped)
+                result = JSON.stringify(result)
+                success = true
+              } catch (error) {
+                result = error.stack
+              }
+            }
+            wrapper.append(
+              Object.assign(document.createElement('pre'), {
+                textContent: result
+              })
+            )
+            if (success) {
+              result +=
+                '\nif this result seems correct to you, output a blank code block and do not repeat the code again.'
+            }
+            console.log('[result]', result)
+          }
+        }
+      })
+    </script>
+  </body>
+</html>
