@@ -4,8 +4,8 @@ export async function setup ({ destroy, ...availabilityArgs }) {
   if (!window.LanguageModel) {
     status.style.display = 'flex'
     status.innerHTML = [
-      '<h2>Blessed you are!</h2>',
-      '<p>Your browser has spared you from <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link">Google\'s AI whims</a>, so websites can\'t just download 4 GB on your device willy nilly. However, that means this web page is of little use to you. Switch to desktop Chrome if you really want to download 4 GB just for a web demo.</p>'
+      '<h2>You are blessed!</h2>',
+      '<p>Your browser has spared you from <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link">Google\'s AI whims</a>, so websites can\'t just download 4 GB on your device willy nilly. However, that means this web page is of little use to you. Switch to desktop Chrome if you really want to download 4 GB just for a silly web demo.</p>'
     ].join('')
     await new Promise(() => {})
   }
@@ -14,7 +14,7 @@ export async function setup ({ destroy, ...availabilityArgs }) {
   if (availability === 'unavailable') {
     status.style.display = 'flex'
     status.innerHTML = [
-      '<h2>Blessed you are!</h2>',
+      '<h2>You are blessed!</h2>',
       '<p>Your device is so weak it has been spared from <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link">Google\'s AI whims</a>, so websites can\'t just download 4 GB on your computer willy nilly. However, that means this web demo is of little use to you. Switch to a <a href="https://developer.chrome.com/docs/ai/prompt-api#hardware-requirements" class="link">more expensive device</a> if you want AI slop.</p>'
     ].join('')
     await new Promise(() => {})
