@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>slop adventure</title>
+    <meta
+      name="description"
+      content="chrome slop api-based adventure based on text"
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <link rel="stylesheet" type="text/css" href="./setup.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <main class="main" id="main">
+      <h1>slop adventure</h1>
+      <p>
+        This text-based adventure uses the
+        <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link"
+          >Chrome slop API</a
+        >.
+      </p>
+
+      <div id="setup-status"></div>
+    </main>
+
+    <script type="module">
+      import { on, Out } from '/reform/v1/index.js'
+      import { setup } from './setup.js'
+
+      const randomEmoji = () => {
+        // https://sheeptester.github.io/javascripts/unicode.html?char=1f9xx
+        const low1 = '🌀'.codePointAt()
+        const high1 = '🛼'.codePointAt()
+        const count1 = high1 - low1 + 1
+        const low2 = '🤌'.codePointAt()
+        const high2 = '🧿'.codePointAt()
+        const count2 = high2 - low2 + 1
+        const i = Math.floor(Math.random() * (count1 + count2))
+        return String.fromCodePoint(i < count1 ? i + low1 : i - count1 + low2)
+      }
+      const getEmoji = () => {
+        let emoji = ''
+        for (let i = 5; i--; ) {
+          emoji += randomEmoji()
+        }
+        return emoji
+      }
+
+      const session = await setup({
+        expectedInputs: [{ type: 'text' }],
+        expectedOutputs: [{ type: 'text', language: 'en' }],
+        initialPrompts: [
+          {
+            role: 'system',
+            content:
+              'Run a choose-your-own-adventure game. Be brief: 1 to 3 sentences for a description, and a short phrase per action.'
+          }
+        ]
+      })
+      const schema = {
+        type: 'object',
+        properties: {
+          description: { type: 'string' },
+          actions: { type: 'array', items: { type: 'string' }, minItems: 2 }
+        },
+        required: ['description', 'actions']
+      }
+
+      const main = document.getElementById('main')
+      const emoji = getEmoji()
+      document.title += ` ${emoji}`
+      let next = `I want a story inspired by these emoji: ${emoji}`
+      while (true) {
+        const p = document.createElement('p')
+        const buttonRow = Object.assign(document.createElement('div'), {
+          className: 'button-row'
+        })
+        main.append(p, buttonRow)
+        const render = ({ description = '', actions = [] }) => {
+          p.textContent = description
+          if (!Array.isArray(actions)) {
+            return
+          }
+          for (const [i, action] of actions.entries()) {
+            if (!buttonRow.children[i]) {
+              const button = Object.assign(document.createElement('button'), {
+                className: 'button outline-btn',
+                disabled: true
+              })
+              buttonRow.append(button)
+            }
+            buttonRow.children[i].textContent = action
+          }
+        }
+
+        let json = ''
+        console.log(next)
+        for await (const chunk of session.promptStreaming(
+          [{ role: 'user', content: next }],
+          { responseConstraint: schema }
+        )) {
+          json += chunk
+          let wipJson = json
+          if (wipJson.endsWith(',')) {
+            wipJson = wipJson.replace(/,$/, '')
+          }
+          let result
+          for (let i = 4; i--; ) {
+            try {
+              result = JSON.parse(wipJson)
+            } catch (error) {
+              if (error.message.includes('Unterminated string')) {
+                wipJson += '"'
+              } else if (error.message.includes('after property value')) {
+                wipJson += '}'
+              } else if (error.message.includes('after array element')) {
+                wipJson += ']'
+              } else {
+                continue
+              }
+            }
+          }
+          if (result) {
+            render(result)
+          }
+        }
+        console.log(json)
+        render(JSON.parse(json))
+        for (const button of buttonRow.children) {
+          button.disabled = false
+        }
+        next = await new Promise(resolve => {
+          buttonRow.addEventListener('click', e => {
+            resolve(e.target.closest('.button').textContent)
+          })
+        })
+        for (const button of buttonRow.children) {
+          button.disabled = true
+        }
+      }
+    </script>
+  </body>
+</html>
