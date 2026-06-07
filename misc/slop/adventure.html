@@ -15,6 +15,11 @@
     <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
     <link rel="stylesheet" type="text/css" href="./setup.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
+    <style>
+      body {
+        margin-bottom: 20svh;
+      }
+    </style>
   </head>
   <body>
     <main class="main" id="main">
@@ -137,11 +142,15 @@
         }
         next = await new Promise(resolve => {
           buttonRow.addEventListener('click', e => {
-            resolve(e.target.closest('.button').textContent)
+            const button = e.target.closest('.button')
+            resolve(button.textContent)
           })
         })
         for (const button of buttonRow.children) {
           button.disabled = true
+          if (button.textContent !== next) {
+            button.style.textDecoration = 'line-through'
+          }
         }
       }
     </script>
