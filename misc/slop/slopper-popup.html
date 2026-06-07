@@ -16,12 +16,23 @@
     <link rel="stylesheet" type="text/css" href="./setup.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
     <style>
+      body {
+        margin-bottom: 20svh;
+      }
       pre {
         white-space: pre-wrap;
       }
-      [style*='display:none'],
-      [style*='display: none'] {
-        display: block !important;
+      .result {
+        color: grey;
+
+        h2,
+        h1 {
+          color: unset;
+        }
+        [style*='display:none'],
+        [style*='display: none'] {
+          display: block !important;
+        }
       }
     </style>
   </head>
@@ -90,12 +101,12 @@
         'sale',
         'breaking news'
       ]
-      const getSystemPrompt = (emoji = '', adj = '', item = '') => {
+      const getSystemPrompt = (emoji = '', adj = '', item = '', zIndex = 0) => {
         let prompt = ''
         // web popup of your choice
         prompt += `write ONLY HTML for an ${adj} ${item}`
         prompt += ` with no explanation`
-        prompt += ` (inspiration: ${emoji})`
+        prompt += ` (inspiration: ${emoji}; z-index: ${zIndex})`
         return prompt
       }
 
@@ -110,23 +121,25 @@
           const emoji = getEmoji()
           const adj = adjs[Math.floor(Math.random() * adjs.length)]
           const item =
-            (i % 5 === 4 ? 'position absolute ' : '') +
-            (Math.random() < 0.3
+            // (i % 5 === 4 ? 'position absolute ' : '') +
+            Math.random() < 0.3
               ? 'web popup of your choice'
-              : items[Math.floor(Math.random() * items.length)])
+              : items[Math.floor(Math.random() * items.length)]
           wrapper.append(
             Object.assign(document.createElement('h2'), {
               textContent: `${adj} ${item} ${emoji}`
             })
           )
-          const systemPrompt = getSystemPrompt(emoji, adj, item)
+          const systemPrompt = getSystemPrompt(emoji, adj, item, i)
           console.log(systemPrompt)
           const session = await LanguageModel.create({
             initialPrompts: [{ role: 'system', content: systemPrompt }]
           })
           const pre = document.createElement('pre')
           wrapper.append(pre)
-          const result = document.createElement('div')
+          const result = Object.assign(document.createElement('div'), {
+            className: 'result'
+          })
           wrapper.append(result)
           // every 5 rounds allow it to be more elaborate
           let html =
@@ -138,8 +151,13 @@
           ])) {
             html += chunk
             pre.textContent = html
-            result.innerHTML = html.replace(/^```html/, '').split('```')[0]
+            result.innerHTML = html
+              .replace(/^```html/, '')
+              .split('```')[0]
+              .replace(/(<img )src(=["']?https?:\/\/)/g, '$1x-src$2')
+              .replace(/url\(["']?https?:\/\//g, 'x-$0')
           }
+          result.innerHTML = html.replace(/^```html/, '').split('```')[0]
           console.log(html)
           i++
         }

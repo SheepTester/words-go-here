@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>slop index</title>
+    <meta name="description" content="chrome slop api experiemnts directory" />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      .button {
+        display: flex;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="main">
+      <h1>slop index</h1>
+      <p>
+        these experiemnts (which ironically were written by hand) take advtange
+        of the
+        <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link"
+          >chrome slop api</a
+        >, which is a very excellent Google Chrome&trade;
+      </p>
+      <div class="button-row" id="links"></div>
+    </main>
+
+    <script type="module">
+      import {} from '/reform/v1/index.js'
+
+      const wrapper = document.getElementById('links')
+      const html = await fetch('..').then(r => r.text())
+      for (const [, match] of html.matchAll(
+        /<a href="slop\/([^.]+)\.html">/g
+      )) {
+        wrapper.append(
+          Object.assign(document.createElement('a'), {
+            className: 'button outline-btn',
+            textContent: match,
+            href: `./${match}.html`
+          })
+        )
+      }
+    </script>
+  </body>
+</html>
