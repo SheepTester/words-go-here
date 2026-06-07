@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>popup generator</title>
+    <meta
+      name="description"
+      content="chrome slop api slaps you with more pop up than you can imagine"
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <link rel="stylesheet" type="text/css" href="./setup.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+    <style>
+      pre {
+        white-space: pre-wrap;
+      }
+      [style*='display:none'],
+      [style*='display: none'] {
+        display: block !important;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:" id="wrapper">
+      <h1>popup slop</h1>
+      <p>
+        <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link"
+          >chrome slop api</a
+        >
+        actively makes your experience worse
+      </p>
+
+      <div id="setup-status"></div>
+    </form>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+      import { setup } from './setup.js'
+
+      const randomEmoji = () => {
+        // https://sheeptester.github.io/javascripts/unicode.html?char=1f9xx
+        const low1 = '🌀'.codePointAt()
+        const high1 = '🛼'.codePointAt()
+        const count1 = high1 - low1 + 1
+        const low2 = '🤌'.codePointAt()
+        const high2 = '🧿'.codePointAt()
+        const count2 = high2 - low2 + 1
+        const i = Math.floor(Math.random() * (count1 + count2))
+        return String.fromCodePoint(i < count1 ? i + low1 : i - count1 + low2)
+      }
+      const getEmoji = () => {
+        let emoji = ''
+        for (let i = 5; i--; ) {
+          emoji += randomEmoji()
+        }
+        return emoji
+      }
+      const adjs = [
+        'annoying',
+        'creative',
+        'funny',
+        'animated',
+        'fun',
+        'interactive',
+        'subtle',
+        'fictional',
+        'bizarre',
+        'surreal',
+        'colorful'
+      ]
+      const items = [
+        'ad popup',
+        'ad banner',
+        'advertisement',
+        'ad',
+        'covid banner',
+        'emergency banner',
+        'status banner',
+        'outage banner',
+        'cookie notice',
+        'cookie banner',
+        'consent form',
+        'newsletter signup',
+        'announcement',
+        'sale',
+        'breaking news'
+      ]
+      const getSystemPrompt = (emoji = '', adj = '', item = '') => {
+        let prompt = ''
+        // web popup of your choice
+        prompt += `write ONLY HTML for an ${adj} ${item}`
+        prompt += ` with no explanation`
+        prompt += ` (inspiration: ${emoji})`
+        return prompt
+      }
+
+      await setup({
+        destroy: true,
+        initialPrompts: [{ role: 'system', content: getSystemPrompt() }]
+      })
+
+      on('wrapper', async wrapper => {
+        let i = 1
+        while (true) {
+          const emoji = getEmoji()
+          const adj = adjs[Math.floor(Math.random() * adjs.length)]
+          const item =
+            (i % 5 === 4 ? 'position absolute ' : '') +
+            (Math.random() < 0.3
+              ? 'web popup of your choice'
+              : items[Math.floor(Math.random() * items.length)])
+          wrapper.append(
+            Object.assign(document.createElement('h2'), {
+              textContent: `${adj} ${item} ${emoji}`
+            })
+          )
+          const systemPrompt = getSystemPrompt(emoji, adj, item)
+          console.log(systemPrompt)
+          const session = await LanguageModel.create({
+            initialPrompts: [{ role: 'system', content: systemPrompt }]
+          })
+          const pre = document.createElement('pre')
+          wrapper.append(pre)
+          const result = document.createElement('div')
+          wrapper.append(result)
+          // every 5 rounds allow it to be more elaborate
+          let html =
+            '```html\n' +
+            (i % 5 === 0 ? '<div>\n' : '<div> <div style="background')
+          pre.textContent = html
+          for await (const chunk of session.promptStreaming([
+            { role: 'assistant', content: html, prefix: true }
+          ])) {
+            html += chunk
+            pre.textContent = html
+            result.innerHTML = html.replace(/^```html/, '').split('```')[0]
+          }
+          console.log(html)
+          i++
+        }
+      })
+    </script>
+  </body>
+</html>
