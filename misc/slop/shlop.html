@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>slop shell</title>
+    <meta name="description" content="unix shell but it hallucinates" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <link rel="stylesheet" type="text/css" href="./setup.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: black;
+        --bg-rgb: 0, 0, 0;
+      }
+      body {
+        color: white;
+        line-height: 1;
+      }
+      p {
+        margin: 0;
+      }
+      .line {
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      .prompt {
+        display: flex;
+        width: 100%;
+        align-items: start;
+      }
+      .prompt textarea {
+        field-sizing: content;
+        flex: auto;
+        resize: none;
+        &:focus {
+          outline: none;
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+      }
+      main {
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body class="code">
+    <div id="setup-status"></div>
+
+    <main>
+      <p class="line">$ pwd</p>
+      <p class="line">/home/admin</p>
+      <form class="prompt">
+        $&nbsp;<textarea name="prompt" autofocus></textarea>
+      </form>
+    </main>
+
+    <script type="module">
+      import { on } from '/reform/v1/index.js'
+      import { setup } from './setup.js'
+
+      const session = await setup({
+        expectedInputs: [{ type: 'text' }],
+        expectedOutputs: [{ type: 'text', language: 'en' }],
+        initialPrompts: [
+          {
+            role: 'system',
+            content:
+              "Pretend to be a Unix shell. Output only what the terminal would output, and nothing else. Do not repeat the user's command."
+          },
+          { role: 'user', content: 'pwd' },
+          { role: 'assistant', content: '/home/admin' }
+        ]
+      })
+
+      on('prompt', textarea => {
+        textarea.addEventListener('keydown', async e => {
+          if (
+            e.key === 'Enter' &&
+            !e.shiftKey &&
+            !e.altKey &&
+            !e.metaKey &&
+            !e.ctrlKey
+          ) {
+            e.preventDefault()
+            if (textarea.value === '') {
+              return
+            }
+            const out = Object.assign(document.createElement('p'), {
+              className: 'line'
+            })
+            textarea.parentElement.before(
+              Object.assign(document.createElement('p'), {
+                className: 'line',
+                textContent: `$ ${textarea.value}`
+              }),
+              out
+            )
+            const prompt = textarea.value
+            textarea.value = ''
+            for await (const chunk of session.promptStreaming([
+              { role: 'user', content: prompt }
+            ])) {
+              out.append(chunk)
+            }
+          }
+        })
+      })
+    </script>
+  </body>
+</html>
