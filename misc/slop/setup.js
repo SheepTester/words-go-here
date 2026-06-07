@@ -22,13 +22,19 @@ export async function setup ({ destroy, ...availabilityArgs }) {
 
   status.className = 'normal'
   status.style.display = 'flex'
+  const base = [
+    '<progress id="setup-progress" min="0" max="100" value="0">your browser doesnt support progress</progress>',
+    availability === 'available'
+      ? ''
+      : // downloading
+      "<p>Tip: It can get stuck around 90%. I think it means it finished downloading the model, so it's moving the gigabytes around on your computer.</p>"
+  ]
   if (availability === 'downloadable') {
     status.innerHTML = [
       '<h2>Your computer is pure</h2>',
       '<p>A random website hasn\'t already silently downloaded a 4 GB LLM on your computer (since <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link">Chrome lets them do that</a>), so this website will be the first. Press the button below when you\'re ready.</p>',
       '<div class="button-row"><button type="button" class="button primary-btn" id="setup-download">Download four gigabytes</button></div>',
-      '<progress id="setup-progress" min="0" max="100" value="0">your browser doesnt support progress</progress>',
-      "<p>Tip: It can get stuck around 90%. I think it means it finished downloading the model, so it's moving the gigabytes around on your computer.</p>"
+      ...base
     ].join('')
     await new Promise(resolve =>
       document
@@ -36,10 +42,7 @@ export async function setup ({ destroy, ...availabilityArgs }) {
         .addEventListener('click', resolve)
     )
   } else {
-    status.innerHTML = [
-      '<p>Getting ready...</p>',
-      '<progress id="setup-progress" min="0" max="100" value="0">your browser doesnt support progress</progress>'
-    ].join('')
+    status.innerHTML = ['<p>Getting ready...</p>', ...base].join('')
   }
   const progress = document.getElementById('setup-progress')
   const session = await LanguageModel.create({
