@@ -27,9 +27,12 @@
         of the
         <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link"
           >chrome slop api</a
-        >, which is a very excellent Google Chrome&trade;
+        >, which is a very excellent Google Chrome&trade; feature that lets
+        websites trigger a four gigabyte download without your consent to run
+        language model with your compute
       </p>
       <div class="button-row" id="links"></div>
+      <p><a href=".." class="link">i have had enough</a></p>
     </main>
 
     <script type="module">
@@ -43,7 +46,7 @@
         wrapper.append(
           Object.assign(document.createElement('a'), {
             className: 'button outline-btn',
-            textContent: match,
+            textContent: match.replaceAll('-', ' '),
             href: `./${match}.html`
           })
         )
