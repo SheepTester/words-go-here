@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>captcha solver</title>
+    <meta
+      name="description"
+      content="does google slop api let you use it to solve google captchas"
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <link rel="stylesheet" type="text/css" href="./setup.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>captcha solver</h1>
+      <p>
+        uses
+        <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link"
+          >google's chrome slop api</a
+        >
+        powered by google llm model to solve google recaptcha.
+      </p>
+
+      <div id="setup-status"></div>
+
+      <div class="two-col-io reform:io">
+        <label class="input-controls file">
+          <input
+            type="file"
+            name="image"
+            accept="image/*"
+            class="hidden-accessible reform:image-input reform:paste-target"
+            data-default="./captcha.jpg"
+          />
+          <span class="icon icon-upload"></span>
+          <span class="file-label">Choose or drop a screenshot</span>
+          <span class="file-name">No file selected</span>
+        </label>
+        <div class="image-content input-content"><canvas></canvas></div>
+        <div class="image-content output-content">
+          <canvas id="grid" data-deps="image"> </canvas>
+        </div>
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            aria-label="Share"
+          ></button>
+        </div>
+      </div>
+    </form>
+
+    <script type="module">
+      import { on, Out } from '/reform/v1/index.js'
+      import { setup } from './setup.js'
+
+      const session = await setup({
+        expectedInputs: [{ type: 'image' }],
+        expectedOutputs: [{ type: 'text' }],
+        initialPrompts: [
+          {
+            role: 'system',
+            content:
+              'Determine which cells of the grid in the image to select based on the prompt in the image. Output a corresponding row-major 2D grid of nullable strings, where null means "cell does not contain" and a string repeating the item to identify means the cell contains it.'
+          }
+        ]
+      })
+      const schema = {
+        type: 'array',
+        items: {
+          type: 'array',
+          items: { type: ['string', 'null'] },
+          minItems: 2
+        },
+        minItems: 2
+      }
+
+      let abort
+      on('grid', async (ctx, { image }) => {
+        abort?.abort()
+        const CELL_SIZE = 60
+        const GAP = 10
+        const color = window.getComputedStyle(document.body).color
+        const render = partialJson => {
+          // console.log('json', partialJson)
+          partialJson = partialJson.replace(/,$/, '')
+          let result
+          for (let i = 3; i--; ) {
+            try {
+              result = JSON.parse(partialJson)
+              break
+            } catch (error) {
+              if (error.message.includes('Unterminated string')) {
+                partialJson += '"'
+              } else if (error.message.includes('after array element')) {
+                partialJson += ']'
+              } else {
+                break
+              }
+            }
+          }
+          if (!result) {
+            return
+          }
+          // console.log('parsed', result)
+          ctx.canvas.width = (CELL_SIZE + GAP) * (result[0]?.length ?? 0) + GAP
+          ctx.canvas.height = (CELL_SIZE + GAP) * result.length + GAP
+          ctx.fillStyle = color
+          ctx.strokeStyle = color
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.font =
+            '16px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol'
+          for (const [y, row] of result.entries()) {
+            const cy = GAP + y * (CELL_SIZE + GAP)
+            for (const [x, cell] of row.entries()) {
+              const cx = GAP + x * (CELL_SIZE + GAP)
+              ctx.strokeRect(cx, cy, CELL_SIZE, CELL_SIZE)
+              if (cell === null || cell === 'null') {
+              } else {
+                ctx.fillText(cell, cx + CELL_SIZE / 2, cy + CELL_SIZE / 2)
+              }
+            }
+          }
+          return result.map(row =>
+            row.map(cell => !(cell === 'null' || cell === null))
+          )
+        }
+        try {
+          abort = new AbortController()
+          const clone = await session.clone({ signal: abort.signal })
+          let output = ''
+          for await (const chunk of await clone.promptStreaming(
+            [
+              {
+                role: 'user',
+                content: [{ type: 'image', value: image.canvas }]
+              }
+            ],
+            { responseConstraint: schema, signal: abort.signal }
+          )) {
+            output += chunk
+            render(output)
+          }
+          const grid = render(output)
+          return Out.from(
+            'text.txt',
+            grid
+              .map(row => row.map(cell => (cell ? '✅' : '🟩')).join(''))
+              .join('\n')
+          )
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') {
+          } else {
+            throw error
+          }
+        }
+      })
+    </script>
+  </body>
+</html>
