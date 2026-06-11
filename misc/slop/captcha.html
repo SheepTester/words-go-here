@@ -82,13 +82,21 @@
         ]
       })
       const schema = {
-        type: 'array',
-        items: {
-          type: 'array',
-          items: { type: ['string', 'null'] },
-          minItems: 2
+        type: 'object',
+        properties: {
+          rows: { type: 'number' },
+          cols: { type: 'number' },
+          cells: {
+            type: 'array',
+            items: {
+              type: 'array',
+              items: { type: ['string', 'null'] },
+              minItems: 2
+            },
+            minItems: 2
+          }
         },
-        minItems: 2
+        required: ['rows', 'cols', 'cells']
       }
 
       let abort
@@ -108,6 +116,8 @@
             } catch (error) {
               if (error.message.includes('Unterminated string')) {
                 partialJson += '"'
+              } else if (error.message.includes('after property value')) {
+                partialJson += '}'
               } else if (error.message.includes('after array element')) {
                 partialJson += ']'
               } else {
@@ -118,16 +128,17 @@
           if (!result) {
             return
           }
-          // console.log('parsed', result)
-          ctx.canvas.width = (CELL_SIZE + GAP) * (result[0]?.length ?? 0) + GAP
-          ctx.canvas.height = (CELL_SIZE + GAP) * result.length + GAP
+          ctx.canvas.width =
+            (CELL_SIZE + GAP) * (result.cells?.[0]?.length ?? 0) + GAP
+          ctx.canvas.height =
+            (CELL_SIZE + GAP) * (result.cells?.length ?? 0) + GAP
           ctx.fillStyle = color
           ctx.strokeStyle = color
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
           ctx.font =
             '16px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol'
-          for (const [y, row] of result.entries()) {
+          for (const [y, row] of result.cells?.entries() ?? []) {
             const cy = GAP + y * (CELL_SIZE + GAP)
             for (const [x, cell] of row.entries()) {
               const cx = GAP + x * (CELL_SIZE + GAP)
@@ -138,13 +149,19 @@
               }
             }
           }
-          return result.map(row =>
-            row.map(cell => !(cell === 'null' || cell === null))
+          return (
+            result.cells?.map(row =>
+              row.map(cell => !(cell === 'null' || cell === null))
+            ) ?? []
           )
         }
         try {
           abort = new AbortController()
+          render(JSON.stringify({ cells: [[null, 'getting ready', null]] }))
           const clone = await session.clone({ signal: abort.signal })
+          render(
+            JSON.stringify({ cells: [[null, 'waiting for first token', null]] })
+          )
           let output = ''
           for await (const chunk of await clone.promptStreaming(
             [
@@ -160,7 +177,7 @@
           }
           const grid = render(output)
           return Out.from(
-            'text.txt',
+            'cells.txt',
             grid
               .map(row => row.map(cell => (cell ? '✅' : '🟩')).join(''))
               .join('\n')
