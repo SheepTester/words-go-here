@@ -27,14 +27,23 @@
         display: flex;
         flex-direction: column;
         font-family: system-ui, sans-serif;
+        background-color: var(--vscode-editor-background);
       }
       #container {
         flex: auto;
         margin: 10px;
       }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+        }
+      }
+      .monaco-editor {
+        --vscode-focusBorder: transparent !important;
+      }
     </style>
   </head>
-  <body>
+  <body class="monaco-component">
     <div id="container"></div>
     <script src="https://unpkg.com/monaco-editor@0.52.2/min/vs/loader.js"></script>
     <script>
@@ -44,6 +53,8 @@
         paths: { vs: 'https://unpkg.com/monaco-editor@0.52.2/min/vs' }
       })
       require(['vs/editor/editor.main'], () => {
+        const isDark = matchMedia('(prefers-color-scheme: dark)')
+
         // https://microsoft.github.io/monaco-editor/playground.html#creating-the-diffeditor-multi-line-example
         const original = monaco.editor.createModel(
           'Four legs good, two legs bad\n',
@@ -56,6 +67,7 @@
         const diffEditor = monaco.editor.createDiffEditor(
           document.getElementById('container'),
           {
+            theme: isDark.matches ? 'vs-dark' : 'vs',
             // https://microsoft.github.io/monaco-editor/api/interfaces/monaco.editor.IStandaloneDiffEditorConstructionOptions.html#originalEditable
             originalEditable: true,
             // https://stackoverflow.com/a/47163918
@@ -63,6 +75,9 @@
           }
         )
         diffEditor.setModel({ original, modified })
+        isDark.addEventListener('change', e => {
+          monaco.editor.setTheme(e.matches ? 'vs-dark' : 'vs')
+        })
       })
     </script>
   </body>
