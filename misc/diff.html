@@ -31,7 +31,6 @@
       }
       #container {
         flex: auto;
-        margin: 10px;
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -71,7 +70,8 @@
             // https://microsoft.github.io/monaco-editor/api/interfaces/monaco.editor.IStandaloneDiffEditorConstructionOptions.html#originalEditable
             originalEditable: true,
             // https://stackoverflow.com/a/47163918
-            automaticLayout: true
+            automaticLayout: true,
+            padding: { top: 10, bottom: 10 }
           }
         )
         diffEditor.setModel({ original, modified })
