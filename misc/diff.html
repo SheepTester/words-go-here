@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -26,6 +26,7 @@
         margin: 0;
         display: flex;
         flex-direction: column;
+        font-family: system-ui, sans-serif;
       }
       #container {
         flex: auto;
@@ -35,11 +36,12 @@
   </head>
   <body>
     <div id="container"></div>
-    <script src="https://unpkg.com/monaco-editor@0.34.1/min/vs/loader.js"></script>
+    <script src="https://unpkg.com/monaco-editor@0.52.2/min/vs/loader.js"></script>
     <script>
       // https://stackoverflow.com/a/68746273
       require.config({
-        paths: { vs: 'https://unpkg.com/monaco-editor@0.34.1/min/vs' }
+        // 0.53 introduced an ugly middle line through blocks
+        paths: { vs: 'https://unpkg.com/monaco-editor@0.52.2/min/vs' }
       })
       require(['vs/editor/editor.main'], () => {
         // https://microsoft.github.io/monaco-editor/playground.html#creating-the-diffeditor-multi-line-example
@@ -53,9 +55,12 @@
         )
         const diffEditor = monaco.editor.createDiffEditor(
           document.getElementById('container'),
-          // https://microsoft.github.io/monaco-editor/api/interfaces/monaco.editor.IStandaloneDiffEditorConstructionOptions.html#originalEditable
-          // https://stackoverflow.com/a/47163918
-          { originalEditable: true, automaticLayout: true }
+          {
+            // https://microsoft.github.io/monaco-editor/api/interfaces/monaco.editor.IStandaloneDiffEditorConstructionOptions.html#originalEditable
+            originalEditable: true,
+            // https://stackoverflow.com/a/47163918
+            automaticLayout: true
+          }
         )
         diffEditor.setModel({ original, modified })
       })
