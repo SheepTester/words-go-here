@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Questionable host zip viewer</title>
+    <meta
+      name="description"
+      content="Efficient file viewer for zip files uploaded via questionable host"
+    />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.8.34/dist/zip.min.js"></script>
+
+    <style>
+      /* TEMP */
+    </style>
+  </head>
+  <body>
+    <script>
+      class QuestionableReader extends zip.Reader {
+        size = 1000
+
+        readUint8Array (offset, length) {
+          console.warn(offset, length)
+          return new Uint8Array(length)
+        }
+      }
+
+      const reader = new zip.ZipReader(new QuestionableReader())
+      const entries = reader.getEntries()
+    </script>
+  </body>
+</html>
