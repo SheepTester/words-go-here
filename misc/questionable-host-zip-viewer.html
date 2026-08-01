@@ -48,6 +48,7 @@
         padding: 20px;
       }
       form {
+        max-width: 500px;
         margin: auto;
         display: flex;
         flex-direction: column;
@@ -105,16 +106,52 @@
       .has-hash form {
         display: none;
       }
+      #progress {
+        height: 30px;
+        border-radius: 10px;
+        display: flex;
+        gap: 1px;
+        overflow: hidden;
+        --progress: 0;
+        --size: 0;
+      }
+      .segment {
+        flex: 1 0 0;
+        background-color: color-mix(in srgb, CanvasText 10%, transparent);
+        &::before {
+          content: '';
+          display: block;
+          height: 100%;
+          width: var(--progress);
+          background-color: CanvasText;
+        }
+      }
+      .has-hash {
+        display: grid;
+        grid-template-areas:
+          'progress progress'
+          'sidebar preview';
+        grid-template-rows: auto 1fr;
+        grid-template-columns: 30fr 70fr;
+      }
+      .progress-wrapper {
+        grid-area: progress;
+        padding: 10px;
+        border-bottom: 1px solid color-mix(in srgb, CanvasText 10%, transparent);
+      }
     </style>
   </head>
   <body class="has-hash no-hash">
     <form action="./questionable-host-zip-viewer.html" method="get">
-      <h1>View zip</h1>
+      <h1>View zip file</h1>
       <p>
         Preview the contents of a zip file uploaded with
         <a
           href="https://sheeptester.github.io/hello-world/questionable-host/instructions.html"
-          >Questionable Host</a
+          >questionable host</a
+        >. For other file types, use
+        <a href="https://sheeptester.github.io/hello-world/questionable-host/"
+          >this viewer</a
         >.
       </p>
       <label>
@@ -133,25 +170,175 @@
       </label>
       <button>Load</button>
     </form>
+    <div class="progress-wrapper">
+      <div id="progress"></div>
+    </div>
     <script>
-      const hash = new URL(location).searchParams.get('hash')
-      if (!hash) {
+      const hashId = new URL(location).searchParams.get('hash')
+      if (!hashId) {
         document.body.classList.remove('has-hash')
         throw 'ball'
       }
       document.body.classList.remove('no-hash')
 
-      class QuestionableReader extends zip.Reader {
-        size = 1000
+      const getUrl = hash =>
+        `https://assets.scratch.mit.edu/internalapi/asset/${hash}.wav/get/`
 
-        readUint8Array (offset, length) {
-          console.warn(offset, length)
-          return new Uint8Array(length)
+      const progress = document.getElementById('progress')
+
+      class Chunk {
+        element = Object.assign(document.createElement('div'), {
+          className: 'segment'
+        })
+        #listeners = []
+        offset = 0
+        #started = false
+
+        async start () {
+          if (this.#started) {
+            return
+          }
+          this.#started = true
+          const response = await fetch(getUrl(this.hash))
+          this.length = +response.headers.get('content-length')
+          this.element.style.setProperty('--size', this.length)
+          if (!this.target) {
+            this.target = {
+              offset: 0,
+              bytes: new Uint8Array(this.length)
+            }
+          }
+          for await (const chunk of response.body) {
+            this.target.bytes.set(chunk, this.target.offset + this.offset)
+            this.offset += chunk.byteLength
+            this.#listeners = this.#listeners.filter(({ min, listener }) => {
+              if (this.offset >= min) {
+                listener()
+                return false
+              }
+              return true
+            })
+            this.element.style.setProperty(
+              '--progress',
+              `${(this.offset / this.length) * 100}%`
+            )
+          }
+          this.offset = Infinity
+          for (const { listener } of this.#listeners) {
+            listener()
+          }
+        }
+
+        on (min, listener) {
+          if (this.offset >= min) {
+            listener()
+          } else {
+            this.#listeners.push({ min, listener })
+          }
         }
       }
 
-      const reader = new zip.ZipReader(new QuestionableReader())
-      const entries = reader.getEntries()
+      // not sure why 15 and not like 9
+      const INODE_HEADER_SIZE = 15
+      const HASH_SIZE = 16
+      const MAX_SIZE = 10 * 1000 * 1000 - 1
+
+      const bigBufferReady = Promise.withResolvers()
+      let bigView
+
+      async function main () {
+        const isInode = hashId.startsWith('i')
+        const firstHash = isInode ? hashId.slice(1) : hashId.slice(0, -1)
+        const chunk = new Chunk()
+        chunk.hash = firstHash
+        chunk.fullOffset = 0
+        progress.append(chunk.element)
+        const chunks = [chunk]
+        if (isInode) {
+          chunk.on(INODE_HEADER_SIZE, () => {
+            const temp = new Uint8Array(12)
+            temp.set(chunk.target.bytes.subarray(0, 6), 2)
+            temp.set(chunk.target.bytes.subarray(6, 9), 9)
+            const view = new DataView(temp.buffer)
+            const fileSize = Number(view.getBigUint64(0))
+            const chunkCount = view.getUint32(8)
+
+            console.log('file size:', fileSize)
+            console.log('number of additional chunks:', chunkCount)
+
+            bigView = new Uint8Array(fileSize)
+            bigBufferReady.resolve()
+            const headerEnd = INODE_HEADER_SIZE + chunkCount * HASH_SIZE
+            const chunkDataByteOffset = chunk.length - headerEnd
+
+            const fragment = document.createDocumentFragment()
+            for (let i = 0; i < chunkCount; i++) {
+              const c = new Chunk()
+              // assumes that all chunks are MAX_SIZE until the end
+              c.fullOffset = chunkDataByteOffset + i * MAX_SIZE
+              c.fullLength = Math.min(MAX_SIZE, fileSize - c.fullOffset)
+              c.target = { bytes: bigView, offset: c.fullOffset }
+              chunks.push(c)
+              fragment.append(c.element)
+            }
+            progress.append(fragment)
+
+            chunk.on(headerEnd, () => {
+              for (let i = 0; i < chunkCount; i++) {
+                chunks[i + 1].hash = chunk.target.bytes
+                  .subarray(
+                    INODE_HEADER_SIZE + i * HASH_SIZE,
+                    INODE_HEADER_SIZE + (i + 1) * HASH_SIZE
+                  )
+                  .values()
+                  .map(byte => byte.toString(16).padStart(2, '0'))
+                  .toArray()
+                  .join('')
+              }
+              bigView.set(chunk.target.bytes.subarray(headerEnd))
+              chunk.target = { bytes: bigView, offset: -headerEnd }
+            })
+          })
+        }
+        chunk.start()
+        if (!isInode) {
+          chunk.fullLength = chunk.length
+          bigView = chunk.target.bytes
+          bigBufferReady.resolve()
+        }
+
+        await bigBufferReady.promise
+
+        class QuestionableReader extends zip.Reader {
+          size = bigView.byteLength
+
+          async readUint8Array (offset, length) {
+            console.log('[read]', { offset, length })
+            await Promise.all(
+              chunks.values().map(chunk => {
+                if (
+                  chunk.fullOffset < offset + length &&
+                  offset < chunk.fullOffset + chunk.fullLength
+                ) {
+                  const resolvers = Promise.withResolvers()
+                  chunk.on(
+                    offset + length - chunk.fullOffset,
+                    resolvers.resolve
+                  )
+                  chunk.start()
+                  return resolvers.promise
+                }
+              })
+            )
+            return bigView.subarray(offset, offset + length)
+          }
+        }
+
+        const reader = new zip.ZipReader(new QuestionableReader())
+        console.log(await reader.getEntries())
+      }
+
+      main()
     </script>
   </body>
 </html>
