@@ -108,7 +108,7 @@
       }
       #progress {
         height: 30px;
-        border-radius: 10px;
+        border-radius: 5px;
         display: flex;
         gap: 1px;
         overflow: hidden;
@@ -116,7 +116,7 @@
         --size: 0;
       }
       .segment {
-        flex: 1 0 0;
+        flex: var(--size) 0 0;
         background-color: color-mix(in srgb, CanvasText 10%, transparent);
         &::before {
           content: '';
@@ -138,6 +138,16 @@
         grid-area: progress;
         padding: 10px;
         border-bottom: 1px solid color-mix(in srgb, CanvasText 10%, transparent);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .files {
+        grid-area: sidebar;
+        border-right: 1px solid color-mix(in srgb, CanvasText 10%, transparent);
+      }
+      .preview {
+        grid-area: preview;
       }
     </style>
   </head>
@@ -171,8 +181,11 @@
       <button>Load</button>
     </form>
     <div class="progress-wrapper">
+      <p><span id="loaded">0 B</span> of <span id="total">0 B</span> loaded</p>
       <div id="progress"></div>
     </div>
+    <div class="files"></div>
+    <div class="preview"></div>
     <script>
       const hashId = new URL(location).searchParams.get('hash')
       if (!hashId) {
@@ -185,6 +198,25 @@
         `https://assets.scratch.mit.edu/internalapi/asset/${hash}.wav/get/`
 
       const progress = document.getElementById('progress')
+      const loadedCount = document.getElementById('loaded')
+      const totalCount = document.getElementById('total')
+
+      function displayBytes (bytes) {
+        if (bytes > 1_000_000_000) {
+          return `${(bytes / 1_000_000_000).toFixed(2)} GB`
+        } else if (bytes > 1_000_000) {
+          return `${(bytes / 1_000_000).toFixed(2)} MB`
+        } else if (bytes > 1_000) {
+          return `${(bytes / 1_000).toFixed(2)} kB`
+        } else if (bytes !== 1) {
+          return `${bytes} bytes`
+        } else {
+          return '1 byte'
+        }
+      }
+
+      const chunks = []
+      let totalLoaded = 0
 
       class Chunk {
         element = Object.assign(document.createElement('div'), {
@@ -211,6 +243,7 @@
           for await (const chunk of response.body) {
             this.target.bytes.set(chunk, this.target.offset + this.offset)
             this.offset += chunk.byteLength
+            totalLoaded += chunk.byteLength
             this.#listeners = this.#listeners.filter(({ min, listener }) => {
               if (this.offset >= min) {
                 listener()
@@ -222,6 +255,7 @@
               '--progress',
               `${(this.offset / this.length) * 100}%`
             )
+            loadedCount.textContent = displayBytes(totalLoaded)
           }
           this.offset = Infinity
           for (const { listener } of this.#listeners) {
@@ -252,8 +286,8 @@
         const chunk = new Chunk()
         chunk.hash = firstHash
         chunk.fullOffset = 0
+        chunks.push(chunk)
         progress.append(chunk.element)
-        const chunks = [chunk]
         if (isInode) {
           chunk.on(INODE_HEADER_SIZE, () => {
             const temp = new Uint8Array(12)
@@ -277,6 +311,7 @@
               // assumes that all chunks are MAX_SIZE until the end
               c.fullOffset = chunkDataByteOffset + i * MAX_SIZE
               c.fullLength = Math.min(MAX_SIZE, fileSize - c.fullOffset)
+              c.element.style.setProperty('--size', c.fullLength)
               c.target = { bytes: bigView, offset: c.fullOffset }
               chunks.push(c)
               fragment.append(c.element)
@@ -308,6 +343,7 @@
         }
 
         await bigBufferReady.promise
+        totalCount.textContent = displayBytes(bigView.byteLength)
 
         class QuestionableReader extends zip.Reader {
           size = bigView.byteLength
@@ -335,7 +371,16 @@
         }
 
         const reader = new zip.ZipReader(new QuestionableReader())
-        console.log(await reader.getEntries())
+        const rows = []
+        const collator = new Intl.Collator('en-US', { numeric: true })
+        for await (const entry of reader.getEntriesGenerator()) {
+          if (entry.directory) {
+            continue
+          }
+          const { compressedSize, filename, lastModDate, uncompressedSize } =
+            entry
+          const segments = filename.split('/')
+        }
       }
 
       main()
