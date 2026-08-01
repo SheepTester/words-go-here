@@ -28,6 +28,7 @@
       }
       * {
         margin: 0;
+        padding: 0;
       }
       button,
       input {
@@ -107,7 +108,7 @@
         display: none;
       }
       #progress {
-        height: 30px;
+        height: 20px;
         border-radius: 5px;
         display: flex;
         gap: 1px;
@@ -149,6 +150,75 @@
       .preview {
         grid-area: preview;
       }
+      .files {
+        overflow: auto;
+      }
+      #files-wrapper {
+        padding: 10px;
+        --depth: 0;
+      }
+      #files-wrapper,
+      .tree {
+        display: flex;
+        flex-direction: column;
+      }
+      .file {
+        text-align: left;
+      }
+      .tree {
+        /* padding-left: 10px; */
+        position: relative;
+      }
+      .tree:before {
+        position: absolute;
+        content: '';
+        display: block;
+        border-left: 1px solid color-mix(in srgb, CanvasText 15%, transparent);
+        top: 0;
+        left: calc(var(--depth) * 10px - 2.5px);
+        bottom: 0;
+      }
+      .file,
+      .dirname {
+        display: grid;
+        grid-template-columns: 20px 1fr;
+        grid-template-areas: 'marker filename';
+        border-radius: 5px;
+        height: 30px;
+        align-content: center;
+        padding-left: calc(var(--depth) * 10px);
+
+        &:hover {
+          background-color: color-mix(in srgb, CanvasText 3%, transparent);
+        }
+        & span {
+          grid-area: filename;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: pre;
+        }
+      }
+      .file {
+        color: color-mix(in srgb, CanvasText 80%, transparent);
+      }
+      .dirname {
+        cursor: pointer;
+      }
+      .dirname::before {
+        content: '›';
+        text-align: center;
+        display: block;
+        grid-area: marker;
+        transition: transform 0.2s;
+      }
+      .dir[open] > .dirname::before {
+        transform: rotate(90deg);
+      }
+      .no-hash .progress-wrapper,
+      .no-hash .files,
+      .no-hash .preview {
+        display: none;
+      }
     </style>
   </head>
   <body class="has-hash no-hash">
@@ -184,7 +254,9 @@
       <p><span id="loaded">0 B</span> of <span id="total">0 B</span> loaded</p>
       <div id="progress"></div>
     </div>
-    <div class="files"></div>
+    <div class="files">
+      <div id="files-wrapper"></div>
+    </div>
     <div class="preview"></div>
     <script>
       const hashId = new URL(location).searchParams.get('hash')
@@ -200,6 +272,7 @@
       const progress = document.getElementById('progress')
       const loadedCount = document.getElementById('loaded')
       const totalCount = document.getElementById('total')
+      const filesWrapper = document.getElementById('files-wrapper')
 
       function displayBytes (bytes) {
         if (bytes > 1_000_000_000) {
@@ -223,7 +296,7 @@
           className: 'segment'
         })
         #listeners = []
-        offset = 0
+        offset = -1
         #started = false
 
         async start () {
@@ -232,6 +305,9 @@
           }
           this.#started = true
           const response = await fetch(getUrl(this.hash))
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} error`)
+          }
           this.length = +response.headers.get('content-length')
           this.element.style.setProperty('--size', this.length)
           if (!this.target) {
@@ -240,6 +316,7 @@
               bytes: new Uint8Array(this.length)
             }
           }
+          this.offset = 0
           for await (const chunk of response.body) {
             this.target.bytes.set(chunk, this.target.offset + this.offset)
             this.offset += chunk.byteLength
@@ -337,9 +414,11 @@
         }
         chunk.start()
         if (!isInode) {
-          chunk.fullLength = chunk.length
-          bigView = chunk.target.bytes
-          bigBufferReady.resolve()
+          chunk.on(0, () => {
+            chunk.fullLength = chunk.length
+            bigView = chunk.target.bytes
+            bigBufferReady.resolve()
+          })
         }
 
         await bigBufferReady.promise
@@ -370,9 +449,69 @@
           }
         }
 
-        const reader = new zip.ZipReader(new QuestionableReader())
-        const rows = []
         const collator = new Intl.Collator('en-US', { numeric: true })
+        function addEntry (tree, [segment, ...rest], item, depth = 0) {
+          if (rest.length > 0) {
+            const index = tree.entries.findIndex(entry =>
+              entry.dir ? collator.compare(segment, entry.name) <= 0 : true
+            )
+            if (index !== -1) {
+              const treeEntry = tree.entries[index]
+              if (treeEntry.dir && treeEntry.name === segment) {
+                addEntry(treeEntry, rest, item, depth + 1)
+                return
+              }
+            }
+            const details = Object.assign(document.createElement('details'), {
+              className: 'dir'
+            })
+            const summary = Object.assign(document.createElement('summary'), {
+              className: 'dirname'
+            })
+            summary.append(
+              Object.assign(document.createElement('span'), {
+                textContent: segment
+              })
+            )
+            const treeContents = Object.assign(document.createElement('div'), {
+              className: 'tree'
+            })
+            treeContents.style.setProperty('--depth', depth + 1)
+            const newTree = {
+              dir: true,
+              name: segment,
+              contents: treeContents,
+              elem: details,
+              entries: []
+            }
+            details.append(summary, treeContents)
+            if (index === -1) {
+              tree.contents.append(details)
+              tree.entries.push(newTree)
+            } else {
+              tree.entries[index].elem.before(details)
+              tree.entries.splice(index, 0, newTree)
+            }
+            addEntry(newTree, rest, item, depth + 1)
+          } else {
+            const index = tree.entries.findIndex(
+              entry => !entry.dir && collator.compare(segment, entry.name) < 0
+            )
+            if (index === -1) {
+              tree.contents.append(item.elem)
+              tree.entries.push({ ...item, name: segment })
+            } else {
+              tree.entries[index].elem.before(item.elem)
+              tree.entries.splice(index, 0, { ...item, name: segment })
+            }
+          }
+        }
+
+        const reader = new zip.ZipReader(new QuestionableReader())
+        const root = {
+          contents: filesWrapper,
+          entries: []
+        }
         for await (const entry of reader.getEntriesGenerator()) {
           if (entry.directory) {
             continue
@@ -380,6 +519,16 @@
           const { compressedSize, filename, lastModDate, uncompressedSize } =
             entry
           const segments = filename.split('/')
+          const elem = Object.assign(document.createElement('button'), {
+            className: 'file',
+            title: filename
+          })
+          elem.append(
+            Object.assign(document.createElement('span'), {
+              textContent: segments.at(-1)
+            })
+          )
+          addEntry(root, segments, { elem })
         }
       }
 
