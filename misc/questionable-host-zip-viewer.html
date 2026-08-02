@@ -219,6 +219,13 @@
       .no-hash .preview {
         display: none;
       }
+      .preview {
+        display: flex;
+      }
+      #preview {
+        border: none;
+        flex: auto;
+      }
     </style>
   </head>
   <body class="has-hash no-hash">
@@ -258,11 +265,10 @@
       <div id="files-wrapper"></div>
     </div>
     <div class="preview">
-      <iframe id="preview" sandbox></iframe>
+      <iframe id="preview"></iframe>
     </div>
     <script type="module">
       import mime from 'https://cdn.jsdelivr.net/npm/mime@4.1.0/dist/src/index.js'
-      console.log(mime)
 
       const hashId = new URL(location).searchParams.get('hash')
       if (!hashId) {
@@ -517,7 +523,7 @@
         contents: filesWrapper,
         entries: []
       }
-      let blob
+      let blobUrl
       let abort
       for await (const entry of reader.getEntriesGenerator()) {
         if (entry.directory) {
@@ -538,8 +544,8 @@
         addEntry(root, segments, { elem })
 
         elem.addEventListener('click', async () => {
-          if (blob) {
-            URL.revokeObjectURL(blob)
+          if (blobUrl) {
+            URL.revokeObjectURL(blobUrl)
             abort.abort()
           }
           abort = new AbortController()
@@ -548,11 +554,9 @@
             onprogress: (progress, total) => {}
           })
           const dotIndex = segments.at(-1).indexOf('.')
-          preview.src = URL.createObjectURL(
+          preview.src = blobUrl = URL.createObjectURL(
             new Blob([buffer], {
-              type:
-                allTypes[segments.at(-1)?.split('.').at(-1) ?? ''] ??
-                'text/plain'
+              type: mime.getType(filename) ?? 'text/plain'
             })
           )
         })
