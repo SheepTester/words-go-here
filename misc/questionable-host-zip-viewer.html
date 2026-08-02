@@ -257,8 +257,13 @@
     <div class="files">
       <div id="files-wrapper"></div>
     </div>
-    <div class="preview"></div>
-    <script>
+    <div class="preview">
+      <iframe id="preview" sandbox></iframe>
+    </div>
+    <script type="module">
+      import mime from 'https://cdn.jsdelivr.net/npm/mime@4.1.0/dist/src/index.js'
+      console.log(mime)
+
       const hashId = new URL(location).searchParams.get('hash')
       if (!hashId) {
         document.body.classList.remove('has-hash')
@@ -273,6 +278,7 @@
       const loadedCount = document.getElementById('loaded')
       const totalCount = document.getElementById('total')
       const filesWrapper = document.getElementById('files-wrapper')
+      const preview = document.getElementById('preview')
 
       function displayBytes (bytes) {
         if (bytes > 1_000_000_000) {
@@ -357,182 +363,200 @@
       const bigBufferReady = Promise.withResolvers()
       let bigView
 
-      async function main () {
-        const isInode = hashId.startsWith('i')
-        const firstHash = isInode ? hashId.slice(1) : hashId.slice(0, -1)
-        const chunk = new Chunk()
-        chunk.hash = firstHash
-        chunk.fullOffset = 0
-        chunks.push(chunk)
-        progress.append(chunk.element)
-        if (isInode) {
-          chunk.on(INODE_HEADER_SIZE, () => {
-            const temp = new Uint8Array(12)
-            temp.set(chunk.target.bytes.subarray(0, 6), 2)
-            temp.set(chunk.target.bytes.subarray(6, 9), 9)
-            const view = new DataView(temp.buffer)
-            const fileSize = Number(view.getBigUint64(0))
-            const chunkCount = view.getUint32(8)
+      const isInode = hashId.startsWith('i')
+      const firstHash = isInode ? hashId.slice(1) : hashId.slice(0, -1)
+      const chunk = new Chunk()
+      chunk.hash = firstHash
+      chunk.fullOffset = 0
+      chunks.push(chunk)
+      progress.append(chunk.element)
+      if (isInode) {
+        chunk.on(INODE_HEADER_SIZE, () => {
+          const temp = new Uint8Array(12)
+          temp.set(chunk.target.bytes.subarray(0, 6), 2)
+          temp.set(chunk.target.bytes.subarray(6, 9), 9)
+          const view = new DataView(temp.buffer)
+          const fileSize = Number(view.getBigUint64(0))
+          const chunkCount = view.getUint32(8)
 
-            console.log('file size:', fileSize)
-            console.log('number of additional chunks:', chunkCount)
+          console.log('file size:', fileSize)
+          console.log('number of additional chunks:', chunkCount)
 
-            bigView = new Uint8Array(fileSize)
-            bigBufferReady.resolve()
-            const headerEnd = INODE_HEADER_SIZE + chunkCount * HASH_SIZE
-            const chunkDataByteOffset = chunk.length - headerEnd
+          bigView = new Uint8Array(fileSize)
+          bigBufferReady.resolve()
+          const headerEnd = INODE_HEADER_SIZE + chunkCount * HASH_SIZE
+          const chunkDataByteOffset = chunk.length - headerEnd
 
-            const fragment = document.createDocumentFragment()
+          const fragment = document.createDocumentFragment()
+          for (let i = 0; i < chunkCount; i++) {
+            const c = new Chunk()
+            // assumes that all chunks are MAX_SIZE until the end
+            c.fullOffset = chunkDataByteOffset + i * MAX_SIZE
+            c.fullLength = Math.min(MAX_SIZE, fileSize - c.fullOffset)
+            c.element.style.setProperty('--size', c.fullLength)
+            c.target = { bytes: bigView, offset: c.fullOffset }
+            chunks.push(c)
+            fragment.append(c.element)
+          }
+          progress.append(fragment)
+
+          chunk.on(headerEnd, () => {
             for (let i = 0; i < chunkCount; i++) {
-              const c = new Chunk()
-              // assumes that all chunks are MAX_SIZE until the end
-              c.fullOffset = chunkDataByteOffset + i * MAX_SIZE
-              c.fullLength = Math.min(MAX_SIZE, fileSize - c.fullOffset)
-              c.element.style.setProperty('--size', c.fullLength)
-              c.target = { bytes: bigView, offset: c.fullOffset }
-              chunks.push(c)
-              fragment.append(c.element)
+              chunks[i + 1].hash = chunk.target.bytes
+                .subarray(
+                  INODE_HEADER_SIZE + i * HASH_SIZE,
+                  INODE_HEADER_SIZE + (i + 1) * HASH_SIZE
+                )
+                .values()
+                .map(byte => byte.toString(16).padStart(2, '0'))
+                .toArray()
+                .join('')
             }
-            progress.append(fragment)
+            bigView.set(chunk.target.bytes.subarray(headerEnd))
+            chunk.target = { bytes: bigView, offset: -headerEnd }
+          })
+        })
+      }
+      chunk.start()
+      if (!isInode) {
+        chunk.on(0, () => {
+          chunk.fullLength = chunk.length
+          bigView = chunk.target.bytes
+          bigBufferReady.resolve()
+        })
+      }
 
-            chunk.on(headerEnd, () => {
-              for (let i = 0; i < chunkCount; i++) {
-                chunks[i + 1].hash = chunk.target.bytes
-                  .subarray(
-                    INODE_HEADER_SIZE + i * HASH_SIZE,
-                    INODE_HEADER_SIZE + (i + 1) * HASH_SIZE
-                  )
-                  .values()
-                  .map(byte => byte.toString(16).padStart(2, '0'))
-                  .toArray()
-                  .join('')
+      await bigBufferReady.promise
+      totalCount.textContent = displayBytes(bigView.byteLength)
+
+      class QuestionableReader extends zip.Reader {
+        size = bigView.byteLength
+
+        async readUint8Array (offset, length) {
+          console.log('[read]', { offset, length })
+          await Promise.all(
+            chunks.values().map(chunk => {
+              if (
+                chunk.fullOffset < offset + length &&
+                offset < chunk.fullOffset + chunk.fullLength
+              ) {
+                const resolvers = Promise.withResolvers()
+                chunk.on(offset + length - chunk.fullOffset, resolvers.resolve)
+                chunk.start()
+                return resolvers.promise
               }
-              bigView.set(chunk.target.bytes.subarray(headerEnd))
-              chunk.target = { bytes: bigView, offset: -headerEnd }
-            })
-          })
-        }
-        chunk.start()
-        if (!isInode) {
-          chunk.on(0, () => {
-            chunk.fullLength = chunk.length
-            bigView = chunk.target.bytes
-            bigBufferReady.resolve()
-          })
-        }
-
-        await bigBufferReady.promise
-        totalCount.textContent = displayBytes(bigView.byteLength)
-
-        class QuestionableReader extends zip.Reader {
-          size = bigView.byteLength
-
-          async readUint8Array (offset, length) {
-            console.log('[read]', { offset, length })
-            await Promise.all(
-              chunks.values().map(chunk => {
-                if (
-                  chunk.fullOffset < offset + length &&
-                  offset < chunk.fullOffset + chunk.fullLength
-                ) {
-                  const resolvers = Promise.withResolvers()
-                  chunk.on(
-                    offset + length - chunk.fullOffset,
-                    resolvers.resolve
-                  )
-                  chunk.start()
-                  return resolvers.promise
-                }
-              })
-            )
-            return bigView.subarray(offset, offset + length)
-          }
-        }
-
-        const collator = new Intl.Collator('en-US', { numeric: true })
-        function addEntry (tree, [segment, ...rest], item, depth = 0) {
-          if (rest.length > 0) {
-            const index = tree.entries.findIndex(entry =>
-              entry.dir ? collator.compare(segment, entry.name) <= 0 : true
-            )
-            if (index !== -1) {
-              const treeEntry = tree.entries[index]
-              if (treeEntry.dir && treeEntry.name === segment) {
-                addEntry(treeEntry, rest, item, depth + 1)
-                return
-              }
-            }
-            const details = Object.assign(document.createElement('details'), {
-              className: 'dir'
-            })
-            const summary = Object.assign(document.createElement('summary'), {
-              className: 'dirname'
-            })
-            summary.append(
-              Object.assign(document.createElement('span'), {
-                textContent: segment
-              })
-            )
-            const treeContents = Object.assign(document.createElement('div'), {
-              className: 'tree'
-            })
-            treeContents.style.setProperty('--depth', depth + 1)
-            const newTree = {
-              dir: true,
-              name: segment,
-              contents: treeContents,
-              elem: details,
-              entries: []
-            }
-            details.append(summary, treeContents)
-            if (index === -1) {
-              tree.contents.append(details)
-              tree.entries.push(newTree)
-            } else {
-              tree.entries[index].elem.before(details)
-              tree.entries.splice(index, 0, newTree)
-            }
-            addEntry(newTree, rest, item, depth + 1)
-          } else {
-            const index = tree.entries.findIndex(
-              entry => !entry.dir && collator.compare(segment, entry.name) < 0
-            )
-            if (index === -1) {
-              tree.contents.append(item.elem)
-              tree.entries.push({ ...item, name: segment })
-            } else {
-              tree.entries[index].elem.before(item.elem)
-              tree.entries.splice(index, 0, { ...item, name: segment })
-            }
-          }
-        }
-
-        const reader = new zip.ZipReader(new QuestionableReader())
-        const root = {
-          contents: filesWrapper,
-          entries: []
-        }
-        for await (const entry of reader.getEntriesGenerator()) {
-          if (entry.directory) {
-            continue
-          }
-          const { compressedSize, filename, lastModDate, uncompressedSize } =
-            entry
-          const segments = filename.split('/')
-          const elem = Object.assign(document.createElement('button'), {
-            className: 'file',
-            title: filename
-          })
-          elem.append(
-            Object.assign(document.createElement('span'), {
-              textContent: segments.at(-1)
             })
           )
-          addEntry(root, segments, { elem })
+          return bigView.subarray(offset, offset + length)
         }
       }
 
-      main()
+      const collator = new Intl.Collator('en-US', { numeric: true })
+      function addEntry (tree, [segment, ...rest], item, depth = 0) {
+        if (rest.length > 0) {
+          const index = tree.entries.findIndex(entry =>
+            entry.dir ? collator.compare(segment, entry.name) <= 0 : true
+          )
+          if (index !== -1) {
+            const treeEntry = tree.entries[index]
+            if (treeEntry.dir && treeEntry.name === segment) {
+              addEntry(treeEntry, rest, item, depth + 1)
+              return
+            }
+          }
+          const details = Object.assign(document.createElement('details'), {
+            className: 'dir'
+          })
+          const summary = Object.assign(document.createElement('summary'), {
+            className: 'dirname'
+          })
+          summary.append(
+            Object.assign(document.createElement('span'), {
+              textContent: segment
+            })
+          )
+          const treeContents = Object.assign(document.createElement('div'), {
+            className: 'tree'
+          })
+          treeContents.style.setProperty('--depth', depth + 1)
+          const newTree = {
+            dir: true,
+            name: segment,
+            contents: treeContents,
+            elem: details,
+            entries: []
+          }
+          details.append(summary, treeContents)
+          if (index === -1) {
+            tree.contents.append(details)
+            tree.entries.push(newTree)
+          } else {
+            tree.entries[index].elem.before(details)
+            tree.entries.splice(index, 0, newTree)
+          }
+          addEntry(newTree, rest, item, depth + 1)
+        } else {
+          const index = tree.entries.findIndex(
+            entry => !entry.dir && collator.compare(segment, entry.name) < 0
+          )
+          if (index === -1) {
+            tree.contents.append(item.elem)
+            tree.entries.push({ ...item, name: segment })
+          } else {
+            tree.entries[index].elem.before(item.elem)
+            tree.entries.splice(index, 0, { ...item, name: segment })
+          }
+        }
+      }
+
+      const reader = new zip.ZipReader(new QuestionableReader())
+      window.zip = reader
+      console.log('ZipReader instance stored in window.zip')
+
+      const root = {
+        contents: filesWrapper,
+        entries: []
+      }
+      let blob
+      let abort
+      for await (const entry of reader.getEntriesGenerator()) {
+        if (entry.directory) {
+          continue
+        }
+        const { compressedSize, filename, lastModDate, uncompressedSize } =
+          entry
+        const segments = filename.split('/')
+        const elem = Object.assign(document.createElement('button'), {
+          className: 'file',
+          title: filename
+        })
+        elem.append(
+          Object.assign(document.createElement('span'), {
+            textContent: segments.at(-1)
+          })
+        )
+        addEntry(root, segments, { elem })
+
+        elem.addEventListener('click', async () => {
+          if (blob) {
+            URL.revokeObjectURL(blob)
+            abort.abort()
+          }
+          abort = new AbortController()
+          const buffer = await entry.arrayBuffer({
+            signal: abort.signal,
+            onprogress: (progress, total) => {}
+          })
+          const dotIndex = segments.at(-1).indexOf('.')
+          preview.src = URL.createObjectURL(
+            new Blob([buffer], {
+              type:
+                allTypes[segments.at(-1)?.split('.').at(-1) ?? ''] ??
+                'text/plain'
+            })
+          )
+        })
+      }
     </script>
   </body>
 </html>
