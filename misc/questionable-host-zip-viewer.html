@@ -226,6 +226,11 @@
         border: none;
         flex: auto;
       }
+      .selected,
+      .selected:hover {
+        color: CanvasText;
+        background-color: color-mix(in srgb, CanvasText 10%, transparent);
+      }
     </style>
   </head>
   <body class="has-hash no-hash">
@@ -265,7 +270,7 @@
       <div id="files-wrapper"></div>
     </div>
     <div class="preview">
-      <iframe id="preview"></iframe>
+      <iframe id="preview" sandbox></iframe>
     </div>
     <script type="module">
       import mime from 'https://cdn.jsdelivr.net/npm/mime@4.1.0/dist/src/index.js'
@@ -525,6 +530,7 @@
       }
       let blobUrl
       let abort
+      let prevFileElem
       for await (const entry of reader.getEntriesGenerator()) {
         if (entry.directory) {
           continue
@@ -547,6 +553,7 @@
           if (blobUrl) {
             URL.revokeObjectURL(blobUrl)
             abort.abort()
+            prevFileElem.classList.remove('selected')
           }
           abort = new AbortController()
           const buffer = await entry.arrayBuffer({
@@ -556,9 +563,13 @@
           const dotIndex = segments.at(-1).indexOf('.')
           preview.src = blobUrl = URL.createObjectURL(
             new Blob([buffer], {
-              type: mime.getType(filename) ?? 'text/plain'
+              type: filename.endsWith('.ts')
+                ? 'text/plain'
+                : (mime.getType(filename) ?? 'text/plain')
             })
           )
+          prevFileElem = elem
+          elem.classList.add('selected')
         })
       }
     </script>
