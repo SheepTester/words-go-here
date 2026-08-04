@@ -111,7 +111,7 @@
         height: 20px;
         border-radius: 5px;
         display: flex;
-        gap: 1px;
+        gap: 2px;
         overflow: hidden;
         --progress: 0;
         --size: 0;
@@ -134,6 +134,9 @@
           'sidebar preview';
         grid-template-rows: auto 1fr;
         grid-template-columns: 30fr 70fr;
+      }
+      .no-preview {
+        grid-template-columns: 1fr 0;
       }
       .progress-wrapper {
         grid-area: progress;
@@ -184,22 +187,52 @@
         grid-template-columns: 20px 1fr;
         grid-template-areas: 'marker filename';
         border-radius: 5px;
-        height: 30px;
+        padding: 5px 0;
         align-content: center;
         padding-left: calc(var(--depth) * 10px);
 
         &:hover {
           background-color: color-mix(in srgb, CanvasText 3%, transparent);
         }
-        & span {
-          grid-area: filename;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: pre;
+      }
+      .no-preview .file {
+        grid-template-columns: 20px 1fr 25ch 10ch 5ch;
+        grid-template-areas: 'marker filename modified fileSize compressionRatio';
+        @media (max-width: 600px) {
+          grid-template-columns: 20px 1fr 10ch 5ch;
+          grid-template-areas:
+            'marker filename filename filename'
+            'marker modified fileSize compressionRatio';
+
+          .modified {
+            text-align: left;
+          }
         }
       }
-      .file {
-        color: color-mix(in srgb, CanvasText 80%, transparent);
+      .col {
+        color: color-mix(in srgb, CanvasText 30%, transparent);
+      }
+      .yes-preview .col {
+        display: none;
+      }
+      .fileName {
+        grid-area: filename;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: pre;
+        color: color-mix(in srgb, CanvasText 70%, transparent);
+      }
+      .modified {
+        grid-area: modified;
+        text-align: right;
+        margin-right: 20px;
+      }
+      .fileSize {
+        grid-area: fileSize;
+      }
+      .compressionRatio {
+        grid-area: compressionRatio;
+        text-align: right;
       }
       .dirname {
         cursor: pointer;
@@ -221,19 +254,69 @@
       }
       .preview {
         display: flex;
+        flex-direction: column;
+      }
+      .preview header {
+        flex: none;
+        display: flex;
+        align-items: end;
+
+        & > div {
+          padding: 20px;
+          flex: auto;
+
+          & p {
+            color: color-mix(in srgb, CanvasText 50%, transparent);
+          }
+        }
       }
       #preview {
         border: none;
         flex: auto;
+      }
+      .no-preview .preview {
+        display: none;
+      }
+      @media (max-width: 700px) {
+        .yes-preview {
+          display: flex;
+          flex-direction: column;
+        }
+        .yes-preview .files {
+          display: none;
+        }
       }
       .selected,
       .selected:hover {
         color: CanvasText;
         background-color: color-mix(in srgb, CanvasText 10%, transparent);
       }
+      #download,
+      #close {
+        display: flex;
+        width: 24px;
+        height: 24px;
+        padding: 12px;
+        font-size: 0;
+        box-sizing: content-box;
+        opacity: 0.7;
+        color: inherit;
+
+        &:hover {
+          opacity: 1;
+        }
+
+        & svg {
+          fill: none;
+          stroke-width: 2;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke: currentColor;
+        }
+      }
     </style>
   </head>
-  <body class="has-hash no-hash">
+  <body class="has-hash no-hash no-preview">
     <form action="./questionable-host-zip-viewer.html" method="get">
       <h1>View zip file</h1>
       <p>
@@ -262,16 +345,47 @@
       </label>
       <button>Load</button>
     </form>
-    <div class="progress-wrapper">
+    <header class="progress-wrapper">
       <p><span id="loaded">0 B</span> of <span id="total">0 B</span> loaded</p>
       <div id="progress"></div>
-    </div>
-    <div class="files">
+    </header>
+    <nav class="files">
       <div id="files-wrapper"></div>
-    </div>
-    <div class="preview">
+    </nav>
+    <main class="preview">
+      <header>
+        <div>
+          <p id="path"></p>
+          <h1 id="filename"></h1>
+        </div>
+        <a id="download">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            aria-label="Download"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+        </a>
+        <button id="close">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            aria-label="Close"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </header>
       <iframe id="preview" sandbox></iframe>
-    </div>
+    </main>
     <script type="module">
       import mime from 'https://cdn.jsdelivr.net/npm/mime@4.1.0/dist/src/index.js'
 
@@ -290,6 +404,12 @@
       const totalCount = document.getElementById('total')
       const filesWrapper = document.getElementById('files-wrapper')
       const preview = document.getElementById('preview')
+      const elems = {
+        path: document.getElementById('path'),
+        filename: document.getElementById('filename'),
+        download: document.getElementById('download'),
+        close: document.getElementById('close')
+      }
 
       function displayBytes (bytes) {
         if (bytes > 1_000_000_000) {
@@ -544,7 +664,27 @@
         })
         elem.append(
           Object.assign(document.createElement('span'), {
-            textContent: segments.at(-1)
+            textContent: segments.at(-1),
+            className: 'fileName'
+          })
+        )
+        elem.append(
+          Object.assign(document.createElement('span'), {
+            textContent: lastModDate.toLocaleString([]),
+            className: 'col modified'
+          })
+        )
+        elem.append(
+          Object.assign(document.createElement('span'), {
+            textContent: displayBytes(uncompressedSize),
+            className: 'col fileSize'
+          })
+        )
+        elem.append(
+          Object.assign(document.createElement('span'), {
+            textContent: `${((compressedSize / uncompressedSize) * 100).toFixed(0)}%`,
+            className: 'col compressionRatio',
+            title: `Compressed size: ${displayBytes(compressedSize)}`
           })
         )
         addEntry(root, segments, { elem })
@@ -555,23 +695,42 @@
             abort.abort()
             prevFileElem.classList.remove('selected')
           }
+          document.body.classList.remove('no-preview')
+          document.body.classList.add('yes-preview')
+          elems.filename.textContent = segments.at(-1)
+          elems.path.textContent =
+            segments.length > 1 ? segments.slice(0, -1).join('/') + '/' : ''
+          elems.download.download = segments.at(-1)
           abort = new AbortController()
           const buffer = await entry.arrayBuffer({
             signal: abort.signal,
             onprogress: (progress, total) => {}
           })
           const dotIndex = segments.at(-1).indexOf('.')
-          preview.src = blobUrl = URL.createObjectURL(
-            new Blob([buffer], {
-              type: filename.endsWith('.ts')
-                ? 'text/plain'
-                : (mime.getType(filename) ?? 'text/plain')
-            })
-          )
+          elems.download.href =
+            preview.src =
+            blobUrl =
+              URL.createObjectURL(
+                new Blob([buffer], {
+                  type: filename.endsWith('.ts')
+                    ? 'text/plain'
+                    : (mime.getType(filename) ?? 'text/plain')
+                })
+              )
           prevFileElem = elem
           elem.classList.add('selected')
         })
       }
+
+      elems.close.addEventListener('click', () => {
+        if (blobUrl) {
+          URL.revokeObjectURL(blobUrl)
+          abort.abort()
+          prevFileElem.classList.remove('selected')
+        }
+        document.body.classList.add('no-preview')
+        document.body.classList.remove('yes-preview')
+      })
     </script>
   </body>
 </html>
