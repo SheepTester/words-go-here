@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>diLLMa</title>
+    <meta
+      name="description"
+      content="force the Google Chrome slop API to choose between two really bad options"
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <link rel="stylesheet" type="text/css" href="./setup.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>Force the LLM into a dilemma</h1>
+      <p>
+        Uses the
+        <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link"
+          >Google Chrome slop API</a
+        >
+      </p>
+
+      <div id="setup-status"></div>
+
+      <div class="cols">
+        <label class="field-label">
+          <span class="label-primary">Option 1</span>
+          <input
+            type="text"
+            name="option1"
+            value="Do nothing and let trolley kill 5 people"
+          />
+        </label>
+        <label class="field-label">
+          <span class="label-primary">Option 2</span>
+          <input
+            type="text"
+            name="option2"
+            value="Pull the lever to send the trolley to kill 1 person"
+          />
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button
+          type="submit"
+          class="button primary-btn"
+          id="schema"
+          data-deps="option1 option2"
+        >
+          Decide
+        </button>
+      </div>
+
+      <div class="col-io reform:io">
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            aria-label="Share"
+          ></button>
+        </div>
+        <textarea
+          class="output-content"
+          id="output"
+          data-deps="schema"
+          aria-label="LLM reasoning"
+          readonly
+        ></textarea>
+      </div>
+    </form>
+
+    <script type="module">
+      import { on, Out } from '/reform/v1/index.js'
+      import { setup } from './setup.js'
+
+      const session = await setup({
+        expectedInputs: [{ type: 'text' }],
+        expectedOutputs: [{ type: 'text' }],
+        initialPrompts: [
+          {
+            role: 'system',
+            content:
+              'You are an arbitrator entrusted to make high impact decisions. Choose an option and explain your reasoning.'
+          }
+        ]
+      })
+
+      on('schema', async (button, { option1, option2, callback }) => {
+        button.onclick = () =>
+          callback({
+            type: 'object',
+            properties: {
+              [option1]: { type: 'string' },
+              [option2]: { type: 'string' }
+            },
+            oneOf: [{ required: [option1] }, { required: [option2] }]
+          })
+      })
+
+      let abort
+      on('output', async (textarea, { schema }) => {
+        abort?.abort()
+        try {
+          abort = new AbortController()
+          const clone = await session.clone({ signal: abort.signal })
+          let output = ''
+          textarea.value = output
+          for await (const chunk of await clone.promptStreaming([], {
+            // responseConstraint: schema,
+            signal: abort.signal
+          })) {
+            output += chunk
+            textarea.value = output
+          }
+          return Out.from('verdict.txt', output)
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') {
+          } else {
+            throw error
+          }
+        }
+      })
+    </script>
+  </body>
+</html>
