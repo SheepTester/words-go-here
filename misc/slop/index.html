@@ -42,7 +42,7 @@
       const wrapper = document.getElementById('links')
       const html = await fetch('..').then(r => r.text())
       for (const [, match] of html.matchAll(
-        /<a href="slop\/([^.]+)\.html">/g
+        /<a href="slop\/([^./]+)\.html">/g
       )) {
         wrapper.append(
           Object.assign(document.createElement('a'), {

@@ -102,7 +102,7 @@
 
     <script type="module">
       import { on, Out } from '/reform/v1/index.js'
-      import { setup } from './setup.js'
+      import { setup, parsePartialJson } from './setup.js'
 
       const session = await setup({
         expectedInputs: [{ type: 'text' }],
@@ -141,9 +141,12 @@
             signal: abort.signal
           })) {
             output += chunk
-            textarea.value = output
+            const result = parsePartialJson(output)
+            if (result) {
+              textarea.value = `${result.choice ?? ''}\n\n${result.reason ?? ''}`
+            }
           }
-          return Out.from('verdict.txt', output)
+          return Out.from('verdict.json', output)
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') {
           } else {

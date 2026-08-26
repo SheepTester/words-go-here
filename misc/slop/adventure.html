@@ -36,7 +36,7 @@
 
     <script type="module">
       import { on, Out } from '/reform/v1/index.js'
-      import { setup } from './setup.js'
+      import { setup, parsePartialJson } from './setup.js'
 
       const randomEmoji = () => {
         // https://sheeptester.github.io/javascripts/unicode.html?char=1f9xx
@@ -111,26 +111,7 @@
           { responseConstraint: schema }
         )) {
           json += chunk
-          let wipJson = json
-          if (wipJson.endsWith(',')) {
-            wipJson = wipJson.replace(/,$/, '')
-          }
-          let result
-          for (let i = 4; i--; ) {
-            try {
-              result = JSON.parse(wipJson)
-            } catch (error) {
-              if (error.message.includes('Unterminated string')) {
-                wipJson += '"'
-              } else if (error.message.includes('after property value')) {
-                wipJson += '}'
-              } else if (error.message.includes('after array element')) {
-                wipJson += ']'
-              } else {
-                continue
-              }
-            }
-          }
+          const result = parsePartialJson(json, 4)
           if (result) {
             render(result)
           }

@@ -68,7 +68,7 @@
 
     <script type="module">
       import { on, Out } from '/reform/v1/index.js'
-      import { setup } from './setup.js'
+      import { setup, parsePartialJson } from './setup.js'
 
       const session = await setup({
         expectedInputs: [{ type: 'image' }],
@@ -107,24 +107,7 @@
         const color = window.getComputedStyle(document.body).color
         const render = partialJson => {
           // console.log('json', partialJson)
-          partialJson = partialJson.replace(/,$/, '')
-          let result
-          for (let i = 3; i--; ) {
-            try {
-              result = JSON.parse(partialJson)
-              break
-            } catch (error) {
-              if (error.message.includes('Unterminated string')) {
-                partialJson += '"'
-              } else if (error.message.includes('after property value')) {
-                partialJson += '}'
-              } else if (error.message.includes('after array element')) {
-                partialJson += ']'
-              } else {
-                break
-              }
-            }
-          }
+          const result = parsePartialJson(partialJson, 3)
           if (!result) {
             return
           }

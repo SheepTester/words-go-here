@@ -60,3 +60,25 @@ export async function setup ({ destroy, ...availabilityArgs }) {
     return session
   }
 }
+
+export function parsePartialJson (partialJson, maxAttempts = 3) {
+  partialJson = partialJson.replace(/,$/, '')
+  let result
+  for (let i = maxAttempts; i--; ) {
+    try {
+      result = JSON.parse(partialJson)
+      break
+    } catch (error) {
+      if (error.message.includes('Unterminated string')) {
+        partialJson += '"'
+      } else if (error.message.includes('after property value')) {
+        partialJson += '}'
+      } else if (error.message.includes('after array element')) {
+        partialJson += ']'
+      } else {
+        break
+      }
+    }
+  }
+  return result
+}
