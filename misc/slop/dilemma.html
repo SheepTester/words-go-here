@@ -15,6 +15,16 @@
     <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
     <link rel="stylesheet" type="text/css" href="./setup.css" />
     <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      .field-label {
+        flex: 1 0 0;
+
+        input {
+          width: 100%;
+        }
+      }
+    </style>
   </head>
   <body>
     <form class="main" role="main" action="javascript:">
@@ -24,6 +34,10 @@
         <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link"
           >Google Chrome slop API</a
         >
+        to run an LLM on-device. Specifies a schema to coerce the LLM into
+        choosing one of the two options. However, in my experience, it seems to
+        have a bias based on the ordering of the options (i.e. it'll change its
+        mind if you swap the options around).
       </p>
 
       <div id="setup-status"></div>
@@ -34,7 +48,7 @@
           <input
             type="text"
             name="option1"
-            value="Do nothing and let trolley kill 5 people"
+            value="Do nothing and nothing happens"
           />
         </label>
         <label class="field-label">
@@ -42,7 +56,7 @@
           <input
             type="text"
             name="option2"
-            value="Pull the lever to send the trolley to kill 1 person"
+            value="Do nothing and let trolley kill 5 people"
           />
         </label>
       </div>
@@ -107,10 +121,10 @@
           callback({
             type: 'object',
             properties: {
-              [option1]: { type: 'string' },
-              [option2]: { type: 'string' }
+              choice: { type: 'string', enum: [option1, option2] },
+              reason: { type: 'string' }
             },
-            oneOf: [{ required: [option1] }, { required: [option2] }]
+            required: ['choice', 'reason']
           })
       })
 
@@ -123,7 +137,7 @@
           let output = ''
           textarea.value = output
           for await (const chunk of await clone.promptStreaming([], {
-            // responseConstraint: schema,
+            responseConstraint: schema,
             signal: abort.signal
           })) {
             output += chunk
