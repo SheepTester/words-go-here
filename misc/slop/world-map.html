@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>What does AI think the world looks like?</title>
+    <meta
+      name="description"
+      content="Asking your on-device LLM what is at each coordinate on Earth"
+    />
+    <meta name="theme-color" content="#4fa1a7" />
+
+    <link rel="stylesheet" type="text/css" href="/sheep3.css" />
+    <link rel="stylesheet" type="text/css" href="/reform/v1/index.css" />
+    <link rel="stylesheet" type="text/css" href="./setup.css" />
+    <script src="/sheep3.js" charset="utf-8"></script>
+
+    <style>
+      canvas {
+      }
+    </style>
+  </head>
+  <body>
+    <form class="main" role="main" action="javascript:">
+      <h1>Slop world map</h1>
+      <p>
+        Inspired by
+        <a href="https://twitter.com/celestepoasts/status/2103232383139057950"
+          >this xeet</a
+        >. Uses the
+        <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link"
+          >Google Chrome slop API</a
+        >
+        to ask an on-device LLM what is at each coordinate in the world.
+      </p>
+
+      <div id="setup-status"></div>
+
+      <div class="col-io reform:io">
+        <div class="output-controls">
+          <a class="file download">
+            <span class="icon icon-download"></span>
+            <span class="file-label">Download</span>
+            <span class="file-name">No file available</span>
+          </a>
+          <button
+            type="button"
+            class="icon icon-copy"
+            aria-label="Copy"
+          ></button>
+          <button
+            type="button"
+            class="icon icon-share"
+            aria-label="Share"
+          ></button>
+        </div>
+        <div class="image-content output-content">
+          <canvas id="output" data-deps="rows colorSet"></canvas>
+        </div>
+      </div>
+
+      <label class="field-label">
+        <span class="label-primary">Rows</span>
+        <input type="number" name="rows" min="1" value="3" />
+      </label>
+
+      <fieldset class="radio-set">
+        <legend class="label-primary">Color set</legend>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="colorSet"
+            value="binary"
+            class="hidden-accessible"
+            checked
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">Land and water</span>
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="colorSet"
+            value="details"
+            class="hidden-accessible"
+          />
+          <span class="radio-button"></span>
+          <span class="label-secondary">Land details (green, sand, ice)</span>
+        </label>
+      </fieldset>
+    </form>
+
+    <script type="module">
+      import { on, Out } from '/reform/v1/index.js'
+      import { setup, parsePartialJson } from './setup.js'
+      import { geoRobinson } from 'https://cdn.jsdelivr.net/npm/d3-geo-projection@4.0.0/+esm'
+
+      // https://d3js.org/d3-geo/projection [long E/W, lat N/S] (in degrees) to
+      // [x, y] or null (unclear what the range is)
+      const projection = geoRobinson().scale(1).translate([0, 0])
+      console.log(
+        [
+          [-180, 0],
+          [180, 0],
+          [0, -90],
+          [0, 90]
+        ].map(a => projection(a))
+      )
+      // appears to be [0~960, 500~0] by default but is overridden rather than
+      // compounded by scale/translate. with scale=1 it's [-pi~pi, close to
+      // pi/2~-pi/2 but a bit more than half]
+
+      const session = await setup({
+        expectedInputs: [{ type: 'text' }],
+        expectedOutputs: [{ type: 'text' }],
+        initialPrompts: [
+          {
+            role: 'system',
+            content:
+              "You're plotting a world map of Earth. What's at the given coordinates?"
+          }
+        ]
+      })
+
+      let abort
+      on('output', async (c, { rows, colorSet }) => {
+        abort?.abort()
+        try {
+          abort = new AbortController()
+          const clone = await session.clone({ signal: abort.signal })
+          const response = await clone.prompt([], {
+            responseConstraint: {
+              type: 'string',
+              enum:
+                colorSet === 'binary'
+                  ? ['land', 'water']
+                  : ['water', 'ice', 'sand', 'green']
+            },
+            signal: abort.signal
+          })
+          return Out.from('slop-world.png', c)
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') {
+          } else {
+            throw error
+          }
+        }
+      })
+    </script>
+  </body>
+</html>
