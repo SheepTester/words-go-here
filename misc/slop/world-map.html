@@ -26,7 +26,9 @@
       <h1>Slop world map</h1>
       <p>
         Inspired by
-        <a href="https://twitter.com/celestepoasts/status/2103232383139057950"
+        <a
+          class="link"
+          href="https://twitter.com/celestepoasts/status/2103232383139057950"
           >this xeet</a
         >. Uses the
         <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link"
@@ -76,7 +78,7 @@
             checked
           />
           <span class="radio-button"></span>
-          <span class="label-secondary">Land and water</span>
+          <span class="label-secondary">Land (white) and water (black)</span>
         </label>
         <label class="radio-label">
           <input
@@ -86,7 +88,7 @@
             class="hidden-accessible"
           />
           <span class="radio-button"></span>
-          <span class="label-secondary">Land details (green, sand, ice)</span>
+          <span class="label-secondary">Land details (sand and ice)</span>
         </label>
       </fieldset>
     </form>
@@ -95,21 +97,28 @@
       import { on, Out } from '/reform/v1/index.js'
       import { setup, parsePartialJson } from './setup.js'
       import { geoRobinson } from 'https://cdn.jsdelivr.net/npm/d3-geo-projection@4.0.0/+esm'
+      import { Semaphore } from '../semaphore.js'
 
       // https://d3js.org/d3-geo/projection [long E/W, lat N/S] (in degrees) to
       // [x, y] or null (unclear what the range is)
       const projection = geoRobinson().scale(1).translate([0, 0])
-      console.log(
-        [
-          [-180, 0],
-          [180, 0],
-          [0, -90],
-          [0, 90]
-        ].map(a => projection(a))
-      )
+      // negative is west and south
+      const top = projection([0, 90])[1]
+      const bottom = projection([0, -90])[1]
       // appears to be [0~960, 500~0] by default but is overridden rather than
       // compounded by scale/translate. with scale=1 it's [-pi~pi, close to
       // pi/2~-pi/2 but a bit more than half]
+      // const projection = geoRobinson()
+      //   .scale(2 / (bottom - top))
+      //   .translate([0, 0])
+      // y should now be +/- 1
+      // console.log(projection([-180, 0]))
+      // console.log(projection([0, 90]))
+      const scaleX = projection([180, 0])[0]
+      // slightly less than 1 for whatever reason
+      const scaleY = projection([0, -90])[1]
+      // console.log(projection.invert([scaleX, 1]))
+      const insetX = projection([180, -90])[0]
 
       const session = await setup({
         expectedInputs: [{ type: 'text' }],
@@ -123,29 +132,95 @@
         ]
       })
 
-      let abort
-      on('output', async (c, { rows, colorSet }) => {
-        abort?.abort()
-        try {
-          abort = new AbortController()
-          const clone = await session.clone({ signal: abort.signal })
-          const response = await clone.prompt([], {
-            responseConstraint: {
-              type: 'string',
-              enum:
-                colorSet === 'binary'
-                  ? ['land', 'water']
-                  : ['water', 'ice', 'sand', 'green']
-            },
-            signal: abort.signal
-          })
-          return Out.from('slop-world.png', c)
-        } catch (error) {
-          if (error instanceof DOMException && error.name === 'AbortError') {
-          } else {
-            throw error
+      const PX_SIZE = 20
+
+      const colors = {
+        binary: { land: 'white', water: 'black' },
+        details: { water: 'blue', ice: 'white', sand: 'yellow', land: 'green' }
+      }
+
+      // Copied from misc/chunks.html
+      function shuffleInPlace (arr) {
+        for (let i = arr.length - 1; i >= 1; i--) {
+          const index = (Math.random() * (i + 1)) | 0
+          if (index !== i) {
+            ;[arr[i], arr[index]] = [arr[index], arr[i]]
           }
         }
+      }
+
+      let _abort
+      on('output', async (c, { rows, colorSet }) => {
+        _abort?.abort()
+        const abort = new AbortController()
+        _abort = abort
+        const cols = Math.ceil(rows * (scaleX / scaleY))
+        c.canvas.width = cols * PX_SIZE
+        c.canvas.height = rows * PX_SIZE
+        c.scale(PX_SIZE, PX_SIZE)
+
+        const jobs = []
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            const y = (((row + 0.5) / rows) * 2 - 1) * scaleY
+            const x = (((col + 0.5) / cols) * 2 - 1) * scaleX
+            let coord = projection.invert([x, y])
+            if (x > insetX && coord[0] < 0) {
+              // Projection wrapped around the globe; if the left edge is in
+              // the globe then use 180 degrees
+              if (
+                projection.invert([((col / cols) * 2 - 1) * scaleX, y])[0] > 0
+              ) {
+                coord[0] = 180
+              } else {
+                continue
+              }
+            } else if (x < -insetX && coord[0] > 0) {
+              if (
+                projection.invert([
+                  (((col + 1) / cols) * 2 - 1) * scaleX,
+                  y
+                ])[0] < 0
+              ) {
+                coord[0] = -180
+              } else {
+                continue
+              }
+            }
+            c.fillStyle = `rgba(${((coord[0] + 180) / 360) * 255}, ${((coord[1] + 90) / 180) * 255}, 255, 0.3)`
+            c.fillRect(col, row, 1, 1)
+            jobs.push({ x: col, y: row, coord })
+          }
+        }
+        shuffleInPlace(jobs)
+
+        const semaphore = new Semaphore(4)
+        await Promise.all(
+          jobs.map(async ({ x, y, coord }) => {
+            using _lock = await semaphore.acquire()
+            abort.signal.throwIfAborted()
+            const clone = await session.clone({ signal: abort.signal })
+            abort.signal.throwIfAborted()
+            const response = await clone.prompt(
+              `${Math.abs(coord[1])}°${coord[1] > 0 ? 'N' : 'S'} ${Math.abs(coord[0])}°${coord[0] > 0 ? 'E' : 'W'}`,
+              {
+                responseConstraint: {
+                  type: 'string',
+                  enum: Object.keys(colors[colorSet])
+                },
+                signal: abort.signal
+              }
+            )
+            abort.signal.throwIfAborted()
+            c.fillStyle = colors[colorSet][response.replaceAll('"', '')]
+            c.fillRect(x, y, 1, 1)
+          })
+        ).catch(
+          error =>
+            !(error instanceof DOMException && error.name === 'AbortError') &&
+            Promise.reject(error)
+        )
+        return Out.from('slop-world.png', c)
       })
     </script>
   </body>
