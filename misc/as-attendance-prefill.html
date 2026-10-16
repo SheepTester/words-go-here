@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -16,7 +16,8 @@
     <script src="/sheep3.js" charset="utf-8"></script>
 
     <style>
-      [type='text'] {
+      [type='text'],
+      [type='url'] {
         width: 100%;
       }
       .button {
@@ -291,7 +292,7 @@
         <input
           type="url"
           name="formUrl"
-          value="https://docs.google.com/forms/d/e/1FAIpQLSdTyROOr_WZGOgpNyfJL2QQFxIDj9FJxSxk2T0orOKu4VvQlQ/viewform"
+          value="https://docs.google.com/forms/d/e/1FAIpQLSc3CypbxjZgU7ZzbhlpEy1XtytmzDquuU4ELmf_VtDRjkDomw/viewform"
         />
       </label>
     </form>
@@ -315,8 +316,8 @@
         return Out.from('url.txt', url)
       })
 
-      on('test-link', (elem, { link }) => {
-        elem.href = link.value
+      on('test-link', async (elem, { link }) => {
+        elem.href = typeof link === 'string' ? link : await link.value.text()
       })
     </script>
   </body>
