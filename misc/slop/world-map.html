@@ -17,7 +17,13 @@
     <script src="/sheep3.js" charset="utf-8"></script>
 
     <style>
-      canvas {
+      #output {
+        /* world-map.svg is centered at 10E i think which is probably better,
+        but it makes the math harder (my head hurt) */
+        background-image: url('./world-map-robinson-0e.jpg');
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
       }
     </style>
   </head>
@@ -34,7 +40,13 @@
         <a href="https://developer.chrome.com/docs/ai/prompt-api" class="link"
           >Google Chrome slop API</a
         >
-        to ask an on-device LLM what is at each coordinate in the world.
+        to ask an on-device LLM what is at each coordinate in the world. World
+        map from
+        <a
+          href="https://commons.wikimedia.org/wiki/File:Robinson_projection_SW.jpg"
+          class="link"
+          >Wikimedia Commons</a
+        >.
       </p>
 
       <div id="setup-status"></div>
@@ -64,7 +76,7 @@
 
       <label class="field-label">
         <span class="label-primary">Rows</span>
-        <input type="number" name="rows" min="1" value="3" />
+        <input type="number" name="rows" min="1" value="10" />
       </label>
 
       <fieldset class="radio-set">
@@ -149,6 +161,11 @@
         }
       }
 
+      function roundBasedOnMinmax (n, min, max) {
+        // TODO
+        return n.toFixed(1)
+      }
+
       let _abort
       on('output', async (c, { rows, colorSet }) => {
         _abort?.abort()
@@ -165,52 +182,68 @@
             const y = (((row + 0.5) / rows) * 2 - 1) * scaleY
             const x = (((col + 0.5) / cols) * 2 - 1) * scaleX
             let coord = projection.invert([x, y])
+            let minLong = projection.invert([
+              ((col / cols) * 2 - 1) * scaleX,
+              y
+            ])[0]
+            let maxLong = projection.invert([
+              (((col + 1) / cols) * 2 - 1) * scaleX,
+              y
+            ])[0]
             if (x > insetX && coord[0] < 0) {
               // Projection wrapped around the globe; if the left edge is in
               // the globe then use 180 degrees
-              if (
-                projection.invert([((col / cols) * 2 - 1) * scaleX, y])[0] > 0
-              ) {
+              if (minLong > 0) {
                 coord[0] = 180
               } else {
                 continue
               }
             } else if (x < -insetX && coord[0] > 0) {
-              if (
-                projection.invert([
-                  (((col + 1) / cols) * 2 - 1) * scaleX,
-                  y
-                ])[0] < 0
-              ) {
+              if (maxLong < 0) {
                 coord[0] = -180
               } else {
                 continue
               }
             }
-            c.fillStyle = `rgba(${((coord[0] + 180) / 360) * 255}, ${((coord[1] + 90) / 180) * 255}, 255, 0.3)`
+            if (coord[0] < 0 && minLong > 0) {
+              minLong = -180
+            } else if (coord[0] > 0 && maxLong < 0) {
+              maxLong = 180
+            }
+            const maxLat = projection.invert([
+              x,
+              ((row / rows) * 2 - 1) * scaleY
+            ])[1]
+            const minLat = projection.invert([
+              x,
+              (((row + 1) / rows) * 2 - 1) * scaleY
+            ])[1]
+            const lat = roundBasedOnMinmax(coord[1], minLat, maxLat)
+            const long = roundBasedOnMinmax(coord[0], minLong, maxLong)
+            c.fillStyle = `rgba(${((+long + 180) / 360) * 255}, ${((+lat + 90) / 180) * 255}, 255, 0.3)`
             c.fillRect(col, row, 1, 1)
-            jobs.push({ x: col, y: row, coord })
+            jobs.push({ x: col, y: row, lat, long })
           }
         }
-        shuffleInPlace(jobs)
+        // console.log([...jobs])
+        // shuffleInPlace(jobs)
 
         const semaphore = new Semaphore(4)
         await Promise.all(
-          jobs.map(async ({ x, y, coord }) => {
+          jobs.map(async ({ x, y, lat, long }) => {
             using _lock = await semaphore.acquire()
             abort.signal.throwIfAborted()
             const clone = await session.clone({ signal: abort.signal })
             abort.signal.throwIfAborted()
-            const response = await clone.prompt(
-              `${Math.abs(coord[1])}°${coord[1] > 0 ? 'N' : 'S'} ${Math.abs(coord[0])}°${coord[0] > 0 ? 'E' : 'W'}`,
-              {
-                responseConstraint: {
-                  type: 'string',
-                  enum: Object.keys(colors[colorSet])
-                },
-                signal: abort.signal
-              }
-            )
+            const displayCoord = `${lat.replace('-', '')}°${+lat > 0 ? 'N' : 'S'} ${long.replace('-', '')}°${+long > 0 ? 'E' : 'W'}`
+            console.log(displayCoord)
+            const response = await clone.prompt(displayCoord, {
+              responseConstraint: {
+                type: 'string',
+                enum: Object.keys(colors[colorSet])
+              },
+              signal: abort.signal
+            })
             abort.signal.throwIfAborted()
             c.fillStyle = colors[colorSet][response.replaceAll('"', '')]
             c.fillRect(x, y, 1, 1)
